@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dillon Bliss | Frontend Engineer</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #0a192f;
+      color: #ccd6f6;
+    }
+    header {
+      text-align: center;
+      padding: 2rem 1rem;
+      border-bottom: 1px solid #112240;
+    }
+    header h1 {
+      margin-bottom: 0.5rem;
+      color: #64ffda;
+    }
+    main {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+    }
+    .project {
+      background: #112240;
+      border-radius: 8px;
+      padding: 1.5rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .project:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .project h3 {
+      color: #64ffda;
+      margin-bottom: 0.5rem;
+    }
+    .project p {
+      color: #8892b0;
+      font-size: 0.95rem;
+    }
+    a {
+      color: #64ffda;
+      text-decoration: none;
+    }
+    footer {
+      text-align: center;
+      margin: 3rem 0 1rem;
+      font-size: 0.9rem;
+      color: #8892b0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Dillon Bliss</h1>
+    <p>Frontend Developer | Building clean, performant, and intuitive interfaces.</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Projects</h2>
+      <div class="project-grid">
+
+        <!-- Example project card -->
+        <div class="project">
+          <h3>Lighting Control CMS</h3>
+          <p>Full-featured Vue + Python CMS for managing smart lighting systems. Includes custom configuration, live status dashboards, and API integrations.</p>
+          <a href="https://github.com/dbliss-henaghan/lighting-cms" target="_blank">View on GitHub →</a>
+        </div>
+
+        <div class="project">
+          <h3>League of Legends Win Predictor</h3>
+          <p>Machine learning model and visualization dashboard predicting match outcomes using Random Forest and Elo-based player metrics.</p>
+          <a href="https://github.com/dbliss-henaghan/lol-predictor" target="_blank">View on GitHub →</a>
+        </div>
+
+        <div class="project">
+          <h3>Streetlight Booking System</h3>
+          <p>Interactive booking app for community lighting control with CSV persistence, calendar integration, and dynamic team access management.</p>
+          <a href="https://github.com/dbliss-henaghan/streetlight-booking" target="_blank">View on GitHub →</a>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 Dillon Bliss — Built with ❤️ and deployed via GitHub Pages</p>
+  </footer>
+</body>
+</html>

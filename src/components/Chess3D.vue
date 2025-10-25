@@ -12,6 +12,11 @@ const canvas = ref(null)
 
 let renderer, scene, camera, controls, raycaster, mouse
 let boardGroup, piecesGroup
+
+// Put your FEN here (only the board layout part is used; other FEN fields ignored)
+const FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR'
+// const FEN = '4R3/8/8/2Pkp3/N7/4rnKB/1nb5/b1r5'
+
 const pieceCache = {} // { pawn, rook, knight, bishop, queen, king }: THREE.Group
 let animationId = null
 let hoveredPiece = null
@@ -82,13 +87,13 @@ function makeSimplePiece(type, colorHex = 0xf0f3ff) {
 
   if (type === 'pawn') {
     // lower body: slightly thinner towards the top
-    const lower = new THREE.CylinderGeometry(0.25, 0.30, 0.80, 16)
+    const lower = new THREE.CylinderGeometry(0.16, 0.24, 0.65, 16)
     const lowerMesh = new THREE.Mesh(lower, mat)
     lowerMesh.position.y = 0.42
     lowerMesh.castShadow = true
 
     // collar line (a thin ring)
-    const collar = new THREE.TorusGeometry(0.23, 0.04, 8, 24)
+    const collar = new THREE.TorusGeometry(0.15, 0.04, 8, 24)
     const collarMesh = new THREE.Mesh(collar, mat)
     collarMesh.rotation.x = Math.PI / 2
     collarMesh.position.y = 0.72
@@ -97,13 +102,13 @@ function makeSimplePiece(type, colorHex = 0xf0f3ff) {
     // head sphere
     const head = new THREE.SphereGeometry(0.19, 16, 16)
     const headMesh = new THREE.Mesh(head, mat)
-    headMesh.position.y = 0.92
+    headMesh.position.y = 0.82
     headMesh.castShadow = true
 
     group.add(lowerMesh, collarMesh, headMesh)
  } else if (type === 'rook') {
     // main tower body (slight taper)
-    const body = new THREE.CylinderGeometry(0.30, 0.36, 0.90, 16)
+    const body = new THREE.CylinderGeometry(0.26, 0.26, 0.90, 16)
     const bodyMesh = new THREE.Mesh(body, mat)
     bodyMesh.position.y = 0.50
     bodyMesh.castShadow = true
@@ -115,7 +120,7 @@ function makeSimplePiece(type, colorHex = 0xf0f3ff) {
     neckMesh.castShadow = true
 
     // upper tower (taller top section)
-    const crownWall = new THREE.CylinderGeometry(0.30, 0.34, 0.22, 16)
+    const crownWall = new THREE.CylinderGeometry(0.28, 0.26, 0.22, 16)
     const crownMesh = new THREE.Mesh(crownWall, mat)
     crownMesh.position.y = 1.20
     crownMesh.castShadow = true
@@ -123,7 +128,7 @@ function makeSimplePiece(type, colorHex = 0xf0f3ff) {
     // crenellations: -_-_-_- pattern using small blocks around the rim
     const teeth = new THREE.BoxGeometry(0.10, 0.18, 0.16)
     const toothCount = 8
-    const radius = 0.28
+    const radius = 0.24
     for (let i = 0; i < toothCount; i += 2) { // place every other to create gaps
         const angle = (i / toothCount) * Math.PI * 2
         const tx = Math.cos(angle) * radius
@@ -137,50 +142,102 @@ function makeSimplePiece(type, colorHex = 0xf0f3ff) {
 
     group.add(bodyMesh, neckMesh, crownMesh)
   } else if (type === 'knight') {
-    // torso
-    const torso = new THREE.CylinderGeometry(0.26, 0.34, 0.55, 16)
-    const torsoMesh = new THREE.Mesh(torso, mat)
-    torsoMesh.position.y = 0.40
-    torsoMesh.castShadow = true
+    // tunables so you can quickly iterate
+    const detail = 24;          // curve/bevel smoothness (12–36)
+    const thickness = 0.13;     // side-to-side thickness of the head/neck
+    const bevel = 0.02;         // edge softness
 
-    // arched neck
-    const curve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3( 0.00, 0.55,  0.05),
-        new THREE.Vector3( 0.05, 0.95, -0.05),
-        new THREE.Vector3(-0.02, 1.15, -0.10),
-    ])
-    const neckGeom = new THREE.TubeGeometry(curve, 12, 0.12, 8, false)
-    const neckMesh = new THREE.Mesh(neckGeom, mat)
-    neckMesh.castShadow = true
+    // base/torso (slightly refined cylinder so proportions feel Staunton-ish)
+    const torso = new THREE.CylinderGeometry(0.16, 0.22, 0.65, 24);
+    const torsoMesh = new THREE.Mesh(torso, mat);
+    torsoMesh.position.y = 0.40;
+    torsoMesh.castShadow = true;
+    group.add(torsoMesh);
 
-    // head + snout
-    const head = new THREE.BoxGeometry(0.35, 0.28, 0.20)
-    const headMesh = new THREE.Mesh(head, mat)
-    headMesh.position.set(-0.05, 1.22, -0.15)
-    headMesh.castShadow = true
+    // --- head + neck as one extruded silhouette (the big visual win) ---
+    const s = new THREE.Shape();
+    // start rear/low neck
+    s.moveTo(0.15, 0.50);
+    // back of neck up to crest
+    s.quadraticCurveTo(0.10, 0.90, 0.06, 1.08);
+    // forehead dome
+    s.bezierCurveTo(0.05, 1.26, -0.02, 1.28, -0.10, 1.24);
+    // nose/muzzle
+    s.bezierCurveTo(-0.42, 1.18, -0.26, 1.07, -0.22, 1.02);
+    // mouth line to chin
+    // throat curve back into the lower neck
+    s.quadraticCurveTo(0.05, 0.96, 0.10, 0.90);
+    s.quadraticCurveTo(0.15, 0.78, 0.15, 0.60);
+    // (shape is implicitly closed back to moveTo)
 
-    const snout = new THREE.BoxGeometry(0.22, 0.16, 0.20)
-    const snoutMesh = new THREE.Mesh(snout, mat)
-    snoutMesh.position.set(-0.10, 1.15, -0.27)
-    snoutMesh.castShadow = true
+    const headNeckGeom = new THREE.ExtrudeGeometry(s, {
+        depth: thickness,
+        bevelEnabled: true,
+        bevelThickness: bevel,
+        bevelSize: bevel,
+        bevelSegments: 3,
+        curveSegments: detail,
+        steps: 1
+    });
+    headNeckGeom.computeVertexNormals();
 
-    // ears
-    const earGeom = new THREE.ConeGeometry(0.05, 0.14, 6)
-    const ear1 = new THREE.Mesh(earGeom, mat)
-    ear1.position.set(0.05, 1.32, -0.12)
-    ear1.rotation.x = Math.PI * 0.15
-    ear1.castShadow = true
-    const ear2 = ear1.clone()
-    ear2.position.x = -0.05
+    // ⬇️ Recenter only in X and Z (keep Y as-is)
+    headNeckGeom.computeBoundingBox();
+    const bb = headNeckGeom.boundingBox;
+    const cx = (bb.min.x + bb.max.x) / 2 + 0.1;        // horizontal center
+    const cz = (bb.min.z + bb.max.z) / 2;        // depth center (≈ thickness/2)
+    headNeckGeom.translate(-cx, 0, -cz);
 
-    // mane ridge (subtle)
-    const mane = new THREE.BoxGeometry(0.06, 0.45, 0.18)
-    const maneMesh = new THREE.Mesh(mane, mat)
-    maneMesh.position.set(0.10, 0.95, 0.00)
-    maneMesh.rotation.z = -0.20
-    maneMesh.castShadow = true
+    const headNeck = new THREE.Mesh(headNeckGeom, mat);
+    headNeck.castShadow = true;
+    headNeck.rotation.y = Math.PI / 2;           // face -Z like before
+    group.add(headNeck);
 
-    group.add(torsoMesh, neckMesh, headMesh, snoutMesh, ear1, ear2, maneMesh)
+
+    // --- ears (small tapered cones, slightly tilted) ---
+    const earGeom = new THREE.ConeGeometry(0.045, 0.12, 8);
+    const ear1 = new THREE.Mesh(earGeom, mat);
+    ear1.position.set(-0.045, 1.29, 0.06);
+    ear1.rotation.x = Math.PI * 0.15;
+    ear1.castShadow = true;
+
+    const ear2 = ear1.clone();
+    ear2.position.x = 0.045;
+    group.add(ear1, ear2);
+
+    // --- simple eye (fake recess with a tiny sphere – swap for CSG later if desired) ---
+    const eye = new THREE.SphereGeometry(0.03, 16, 12);
+    const eyeMesh = new THREE.Mesh(eye, mat);
+    eyeMesh.position.set(-0.07, 1.16, 0.1);
+
+    const eye2 = eyeMesh.clone();
+    eye2.position.x = 0.07;
+    group.add(eyeMesh, eye2);
+
+    // --- mane as a thin extruded slab along the crest ---
+    const maneShape = new THREE.Shape();
+    maneShape.moveTo(0, 0.98);
+    maneShape.quadraticCurveTo(0.05, 0.98, 0.06, 1.16);
+    maneShape.lineTo(-0.02, 1.16);
+    maneShape.quadraticCurveTo(-0.02, 0.96, 0.08, 0.66);
+
+    const maneGeom = new THREE.ExtrudeGeometry(maneShape, {
+        depth: 0.08,
+        bevelEnabled: false,
+        curveSegments: detail
+    });
+    const maneMesh = new THREE.Mesh(maneGeom, mat);
+    maneMesh.position.z = thickness * 0.55; // sits slightly proud of the crest
+    maneMesh.castShadow = true;
+    group.add(maneMesh);
+
+    // --- subtle collar ring (optional, helps readability above the base) ---
+    const collar = new THREE.TorusGeometry(0.19, 0.03, 12, 32);
+    const collarMesh = new THREE.Mesh(collar, mat);
+    collarMesh.rotation.x = Math.PI / 2;
+    collarMesh.position.y = 0.70;
+    collarMesh.castShadow = true;
+    group.add(collarMesh);
 } else if (type === 'bishop') {
     // taller, thinner body
     const body = new THREE.CylinderGeometry(0.14, 0.20, 0.90, 16)
@@ -195,39 +252,21 @@ function makeSimplePiece(type, colorHex = 0xf0f3ff) {
     collarMesh.position.y = 0.98
     collarMesh.castShadow = true
 
-    // elliptical top with a rectangular slit via two clipping planes (diagonal)
-    const topGeom = new THREE.SphereGeometry(0.18, 20, 20)
-    const slitWidth = 0.06
-    const theta = -Math.PI / 6
-    const n = new THREE.Vector3(Math.cos(theta), 0, Math.sin(theta)).normalize()
-
-    // Left half: keep region n·x <= -slitWidth/2
-    const topMatA = mat.clone()
-    topMatA.clippingPlanes = [ new THREE.Plane(n.clone().negate(), -slitWidth / 2) ]
-    const topA = new THREE.Mesh(topGeom, topMatA)
-    topA.position.y = 1.22
-    topA.scale.set(0.7, 1.95, 1.0)
-    topA.castShadow = true
-
-    // Right half: keep region n·x >= +slitWidth/2
-    const topMatB = mat.clone()
-    topMatB.clippingPlanes = [ new THREE.Plane(n.clone(), -slitWidth / 2) ]
-    const topB = new THREE.Mesh(topGeom, topMatB)
-    topB.position.y = 1.22
-    topB.scale.set(0.7, 1.95, 1.0)
-    topB.castShadow = true
+    // elliptical top (base)
+    const topGeom = new THREE.SphereGeometry(0.15, 20, 20)
+    const topMesh = new THREE.Mesh(topGeom, mat)
+    topMesh.position.y = 1.22
+    topMesh.scale.set(0.7, 1.95, 0.7)
+    topMesh.castShadow = true
 
     // smaller ellipse cap on top
-    const capGeom = new THREE.SphereGeometry(0.13, 20, 20)
+    const capGeom = new THREE.SphereGeometry(0.08, 20, 20)
     const cap = new THREE.Mesh(capGeom, mat)
-    cap.position.y = 1.36
+    cap.position.y = 1.48
     cap.scale.set(0.65, 1.35, 0.65)
     cap.castShadow = true
 
-    group.add(bodyMesh, collarMesh, topA, topB, cap)
-
-
-
+    group.add(bodyMesh, collarMesh, topMesh, cap)
   } else if (type === 'queen') {
     const body = new THREE.ConeGeometry(0.38, 1.0, 16)
     const crown = new THREE.TorusGeometry(0.25, 0.06, 8, 16)
@@ -251,50 +290,60 @@ function makeSimplePiece(type, colorHex = 0xf0f3ff) {
   return group
 }
 
-function placePieces() {
-    piecesGroup = new THREE.Group()
+function placePiecesFromFEN(fen) {
+  // clear previous group if present
+  if (piecesGroup) scene.remove(piecesGroup)
+  piecesGroup = new THREE.Group()
 
-    const white = 0xF0F0F0
-    const black = 0x2E2E2E
+  const WHITE = 0xEEEEEE
+  const BLACK = 0x333333
 
-    const typesRank = ['rook','knight','bishop','queen','king','bishop','knight','rook']
+  // map FEN letter -> {type,color}
+  const toPiece = (ch) => {
+    const isLower = ch === ch.toLowerCase()
+    const color = isLower ? BLACK : WHITE
+    const t = ch.toLowerCase()
+    const type =
+      t === 'p' ? 'pawn'   :
+      t === 'r' ? 'rook'   :
+      t === 'n' ? 'knight' :
+      t === 'b' ? 'bishop' :
+      t === 'q' ? 'queen'  :
+      t === 'k' ? 'king'   : null
+    return type ? { type, color } : null
+  }
 
-    // White back rank (z = -3.5), pawns at z = -2.5
-    for (let i=0; i<8; i++) {
-    const t = typesRank[i]
-    const p = makeSimplePiece(t, white)
-    p.position.set((i - 3.5), 0.08, -3.5)
-    p.userData.rest = p.position.clone()  
-    piecesGroup.add(p)
+  // use only the placement part before spaces
+  const rows = fen.trim().split(' ')[0].split('/')
+  if (rows.length !== 8) {
+    console.warn('Invalid FEN rows; expected 8')
+    return
+  }
 
-    const pawn = makeSimplePiece('pawn', white)
-    pawn.position.set((i - 3.5), 0.08, -2.5)
-    pawn.userData.rest = pawn.position.clone()  
-    piecesGroup.add(pawn)
+  // FEN rows go rank 8 → 1. Our board z: rank 8 = +3.5, rank 1 = -3.5
+  for (let rank = 0; rank < 8; rank++) {
+    let file = 0
+    for (const ch of rows[rank]) {
+      if (ch >= '1' && ch <= '8') {
+        file += Number(ch)
+      } else {
+        const spec = toPiece(ch)
+        if (spec && file < 8) {
+          const g = makeSimplePiece(spec.type, spec.color)
+          const x = (file - 3.5)
+          const z = (3.5 - rank)
+          g.position.set(x, 0.08, z)
+          g.userData.rest = g.position.clone()
+          piecesGroup.add(g)
+          file += 1
+        }
+      }
     }
+  }
 
-    // Black back rank (z = +3.5), pawns at z = +2.5
-    for (let i=0; i<8; i++) {
-    const t = typesRank[i]
-    const p = makeSimplePiece(t, black)
-    p.position.set((i - 3.5), 0.08, +3.5)
-    p.userData.rest = p.position.clone() 
-    piecesGroup.add(p)
-
-    const pawn = makeSimplePiece('pawn', black)
-    pawn.position.set((i - 3.5), 0.08, +2.5)
-    pawn.userData.rest = pawn.position.clone()
-    piecesGroup.add(pawn)
-    }
-
-
-    // shadow & pickable flags
-    piecesGroup.traverse(obj => {
-      if (obj.isMesh) obj.castShadow = true
-    })
-
-    scene.add(piecesGroup)
+  scene.add(piecesGroup)
 }
+
 
 function init() {
   scene = new THREE.Scene()
@@ -341,7 +390,7 @@ function init() {
   scene.add(ground)
 
   makeBoard()
-  placePieces()
+  placePiecesFromFEN(FEN)
 
   raycaster = new THREE.Raycaster()
   mouse = new THREE.Vector2()

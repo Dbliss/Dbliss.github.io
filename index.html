@@ -1,13 +1,1428 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>dbliss.github.io</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <title>Dillon – Software Engineer & Data Scientist</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <style>
+    :root {
+      --bg: #050510;
+      --bg-elevated: #0b0b17;
+      --bg-elevated-soft: #101020;
+      --accent: #5b5bff;
+      --accent-soft: rgba(91, 91, 255, 0.2);
+      --accent-strong: #8b5bff;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --card-border: rgba(148, 163, 184, 0.16);
+      --danger: #f97373;
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-pill: 999px;
+      --transition-fast: 180ms ease-out;
+      --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.75);
+      --shadow-glow: 0 0 30px rgba(91, 91, 255, 0.55);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #15153a 0, #050510 45%);
+      color: var(--text-main);
+      min-height: 100vh;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page__inner {
+      width: min(1200px, 100%);
+      margin: 0 auto;
+      padding: 24px clamp(18px, 4vw, 32px) 48px;
+    }
+
+    /* ------------ Header ------------ */
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .nav__left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav__logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: radial-gradient(circle at 20% 0%, var(--accent-strong), #111133);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .nav__brand {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .nav__brand-title {
+      font-size: 14px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .nav__brand-name {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .nav__links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .nav__link {
+      position: relative;
+      cursor: pointer;
+      padding-bottom: 4px;
+    }
+
+    .nav__link:hover {
+      color: var(--text-main);
+    }
+
+    .nav__link::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      height: 2px;
+      width: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+      transition: width var(--transition-fast);
+    }
+
+    .nav__link--active::after {
+      width: 100%;
+    }
+
+    .nav__right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav__socials {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav__social {
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      color: var(--text-muted);
+      transition: background var(--transition-fast), color var(--transition-fast),
+        border-color var(--transition-fast);
+      cursor: pointer;
+    }
+
+    .nav__social:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent-strong);
+    }
+
+    .nav__cta {
+      padding: 9px 16px;
+      font-size: 13px;
+      border-radius: var(--radius-pill);
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: #fff;
+      font-weight: 600;
+      box-shadow: var(--shadow-glow);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .nav__cta span {
+      font-size: 16px;
+    }
+
+    /* ------------ Hero ------------ */
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2.3fr);
+      gap: 40px;
+      align-items: stretch;
+      margin-bottom: 40px;
+    }
+
+    .hero__left {
+      position: relative;
+      padding: 26px 26px 24px;
+      border-radius: var(--radius-lg);
+      background: radial-gradient(circle at top left, #151538, #050510 55%);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
+
+    .hero__pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .hero__pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: radial-gradient(circle, #22c55e, #15803d);
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.7);
+    }
+
+    .hero__headline {
+      margin-top: 18px;
+      font-size: clamp(24px, 4vw, 32px);
+      line-height: 1.25;
+      font-weight: 500;
+      color: #e5e7eb;
+    }
+
+    .hero__headline strong {
+      display: block;
+      font-size: clamp(30px, 5vw, 40px);
+      color: var(--accent-strong);
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .hero__subtitle {
+      margin-top: 10px;
+      font-size: 14px;
+      color: var(--text-muted);
+      max-width: 34rem;
+    }
+
+    .hero__cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .btn-primary,
+    .btn-ghost {
+      padding: 10px 18px;
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform var(--transition-fast),
+        box-shadow var(--transition-fast), background var(--transition-fast),
+        color var(--transition-fast), border-color var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: #fff;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 40px rgba(91, 91, 255, 0.75);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+    }
+
+    .btn-ghost span {
+      font-size: 15px;
+    }
+
+    .btn-ghost:hover {
+      color: var(--text-main);
+      border-color: var(--accent);
+      background: rgba(15, 23, 42, 0.8);
+    }
+
+    .hero__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 26px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .hero__meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .hero__meta-label {
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .hero__meta-value {
+      font-size: 13px;
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+
+    .hero__spark {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(91, 91, 255, 0.4), transparent 60%);
+      top: -24px;
+      right: 24%;
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    .hero__right {
+      position: relative;
+      border-radius: var(--radius-lg);
+      background: radial-gradient(circle at top, #1e1e3c, #050510 70%);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 22px 22px 18px;
+    }
+
+    .hero__profile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      text-align: center;
+    }
+
+    .hero__avatar-wrapper {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      border-radius: 999px;
+      padding: 6px;
+      background: radial-gradient(circle, var(--accent-strong), #111827);
+    }
+
+    .hero__avatar-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 0, #1f2937, #020617 70%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 52px;
+      font-weight: 700;
+      color: #e5e7eb;
+      overflow: hidden;
+    }
+
+    .hero__avatar-tag {
+      position: absolute;
+      bottom: 4px;
+      right: -10px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      color: var(--text-muted);
+      transform: rotate(-12deg);
+    }
+
+    .hero__profile-name {
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    .hero__profile-role {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .hero__profile-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+      justify-content: center;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      color: var(--text-muted);
+    }
+
+    .badge--accent {
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: #fff;
+    }
+
+    .hero__right-footer {
+      margin-top: 18px;
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .hero__right-footer strong {
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+
+    .hero__right-footer button {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: none;
+      background: rgba(91, 91, 255, 0.16);
+      color: var(--accent-strong);
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    /* ------------ Sections ------------ */
+
+    section {
+      margin-top: 24px;
+    }
+
+    .section__label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      margin-bottom: 6px;
+    }
+
+    .section__title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .section__subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      max-width: 32rem;
+      margin-bottom: 16px;
+    }
+
+    /* Specialties */
+
+    .specialties-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      border-radius: var(--radius-md);
+      background: var(--bg-elevated);
+      border: 1px solid var(--card-border);
+      padding: 16px 16px 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        circle at top left,
+        rgba(91, 91, 255, 0.22),
+        transparent 55%
+      );
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+      pointer-events: none;
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card__icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      font-size: 17px;
+    }
+
+    .card__title {
+      font-size: 15px;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .card__body {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .card__footer {
+      font-size: 11px;
+      color: var(--accent-strong);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .card__footer span {
+      font-size: 14px;
+    }
+
+    /* Projects */
+
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .project-card {
+      border-radius: var(--radius-md);
+      background: var(--bg-elevated-soft);
+      border: 1px solid var(--card-border);
+      padding: 12px 12px 10px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .project-card__thumb {
+      height: 120px;
+      border-radius: 14px;
+      background: radial-gradient(circle at top left, #1d1f3f, #020617 60%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .project-card__thumb-overlay {
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(
+          120deg,
+          rgba(148, 163, 184, 0.3) 1px,
+          transparent 1px
+        ),
+        linear-gradient(
+          210deg,
+          rgba(107, 114, 128, 0.32) 1px,
+          transparent 1px
+        );
+      background-size: 120px 120px;
+      opacity: 0.5;
+    }
+
+    .project-card__tags {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      display: inline-flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .project-tag {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--text-muted);
+    }
+
+    .project-card__title {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .project-card__desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      flex: 1;
+    }
+
+    .project-card__footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .project-card__links {
+      display: flex;
+      gap: 8px;
+    }
+
+    .link-pill {
+      padding: 4px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .link-pill span {
+      font-size: 14px;
+    }
+
+    .link-pill:hover {
+      border-color: var(--accent);
+      color: var(--accent-strong);
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    /* About / process */
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1.5fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .about-card {
+      border-radius: var(--radius-md);
+      background: var(--bg-elevated);
+      border: 1px solid var(--card-border);
+      padding: 16px 16px 14px;
+      box-shadow: var(--shadow-soft);
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .about-card__title {
+      font-size: 15px;
+      font-weight: 500;
+      color: #e5e7eb;
+    }
+
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .timeline__item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-size: 12px;
+    }
+
+    .timeline__marker {
+      margin-top: 4px;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent-strong);
+      box-shadow: 0 0 10px rgba(91, 91, 255, 0.9);
+    }
+
+    .timeline__body-title {
+      font-weight: 500;
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+
+    /* Testimonials / contact */
+
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1.6fr;
+      gap: 18px;
+      margin-top: 24px;
+      align-items: stretch;
+    }
+
+    .testimonial-card {
+      border-radius: var(--radius-lg);
+      background: radial-gradient(circle at top, #151538, #050510 65%);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      padding: 18px 18px 16px;
+      box-shadow: var(--shadow-soft);
+      font-size: 13px;
+      color: var(--text-muted);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .testimonial-card__quote-icon {
+      font-size: 22px;
+      color: rgba(148, 163, 184, 0.6);
+    }
+
+    .testimonial-card__body {
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+
+    .testimonial-card__author {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .testimonial-card__avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      background: radial-gradient(circle at top left, #1f2937, #020617 70%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .testimonial-card__name {
+      font-size: 13px;
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+
+    .testimonial-card__role {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .contact-card {
+      border-radius: var(--radius-lg);
+      background: var(--bg-elevated);
+      border: 1px solid var(--card-border);
+      padding: 18px 18px 16px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .contact-card__title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .contact-card__row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    .contact-pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .contact-pill span {
+      font-size: 15px;
+    }
+
+    .contact-card__cta-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .contact-card__hint {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Footer */
+
+    .footer {
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(31, 41, 55, 0.9);
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .footer__links {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .footer__link {
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .footer__link:hover {
+      color: var(--accent-strong);
+    }
+
+    /* ------------ Responsive ------------ */
+
+    @media (max-width: 960px) {
+      .hero {
+        grid-template-columns: 1.2fr;
+      }
+
+      .hero__right {
+        order: -1;
+      }
+
+      .specialties-grid,
+      .projects-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .about-grid,
+      .bottom-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .nav {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .nav__links {
+        display: none;
+      }
+
+      .hero__left {
+        padding: 20px 18px 18px;
+      }
+
+      .hero__right {
+        padding: 18px 18px 16px;
+      }
+
+      .specialties-grid,
+      .projects-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .page__inner {
+        padding-inline: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="page">
+    <main class="page__inner">
+      <!-- HEADER -->
+      <header class="nav">
+        <div class="nav__left">
+          <div class="nav__logo">{{ initials }}</div>
+          <div class="nav__brand">
+            <span class="nav__brand-title">{{ brandTagline }}</span>
+            <span class="nav__brand-name">{{ brandName }}</span>
+          </div>
+        </div>
+        <nav class="nav__links">
+          <a
+            v-for="link in navLinks"
+            :key="link.id"
+            href="#"
+            class="nav__link"
+            :class="{ 'nav__link--active': link.id === activeNav }"
+            @click.prevent="scrollTo(link.to)"
+          >
+            {{ link.label }}
+          </a>
+        </nav>
+        <div class="nav__right">
+          <div class="nav__socials">
+            <a
+              v-for="social in socials"
+              :key="social.label"
+              :href="social.href"
+              class="nav__social"
+              target="_blank"
+              rel="noreferrer noopener"
+              :title="social.label"
+            >
+              <span v-html="social.icon"></span>
+            </a>
+          </div>
+          <button class="nav__cta" @click="scrollTo('contact')">
+            Let’s talk <span>↗</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- HERO -->
+      <section id="home" class="hero">
+        <div class="hero__left">
+          <div class="hero__pill">
+            <span class="hero__pill-dot"></span>
+            <span>Open to new opportunities</span>
+          </div>
+
+          <h1 class="hero__headline">
+            This is your developer
+            <strong>{{ name }}</strong>
+          </h1>
+
+          <p class="hero__subtitle">
+            {{ heroSubtitle }}
+          </p>
+
+          <div class="hero__cta-row">
+            <button class="btn-primary" @click="scrollTo('projects')">
+              View projects
+            </button>
+            <button class="btn-ghost" @click="scrollTo('about')">
+              About me <span>↓</span>
+            </button>
+          </div>
+
+          <div class="hero__meta">
+            <div class="hero__meta-item">
+              <span class="hero__meta-label">Specialities</span>
+              <span class="hero__meta-value">{{ primaryStack }}</span>
+            </div>
+            <div class="hero__meta-item">
+              <span class="hero__meta-label">Experience</span>
+              <span class="hero__meta-value">
+                {{ experienceYears }}+ years building software
+              </span>
+            </div>
+            <div class="hero__meta-item">
+              <span class="hero__meta-label">Location</span>
+              <span class="hero__meta-value">{{ location }}</span>
+            </div>
+          </div>
+
+          <div class="hero__spark"></div>
+        </div>
+
+        <aside class="hero__right">
+          <div class="hero__profile">
+            <div class="hero__avatar-wrapper">
+              <div class="hero__avatar-inner">
+                <!-- Could be an <img> instead, just swap this -->
+                <span>{{ initials }}</span>
+              </div>
+              <div class="hero__avatar-tag">
+                Shipping since {{ startedYear }}
+              </div>
+            </div>
+            <div>
+              <div class="hero__profile-name">{{ name }}</div>
+              <div class="hero__profile-role">{{ title }}</div>
+            </div>
+            <div class="hero__profile-badges">
+              <span class="badge badge--accent">Full-stack</span>
+              <span class="badge">Data & ML</span>
+              <span class="badge">Clean architecture</span>
+            </div>
+          </div>
+
+          <div class="hero__right-footer">
+            <div>
+              <strong>{{ highlightLine }}</strong><br />
+              <span>{{ highlightSub }}</span>
+            </div>
+            <button @click="scrollTo('projects')">
+              Explore work
+            </button>
+          </div>
+        </aside>
+      </section>
+
+      <!-- SPECIALTIES -->
+      <section id="specialities">
+        <div class="section__label">Speciality</div>
+        <div class="section__title">My specialities</div>
+        <div class="section__subtitle">
+          I enjoy taking ideas from sketch to deployed, production-ready systems.
+          Here’s where I bring the most value.
+        </div>
+
+        <div class="specialties-grid">
+          <article
+            v-for="spec in specialities"
+            :key="spec.title"
+            class="card"
+          >
+            <div class="card__icon">{{ spec.icon }}</div>
+            <div class="card__title">{{ spec.title }}</div>
+            <p class="card__body">{{ spec.body }}</p>
+            <div class="card__footer">
+              <span>{{ spec.footer }}</span> <span>↗</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- PROJECTS -->
+      <section id="projects">
+        <div class="section__label">Selected work</div>
+        <div class="section__title">Projects I’m proud of</div>
+        <div class="section__subtitle">
+          A mix of personal experiments and real-world tools. Each project is an
+          excuse to learn something new and ship something useful.
+        </div>
+
+        <div class="projects-grid">
+          <article
+            v-for="project in projects"
+            :key="project.title"
+            class="project-card"
+          >
+            <div class="project-card__thumb">
+              <div class="project-card__thumb-overlay"></div>
+              <div class="project-card__tags">
+                <span
+                  class="project-tag"
+                  v-for="tag in project.tags"
+                  :key="tag"
+                >
+                  {{ tag }}
+                </span>
+              </div>
+            </div>
+            <div class="project-card__title">{{ project.title }}</div>
+            <p class="project-card__desc">{{ project.description }}</p>
+            <div class="project-card__footer">
+              <span>{{ project.stack }}</span>
+              <div class="project-card__links">
+                <a
+                  v-if="project.github"
+                  :href="project.github"
+                  class="link-pill"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  Code <span>↗</span>
+                </a>
+                <a
+                  v-if="project.demo"
+                  :href="project.demo"
+                  class="link-pill"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  Live demo <span>●</span>
+                </a>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ABOUT / PROCESS -->
+      <section id="about">
+        <div class="section__label">About</div>
+        <div class="section__title">My work process</div>
+        <div class="section__subtitle">
+          I like systems that are robust enough for production but friendly
+          enough for teammates to extend. Here’s how I typically approach a
+          project.
+        </div>
+
+        <div class="about-grid">
+          <article class="about-card">
+            <div class="about-card__title">How I build</div>
+            <p>
+              I balance fast iteration with long-term maintainability. That
+              means small deployable slices, a clean domain model, and the right
+              amount of automation.
+            </p>
+            <ul class="timeline">
+              <li class="timeline__item" v-for="item in process" :key="item.title">
+                <div class="timeline__marker"></div>
+                <div class="timeline__body">
+                  <div class="timeline__body-title">{{ item.title }}</div>
+                  <div>{{ item.body }}</div>
+                </div>
+              </li>
+            </ul>
+          </article>
+
+          <article class="about-card">
+            <div class="about-card__title">Tech I enjoy</div>
+            <p>
+              I’m comfortable across the stack, but I gravitate toward modern
+              TypeScript frontends, Python backends, and anything that involves
+              data or ML.
+            </p>
+            <ul class="timeline">
+              <li class="timeline__item" v-for="item in techStack" :key="item.title">
+                <div class="timeline__marker"></div>
+                <div class="timeline__body">
+                  <div class="timeline__body-title">{{ item.title }}</div>
+                  <div>{{ item.body }}</div>
+                </div>
+              </li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <!-- TESTIMONIAL / CONTACT -->
+      <section class="bottom-grid" id="contact">
+        <article class="testimonial-card">
+          <div class="testimonial-card__quote-icon">“</div>
+          <p class="testimonial-card__body">
+            {{ testimonial.body }}
+          </p>
+          <div class="testimonial-card__author">
+            <div class="testimonial-card__avatar">
+              {{ testimonial.initials }}
+            </div>
+            <div>
+              <div class="testimonial-card__name">
+                {{ testimonial.name }}
+              </div>
+              <div class="testimonial-card__role">
+                {{ testimonial.role }}
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="contact-card">
+          <div>
+            <div class="contact-card__title">Have a project in mind?</div>
+            <p>
+              I’m happy to chat about collaborations, freelance work, or just
+              interesting problems you’re stuck on.
+            </p>
+          </div>
+
+          <div class="contact-card__row">
+            <div class="contact-pill">
+              <span>✉</span>
+              <a :href="'mailto:' + email">{{ email }}</a>
+            </div>
+            <div class="contact-pill">
+              <span>↗</span>
+              <a :href="primarySocial.href" target="_blank" rel="noreferrer noopener">
+                {{ primarySocial.label }}
+              </a>
+            </div>
+          </div>
+
+          <div class="contact-card__cta-row">
+            <button class="btn-primary" @click="openEmail">
+              Email me a brief
+            </button>
+            <button class="btn-ghost" @click="scrollTo('projects')">
+              Browse my projects
+            </button>
+          </div>
+
+          <div class="contact-card__hint">
+            Prefer async? Send me some context, links, or a Loom and I’ll get
+            back with concrete next steps.
+          </div>
+        </article>
+      </section>
+
+      <!-- FOOTER -->
+      <footer class="footer">
+        <div>© {{ currentYear }} {{ name }}. All rights reserved.</div>
+        <div class="footer__links">
+          <a class="footer__link" href="#home" @click.prevent="scrollTo('home')">
+            Back to top
+          </a>
+          <a
+            class="footer__link"
+            v-for="social in socials"
+            :key="social.label + '-footer'"
+            :href="social.href"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            {{ social.label }}
+          </a>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          name: "Dillon Bliss-Henaghan",
+          title: "Software Engineer & Data Scientist",
+          location: "Sydney, Australia",
+          experienceYears: 3,
+          brandName: "dbliss.dev",
+          brandTagline: "Portfolio",
+          heroSubtitle:
+            "I design and build robust software systems — from web apps and data tools to ML-driven experiments — with a focus on clarity, performance, and developer experience.",
+          startedYear: 2019,
+          primaryStack: "Python · TypeScript · Vue · Data / ML",
+          socials: [
+            {
+              label: "GitHub",
+              href: "https://github.com/your-handle",
+              icon: "🐙",
+            },
+            {
+              label: "LinkedIn",
+              href: "https://www.linkedin.com/in/your-profile",
+              icon: "in",
+            },
+            {
+              label: "X / Twitter",
+              href: "https://twitter.com/your-handle",
+              icon: "𝕏",
+            },
+          ],
+          navLinks: [
+            { id: "home", label: "Home", to: "home" },
+            { id: "projects", label: "Projects", to: "projects" },
+            { id: "about", label: "About", to: "about" },
+            { id: "contact", label: "Contact", to: "contact" },
+          ],
+          activeNav: "home",
+          specialities: [
+            {
+              icon: "🧠",
+              title: "Backend & APIs",
+              body: "Designing clean service boundaries, REST/GraphQL APIs, background workers, and integrations that are easy to operate and extend.",
+              footer: "View backend projects",
+            },
+            {
+              icon: "📊",
+              title: "Data & ML",
+              body: "Building ETL pipelines, analytics, and ML prototypes that turn raw data into decisions and insights.",
+              footer: "See my data work",
+            },
+            {
+              icon: "🎨",
+              title: "Frontend UX",
+              body: "Modern, responsive interfaces with attention to loading states, accessibility, and interaction details.",
+              footer: "Browse UI projects",
+            },
+          ],
+          projects: [
+            {
+              title: "League of Legends Match Predictor",
+              description:
+                "End-to-end system that ingests pro-match data, computes Elo-style ratings, and predicts win probabilities with a Random Forest model.",
+              stack: "Python · scikit-learn · FastAPI · Vue",
+              tags: ["ML", "Sports Analytics"],
+              github: "https://github.com/your-handle/lol-predictor",
+              demo: "",
+            },
+            {
+              title: "Smart Lighting Control Dashboard",
+              description:
+                "Real-time dashboard for configuring street-lighting groups, schedules, and energy savings, with integration to an IoT CMS.",
+              stack: "Vue · TypeScript · REST APIs",
+              tags: ["IoT", "Dashboard"],
+              github: "https://github.com/your-handle/smart-lighting-ui",
+              demo: "",
+            },
+            {
+              title: "Invoice Automation Toolkit",
+              description:
+                "Scriptable workflow that aggregates lesson logs from Google Docs and generates polished PDF invoices on a schedule.",
+              stack: "Python · Google APIs",
+              tags: ["Automation"],
+              github: "https://github.com/your-handle/invoice-automation",
+              demo: "",
+            },
+          ],
+          process: [
+            {
+              title: "1. Clarify the problem",
+              body: "Start with constraints, success metrics, and trade-offs. Write down assumptions so everyone is aligned.",
+            },
+            {
+              title: "2. Design the system",
+              body: "Sketch the data model, boundaries, and interfaces. Choose boring but reliable tech where it matters.",
+            },
+            {
+              title: "3. Ship in slices",
+              body: "Deliver small, testable increments with CI/CD, monitoring, and docs, so we can iterate safely.",
+            },
+          ],
+          techStack: [
+            {
+              title: "Frontend",
+              body: "Vue 3 / Nuxt, TypeScript, component-driven design, state management, and API-driven UIs.",
+            },
+            {
+              title: "Backend",
+              body: "Python (FastAPI, Flask), Node, Postgres, Redis, background jobs, and cloud deployments.",
+            },
+            {
+              title: "Data & ML",
+              body: "Pandas, scikit-learn, experimentation, evaluating models, and wiring them into products.",
+            },
+          ],
+          testimonial: {
+            body:
+              "“Dillon is the rare engineer who can go from high-level system design to low-level implementation details without losing sight of the user. He ships fast, measures, and iterates.”",
+            name: "Future Teammate / Manager",
+            role: "Somebody you’ll quote later",
+            initials: "FT",
+          },
+          email: "you@example.com",
+          highlightLine: "Shipping thoughtful, data-aware software.",
+          highlightSub: "From dashboards and APIs to ML-powered tools.",
+        };
+      },
+      computed: {
+        initials() {
+          return this.name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .slice(0, 2)
+            .toUpperCase();
+        },
+        currentYear() {
+          return new Date().getFullYear();
+        },
+        primarySocial() {
+          return this.socials[0];
+        },
+      },
+      methods: {
+        scrollTo(id) {
+          this.activeNav = id;
+          const el = document.getElementById(id);
+          if (!el) return;
+          const top = el.getBoundingClientRect().top + window.scrollY - 70;
+          window.scrollTo({ top, behavior: "smooth" });
+        },
+        openEmail() {
+          window.location.href =
+            "mailto:" +
+            this.email +
+            "?subject=Project%20request&body=Hey%20Dillon%2C%0D%0A%0D%0AHere%27s%20a%20bit%20about%20the%20project...";
+        },
+      },
+    }).mount("#app");
+  </script>
+</body>
 </html>

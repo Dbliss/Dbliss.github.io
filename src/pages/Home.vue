@@ -26,13 +26,9 @@
         </ul>
       </div>
 
-      <!-- Right: big rectangular headshot -->
-      <div class="hero-main-photo">
-        <div
-          class="headshot-rect headshot-rect-bg"
-          :style="{ backgroundImage: `url(${headshotUrl})` }"
-          aria-hidden="true"
-        ></div>
+      <!-- Right: photo sitting on top of a panel, not inside its own box -->
+      <div class="hero-main-photo" aria-hidden="true">
+        <img class="headshot-img" :src="headshotUrl" alt="" />
       </div>
     </div>
   </section>

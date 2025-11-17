@@ -70,7 +70,7 @@ main{flex:1}
 
 .footer{border-top:1px solid var(--line);color:var(--muted);padding:20px 18px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 
-/* HERO WITH RECTANGULAR HEADSHOT */
+/* HERO */
 .hero{
   margin:18px 0 24px;
 }
@@ -89,8 +89,11 @@ main{flex:1}
     var(--bg);
   border:1px solid var(--line);
   box-shadow:var(--shadow);
-  overflow:hidden;
+  /* let the photo extend past the hero edge */
+  overflow:visible;
 }
+
+
 
 .hero-main-text h1{
   margin:6px 0 8px;
@@ -106,47 +109,28 @@ main{flex:1}
   font-size:.9rem;
 }
 
+/* right column: only positions the image; NO background/panel here */
 .hero-main-photo{
   display:flex;
+  align-items:flex-end;
   justify-content:flex-end;
+  margin-bottom:-24px;  /* <— new: cancels hero-main's 24px bottom padding */
 }
 
-/* big rectangular headshot, slightly “card-like” */
-.headshot-rect{
-  position:relative;
-  width:260px;
-  max-width:100%;
-  aspect-ratio:4/5;
-  border-radius:18px;
-  overflow:hidden;
-  background:#020617;
-  box-shadow:0 26px 55px rgba(0,0,0,.85);
-}
-
-.headshot-rect-bg{
-  background-repeat:no-repeat;
-  background-size:140%;     /* >100% zooms in to hide outer padding */
-  background-position:50% 20%; /* tweak X/Y to line your face up nicely */
-}
-
-/* subtle “glow” behind the photo */
-.headshot-rect::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:radial-gradient(circle at 10% 0,rgba(91,91,255,.32),transparent 60%);
-  mix-blend-mode:screen;
-  pointer-events:none;
-}
-
-.headshot-rect img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
+/* the actual photo – not in a box */
+.headshot-img{
   display:block;
+  width:320px;
+  height:auto;
+  border-radius:0;
+  box-shadow:none;
+  filter: drop-shadow(0 24px 50px rgba(0,0,0,.7));
+  transform: scale(1.15);
+  transform-origin:50% 100%;  /* bottom-center pivot */
 }
 
-/* responsive tweaks */
+
+/* responsive */
 @media (max-width:960px){
   .hero-main{
     grid-template-columns:minmax(0,1fr);
@@ -154,8 +138,10 @@ main{flex:1}
   .hero-main-photo{
     justify-content:flex-start;
     margin-top:8px;
+    margin-right:0; /* no overflow on small screens */
   }
-  .headshot-rect{
+  .headshot-img{
     width:220px;
+    transform:none;
   }
 }

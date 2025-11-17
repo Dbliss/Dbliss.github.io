@@ -1,5 +1,40 @@
-# Vue 3 + Vite
+# Dillon Portfolio (Vue 3 + Vite)
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Multi-page portfolio optimized for hiring managers:
+- Landing page with featured projects
+- Projects index + per-project case study pages
+- About, Contact
+- Hash router so GitHub Pages reloads
+- GitHub Action auto-deploys on push to `main`
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+
+Architecture:
+/ (repo root)
+├─ package.json
+├─ vite.config.js
+├─ index.html
+├─ .gitignore
+├─ README.md
+├─ .github/
+│  └─ workflows/
+│     └─ deploy.yml
+└─ src/
+   ├─ main.js
+   ├─ App.vue
+   ├─ assets/
+   │  └─ main.css
+   ├─ router/
+   │  └─ index.js
+   ├─ data/
+   │  ├─ projects.js
+   │  └─ socials.js
+   ├─ components/
+   │  ├─ SiteNav.vue
+   │  ├─ SiteFooter.vue
+   │  └─ ProjectCard.vue
+   └─ pages/
+      ├─ Home.vue
+      ├─ Projects.vue
+      ├─ ProjectDetail.vue
+      ├─ About.vue
+      └─ Contact.vue

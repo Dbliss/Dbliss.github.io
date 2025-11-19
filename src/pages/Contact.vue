@@ -13,11 +13,11 @@
       </a>
     </div>
 
-    <p style="color:var(--muted);margin-top:10px">Prefer async? Send context, links, or a Loom; I’ll reply with concrete next steps.</p>
+    <p style="color:var(--muted);margin-top:10px">Prefer async? Send context, links; I’ll reply with concrete next steps.</p>
   </section>
 </template>
 
 <script setup>
 import { socials } from '../data/socials'
-const email = 'you@example.com' // change me
+const email = 'you@example.com'
 </script>

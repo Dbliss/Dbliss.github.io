@@ -7,7 +7,7 @@
         <div class="section-label">Welcome</div>
         <h1>
           This is your engineer
-          <strong style="color:#b7b9ff">Dillon Bliss-Henaghan</strong>
+          <strong style="color:#b7b9ff">Dillon Bliss</strong>
         </h1>
         <p class="section-sub">
           Mechatronic Engineer with experience working as Full-Stack Developer based in Sydney. I design and build robust systems
@@ -21,7 +21,7 @@
 
         <ul class="hero-facts">
           <li>📍 Sydney, Australia</li>
-          <li>📖  End-to-end design · Frontend · Backend · System Integrations · Data/ML</li>
+          <li>📖  End-to-end design · Frontend · Backend · Data/ML</li>
           <li>🛠 Python, JavaScript, TypeScript, C++, Vue, HTML/CSS, SQL</li>
           <li>🚀 2+ Years Professional Experience</li>
         </ul>

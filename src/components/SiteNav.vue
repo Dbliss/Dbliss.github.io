@@ -32,4 +32,18 @@ import { socials } from '../data/socials'
 
 <style scoped>
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* hide brand on small screens */
+@media (max-width: 800px) {
+  .brand {
+    display: none;
+  }
+  .actions .btn.primary {
+    display: none;
+  }
+}
+
+
 </style>
+
+

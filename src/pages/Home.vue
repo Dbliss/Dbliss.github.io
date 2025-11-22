@@ -6,11 +6,10 @@
       <div class="hero-main-text">
         <div class="section-label">Welcome</div>
         <h1>
-          This is your engineer
-          <strong style="color:#b7b9ff">Dillon Bliss</strong>
+          This is your engineer, <strong style="color:#b7b9ff">Dillon Bliss</strong>
         </h1>
         <p class="section-sub">
-          Mechatronic Engineer with experience working as Full-Stack Developer based in Sydney. I design and build robust systems
+          Mechatronic Engineer working as Full-Stack Developer based in Sydney. I design and build robust systems
           from dashboards and APIs to data/ML tools with a focus on reliability and performance.
         </p>
 
@@ -36,10 +35,9 @@
 
   <!-- EXPERIENCE + ACHIEVEMENTS SNAPSHOT -->
   <section style="margin-top:24px">
-    <div class="section-label">Profile</div>
     <div class="section-title">Experience &amp; achievements</div>
     <p class="section-sub">
-      A quick snapshot - The full timeline and details can be found in my resume and LinkedIn.
+      The full timeline and details can be found in my resume and LinkedIn.
     </p>
 
     <div class="grid cols-2">
@@ -48,14 +46,13 @@
         <h3 style="margin-top:0;margin-bottom:8px">Experience</h3>
         <ul style="padding-left:18px;color:var(--muted);margin:0">
           <li>
-            <strong>Project and System Services Engineer · Schréder</strong> – smart city and lighting projects,
-            integrating IoT systems with custom software.
+            Worked within smart city and lighting projects, integrating IoT systems with custom software.
           </li>
           <li>
-            Built and upkeep multiple end-to-end custom solutions for large customers in Australia. Including full stack dashboards with integrating features for other platforms.
+            Deployed various end-to-end full stack solutions for large customers in Australia.
           </li>
           <li>
-            Built internal systems and frontends to automate repetitive tasks and improve team efficiency. 
+            Built internal systems and frontends to automate repetitive tasks and improve team efficiency.
           </li>
         </ul>
       </div>
@@ -65,14 +62,13 @@
         <h3 style="margin-top:0;margin-bottom:8px">Selected achievements</h3>
         <ul style="padding-left:18px;color:var(--muted);margin:0">
           <li>
-            Finalist for the 2025 Young Achiever Award (Lighting Council of Australia) for contributions to
-            smart city projects.
+            Rising Star Employee Award (Schréder, 2025).
           </li>
           <li>
-            Rising star employee award (Schréder, Jan 2025) for proactive development of internal tools.
+            Young Achiever Award Finalist (Lighting Council of Australia, 2025).
           </li>
           <li>
-            High distinction average in my final year of Bachelor of Engineering (Mechatronics) at UNSW.
+            High distinction average in final year of Bachelor of Engineering at UNSW.
           </li>
         </ul>
       </div>
@@ -81,10 +77,9 @@
 
   <!-- FEATURED PROJECTS -->
   <section style="margin-top:24px">
-    <div class="section-label">Selected work</div>
     <div class="section-title">Featured projects</div>
     <p class="section-sub">
-      Flagship case studies. See the full list on the projects page.
+      Check out what I have built! See the full list on the projects page.
     </p>
     <div class="grid cols-3">
       <ProjectCard v-for="p in featured" :key="p.slug" :project="p" />

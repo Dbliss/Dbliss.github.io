@@ -134,11 +134,21 @@ main{flex:1}
   right: calc(-150px + 12.5vw);
   height:auto;
   display:block;
-  width: clamp(0px, 350px + 4vw, 720px);
+  width: clamp(0px, 350px + 3vw, 720px);
   height:auto;
   border-radius:0;
   box-shadow:none;
   filter: drop-shadow(0 24px 50px rgba(0,0,0,.7));
+}
+
+/* HIDE HERO CTAS BELOW 600PX */
+@media (max-width: 552px) {
+  .hero-main-text .btn {
+    display: none;
+  }
+  .hero-facts {
+    display: none;
+  }
 }
 
 /* --- MOBILE (<800px) HERO FIXES --- */
@@ -176,4 +186,12 @@ main{flex:1}
     width: 240px !important; /* keeps it reasonable on mobile */
     filter: drop-shadow(0 16px 35px rgba(0,0,0,.6));
   }
+
+  
+
+  .hero-main {
+    mask-image: linear-gradient(to right, black calc(100% - 1px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 1px), transparent 100%);
+  }
+
 }

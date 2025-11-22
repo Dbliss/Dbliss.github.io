@@ -60,12 +60,12 @@ button:focus-visible {
 
 .canvas-wrap {
   position: fixed;
-  top: 64px;              /* leave space for your header */
+  top: 64px;            
   left: 0;
   width: 100vw;
   height: calc(100svh - 64px);
-  z-index: 10;            /* sit above page content */
-  pointer-events: auto;   /* keep chess interactive; set to none if you want clicks to pass through */
+  z-index: 10;            
+  pointer-events: auto;  
 }
 
 

@@ -17,10 +17,20 @@
 
     <div class="actions">
       <a v-for="s in socials" :key="s.label" :href="s.href" class="btn" target="_blank" rel="noreferrer noopener">
-        <span v-if="s.icon==='in'">in</span>
-        <span v-else>{{ s.icon }}</span>
+
+        <!-- LinkedIn -->
+        <span v-if="s.icon === 'in'">in</span>
+
+        <!-- GitHub PNG -->
+        <img 
+          v-else-if="s.icon === 'github'"
+          :src="githubIcon"
+          alt="GitHub"
+          style="width:24px;height:24px;display:block"
+        />
         <span class="sr-only">{{ s.label }}</span>
       </a>
+
       <RouterLink class="btn primary" to="/projects">View projects</RouterLink>
     </div>
   </header>
@@ -28,6 +38,7 @@
 
 <script setup>
 import { socials } from '../data/socials'
+import githubIcon from '../assets/github.webp'
 </script>
 
 <style scoped>

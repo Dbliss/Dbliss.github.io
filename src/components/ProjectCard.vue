@@ -5,7 +5,6 @@
     </div>
 
     <h3 style="margin:8px 0 4px">{{ project.title }}</h3>
-    <div class="section-sub" style="margin:0">{{ project.tagline }}</div>
     <p style="margin:10px 0 12px; color:var(--muted)">{{ project.excerpt }}</p>
 
     <div class="tags" style="margin-bottom:12px">

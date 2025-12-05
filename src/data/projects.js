@@ -1,27 +1,45 @@
 export const projects = [
   {
     slug: 'lol-match-predictor',
-    title: 'League of Legends Match Predictor',
-    tagline: 'Predict win probabilities from pro-match data',
+    title: 'Bayesian Predictor for Esports',
+    tagline: 'Side project to price pro esports matches like a bookmaker',
     excerpt:
-      'End-to-end system that ingests pro-match data, learns Elo-like ratings, and serves predictions.',
+      'Built my own player rating system and match model, then used it to see where it disagrees with bookmaker odds.',
     description: `
-I built a data pipeline to ingest and clean match logs, extracted team-level features and recent-form signals,
-and trained a Random Forest model with cross-validation and calibration. I packaged the model behind a FastAPI
-service with endpoints for probability lookups, and a Vue front end for exploration.
+For this project I wanted to learn some more advanced ML concepts, and also explore finance from an analytics angle.
 
-**Key decisions**
-- Prefer interpretable features with leakage checks over heavy feature-engineering
-- Emphasized calibration (Brier) rather than just raw accuracy
-- Cached derived features to cut training time by ~60%
+Esports has extensive match history data available, so I picked League of Legends pro matches as my domain. 
+I take raw match data and:
+- turn it into a clean view of players, teams and patches
+- give every player a skill rating that moves over time according to bayesian fundamentals
+- additional metrics were measured over time, where I created random forest models to measure how well each individual contributed to game.
+- finally, I built a gradient boosting models with these features to predict match outcomes
 
-**Outcome**
-- Cross-validated accuracy around mid-60s, with well-calibrated probabilities
-- Great playground for discussing feature leakage and real-world evaluation trade-offs
+Instead of stopping at "the model is X% accurate", I pushed hard on how **good** the probabilities are:
+- plotted calibration curves to check if my 60% calls really win about 60% of the time
+- looked at the full distribution of predicted win chances to see when the model is sitting on coinflip vs finding real favourites/underdogs
+- compared my numbers to bookmaker lines in simple backtests to see if there’s any edge or if I’m just recreating the market
+- I also used testings methods to ensure I wasn’t overfitting to historical data, or leaking future info into my features. This included k-fold cross-validation and time-based splits.
+
+What I actually got out of it:
+- this project gave me real taste of building end-to-end ML systems, and the challenges of establishing clean workflows for data processing, model training, and evaluation
+- a much deeper understanding of common professional ML methods and tools, such as random forests, gradient boosting, calibration techniques, and backtesting strategies.
+- the financial understanding of how to evaluate probabilistic models in real-world scenarios, especially in competitive markets like sports betting.
+
+Model Results:
+- My final model achieved about 68% accuracy on held-out test data, which is decent for this domain
+- Calibration plots showed the probabilities were reasonably well-aligned with actual outcomes, though there’s room for improvement
+- Backtests against bookmaker odds indicated some small edges on certain match types, but nothing consistently exploitable after fees
+- The model did however, beat the market from prior to 2020, indicating that bookmakers have improved efficiency over time as the esports scene matured. 
+- While not a financially profitable system, it was a great learning experience in probabilistic modeling and real-world ML evaluation.
+
+The images here are two of the main diagnostics I use:
+- a calibration plot to sanity-check the probabilities
+- a probability distribution chart to see how often the model leans into strong opinions vs staying conservative
     `,
-    stack: ['Python', 'pandas', 'scikit-learn', 'FastAPI', 'Vue'],
+    stack: ['Python', 'pandas', 'scikit-learn'],
     tags: ['ML', 'Sports Analytics'],
-    repoUrl: 'https://github.com/your-handle/lol-predictor', // replace when ready
+    repoUrl: 'https://github.com/your-handle/lol-predictor',
     liveUrl: '',
     featured: true
   },

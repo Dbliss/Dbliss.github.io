@@ -195,3 +195,32 @@ main{flex:1}
   }
 
 }
+
+
+.profit-banner {
+  margin: 18px 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+  /* gold-to-green "winning money" gradient text */
+  background: linear-gradient(90deg, #ffd700 0%, #ffb84d 40%, #28a745 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 10px rgba(79, 209, 255, 0.9);
+  animation: glowPulse 1.6s ease-in-out infinite;
+}
+@keyframes glowPulse {
+  0% {
+    text-shadow: 0 0 6px rgba(52,199,89,0.6),
+                 0 0 12px rgba(52,199,89,0.4);
+  }
+  50% {
+    text-shadow: 0 0 14px rgba(52,199,89,1),
+                 0 0 32px rgba(84,255,137,0.9);
+  }
+  100% {
+    text-shadow: 0 0 6px rgba(52,199,89,0.6),
+                 0 0 12px rgba(52,199,89,0.4);
+  }
+}

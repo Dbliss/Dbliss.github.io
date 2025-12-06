@@ -37,9 +37,9 @@ The images here are two of the main diagnostics I use:
 - a calibration plot to sanity-check the probabilities
 - a probability distribution chart to see how often the model leans into strong opinions vs staying conservative
     `,
-    stack: ['Python', 'pandas', 'scikit-learn'],
-    tags: ['ML', 'Sports Analytics'],
-    repoUrl: 'https://github.com/your-handle/lol-predictor',
+    stack: ['Python', 'pandas', 'scikit-learn', 'UKF', 'Random forests', 'Gradient Boosting'],
+    tags: ['Machine Learning', 'Sports Analytics', 'Financial Modeling', 'Statistics'],
+    repoUrl: 'https://github.com/Dbliss/LoLPredictor',
     liveUrl: '',
     featured: true
   },

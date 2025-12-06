@@ -25,17 +25,17 @@
         <!-- Left: text -->
         <div class="hero-copy">
           <p class="hero-summary">
-            After listening to hours and hours of data science podcasts, I wanted to commit to a project where I could practice with real-world data and machine learning techniques.
-            Looking at domains I already know, Esports, particularly League of Legends seemed like an interesting project to try and build a model around.
+            After listening to hours and hours of data science podcasts, I wanted to commit to a project where I could practice with real-world data and apply machine learning techniques.
+            Looking at domains I already know, Esports, particularly League of Legends, seemed like an interesting gateway.
             With the objective of beating to bookmakers, I ambitiously built this tool. 
-            Like most projects, people have already done similar things, so I first begun by reading countless academic papers relating to sports betting, esports feature engineering, and complex elo models.
+            Like most projects, people have already tackled similar challenges, so I first began by reading countless academic papers relating to sports betting, esports feature engineering, and advanced elo models.
           </p>
 
           <p class="hero-summary">
-            The focus wasn’t only on accuracy, but on producing probabilities that
-            behave like real prices: stable across time, leak-free, and comparable to
-            bookmaker numbers. In the world of statistics, the most important thing thing is calibration. If the model says a team has a win probability of
-            60%, it should win about 60% of the time. This was my primary goal for the model.
+            The focus wasn’t solely on accuracy, but instead on producing a model that
+            behaves in a predictable manner: stable across time, leak-free, and comparable to
+            bookmaker numbers. In the world of statistics, calibration makes a profitable project. If the model says a team has a win probability of
+            60%, they should win about 60% of the time. This was my primary goal for the model.
           </p>
 
           <div class="hero-actions">
@@ -104,20 +104,20 @@
         </h2>
 
         <p class="section-intro">
-            To get from raw match data to reliable win probabilities, I built a full data pipeline with several key steps:
+            To get from raw match data into reliable win probabilities, I had to build a full data pipeline with several key steps:
         </p>
 
         <ol class="pipeline-list">
             <li>Names are standardised, ultra–low–sample teams are removed, and incomplete matches are filtered out. </li>
-            <li>Create columns to track patch tags, roster changes, and region strength so the
+            <li>Column are created to track patch tags, roster changes, and region strength so the
             model can react to meta shifts rather than blindly inferring.</li>
             <li>
-            Build rolling features for each team and role: recent form, opponent strength, side selection, and
-            player-level boxscore trends.
+            Build rolling features for each team and position, including: recent form, opponent strength, side selection, and
+            player-level trends.
             </li>
             <li>Utilise a random forest to capture non-linear performance scores of individual players. This created another rich feature for the model to consume. </li>
             <li>
-            Build a high-performing elo model using performance scores and match outcomes to track player and team strength over time.
+            Build a high-performing elo model using performance scores and match outcomes to track player strength and variance over time.
             </li>
             <li>
             Run a Bayesian state-space rating model with an Unscented Kalman Filter (UKF) and stochastic variance to
@@ -125,7 +125,7 @@
             </li>
             <li>
             Feed Elo-style and UKF features into tree ensembles (Random Forests and gradient-boosted machines) to
-            predict match win probability under a Bayesian probability framework.
+            predict match win probability.
             </li>
             <li>
             Evaluate on time-based splits to avoid look-ahead leakage, then post-hoc calibrate the probabilities and
@@ -149,7 +149,7 @@
     <p class="section-intro">
             To judge how well my system works, I compare it directly to the models
             sitting behind bookmaker odds. I built a python-based data collection pipeline that extracted match outcomes and odds from public betting websites, using BeautifulSoup and requests.
-            Then I used cross-fold validation to measure my models accuracy against those same historical games. For a small subset of matches, the accuracy and log loss results were recorded.
+            Then I used validated to measure my models accuracy against those same historical games, recording the accuracy and log loss results.
         </p>
 
         <p class="metric-line">
@@ -171,42 +171,35 @@
             Well… not quite. Even when a model is slightly ahead of bookmaker
             accuracy on held-out data, there are two big caveats. First, bookmaker
             odds always include a built-in margin, so a small edge in raw
-            accuracy does not automatically translate into a profitable strategy
-            once you pay that fee every bet. Second, bookmakers have dedicated
+            accuracy does not automatically translate into a profitable strategy. Second, bookmakers have dedicated
             teams, budgets, and live information streams continually improving
-            their models. When you look at more recent seasons, that advantage
+            their models. An edge on historical data does not guarantee an edge in future matches. When you look at more recent seasons, that change
             shows up clearly in the numbers.
         </p>
         <h3 class="section-subtitle" style="margin:0 0 6px;">How bookmaker models evolved</h3>
 
         <p class="metric-line" style="margin:0px 0;">
-            <strong>Bookmaker (2019–2024 history):</strong>
+            <strong>Bookmaker (2019–2025):</strong>
             log loss = 0.624, accuracy = 65.16%
         </p>
         <p class="metric-line" style="margin:0px 0 0;">
             <strong>Bookmaker (2025 only):</strong>
             log loss = 0.558, accuracy = 73.33%
         </p>
-        
-        <p class="outcomes-intro">
-            Bookmakers likely have far more data, a longer operational history, and whole teams
-            of quants; over the last six years, their pricing quality has clearly
-            improved as the esports market has matured. In the earlier years,
-            especially pre-2020, a model with this level of accuracy and
-            calibration would likely have been broadly competitive with the market:
-            well-behaved probabilities, modest but solid accuracy, and an edge
-            mainly because the ecosystem was still inefficient.
-        </p>
 
+        
         <p>
             As the scene matures, the bookmakers’ proprietary models catch up and then pull
-            ahead. By 2025 the gap between my metrics and theirs makes the use case unfeasible. 
-            It is also very likely that the few percentage points differentiating my and their model are
-            the hardest to close without richer data, and a more
-            complex modelling stack. Accuracy typically sits in the high-60s to
-            low-70s depending on patch window, and calibration checks (log loss,
-            Brier, ECE) show that the probabilities are well-behaved rather than
-            overconfident. 
+            ahead. By 2025 the gap between my metrics and theirs makes the model redundant. 
+            It is also very likely that the few percentage points differentiating my model from theirs are
+            the hardest to close without richer data, and a more advanced modelling stack. 
+        </p>
+        
+        <p class="outcomes-intro">
+            In the earlier years, especially pre-2020, my model with its level of accuracy and
+            calibration would likely have been broadly competitive with the market. Possessing
+            well-behaved probabilities, modest accuracy, and an edge
+            mainly because the ecosystem was still inefficient. 
         </p>
         </div>
 
@@ -242,33 +235,34 @@
       <p class="learnings-text">
         I treated this project as a long-running skills test rather than a one-off model:
         the goal was to get better at building production-like ML systems that stand
-        up against industry standards. This forced me to push my data engineering,
-        modelling, evaluation, and coding skills in a realistic setting.
+        up against industry standards. While the project isn't profitable in terms of finance, it has forced me to push my data engineering,
+        modelling, evaluation, and coding skills in a realistic setting. This itself was the main win as I got the oppportunity to learn and grow my skillset. 
       </p>
 
       <ul class="learnings-list">
         <li>
           <strong>Data Science & Software Engineering:</strong>
           Building Elo-style ratings, UKF-based state-space models, bayesian statistics, random forests, 
-          and gradient boosting models taught me how to effectively use tools commonly found in the industry. But actively studying, using and analysing the outputs
+          and gradient boosting models taught me how to effectively use tools commonly found in the industry. By actively studying, using and analysing the outputs
           of these tools, I gained a much more in-depth understanding of their strengths, weaknesses, and appropriate use-cases for each tool.
         </li>
 
         <li>
           <strong>End-to-end ML & data engineering:</strong>
-          I designed and implemented the full pipeline myself. From scraping odds and match
-          data, to standardising performances, building rolling aggregates, and wiring everything
-          into easily reproducible evaluation scripts. This improved my ability to turn
-          multiple messy, external data sources into a structured feature set that a model can reliably
-          consume.
+          I designed and implemented the full pipeline myself, from scraping odds and match
+            data to standardising performances, building rolling aggregates, and wiring everything
+            into easily reproducible evaluation scripts. This improved my ability to turn
+            multiple messy external data sources into a structured feature set that a model can reliably
+            consume.
         </li>
 
         <li>
           <strong>Statistical modelling & calibration:</strong>
-          I moved beyond “is the accuracy good?” to thinking in terms of log loss,
-          Brier score, reliability curves, and expected calibration error. This sharpened
-          my intuition for when a model is overconfident, underconfident, or well-calibrated,
-           a skill that transfers directly to statistical and emotionless decision-support systems.
+          I moved beyond “is the model good?” to thinking in terms of log loss,
+            Brier score, reliability curves, and expected calibration error. This sharpened
+            my intuition for diagnosing overconfidence and underconfidence, and for understanding
+            when probability estimates truly reflected reality. An essential capability for any
+            high-stakes, statistics decision making.
         </li>
       </ul>
     </section>
@@ -381,7 +375,7 @@ defineProps({
 
 .outcomes-grid {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 3fr);
+  grid-template-columns: minmax(0, 11fr) minmax(0, 7fr);
   gap: 20px;
   margin-top: 10px;
 }

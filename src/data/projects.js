@@ -44,6 +44,25 @@ The images here are two of the main diagnostics I use:
     featured: true
   },
   {
+    slug: 'sportslux',
+    title: 'Sportslux Lighting Optimiser',
+    tagline: 'Advanced sports lighting configuration calculator for Schreder',
+    excerpt:
+      'End-to-end web app that calculates optimal pole layouts, fixture mixes, and tilt for sports fields with downloadable reports.',
+    description: `
+Sportslux is a full-stack tool for engineers to rapidly design compliant sports field lighting layouts.
+It ingests field requirements, fixture photometry, and pole placement rules to generate optimised aiming plans, preview heatmaps, and PDFs.
+
+The platform supports two optimisation modes (fast vs advanced), interactive manual overrides, and uploads of custom IES files to extend the luminaire library.
+I led the UX, data model, and optimisation orchestration work to make it practical for day-to-day design teams.
+    `,
+    stack: ['Vue 3', 'TypeScript', 'Node.js', 'Python', 'FastAPI', 'PostgreSQL'],
+    tags: ['Sports Lighting', 'Optimisation', 'Full-stack'],
+    repoUrl: '',
+    liveUrl: '',
+    featured: true
+  },
+  {
     slug: 'smart-lighting-dashboard',
     title: 'Smart Lighting Control Dashboard',
     tagline: 'Manage lighting groups, schedules, and live device states',

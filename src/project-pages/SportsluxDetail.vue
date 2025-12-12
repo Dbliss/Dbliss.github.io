@@ -570,20 +570,20 @@ const props = defineProps({
   }
 })
 
-/**
- * Vertical light trails that move through all sections.
- * Physics is continuous across boxes because they are positioned relative to the entire page.
- */
-const lightTrails = Array.from({ length: 8 }, (_, i) => {
-  const baseX = 8 + (i * 84) / 13 // keep within content column
+const TRAIL_COUNT = 40
+
+const lightTrails = Array.from({ length: TRAIL_COUNT }, (_, i) => {
+  const n = TRAIL_COUNT
+  const baseX = 6 + (i * 88) / (n - 1) // 6% .. 94%
   return {
     id: i,
     x: baseX,
-    duration: 52 + (i % 4) * 10,
+    duration: 40 + (i % 4) * 5,
     delay: -i * 1.7,
-    size: 410 + (i % 3) * 160
+    size: 610 + (i % 3) * 60
   }
 })
+
 
 const performance = [
   { fittings: 1, fast: '< 1 sec', advanced: '< 1 sec' },
@@ -859,6 +859,7 @@ const vReveal = {
   width: 100%;
   max-width: 1100px;
   height: 100%;
+  margin-inline: auto;
 }
 
 .slx-light {

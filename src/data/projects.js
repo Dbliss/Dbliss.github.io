@@ -56,7 +56,7 @@ It ingests field requirements, fixture photometry, and pole placement rules to g
 The platform supports two optimisation modes (fast vs advanced), interactive manual overrides, and uploads of custom IES files to extend the luminaire library.
 I led the UX, data model, and optimisation orchestration work to make it practical for day-to-day design teams.
     `,
-    stack: ['Vue', 'TypeScript', 'Node.js', 'Python', 'FastAPI', 'PostgreSQL'],
+    stack: ['Vue', 'JavaScript', 'CSS', 'HTML', 'Python', 'FastAPI', 'PostgreSQL'],
     tags: ['Photometry', 'Optimisation', 'Full-stack'],
     repoUrl: '',
     liveUrl: '',

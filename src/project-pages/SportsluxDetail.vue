@@ -535,24 +535,32 @@
         Shipping Sportslux in stages
       </h2>
 
-      <div class="slx-timeline-grid">
-        <ol class="slx-timeline-list">
+      <div
+        ref="timelineScrollEl"
+        class="slx-timeline-scroll"
+        aria-label="Sportslux release timeline"
+      >
+        <ol class="slx-timeline-strip">
           <li
-            v-for="event in keyDates"
-            :key="event.date"
-            class="slx-timeline-item"
+            v-for="(event, idx) in keyDates"
+            :key="event.date + event.version"
+            :ref="el => setTimelineItemRef(idx, el)"
+            class="slx-timeline-chip"
+            :class="{ 'is-current': isCurrentVersion(event) }"
           >
-            <div class="slx-timeline-marker">
-              <span class="slx-timeline-dot"></span>
-              <span class="slx-timeline-line"></span>
-            </div>
-            <div class="slx-timeline-content">
+            <div class="slx-timeline-top">
+              <span class="slx-timeline-dot" aria-hidden="true"></span>
               <div class="mono slx-timeline-date">
-                {{ event.date }} · {{ event.version }}
+                {{ event.date }}
               </div>
-              <div class="slx-timeline-title">
-                {{ event.title }}
-              </div>
+            </div>
+
+            <div class="slx-timeline-text">
+              {{ event.title }}
+            </div>
+
+            <div class="mono slx-timeline-version">
+              {{ event.version }}
             </div>
           </li>
         </ol>
@@ -562,6 +570,7 @@
 </template>
 
 <script setup>
+import { nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 
@@ -607,6 +616,45 @@ const lightTrails = Array.from({ length: TRAIL_COUNT }, (_, i) => {
     delay: -i * 1.7,
     size: 610 + (i % 3) * 60
   }
+})
+
+const currentVersion = computed(() => props.project?.currentVersion || 'V2.0.3')
+
+function isCurrentVersion(event) {
+  return event.version === currentVersion.value
+}
+
+const timelineScrollEl = ref(null)
+const timelineItemEls = ref([])
+
+function setTimelineItemRef(idx, el) {
+  if (el) timelineItemEls.value[idx] = el
+}
+
+function centerTimelineOnCurrent() {
+  const container = timelineScrollEl.value
+  if (!container) return
+
+  const idx = keyDates.findIndex(e => e.version === currentVersion.value)
+  if (idx === -1) return
+
+  const el = timelineItemEls.value[idx]
+  if (!el) return
+
+  // center the selected chip in the scroll container
+  const containerRect = container.getBoundingClientRect()
+  const elRect = el.getBoundingClientRect()
+
+  const currentScrollLeft = container.scrollLeft
+  const elCenter = (elRect.left - containerRect.left) + (elRect.width / 2)
+  const targetScrollLeft = currentScrollLeft + elCenter - (containerRect.width / 2)
+
+  container.scrollTo({ left: targetScrollLeft, behavior: 'auto' })
+}
+
+onMounted(async () => {
+  await nextTick()
+  centerTimelineOnCurrent()
 })
 
 const performance = [
@@ -1650,40 +1698,45 @@ const vReveal = {
   color: #90b3ff;
 }
 
-/* Timeline */
-
+/* TIMELINE (horizontal, compact) */
 .slx-timeline {
   margin-top: 2.1rem;
 }
 
-.slx-timeline-grid {
-  display: grid;
-  grid-template-columns: minmax(260px, 2.4fr) minmax(0, 3.2fr);
-  gap: 1.6rem;
-  align-items: flex-start;
+.slx-timeline-scroll {
+  margin-top: 0.9rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.2rem 0.2rem 0.6rem;
+  -webkit-overflow-scrolling: touch;
+  contain: layout paint;
 }
 
-.slx-timeline-list {
+.slx-timeline-strip {
   list-style: none;
+  display: flex;
+  gap: 0.9rem;
   margin: 0;
   padding: 0;
-  position: relative;
+  min-width: max-content;
 }
 
-.slx-timeline-item {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.75rem;
-  align-items: flex-start;
-  padding-bottom: 0.9rem;
+.slx-timeline-chip {
+  position: relative;
+  width: 270px;
+  border-radius: 1rem;
+  padding: 0.85rem 0.95rem 1.35rem;
+  background: rgba(6, 12, 40, 0.55);
+  border: 1px solid rgba(188, 214, 255, 0.18);
+  box-shadow: none;
+  contain: content;
 }
 
-.slx-timeline-marker {
-  position: relative;
-  width: 14px;
+.slx-timeline-top {
   display: flex;
-  flex-direction: column;
   align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.55rem;
 }
 
 .slx-timeline-dot {
@@ -1691,38 +1744,53 @@ const vReveal = {
   height: 10px;
   border-radius: 999px;
   background: radial-gradient(circle, #4dd2ff 0, #a855ff 100%);
-  box-shadow: 0 0 0 4px rgba(77, 210, 255, 0.1);
-}
-
-.slx-timeline-line {
-  flex: 1;
-  width: 2px;
-  margin-top: 4px;
-  background: linear-gradient(to bottom, rgba(151, 195, 255, 0.75), transparent);
-}
-
-.slx-timeline-item:last-child .slx-timeline-line {
-  background: none;
-}
-
-.slx-timeline-content {
-  padding-bottom: 0.7rem;
-  border-bottom: 1px dashed rgba(103, 132, 194, 0.55);
-}
-
-.slx-timeline-item:last-child .slx-timeline-content {
-  border-bottom: none;
+  box-shadow: 0 0 0 4px rgba(77, 210, 255, 0.10);
+  flex: 0 0 auto;
 }
 
 .slx-timeline-date {
   font-size: 0.78rem;
   color: #92a7d7;
-  margin-bottom: 0.18rem;
+  white-space: nowrap;
 }
 
-.slx-timeline-title {
+.slx-timeline-text {
   font-size: 0.9rem;
   color: #c2cff1;
+  line-height: 1.25;
+}
+
+.slx-timeline-version {
+  position: absolute;
+  right: 0.85rem;
+  bottom: 0.7rem;
+  font-size: 0.78rem;
+  color: #9ad1ff;
+  opacity: 0.9;
+}
+
+.slx-timeline-chip.is-current {
+  border-color: rgba(221, 234, 255, 0.65);
+  background: linear-gradient(145deg, rgba(10, 22, 72, 0.78), rgba(7, 14, 46, 0.82));
+  box-shadow: none;
+}
+
+.slx-timeline-chip.is-current .slx-timeline-version {
+  color: #dde6ff;
+  opacity: 1;
+}
+
+.slx-timeline-chip.is-current .slx-timeline-dot {
+  box-shadow: 0 0 0 5px rgba(168, 85, 255, 0.14);
+}
+
+/* Scrollbar (subtle) */
+.slx-timeline-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+.slx-timeline-scroll::-webkit-scrollbar-thumb {
+  background: rgba(141, 177, 255, 0.22);
+  border-radius: 999px;
 }
 
 /* Animations */

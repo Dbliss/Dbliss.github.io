@@ -82,7 +82,7 @@
         </p>
       </div>
 
-      <div class="slx-hero-right">  
+      <div class="slx-hero-right">
         <img
           class="image"
           :src="login"
@@ -107,7 +107,7 @@
             <p class="section-lead">
               The users selects the sport, field dimensions, pole positions, and
               what lumainaires to use. The engine automatically finds the minimun number of Fittings required
-              to reach the optimal solution for the requirements. All done in seconds. 
+              to reach the optimal solution for the requirements. All done in seconds.
             </p>
           </div>
 
@@ -207,7 +207,6 @@
         </div>
       </div>
 
-
       <!-- Evolving optimisation result visual -->
       <div class="slx-engine-result">
         <div class="slx-engine-result-grid">
@@ -218,37 +217,34 @@
           />
 
           <div class="slx-engine-result-text">
-              <h2 class="section-subtitle">
-                Turning lighting design into an algorithm
-              </h2>
-              <p class="section-sub">
-                Early sports lighting design is usually a loop of guessing pole layouts, running old photometry software, tweaking fittings
-                and hoping the results satisfy Australian standards. Sportslux steamlines that process. To a computer,
-                everything becomes geometry, constraints and objective functions.
-              </p>
+            <h2 class="section-subtitle">
+              Turning lighting design into an algorithm
+            </h2>
+            <p class="section-sub">
+              Early sports lighting design is usually a loop of guessing pole layouts, running old photometry software, tweaking fittings
+              and hoping the results satisfy Australian standards. Sportslux steamlines that process. To a computer,
+              everything becomes geometry, constraints and objective functions.
+            </p>
 
-              <div style="margin-bottom: 0.8rem;"></div>
+            <div style="margin-bottom: 0.8rem;"></div>
 
-              <p class="section-sub">
-                Because the objective is non-differential and discontinous, differential evolution was chosen as the intelligent search algorithm. 
-                The engine begins by randomly placing luminaires on the poles, then evaluates the photometry grid, isolux curves and glare.
-                These metrics are assigned a cost score where heavy penalties are applied for any unmet targets. The algorithm then iteratively refines the solution 
-                until it converges to a low-cost solution. 
-              </p>
+            <p class="section-sub">
+              Because the objective is non-differential and discontinous, differential evolution was chosen as the intelligent search algorithm.
+              The engine begins by randomly placing luminaires on the poles, then evaluates the photometry grid, isolux curves and glare.
+              These metrics are assigned a cost score where heavy penalties are applied for any unmet targets. The algorithm then iteratively refines the solution
+              until it converges to a low-cost solution.
+            </p>
 
-              <div style="margin-bottom: 0.8rem;"></div>
+            <div style="margin-bottom: 0.8rem;"></div>
 
-              <p class="section-sub">
-                To minimise hardware, the search is staged: begin with one luminaire per pole, then increase the count only when targets can’t be met.
-                Each stage is cached so the next depth can warm-start from previous best candidates, keeping runtimes low while reliably converging to a minimum-fitting design.
-                A technique I learned from my work on chess engines, known as iterative deepening.
-              </p>
-
+            <p class="section-sub">
+              To minimise hardware, the search is staged: begin with one luminaire per pole, then increase the count only when targets can’t be met.
+              Each stage is cached so the next depth can warm-start from previous best candidates, keeping runtimes low while reliably converging to a minimum-fitting design.
+              A technique I learned from my work on chess engines, known as iterative deepening.
+            </p>
           </div>
-
         </div>
       </div>
-
     </section>
 
     <!-- Images -->
@@ -393,16 +389,60 @@
       </div>
     </section>
 
-    <!-- MODES + INTERACTIVE / SECURE -->
-    <section class="slx-section slx-section-grid slx-modes" v-reveal>
+        <!-- Admin page -->
+    <section class="slx-section slx-section-grid-admin slx-modes" v-reveal>
       <div class="slx-section-block">
-        <p class="section-label">My role</p>
         <h2 class="section-title">
-          End-to-end: solver, cloud and UI
+          Admin Functionality
+        </h2>
+
+        <p class="section-sub">
+          The admin page allows key personel to easilyt invite users and revoke access.
+          The role and permissions follow an easily adjustable role based access control (RBAC) model.
+          Specific roles also possess the ability to change available luminaires by deleting a luminaire, or upload a new one.
+          Admin also have the ability to monitor usage statistics, looking at total number of runs, and the most active users, 
+          giving information about which employees are generating the most leads, and positions in the orgnisation use the tool most. 
+        </p>
+        <p class="section-sub">
+          All customer information is secured using bcrypt and JWT tokens. Password are securely hashed and salted before storage, following
+          modern industry practices.
+        </p>
+        <p class="section-sub">
+          Cloud hosting lets Schreder teams and selected customers log in from anywhere with a browser. Specific ip addresses are whitelisted to ensure 
+          only authorised users can access the system. The entire system only runs during extended working hours to reduce attack surface and deduct from
+          operational costs.
+        </p>
+      </div>
+
+      <div class="slx-section-block slx-panel">
+        <img
+          class="image"
+          :src="admin"
+          alt="Sportslux secure admin screen."
+          loading="lazy"
+        />
+      </div>
+    </section>
+
+    <!-- Key Learnings -->
+    <section class="slx-section slx-section-grid-learnings slx-modes" v-reveal>
+       <div class="slx-section-block slx-panel">
+        <img
+          class="image"
+          :src="devBoard"
+          alt="Sportslux secure admin screen."
+          loading="lazy"
+        />
+      </div>
+      <div class="slx-section-block">
+        <h2 class="section-title">
+          Key Learnings
         </h2>
         <p class="section-sub">
-          I owned Sportslux from first spike to production: modelling the optimisation problem, building the engine,
-          wiring the API and deploying the system to AWS with monitoring in place.
+          Sportslux was built by a team of two. Designed first as a locally hosted MVP, then deployed and iterated on in short sprints.
+          The process was documented on Confluence and managed in Jira with ticketing and sprint planning.
+          In a two-person team, you don’t get to specialise, you're forced to understand the full system end-to-end.
+          Below are the key learnings from this project:
         </p>
 
         <ul class="slx-list">
@@ -411,89 +451,71 @@
           </li>
         </ul>
       </div>
-
-      <div class="slx-section-block slx-panel">
-        <p class="section-label">Interactive & secure</p>
-        <h2 class="section-title">
-          Safe to roll out, fun to use
-        </h2>
-
-        <ul class="slx-list">
-          <li>
-            The admin page allows key personel to invite users, revoke access, change available luminaires and look at program usage.
-            All customer information is secured using bcrypt and JWT tokens.
-          </li>
-          <li>
-            Interactive mode lets designers override solver choices and watch the lux field, uniformity and glare
-            respond immediately.
-          </li>
-          <li>
-            Cloud hosting lets Schreder teams and selected customers log in from anywhere with a browser.
-          </li>
-        </ul>
-
-        <img
-          class="image"
-          :src="login"
-          alt="Sportslux secure login screen."
-          loading="lazy"
-        />
-
-      </div>
     </section>
 
-    <!-- IMPACT + ROADMAP -->
-    <section class="slx-section slx-section-grid slx-impact" v-reveal>
-      <div class="slx-section-block">
-        <p class="section-label">Impact</p>
+    <!-- IMPACT -->
+    <section class="slx-section" v-reveal>
+      <p class="section-label">Impact</p>
+      <div class="slx-section-grid-impact">
+              <div class="slx-section-block">
         <h2 class="section-title">
-          How Schreder is using it
+          Business Value
         </h2>
 
-        <ul class="slx-list">
+        <ul class="slx-list-spaced">
           <li v-for="item in benefits" :key="item">
             {{ item }}
           </li>
         </ul>
-
-        <div class="slx-section-block slx-stack-panel">
-        <p class="slx-stack-label">Core stack</p>
-        <div class="slx-stack-chips">
-          <span class="slx-chip">Python · FastAPI</span>
-          <span class="slx-chip">Vue 3 · Vite</span>
-          <span class="slx-chip">Vuetify</span>
-          <span class="slx-chip">PostgreSQL · RDS</span>
-          <span class="slx-chip">NGINX · Gunicorn</span>
-          <span class="slx-chip">AWS S3</span>
-        </div>
-      </div>
       </div>
 
       <div class="slx-section-block">
-        <p class="section-label">Roadmap & constraints</p>
+        <img
+          class="image"
+          :src="reportImage"
+          alt="Example of an automatically generated Sportslux report."
+          loading="lazy"
+        />
+      </div>
+      </div>
+    </section>
+
+    <!-- BACKEND ARCHITECTURE -->
+    <section class="slx-section slx-section-grid slx-impact" v-reveal>
+      <div class="slx-section-block">
+        <p class="section-label">Backend architecture</p>
         <h2 class="section-title">
-          What is next and what is deliberate
+          How the service is structured
         </h2>
 
         <div class="slx-roadmap-grid">
           <div>
-            <h3 class="slx-small-heading">Upcoming</h3>
+            <h3 class="slx-small-heading">Request path</h3>
             <ul class="slx-list">
-              <li v-for="item in upcoming" :key="item">
+              <li v-for="item in backendRequestPath" :key="item">
                 {{ item }}
               </li>
             </ul>
           </div>
 
           <div>
-            <h3 class="slx-small-heading">Current limits</h3>
+            <h3 class="slx-small-heading">Core components</h3>
             <ul class="slx-list">
-              <li v-for="item in limitations" :key="item">
+              <li v-for="item in backendCoreComponents" :key="item">
                 {{ item }}
               </li>
             </ul>
           </div>
         </div>
+
+        <div style="margin-top: 1rem;"></div>
+
+        <h3 class="slx-small-heading">Operational guarantees</h3>
+        <ul class="slx-list">
+          <li v-for="item in backendOps" :key="item">
+            {{ item }}
+          </li>
+        </ul>
       </div>
     </section>
 
@@ -505,15 +527,6 @@
       </h2>
 
       <div class="slx-timeline-grid">
-        <div class="image-wrapper slx-image-report">
-          <img
-            class="image"
-            :src="reportImage"
-            alt="Example of an automatically generated Sportslux report."
-            loading="lazy"
-          />
-        </div>
-
         <ol class="slx-timeline-list">
           <li
             v-for="event in keyDates"
@@ -549,6 +562,8 @@ import resultsHeatmap from '../assets/sportslux-heatmap.png'
 import isoluxPreview from '../assets/sportslux-isolux.png'
 import reportImage from '../assets/sportslux-report.png'
 import login from '../assets/sportslux-login.png'
+import admin from '../assets/sportslux-admin.png'
+import devBoard from '../assets/sportslux-devboard.png'
 
 import result1 from '../assets/sportslux_results/1.png'
 import result2 from '../assets/sportslux_results/2.png'
@@ -584,7 +599,6 @@ const lightTrails = Array.from({ length: TRAIL_COUNT }, (_, i) => {
   }
 })
 
-
 const performance = [
   { fittings: 1, fast: '< 1 sec', advanced: '< 1 sec' },
   { fittings: 2, fast: '1 sec', advanced: '1 sec' },
@@ -596,34 +610,51 @@ const performance = [
   { fittings: 8, fast: '15 sec', advanced: '1 min' }
 ]
 
-const learnings = [
-  'Productionised the stack on AWS, including environment setup, observability and day-2 operations.',
-  'Modelled projects, fittings and solver outputs in a single PostgreSQL schema on AWS RDS.',
-  'Built a typed FastAPI backend behind Gunicorn and NGINX to expose the optimisation engine as a high-throughput API.',
-  'Designed a Vue + Vuetify frontend for designers and sales teams, tuned for dense data and rapid scenario changes.',
-  'Used Vite for development and bundling to keep feedback loops fast and production bundles lean.',
-  'Configured NGINX both as a reverse proxy for FastAPI and as a static asset server with caching and compression.',
-  'Stored generated reports and exports durably in S3 with simple link-based access from the UI.'
+/**
+ * Backend architecture (split into 3 lists so it reads like an actual system,
+ * not just a random tech-stack name drop).
+ */
+const backendRequestPath = [
+  'UI submits a typed design request → FastAPI validates payloads (Pydantic) and normalises units/inputs.',
+  'Auth gate: JWT verification + role checks (designer vs admin) before any solver or data access.',
+  'API dispatches a solver job with a stable configuration hash so identical runs can be de-duplicated.',
+  'Response returns best-known solution quickly, with the option to retrieve full outputs (grid, isolux, report) via follow-up endpoints.'
 ]
+
+const backendCoreComponents = [
+  'FastAPI service layer: clean route boundaries, strict schemas, and error responses that are actionable for users.',
+  'Optimisation engine module: isolated from HTTP concerns so it can be profiled, tested, and reused (e.g. DGI calculator migration).',
+  'PostgreSQL (RDS) as the system of record: projects, luminaire metadata, solver runs, and cached results.',
+  'S3 storage for generated artefacts (reports/exports) with simple link-based retrieval from the UI.'
+]
+
+const backendOps = [
+  'Reverse proxy (NGINX) in front of Gunicorn: static asset caching/compression + safe request forwarding to the API.',
+  'Performance-first approach: heavy vectorisation in NumPy + parallel evaluation for candidate solutions.',
+  'Day-2 mindset: reproducible environments, safe rollout patterns, and production debugging without “SSH and pray”.',
+  'Security basics done properly: salted password hashing (bcrypt), token expiry, and least-privilege admin actions.'
+]
+
+const learnings = [
+  'I had to design the overall structure of the system end-to-end, making sure it could scale cleanly and still stay reliable as usage grows.',
+  'I learned that good API design is mostly about preventing misuse, so I built clear schemas, stringent validation, and role based permissions so the system can be managed safely.',
+  'I further improved my code optimising skillset, this time in Python. This consisted of profiling properly, finding the real bottlenecks, and then fixing them with better data structures, caching, and vectorisation.',
+  'I learned to iterate with the end-user in mind: collecting real feedback from customers, turning it into clear tickets, and planning sprints so we ship improvements without breaking what already works.',
+  'How to properly future proof code, designing the database so new luminaire models and new constraints can be added without needing a schema rewrite or breaking existing projects.',
+  'I learned the value of proper observability by storing API calls and run metadata. This made issues easily diagnosable, made solver runs reproducible, enabled monitoring of usage/health, and allowing for result caching.',
+  'Documentation is what keeps momentum in a intermittent project, so I documented features, decisions, and backend structure, and kept commits clear enough that rollbacks and version tracking are easy.',
+]
+
 
 const benefits = [
-  'Turned early sports-field design from hours or days of manual work into seconds-long solver runs for typical scopes.',
-  'Since launch, designers run Sportslux roughly ten times per week on live projects.',
-  'Sales teams can now build and iterate lighting concepts live in front of customers, lifting perceived technical maturity.',
-  'Handles non-standard fields and changing constraints without redesigning from scratch, keeping Schreder responsive.'
-]
-
-const upcoming = [
-  'Extending pole configurations with AS/NZS 1158 placement guidance baked in (edge distances and spacing vs mounting height).',
-  'Embedding smarter goal and key-area rules plus field-dimension-based recommendations for pole counts.',
-  'Interactive field layouts using stacked shapes with optional Google Maps integration.',
-  'Richer recommendations for pole envelopes and spacing relative to mounting height.'
-]
-
-const limitations = [
-  'Current V2 release supports up to four poles per field; larger stadium layouts are not yet modelled.',
-  'Solve time grows non-linearly when pushing beyond six fittings per pole in advanced mode.',
-  'Full enforcement of all edge-distance and placement constraints is planned but not fully shipped yet.'
+  'Turned early sports-field design from hours of manual work into seconds-long solver runs for typical scopes. Each use saves about 2 hours of designer time.',
+  'Since launch, designers have run Sportslux over 240 times. On average, about 11 times a week. 240 uses x 2 hours = 480 hours saved (at $150/hour) ~ $72 000 of business value within the firt 6 months of use.',
+  'Sales teams can now build and iterate lighting concepts live in front of customers, lifting perceived technical maturity. Sales people who use the tool report increased sales rate. However, this is anectdotal',
+  'Streamlines the handoff between sales teams and lighting designers, as initial designs are now formatted in the exact form a lighting designed desires, reducing rework and miscommunication.',
+  'Customers now immediately recieve a detailed report of their intial design automatically generated by the system, improving customer experience and professionalism.',
+  'All sales meetings now automatically log the customers exact requirements and initial designs, allowing for better follow-up and more tailored proposals.',
+  'As a side use-case, the website also hosts a DGI calculator for quick daylight glare analysis, which has been used over 300 times since launch.',
+  'Sportslux led to me getting nominated for the Young Achiever Award 2025, recognising the significant impact this project had on the business.'
 ]
 
 const keyDates = [
@@ -746,7 +777,6 @@ function applyFrame(idx) {
   // ✅ ensure middle-column variables re-sync with this frame's luminaire count
   updateVariablesFast()
 }
-
 
 /* --- Middle column: VARIABLES (updates frequently, uses current frame lum count) --- */
 function updateVariablesFast() {
@@ -1151,6 +1181,28 @@ const vReveal = {
   align-items: flex-start;
 }
 
+.slx-section-grid-impact {
+  display: grid;
+  grid-template-columns: minmax(0, 2.5fr) minmax(0, 2fr);
+  gap: 1.8rem;
+  align-items: flex-start;
+}
+
+.slx-section-grid-learnings {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 2.6fr);
+  gap: 1.8rem;
+  align-items: flex-start;
+}
+
+.slx-section-grid-admin {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 3fr);
+  gap: 1.8rem;
+  align-items: flex-start;
+}
+
+
 .slx-section-grid-engine {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -1189,7 +1241,6 @@ const vReveal = {
 }
 
 /* Lists */
-
 .slx-list {
   margin: 0;
   padding-left: 1.1rem;
@@ -1199,6 +1250,17 @@ const vReveal = {
   font-size: 0.9rem;
   color: #a7b5d5;
 }
+
+.slx-list-spaced {
+ margin: 0;
+  padding-left: 1.1rem;
+  list-style: disc;
+  display: grid;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: #a7b5d5;
+}
+
 
 /* Images */
 

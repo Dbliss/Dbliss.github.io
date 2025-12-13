@@ -481,12 +481,21 @@
     </section>
 
     <!-- BACKEND ARCHITECTURE -->
-    <section class="slx-section slx-section-grid slx-impact" v-reveal>
+    <section class="slx-section slx-impact" v-reveal>
       <div class="slx-section-block">
         <p class="section-label">Backend architecture</p>
         <h2 class="section-title">
           How the service is structured
         </h2>
+
+        <div class="slx-section-block">
+          <img
+            class="image"
+            :src="backendStructure"
+            alt="Diagram of backend structure."
+            loading="lazy"
+          />
+        </div>
 
         <div class="slx-roadmap-grid">
           <div>
@@ -564,6 +573,7 @@ import reportImage from '../assets/sportslux-report.png'
 import login from '../assets/sportslux-login.png'
 import admin from '../assets/sportslux-admin.png'
 import devBoard from '../assets/sportslux-devboard.png'
+import backendStructure from '../assets/sportslux-structure.png'
 
 import result1 from '../assets/sportslux_results/1.png'
 import result2 from '../assets/sportslux_results/2.png'
@@ -610,29 +620,27 @@ const performance = [
   { fittings: 8, fast: '15 sec', advanced: '1 min' }
 ]
 
-/**
- * Backend architecture (split into 3 lists so it reads like an actual system,
- * not just a random tech-stack name drop).
- */
 const backendRequestPath = [
-  'UI submits a typed design request → FastAPI validates payloads (Pydantic) and normalises units/inputs.',
-  'Auth gate: JWT verification + role checks (designer vs admin) before any solver or data access.',
-  'API dispatches a solver job with a stable configuration hash so identical runs can be de-duplicated.',
-  'Response returns best-known solution quickly, with the option to retrieve full outputs (grid, isolux, report) via follow-up endpoints.'
+  'The UI sends a design request to NGINX, which serves the frontend and forwards API calls to FastAPI.',
+  'FastAPI validates inputs and checks authentication/roles before the solver runs, so bad or unauthorised requests never reach compute.',
+  'The solver runs and either reuses cached results or computes a new solution, then stores the run + outputs for later reuse.',
+  '"In progress" and a loading screen come back to the UI immediately, with ability to cancel a job midway', 
+  'Once a solution is reached, all results and exports are stored locally with persistance, meaning a user can refresh the page or changes tabs so without re-running the job.'
 ]
 
 const backendCoreComponents = [
-  'FastAPI service layer: clean route boundaries, strict schemas, and error responses that are actionable for users.',
-  'Optimisation engine module: isolated from HTTP concerns so it can be profiled, tested, and reused (e.g. DGI calculator migration).',
-  'PostgreSQL (RDS) as the system of record: projects, luminaire metadata, solver runs, and cached results.',
-  'S3 storage for generated artefacts (reports/exports) with simple link-based retrieval from the UI.'
+  'NGINX: a well known fast static delivery for the UI, plus a clean reverse proxy to the API.',
+  'Gunicorn + FastAPI: handles real traffic reliably with multiple workers, and keeps the API strict and predictable with typed requests.',
+  'Optimisation engine: kept separate from the web layer so it stays testable and easier for the user to get progress on.',
+  'Postgres (RDS): a industry standard way to record user actions. Tables seperated per user functionality for easy management and future migrations.',
+  'S3 storage: keeps generated reports/exports durable and lightweight to serve, without bloating the database.'
 ]
 
 const backendOps = [
-  'Reverse proxy (NGINX) in front of Gunicorn: static asset caching/compression + safe request forwarding to the API.',
-  'Performance-first approach: heavy vectorisation in NumPy + parallel evaluation for candidate solutions.',
-  'Day-2 mindset: reproducible environments, safe rollout patterns, and production debugging without “SSH and pray”.',
-  'Security basics done properly: salted password hashing (bcrypt), token expiry, and least-privilege admin actions.'
+  'Every run is logged with enough metadata to reproduce issues, which makes debugging much faster than guessing from screenshots.',
+  'Caching is built in, so repeated runs with the same inputs return instantly instead of burning compute again.',
+  'Validation happens at the API boundary, so the solver and databases are protected.',
+  'The system can be monitored through usage and health signals, automations are in place to ping a health point, with alerts on abnormality.'
 ]
 
 const learnings = [

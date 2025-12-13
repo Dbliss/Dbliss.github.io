@@ -248,24 +248,32 @@
     </section>
 
     <!-- Images -->
-    <section class="slx-section" v-reveal>
-      <div class="slx-section-block slx-gallery">
-        <div class="image-wrapper slx-image-glow">
-          <img
-            class="image"
-            :src="dashboardPreview"
-            alt="Sportslux photometry grid preview."
-            loading="lazy"
-          />
-        </div>
+    <section class="slx-section slx-section-block" v-reveal>
+      <div class="slx-section-block">
+        <div class="slx-gallery-card" role="group" aria-label="Sportslux UI examples">
+          <figure class="slx-gallery-item">
+            <img
+              class="slx-gallery-img"
+              :src="dashboardPreview"
+              alt="UI of pole position selection."
+              loading="lazy"
+            />
+            <figcaption class="slx-gallery-caption">
+              Pole-position UI: invalid positions update as you change field size + sport
+            </figcaption>
+          </figure>
 
-        <div class="image-wrapper slx-image-glow secondary">
-          <img
-            class="image"
-            :src="resultsHeatmap"
-            alt="Sportslux heatmap and optimisation summary."
-            loading="lazy"
-          />
+          <figure class="slx-gallery-item">
+            <img
+              class="slx-gallery-img"
+              :src="resultsHeatmap"
+              alt="Result of a simple configuration leading to a lighting design with all metrics passing."
+              loading="lazy"
+            />
+            <figcaption class="slx-gallery-caption">
+              Result from a simple user setup, with all metrics meeting requirements
+            </figcaption>
+          </figure>
         </div>
       </div>
     </section>
@@ -1331,6 +1339,45 @@ const vReveal = {
   width: 100%;
   display: block;
   border-radius: 0.7rem;
+}
+
+/* Images */
+
+.slx-gallery-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.slx-gallery-item {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.slx-gallery-img {
+  width: 100%;
+  aspect-ratio: 16 / 12;     /* forces same vertical size */
+  height: auto;
+  display: block;
+  border-radius: 0.85rem;
+  background: linear-gradient(145deg, #05081f, #050b2a);
+}
+
+.slx-gallery-caption {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: #a4b3d4;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .slx-gallery-card {
+    grid-template-columns: 1fr;
+  }
 }
 
 .slx-gallery {

@@ -10,6 +10,7 @@
     "lint": "echo \"(optional) add eslint\""
   },
   "dependencies": {
+    "three": "^0.182.0",
     "vue": "^3.4.27",
     "vue-router": "^4.6.3"
   },

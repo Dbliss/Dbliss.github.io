@@ -85,8 +85,7 @@ The UI supports schedule editing, device grouping, and live status streaming wit
     stack: ['Vue 3', 'TypeScript', 'REST', 'WebSockets'],
     tags: ['IoT', 'Dashboard'],
     repoUrl: '',
-    liveUrl: '',
-    featured: true
+    liveUrl: ''
   },
   {
     slug: 'invoice-automation',
@@ -104,26 +103,27 @@ I built templating and rounding rules, then scheduled it on a small VM with emai
     stack: ['Python', 'Google APIs'],
     tags: ['Automation'],
     repoUrl: 'https://github.com/your-handle/invoice-automation',
-    liveUrl: '',
-    featured: true
+    liveUrl: ''
   },
   {
-    slug: 's4i-cms-integration',
-    title: 'S4i CMS Integration (Anonymised)',
-    tagline: 'Unified API client for a vendor CMS',
+    slug: 'chessEngine',
+    title: 'C++ Chess Engine',
+    tagline: 'High Performing Chess Engine and UI Built from Scratch',
     excerpt:
-      'Created a typed client and caching strategy to make a vendor CMS bearable to integrate with.',
+      'Created a high performing chess engine to extend my c++ skillset.',
     description: `
-I reverse-engineered inconsistent endpoints, wrapped them in a typed client, and added
-request deduplication and caching. This improved reliability and simplified the UI layer.
+I built a chess engine from scratch in c++ to extend my knowledge of c++ fundamentals, learn about optimisation techniques,
+and master key software fundamentals such as hashing, search trees, bit operations, 
 
 **Outcome**
-- Fewer edge-case failures and simpler error handling
-- Easier to mock in tests
+- Over 2000 rated chess engine
+- Millions of computations a second
+- Extensive understanding of C++ fundamentals and heavily optimised code
     `,
-    stack: ['TypeScript', 'OpenAPI', 'Caching'],
-    tags: ['Integration'],
+    stack: ['C++', 'Visual Studio executable code', 'Caching'],
+    tags: ['Optimisation'],
     repoUrl: '',
-    liveUrl: ''
+    liveUrl: '',
+    featured: true
   }
 ]

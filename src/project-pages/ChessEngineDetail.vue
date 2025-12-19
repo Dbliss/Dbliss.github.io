@@ -76,12 +76,21 @@ let boardMesh = null;
 let piecesGroup = null;
 let meshToPiece = new WeakMap();
 
-let highlightsGroup = null;
-let highlightGeo = null;
+// Highlights (selection vs hover preview)
+let selectionHighlightsGroup = null;
+let hoverHighlightsGroup = null;
+
+let dotGeo = null;
+let captureRingGeo = null;
+let selectRingGeo = null;
 let highlightQuat = new THREE.Quaternion();
-let highlightMatMove = null;
-let highlightMatCapture = null;
-let highlightMatSelect = null;
+
+let matMoveSel = null;
+let matCaptureSel = null;
+let matSelectFrom = null;
+
+let matMoveHover = null;
+let matCaptureHover = null;
 
 let raf = 0;
 const clock = new THREE.Clock();
@@ -90,10 +99,13 @@ let elapsed = 0;
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
+let boardPickMeshes = []; // meshes that cover the playable board for raycasting
+
 let hoveredPiece = null;
 let hoveredBasePos = null;
 let hoveredBaseQuat = null;
 let hoveredEmissiveRestore = [];
+let hoverStartTime = 0;
 
 const tmpEuler = new THREE.Euler();
 const tmpQuat = new THREE.Quaternion();
@@ -133,11 +145,23 @@ const WHITE_TINT = new THREE.Color(0xd2c7b6);
 const BLACK_TINT = new THREE.Color(0x151515);
 const HOVER_GLOW = 0x2f6bff;
 
-const SHAKE = {
-	rotAmp: 0.10,
-	posAmp: 0.02,
-	freq: 18.0,
+// Hover jiggle envelope: 2s total, 1s steady then 1s ease-out
+const HOVER_SHAKE = {
+	rotAmp: 0.03, // radians (light)
+	posAmp: 0.006, // world units (light)
+	freq: 16.0,
+	holdSec: 1.0,
+	totalSec: 2.0,
 };
+
+// Move animation
+const MOVE_ANIM = {
+	durationSec: 0.28,
+	jumpHeightRatio: 0.32, // relative to square size
+};
+
+// Active piece move animations
+let moveAnims = []; // { piece, startPos, endPos, startQuat, endQuat, startT, dur, jumpH, onComplete? }
 
 const TEMPLATE_NAMES = {
 	pawn: "Pawn_White_0",
@@ -165,10 +189,10 @@ const CINEMATIC = {
 	playSide: -0.0,
 	playTargetUp: 0.10,
 
-	// Start positionnpm
-    introSideDist: 1.5,
+	// Start position
+	introSideDist: 1.5,
 	introUp: 0.0,
-	introForward: 0.00,
+	introForward: 0.0,
 	introSide: 0,
 	introTargetUp: 0,
 
@@ -222,38 +246,38 @@ const FEATURE_BLURBS = [
 // ------------------------------------------------------------
 
 onMounted(() => {
-  initThree();
-  loadModel();
-  startLoop();
+	initThree();
+	loadModel();
+	startLoop();
 
-  // Engine init (doesn't block rendering)
-  engine = new StockfishClient({
-    workerUrl: "/stockfish/stockfish-17.1-lite-single-03e3232.js",
-    skillLevel: 2,
-    movetimeMs: 120,
-  });
+	// Engine init (doesn't block rendering)
+	engine = new StockfishClient({
+		workerUrl: "/stockfish/stockfish-17.1-lite-single-03e3232.js",
+		skillLevel: 2,
+		movetimeMs: 120,
+	});
 
-  engine.init().catch((e) => {
-    console.error("Stockfish init failed:", e);
-  });
+	engine.init().catch((e) => {
+		console.error("Stockfish init failed:", e);
+	});
 
-  onScroll();
-  window.addEventListener("resize", onResize, { passive: true });
-  window.addEventListener("scroll", onScroll, { passive: true });
+	onScroll();
+	window.addEventListener("resize", onResize, { passive: true });
+	window.addEventListener("scroll", onScroll, { passive: true });
 });
-
 
 onBeforeUnmount(() => {
-  window.removeEventListener("resize", onResize);
-  window.removeEventListener("scroll", onScroll);
+	window.removeEventListener("resize", onResize);
+	window.removeEventListener("scroll", onScroll);
 
-  try { engine?.terminate?.(); } catch {}
-  engine = null;
+	try {
+		engine?.terminate?.();
+	} catch {}
+	engine = null;
 
-  stopLoop();
-  disposeAll();
+	stopLoop();
+	disposeAll();
 });
-
 
 // Hero transforms
 const heroOpacity = computed(() => {
@@ -330,12 +354,9 @@ function loadModel() {
 		chessModelUrl,
 		(gltf) => {
 			clearSelection();
+			clearHover();
 
-			if (highlightsGroup) {
-				scene.remove(highlightsGroup);
-				disposeObject3D(highlightsGroup);
-				highlightsGroup = null;
-			}
+			disposeHighlightSystem();
 
 			if (piecesGroup) {
 				scene.remove(piecesGroup);
@@ -375,6 +396,16 @@ function loadModel() {
 			hideTemplates(templates);
 
 			const boardRoot = boardMesh.parent ?? boardMesh;
+
+			// NEW: build a list of meshes that represent the playable board surface for raycasting
+			boardPickMeshes = [];
+			boardRoot.traverse((o) => {
+				if (!o.isMesh) return;
+				// exclude piece meshes/templates
+				if (/pawn|rook|knight|bishop|queen|king/i.test(o.name || "")) return;
+				boardPickMeshes.push(o);
+			});
+
 			const boardInfo = computeBoardGrid(boardMesh);
 			boardInfoGlobal = boardInfo;
 
@@ -384,10 +415,9 @@ function loadModel() {
 			indexPiecesBySquare();
 
 			setupHighlightSystem(boardInfo);
-
 			setupCinematicFromBoard(boardInfo, boardMesh);
 
-			// Reset chess state to starting position (matches your spawned pieces)
+			// Reset chess state to starting position
 			game.reset();
 			lastMove.value = "";
 			featureBlurb.value = "";
@@ -405,99 +435,189 @@ function loadModel() {
 	);
 }
 
+
 // ------------------------------------------------------------
-// Highlight system (legal move squares)
+// Highlight system (dots + rings)
 // ------------------------------------------------------------
 function setupHighlightSystem(boardInfo) {
-	highlightsGroup = new THREE.Group();
-	highlightsGroup.name = "SquareHighlights";
-	scene.add(highlightsGroup);
+	selectionHighlightsGroup = new THREE.Group();
+	selectionHighlightsGroup.name = "SelectionMoveDots";
+	scene.add(selectionHighlightsGroup);
+
+	hoverHighlightsGroup = new THREE.Group();
+	hoverHighlightsGroup.name = "HoverMoveDots";
+	scene.add(hoverHighlightsGroup);
 
 	const s = boardInfo.squareSize * GRID.spacing;
-	highlightGeo = new THREE.PlaneGeometry(s, s);
 
-	// Orient plane XY => board plane (x=fileAxis, y=rankAxis, z=normal)
+	// Dot size tuned to "small" but clickable/visible.
+	const r = s * 0.14;
+
+	dotGeo = new THREE.CircleGeometry(r, 32);
+	captureRingGeo = new THREE.RingGeometry(r * 0.55, r * 0.9, 32);
+	selectRingGeo = new THREE.RingGeometry(r * 1.25, r * 1.55, 48);
+
+	// Orient XY => board plane (x=fileAxis, y=rankAxis, z=normal)
 	tmpM.makeBasis(boardInfo.fileAxis, boardInfo.rankAxis, boardInfo.normal);
 	highlightQuat.setFromRotationMatrix(tmpM);
 
-	highlightMatMove = new THREE.MeshBasicMaterial({
-		color: 0x2f6bff,
+	const common = {
 		transparent: true,
-		opacity: 0.22,
 		depthWrite: false,
 		polygonOffset: true,
 		polygonOffsetFactor: -1,
 		polygonOffsetUnits: -1,
-	});
+	};
 
-	highlightMatCapture = new THREE.MeshBasicMaterial({
-		color: 0xff3b3b,
-		transparent: true,
-		opacity: 0.26,
-		depthWrite: false,
-		polygonOffset: true,
-		polygonOffsetFactor: -1,
-		polygonOffsetUnits: -1,
-	});
+	// Selection dots: more solid
+	matMoveSel = new THREE.MeshBasicMaterial({ color: 0x22262f, opacity: 0.88, ...common });
+	matCaptureSel = new THREE.MeshBasicMaterial({ color: 0x22262f, opacity: 0.88, ...common });
+	matSelectFrom = new THREE.MeshBasicMaterial({ color: 0x2f3440, opacity: 0.55, ...common });
 
-	highlightMatSelect = new THREE.MeshBasicMaterial({
-		color: 0xffd54a,
-		transparent: true,
-		opacity: 0.18,
-		depthWrite: false,
-		polygonOffset: true,
-		polygonOffsetFactor: -1,
-		polygonOffsetUnits: -1,
-	});
+	// Hover preview: more subtle
+	matMoveHover = new THREE.MeshBasicMaterial({ color: 0x22262f, opacity: 0.52, ...common });
+	matCaptureHover = new THREE.MeshBasicMaterial({ color: 0x22262f, opacity: 0.52, ...common });
 }
 
-function clearHighlights() {
-	if (!highlightsGroup) return;
-
-	for (const child of [...highlightsGroup.children]) {
-		highlightsGroup.remove(child);
-		child.geometry?.dispose?.();
-		child.material?.dispose?.();
+function disposeHighlightSystem() {
+	if (selectionHighlightsGroup) {
+		scene?.remove(selectionHighlightsGroup);
+		selectionHighlightsGroup.clear();
+		selectionHighlightsGroup = null;
 	}
+	if (hoverHighlightsGroup) {
+		scene?.remove(hoverHighlightsGroup);
+		hoverHighlightsGroup.clear();
+		hoverHighlightsGroup = null;
+	}
+
+	dotGeo?.dispose?.();
+	dotGeo = null;
+	captureRingGeo?.dispose?.();
+	captureRingGeo = null;
+	selectRingGeo?.dispose?.();
+	selectRingGeo = null;
+
+	matMoveSel?.dispose?.();
+	matMoveSel = null;
+	matCaptureSel?.dispose?.();
+	matCaptureSel = null;
+	matSelectFrom?.dispose?.();
+	matSelectFrom = null;
+
+	matMoveHover?.dispose?.();
+	matMoveHover = null;
+	matCaptureHover?.dispose?.();
+	matCaptureHover = null;
 }
 
-function addSquareHighlight(square, kind) {
-	if (!highlightsGroup || !boardInfoGlobal) return;
+function clearSelectionHighlights() {
+	selectionHighlightsGroup?.clear?.();
+}
+
+function clearHoverHighlights() {
+	hoverHighlightsGroup?.clear?.();
+}
+
+function addMoveMarker(square, kind, mode) {
+	if (!boardInfoGlobal) return;
+
+	const isSel = mode === "selection";
+	const group = isSel ? selectionHighlightsGroup : hoverHighlightsGroup;
+	if (!group) return;
 
 	const { file, rank } = squareToFileRank(square);
 	const pos = getSquareCenterWorld(file, rank, boardInfoGlobal);
 	snapToBoardTopInPlace(pos, boardInfoGlobal, 0.002);
 
-	const mat =
-		kind === "select" ? highlightMatSelect :
-		kind === "capture" ? highlightMatCapture :
-		highlightMatMove;
+	let geo = dotGeo;
+	let mat = isSel ? matMoveSel : matMoveHover;
 
-	const mesh = new THREE.Mesh(highlightGeo, mat.clone());
+	if (kind === "capture") {
+		geo = captureRingGeo;
+		mat = isSel ? matCaptureSel : matCaptureHover;
+	}
+
+	const mesh = new THREE.Mesh(geo, mat);
 	mesh.quaternion.copy(highlightQuat);
 	mesh.position.copy(pos);
-	mesh.userData.square = square;
-	mesh.renderOrder = 10;
-	highlightsGroup.add(mesh);
+	mesh.renderOrder = isSel ? 12 : 11;
+
+	// Only selection markers are clickable for "move now"
+	if (isSel) mesh.userData.square = square;
+
+	group.add(mesh);
+}
+
+function addFromMarker(square) {
+	if (!boardInfoGlobal || !selectionHighlightsGroup) return;
+
+	const { file, rank } = squareToFileRank(square);
+	const pos = getSquareCenterWorld(file, rank, boardInfoGlobal);
+	snapToBoardTopInPlace(pos, boardInfoGlobal, 0.002);
+
+	const mesh = new THREE.Mesh(selectRingGeo, matSelectFrom);
+	mesh.quaternion.copy(highlightQuat);
+	mesh.position.copy(pos);
+	mesh.renderOrder = 13;
+	selectionHighlightsGroup.add(mesh);
 }
 
 function showSelectionAndMoves(fromSquare, movesVerbose) {
-	clearHighlights();
+	clearSelectionHighlights();
+	clearHoverHighlights(); // selection should "own" the board UI
 
-	addSquareHighlight(fromSquare, "select");
+	addFromMarker(fromSquare);
 
 	for (const m of movesVerbose) {
-		const isCap = m.flags?.includes("c") || m.flags?.includes("e"); // capture or en-passant
-		addSquareHighlight(m.to, isCap ? "capture" : "move");
+		const isCap = m.flags?.includes("c") || m.flags?.includes("e");
+		addMoveMarker(m.to, isCap ? "capture" : "move", "selection");
 	}
 }
+
+function showHoverMoves(pieceRoot) {
+	clearHoverHighlights();
+	if (!pieceRoot) return;
+	if (!selected || selected?.pieceRoot !== pieceRoot) {
+		// Only preview if not currently selected something
+	} else {
+		return;
+	}
+	if (engineThinking.value || game.isGameOver()) return;
+
+	const sq = fileRankToSquare(pieceRoot.userData.file, pieceRoot.userData.rank);
+	const turnColor = game.turn() === "w" ? "white" : "black";
+	if (pieceRoot.userData.color !== turnColor) return;
+
+	const moves = game.legalMovesFrom(sq);
+	for (const m of moves) {
+		const isCap = m.flags?.includes("c") || m.flags?.includes("e");
+		addMoveMarker(m.to, isCap ? "capture" : "move", "hover");
+	}
+}
+
+function getPieceRootFromHit(obj) {
+	let o = obj;
+	while (o) {
+		const pr = meshToPiece.get(o);
+		if (pr) return pr;
+		o = o.parent;
+	}
+	return null;
+}
+
 
 // ------------------------------------------------------------
 // Click handling (select piece / move)
 // ------------------------------------------------------------
+function isAnimating() {
+	return moveAnims.length > 0;
+}
+
 function onPointerDown(ev) {
 	if (!renderer || !camera || loading.value || error.value) return;
 	if (engineThinking.value) return;
+	if (isAnimating()) return;
 	if (!piecesGroup || !boardMesh || !boardInfoGlobal) return;
 
 	const rect = renderer.domElement.getBoundingClientRect();
@@ -506,9 +626,9 @@ function onPointerDown(ev) {
 
 	raycaster.setFromCamera(pointer, camera);
 
-	// 1) Click on a highlighted square => attempt move immediately
-	if (highlightsGroup) {
-		const hlHits = raycaster.intersectObject(highlightsGroup, true);
+	// 1) Click on a selection move dot => attempt move immediately
+	if (selectionHighlightsGroup) {
+		const hlHits = raycaster.intersectObject(selectionHighlightsGroup, true);
 		if (hlHits.length) {
 			const sq = hlHits[0].object?.userData?.square;
 			if (sq) {
@@ -518,20 +638,39 @@ function onPointerDown(ev) {
 		}
 	}
 
-	// 2) Click on a piece => select (if it's that side to move)
+	// 2) Click on a piece
 	const pieceHits = raycaster.intersectObject(piecesGroup, true);
 	if (pieceHits.length) {
-		const pieceRoot = meshToPiece.get(pieceHits[0].object);
+		const pieceRoot = getPieceRootFromHit(pieceHits[0].object);
 		if (pieceRoot) {
+			// If we have a selection, clicking an enemy on a legal square should CAPTURE
+			if (selected) {
+				const targetSq = fileRankToSquare(pieceRoot.userData.file, pieceRoot.userData.rank);
+				const legal = selectedMoves.some((m) => m.to === targetSq);
+				const enemy = pieceRoot.userData.color !== selected.pieceRoot.userData.color;
+
+				if (legal && enemy) {
+					tryMoveTo(targetSq);
+					return;
+				}
+			}
+
+			// Otherwise treat it as (re)select
 			trySelectPiece(pieceRoot);
 			return;
 		}
 	}
 
+
 	// 3) Click on board => if selected, try move to that square; else clear selection
-	const boardHits = raycaster.intersectObject(boardMesh, true);
+	// 3) Click on board (use the pick meshes, not just boardMesh)
+	const boardHits = boardPickMeshes.length
+		? raycaster.intersectObjects(boardPickMeshes, true)
+		: raycaster.intersectObject(boardMesh, true);
+
 	if (boardHits.length) {
 		const sq = squareFromWorldPoint(boardHits[0].point, boardInfoGlobal);
+
 		if (!sq) {
 			clearSelection();
 			return;
@@ -576,25 +715,27 @@ function trySelectPiece(pieceRoot) {
 
 function tryMoveTo(toSquare) {
 	if (!selected) return;
+	if (isAnimating()) return;
 
 	const fromSquare = selected.fromSquare;
 
 	// Only allow squares that are in the current move list
 	const ok = selectedMoves.some((m) => m.to === toSquare);
 	if (!ok) {
-		// Clicking elsewhere just changes selection state more predictably
 		clearSelection();
 		return;
 	}
 
-	// Always promote to queen for now (you can later ask user)
+	clearHover(); // avoid jitter/glow fighting animation
+
+	// Always promote to queen for now
 	const result = game.tryMove(fromSquare, toSquare, "q");
 	if (!result) {
 		clearSelection();
 		return;
 	}
 
-	// Apply 3D updates based on move flags :contentReference[oaicite:3]{index=3}
+	// Apply 3D updates based on move flags
 	applyMoveToScene(result, selected.pieceRoot, fromSquare, toSquare);
 
 	// Update UI blurb
@@ -607,49 +748,48 @@ function tryMoveTo(toSquare) {
 }
 
 async function maybePlayBlackMove() {
-  if (!engine) return;
-  if (game.isGameOver()) return;
-  if (game.turn() !== "b") return;
+	if (!engine) return;
+	if (game.isGameOver()) return;
+	if (game.turn() !== "b") return;
 
-  engineThinking.value = true;
-  clearSelection();
+	engineThinking.value = true;
+	clearSelection();
+	clearHover();
 
-  try {
-    // Get engine move
-    const uci = await engine.bestMoveFromFen(game.fen(), { movetimeMs: 120 });
-    if (!uci || uci === "(none)") return;
+	try {
+		const uci = await engine.bestMoveFromFen(game.fen(), { movetimeMs: 120 });
+		if (!uci || uci === "(none)") return;
 
-    const mv = parseUciMove(uci);
-    if (!mv) return;
+		const mv = parseUciMove(uci);
+		if (!mv) return;
 
-    // Find the moved piece in the scene
-    indexPiecesBySquare();
-    const pieceRoot = squareToPiece.get(mv.from);
-    if (!pieceRoot) return;
+		// Find the moved piece in the scene
+		indexPiecesBySquare();
+		const pieceRoot = squareToPiece.get(mv.from);
+		if (!pieceRoot) return;
 
-    // Apply to chess.js
-    const result = game.tryMove(mv.from, mv.to, mv.promotion || "q");
-    if (!result) return;
+		const result = game.tryMove(mv.from, mv.to, mv.promotion || "q");
+		if (!result) return;
 
-    // Apply to 3D scene
-    applyMoveToScene(result, pieceRoot, mv.from, mv.to);
+		applyMoveToScene(result, pieceRoot, mv.from, mv.to);
 
-    // Update UI blurb
-    lastMove.value = `Move: ${result.san}`;
-    featureBlurb.value = FEATURE_BLURBS[blurbIndex % FEATURE_BLURBS.length];
-    blurbIndex++;
-  } catch (e) {
-    console.error("Engine move failed:", e);
-  } finally {
-    engineThinking.value = false;
-  }
+		lastMove.value = `Move: ${result.san}`;
+		featureBlurb.value = FEATURE_BLURBS[blurbIndex % FEATURE_BLURBS.length];
+		blurbIndex++;
+	} catch (e) {
+		console.error("Engine move failed:", e);
+	} finally {
+		engineThinking.value = false;
+	}
 }
-
 
 function clearSelection() {
 	selected = null;
 	selectedMoves = [];
-	clearHighlights();
+	clearSelectionHighlights();
+
+	// If you're currently hovering something (and it's your turn), restore hover preview
+	if (hoveredPiece) showHoverMoves(hoveredPiece);
 }
 
 // ------------------------------------------------------------
@@ -657,8 +797,6 @@ function clearSelection() {
 // ------------------------------------------------------------
 function applyMoveToScene(moveResult, movedPieceRoot, fromSquare, toSquare) {
 	// Captures
-	// - normal capture: captured on 'to'
-	// - en-passant: captured pawn sits on (file(to), rank(from))
 	if (moveResult.flags?.includes("e")) {
 		const { file: tf } = squareToFileRank(toSquare);
 		const { rank: fr } = squareToFileRank(fromSquare);
@@ -668,10 +806,29 @@ function applyMoveToScene(moveResult, movedPieceRoot, fromSquare, toSquare) {
 		removePieceAtSquare(toSquare);
 	}
 
-	// Move the selected piece
-	movePieceRootToSquare(movedPieceRoot, toSquare);
+	// Promotion needs to swap AFTER the jump lands (looks much better)
+	let promotionType = null;
+	if (moveResult.flags?.includes("p")) {
+		const promo = (moveResult.promotion || "q").toLowerCase();
+		promotionType =
+			promo === "q" ? "queen" :
+			promo === "r" ? "rook" :
+			promo === "b" ? "bishop" :
+			promo === "n" ? "knight" :
+			"queen";
+	}
 
-	// Castling: move rook too :contentReference[oaicite:4]{index=4}
+	// Move the piece (jump anim)
+	animatePieceRootToSquare(movedPieceRoot, toSquare, {
+		onComplete: () => {
+			if (promotionType) {
+				replacePieceWithType(movedPieceRoot, promotionType, toSquare);
+			}
+			indexPiecesBySquare();
+		},
+	});
+
+	// Castling: move rook too (jump anim)
 	if (moveResult.flags?.includes("k") || moveResult.flags?.includes("q")) {
 		const side = moveResult.flags.includes("k") ? "k" : "q";
 		const color = moveResult.color === "w" ? "w" : "b";
@@ -689,33 +846,81 @@ function applyMoveToScene(moveResult, movedPieceRoot, fromSquare, toSquare) {
 
 		const rm = rookMoves[color][side];
 		const rook = squareToPiece.get(rm.from);
-		if (rook) movePieceRootToSquare(rook, rm.to);
+		if (rook) {
+			animatePieceRootToSquare(rook, rm.to);
+		}
 	}
 
-	// Promotion: replace pawn mesh with promoted piece mesh :contentReference[oaicite:5]{index=5}
-	if (moveResult.flags?.includes("p")) {
-		const promo = (moveResult.promotion || "q").toLowerCase();
-		const type =
-			promo === "q" ? "queen" :
-			promo === "r" ? "rook" :
-			promo === "b" ? "bishop" :
-			promo === "n" ? "knight" :
-			"queen";
-
-		replacePieceWithType(movedPieceRoot, type, toSquare);
-	}
-
+	// Update mapping now (logic) even though visuals animate
 	indexPiecesBySquare();
 }
 
-function movePieceRootToSquare(pieceRoot, square) {
-	if (!boardInfoGlobal) return;
+function animatePieceRootToSquare(pieceRoot, square, opts = {}) {
+	if (!boardInfoGlobal || !pieceRoot) return;
 
+	const { durationSec = MOVE_ANIM.durationSec, onComplete = null } = opts;
+
+	// Record start
+	const startPos = pieceRoot.position.clone();
+	const startQuat = pieceRoot.quaternion.clone();
+
+	// Update logical square immediately
 	const { file, rank } = squareToFileRank(square);
 	pieceRoot.userData.file = file;
 	pieceRoot.userData.rank = rank;
 
+	// Compute end transform by placing, then restore
 	placeOnSquare(pieceRoot, boardInfoGlobal, file, rank, pieceRoot.userData.color);
+	const endPos = pieceRoot.position.clone();
+	const endQuat = pieceRoot.quaternion.clone();
+
+	pieceRoot.position.copy(startPos);
+	pieceRoot.quaternion.copy(startQuat);
+	pieceRoot.updateWorldMatrix(true, true);
+
+	const jumpH = (boardInfoGlobal.squareSize * MOVE_ANIM.jumpHeightRatio);
+
+	moveAnims.push({
+		piece: pieceRoot,
+		startPos,
+		endPos,
+		startQuat,
+		endQuat,
+		startT: elapsed,
+		dur: Math.max(0.05, durationSec),
+		jumpH: Math.max(0, jumpH),
+		onComplete,
+	});
+}
+
+function updateMoveAnimations(nowT) {
+	if (!moveAnims.length) return;
+
+	const upDir = (basisUp && basisUp.lengthSq() > 1e-8) ? basisUp : (boardInfoGlobal?.normal || WORLD_UP);
+
+	for (let i = moveAnims.length - 1; i >= 0; i--) {
+		const a = moveAnims[i];
+		const t = (nowT - a.startT) / a.dur;
+
+		if (t >= 1) {
+			a.piece.position.copy(a.endPos);
+			a.piece.quaternion.copy(a.endQuat);
+			a.piece.updateWorldMatrix(true, true);
+
+			try { a.onComplete?.(); } catch (e) { console.error(e); }
+
+			moveAnims.splice(i, 1);
+			continue;
+		}
+
+		const e = easeInOutCubic(Math.max(0, Math.min(1, t)));
+		const jump = Math.sin(Math.PI * e) * a.jumpH;
+
+		tmpTarget.copy(a.startPos).lerp(a.endPos, e).addScaledVector(upDir, jump);
+		a.piece.position.copy(tmpTarget);
+		a.piece.quaternion.slerpQuaternions(a.startQuat, a.endQuat, e);
+		a.piece.updateWorldMatrix(true, true);
+	}
 }
 
 function removePieceAtSquare(square) {
@@ -770,14 +975,12 @@ function getSquareCenterWorld(file, rank, boardInfo) {
 }
 
 function snapToBoardTopInPlace(pos, boardInfo, lift = 0.0) {
-	// shift point along normal until its dot(normal) == boardTop, then lift a bit
 	const d = boardInfo.boardTop - pos.dot(boardInfo.normal);
 	pos.addScaledVector(boardInfo.normal, d + lift);
 	return pos;
 }
 
 function squareFromWorldPoint(point, boardInfo) {
-	// Project onto file/rank axes (inverse of placement math)
 	const v = tmpV.copy(point).sub(boardInfo.center);
 
 	const denom = Math.max(1e-6, boardInfo.squareSize * GRID.spacing);
@@ -954,19 +1157,35 @@ function buildFullSetFromTemplates(templates, board) {
 function clonePieceWithTint(template, color) {
 	const clone = template.clone(true);
 	clone.visible = true;
-	clone.traverse((o) => { o.visible = true; });
+	clone.traverse((o) => {
+		o.visible = true;
+	});
 
-	const target = (color === "white") ? WHITE_TINT : BLACK_TINT;
+	const target = color === "white" ? WHITE_TINT : BLACK_TINT;
 
 	clone.traverse((o) => {
 		if (!o.isMesh || !o.material) return;
 
 		const apply = (m) => {
-			const nm = m.clone();
-			if (nm.color) nm.color.copy(colorBase).lerp(target, 1.0);
-			if (nm.emissive) nm.emissive.setHex(0x000000);
-			nm.needsUpdate = true;
-			return nm;
+		const nm = m.clone();
+
+		// IMPORTANT: ignore template base color entirely (templates are inconsistent).
+		// Force a uniform base color per side.
+		if (nm.color) nm.color.copy(target);
+
+		// Make shape readable with highlights instead of relying on albedo differences
+		if (typeof nm.roughness === "number") nm.roughness = (color === "white") ? 0.10 : 0.30; // rougher black
+		if (typeof nm.metalness === "number") nm.metalness = (color === "white") ? 0.30 : 0.90; // less metallic black
+		if ("envMapIntensity" in nm) nm.envMapIntensity = (color === "white") ? 1.45 : 0.55;   // softer env reflections
+
+		// Optional (tiny) contrast help: slightly darken whites / slightly lift blacks
+		// without depending on original template colors.
+		if (nm.color) nm.color.offsetHSL(0, 0, (color === "white") ? -0.06 : 0.03);
+
+		if (nm.emissive) nm.emissive.setHex(0x000000);
+
+		nm.needsUpdate = true;
+		return nm;
 		};
 
 		o.material = Array.isArray(o.material) ? o.material.map(apply) : apply(o.material);
@@ -1068,23 +1287,24 @@ function computeBoardGrid(board) {
 	tmpAxisY.set(0, 1, 0).applyQuaternion(tmpQuat).normalize();
 	tmpAxisZ.set(0, 0, 1).applyQuaternion(tmpQuat).normalize();
 
-	const up = tmpV.set(0, 1, 0);
 	let normal = tmpAxisY;
-	let best = Math.abs(tmpAxisY.dot(up));
+	let best = Math.abs(tmpAxisY.dot(WORLD_UP));
 
-	const xScore = Math.abs(tmpAxisX.dot(up));
+	const xScore = Math.abs(tmpAxisX.dot(WORLD_UP));
 	if (xScore > best) {
 		best = xScore;
 		normal = tmpAxisX;
 	}
 
-	const zScore = Math.abs(tmpAxisZ.dot(up));
+	const zScore = Math.abs(tmpAxisZ.dot(WORLD_UP));
 	if (zScore > best) {
 		best = zScore;
 		normal = tmpAxisZ;
 	}
 
 	tmpNormal.copy(normal).normalize();
+	// Make sure normal points upward (avoids "underside" placement if model axis is flipped)
+	if (tmpNormal.dot(WORLD_UP) < 0) tmpNormal.multiplyScalar(-1);
 
 	const fileAxis = tmpAxisX.clone().sub(tmpNormal.clone().multiplyScalar(tmpAxisX.dot(tmpNormal)));
 	if (fileAxis.lengthSq() < 1e-10) throw new Error("Board file axis is degenerate after projection.");
@@ -1105,8 +1325,12 @@ function computeBoardGrid(board) {
 }
 
 function getBoxExtremeAlongNormal(box, normal, max) {
-	const x0 = box.min.x, y0 = box.min.y, z0 = box.min.z;
-	const x1 = box.max.x, y1 = box.max.y, z1 = box.max.z;
+	const x0 = box.min.x,
+		y0 = box.min.y,
+		z0 = box.min.z;
+	const x1 = box.max.x,
+		y1 = box.max.y,
+		z1 = box.max.z;
 
 	let extreme = max ? -Infinity : Infinity;
 
@@ -1117,8 +1341,14 @@ function getBoxExtremeAlongNormal(box, normal, max) {
 		else extreme = Math.min(extreme, d);
 	};
 
-	test(x0, y0, z0); test(x0, y0, z1); test(x0, y1, z0); test(x0, y1, z1);
-	test(x1, y0, z0); test(x1, y0, z1); test(x1, y1, z0); test(x1, y1, z1);
+	test(x0, y0, z0);
+	test(x0, y0, z1);
+	test(x0, y1, z0);
+	test(x0, y1, z1);
+	test(x1, y0, z0);
+	test(x1, y0, z1);
+	test(x1, y1, z0);
+	test(x1, y1, z1);
 
 	return extreme;
 }
@@ -1153,26 +1383,24 @@ function placeOnSquare(piece, boardInfo, file, rank, color) {
 	const fx = (file - 3.5) * GRID.spacing + GRID.offsetFile;
 	const rz = (rank - 3.5) * GRID.spacing + GRID.offsetRank;
 
-	tmpTarget.copy(center)
-		.addScaledVector(fileAxis, fx * squareSize)
-		.addScaledVector(rankAxis, rz * squareSize);
+	tmpTarget.copy(center).addScaledVector(fileAxis, fx * squareSize).addScaledVector(rankAxis, rz * squareSize);
 
 	piece.position.copy(tmpTarget);
 
 	const boardRoll = Math.atan2(fileAxis.z, fileAxis.x);
 	piece.rotation.z = boardRoll + (color === "black" ? -0.5 * Math.PI : 0.5 * Math.PI);
-		
+
 	piece.updateWorldMatrix(true, true);
 
 	const base = getBaseCenterXZWorld(piece);
-	piece.position.x += (tmpTarget.x - base.x);
-	piece.position.z += (tmpTarget.z - base.z);
+	piece.position.x += tmpTarget.x - base.x;
+	piece.position.z += tmpTarget.z - base.z;
 
 	piece.updateWorldMatrix(true, true);
 
 	tmpBox.setFromObject(piece);
 	const pieceBottom = getBoxExtremeAlongNormal(tmpBox, normal, false);
-	const lift = (boardTop - pieceBottom) + PIECE.liftEps;
+	const lift = boardTop - pieceBottom + PIECE.liftEps;
 
 	piece.position.addScaledVector(normal, lift);
 	piece.updateWorldMatrix(true, true);
@@ -1214,10 +1442,12 @@ function getBaseCenterXZWorld(obj) {
 }
 
 // ------------------------------------------------------------
-// Hover pick + shake + glow
+// Hover pick + glow + time-limited jiggle + hover move preview
 // ------------------------------------------------------------
 function onPointerMove(ev) {
 	if (!piecesGroup || loading.value || error.value) return;
+	if (!renderer || !camera) return;
+	if (isAnimating()) return;
 
 	const rect = renderer.domElement.getBoundingClientRect();
 	pointer.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
@@ -1231,7 +1461,7 @@ function onPointerMove(ev) {
 		return;
 	}
 
-	const pieceRoot = meshToPiece.get(hits[0].object);
+	const pieceRoot = getPieceRootFromHit(hits[0].object);
 	if (!pieceRoot) {
 		clearHover();
 		return;
@@ -1247,6 +1477,8 @@ function setHover(pieceRoot) {
 	hoveredPiece = pieceRoot;
 	hoveredBasePos = pieceRoot.position.clone();
 	hoveredBaseQuat = pieceRoot.quaternion.clone();
+	hoverStartTime = elapsed;
+
 	document.body.style.cursor = "pointer";
 
 	hoveredEmissiveRestore = [];
@@ -1261,6 +1493,9 @@ function setHover(pieceRoot) {
 			m.needsUpdate = true;
 		}
 	});
+
+	// Hover preview moves (only when nothing selected)
+	if (!selected) showHoverMoves(pieceRoot);
 }
 
 function clearHover() {
@@ -1279,27 +1514,46 @@ function clearHover() {
 	hoveredBaseQuat = null;
 	hoveredEmissiveRestore = [];
 	document.body.style.cursor = "";
+
+	clearHoverHighlights();
 }
 
-function applyShake(t) {
+function applyHoverShake(nowT) {
 	if (!hoveredPiece) return;
 
-	const f = SHAKE.freq;
+	const dt = nowT - hoverStartTime;
+
+	// 0..1s steady, then ease out to 0 by 2s
+	let env = 1.0;
+	if (dt >= HOVER_SHAKE.totalSec) env = 0.0;
+	else if (dt > HOVER_SHAKE.holdSec) {
+		const t01 = (dt - HOVER_SHAKE.holdSec) / Math.max(1e-6, HOVER_SHAKE.totalSec - HOVER_SHAKE.holdSec);
+		env = 1.0 - smoothstep(0, 1, t01);
+	}
+
+	// Stop fully after 2s (but keep glow / cursor)
+	if (env <= 1e-4) {
+		hoveredPiece.position.copy(hoveredBasePos);
+		hoveredPiece.quaternion.copy(hoveredBaseQuat);
+		return;
+	}
+
+	const f = HOVER_SHAKE.freq;
 
 	hoveredPiece.position.copy(hoveredBasePos);
 	hoveredPiece.quaternion.copy(hoveredBaseQuat);
 
 	tmpEuler.set(
-		SHAKE.rotAmp * Math.sin(t * f * 1.1),
-		SHAKE.rotAmp * 0.8 * Math.sin(t * f * 0.9),
-		SHAKE.rotAmp * 0.6 * Math.sin(t * f * 1.3)
+		env * HOVER_SHAKE.rotAmp * Math.sin(nowT * f * 1.1),
+		env * HOVER_SHAKE.rotAmp * 0.8 * Math.sin(nowT * f * 0.9),
+		env * HOVER_SHAKE.rotAmp * 0.6 * Math.sin(nowT * f * 1.3)
 	);
 
 	tmpQuat.setFromEuler(tmpEuler);
 	hoveredPiece.quaternion.multiply(tmpQuat);
 
-	hoveredPiece.position.x += SHAKE.posAmp * Math.sin(t * f * 1.7);
-	hoveredPiece.position.z += SHAKE.posAmp * Math.cos(t * f * 1.4);
+	hoveredPiece.position.x += env * HOVER_SHAKE.posAmp * Math.sin(nowT * f * 1.7);
+	hoveredPiece.position.z += env * HOVER_SHAKE.posAmp * Math.cos(nowT * f * 1.4);
 }
 
 // ------------------------------------------------------------
@@ -1316,7 +1570,9 @@ function startLoop() {
 		scroll01.value = THREE.MathUtils.damp(scroll01.value, scrollTarget01, CINEMATIC.smoothing, delta);
 		applyCinematic(scroll01.value);
 
-		applyShake(elapsed);
+		updateMoveAnimations(elapsed);
+		applyHoverShake(elapsed);
+
 		renderer.render(scene, camera);
 	};
 	tick();
@@ -1345,11 +1601,7 @@ function disposeAll() {
 	clearHover();
 	clearSelection();
 
-	if (highlightsGroup) {
-		scene?.remove(highlightsGroup);
-		disposeObject3D(highlightsGroup);
-		highlightsGroup = null;
-	}
+	disposeHighlightSystem();
 
 	if (piecesGroup) {
 		scene?.remove(piecesGroup);
@@ -1403,7 +1655,7 @@ function disposeObject3D(obj) {
 // Helpers
 // ------------------------------------------------------------
 function smoothstep(edge0, edge1, x) {
-	const t = THREE.MathUtils.clamp((x - edge0) / Math.max(1e-6, (edge1 - edge0)), 0, 1);
+	const t = THREE.MathUtils.clamp((x - edge0) / Math.max(1e-6, edge1 - edge0), 0, 1);
 	return t * t * (3 - 2 * t);
 }
 
@@ -1446,12 +1698,10 @@ function easeInOutCubic(x) {
 .hero-title {
 	font-weight: 900;
 	letter-spacing: 0.02em;
-	line-height: 1.0;
+	line-height: 1;
 	font-size: clamp(40px, 7vw, 78px);
 	color: rgba(245, 248, 255, 0.96);
-	text-shadow:
-		0 0 14px rgba(80, 140, 255, 0.35),
-		0 0 44px rgba(80, 140, 255, 0.18),
+	text-shadow: 0 0 14px rgba(80, 140, 255, 0.35), 0 0 44px rgba(80, 140, 255, 0.18),
 		0 12px 60px rgba(0, 0, 0, 0.55);
 }
 
@@ -1542,20 +1792,12 @@ function easeInOutCubic(x) {
 	position: absolute;
 	inset: -2px;
 	z-index: 1;
-	background:
-		radial-gradient(1200px 700px at 50% 35%,
-			rgba(255,255,255,0.08),
-			rgba(0,0,0,0.0) 55%),
-		radial-gradient(1200px 900px at 50% 50%,
-			rgba(0,0,0,0.0),
-			rgba(0,0,0,0.55) 75%),
-		linear-gradient(to bottom,
-			rgba(0,0,0,0.25),
-			rgba(0,0,0,0.35));
+	background: radial-gradient(1200px 700px at 50% 35%, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0) 55%),
+		radial-gradient(1200px 900px at 50% 50%, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.55) 75%),
+		linear-gradient(to bottom, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.35));
 }
 
 .mono {
-	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-		"Liberation Mono", "Courier New", monospace;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 </style>

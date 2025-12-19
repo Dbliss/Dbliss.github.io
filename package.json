@@ -10,6 +10,8 @@
     "lint": "echo \"(optional) add eslint\""
   },
   "dependencies": {
+    "chess.js": "^1.4.0",
+    "stockfish": "^17.1.0",
     "three": "^0.182.0",
     "vue": "^3.4.27",
     "vue-router": "^4.6.3"

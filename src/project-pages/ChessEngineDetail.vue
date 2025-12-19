@@ -1,721 +1,1561 @@
 <template>
-  <article>
-    <!-- Back link -->
-    <RouterLink
-      to="/projects"
-      class="btn"
-      style="margin-bottom:14px;display:inline-block"
-    >
-      ← Back to projects
-    </RouterLink>
+	<div class="page">
+		<section class="chess-stage">
+			<canvas ref="canvasRef" class="chess-canvas"></canvas>
 
-    <!-- Hero: intro + 3D viewer -->
-    <section class="card hero">
-      <div class="section-label">3D · WebGL · Interaction</div>
-      <h1 class="hero-title">{{ project?.title ?? 'Classic 3D Chessboard' }}</h1>
+			<!-- Hero title that fades/moves out as you scroll -->
+			<div
+				class="hero"
+				:style="{
+					opacity: heroOpacity,
+					transform: `translateY(${heroTranslateY}px)`,
+				}"
+			>
+				<div class="hero-title">Chess Engine C++</div>
+				<div class="hero-sub mono">Scroll to reveal the board</div>
+			</div>
 
-      <div class="tags hero-tags" v-if="project?.tags?.length">
-        <span class="tag" v-for="t in project.tags" :key="t">{{ t }}</span>
-      </div>
+			<!-- Move / feature info (updates after every move) -->
+			<div v-if="lastMove || featureBlurb" class="info-card">
+				<div v-if="lastMove" class="info-title">{{ lastMove }}</div>
+				<div v-if="featureBlurb" class="info-sub mono">{{ featureBlurb }}</div>
+			</div>
 
-      <div class="hero-meta mono">
-        <strong>Stack:</strong>
-        {{ project?.stack?.length ? project.stack.join(' · ') : 'Vue · Three.js · glTF/GLB' }}
-      </div>
+			<div v-if="loading || error" class="overlay">
+				<div v-if="loading" class="overlay-card">
+					<div class="title">Loading chess set…</div>
+					<div class="bar">
+						<div class="fill" :style="{ width: `${Math.round(progress * 100)}%` }"></div>
+					</div>
+					<div class="sub mono">{{ Math.round(progress * 100) }}%</div>
+				</div>
 
-      <div class="hero-grid">
-        <!-- Left: text -->
-        <div class="hero-copy">
-          <p class="hero-summary">
-            This page renders a free Sketchfab chess set exported as a <strong>GLB</strong> and prepares the scene graph for
-            interaction (selection, drag & drop, snap-to-square).
-          </p>
+				<div v-else class="overlay-card error">
+					<div class="title">Failed to load GLB</div>
+					<div class="sub mono">{{ error }}</div>
+				</div>
+			</div>
 
-          <p class="hero-summary">
-            The model is loaded from <span class="mono">src/assets/chessboard/classic_chessboard.glb</span>.
-            The viewer auto-centers and scales the asset, and supports click selection via raycasting.
-          </p>
+			<div class="vignette" />
+		</section>
 
-          <div class="hero-actions">
-            <button class="btn" type="button" @click="resetCamera" :disabled="!ready">
-              Reset camera
-            </button>
-            <button class="btn secondary" type="button" @click="toggleAutoRotate" :disabled="!ready">
-              {{ autoRotate ? 'Stop rotate' : 'Auto rotate' }}
-            </button>
-          </div>
-
-          <div class="info-block">
-            <div class="info-line">
-              <strong>Status:</strong>
-              <span>{{ statusText }}</span>
-            </div>
-            <div class="info-line">
-              <strong>Selected:</strong>
-              <span class="mono">{{ selectedLabel }}</span>
-            </div>
-            <div class="info-line">
-              <strong>Controls:</strong>
-              <span>Drag = orbit · Wheel = zoom · Right drag = pan · Click = select</span>
-            </div>
-          </div>
-
-          <div class="warn" v-if="warning">
-            {{ warning }}
-          </div>
-        </div>
-
-        <!-- Right: 3D viewer -->
-        <div class="hero-viewer">
-          <div class="viewer-frame" ref="containerRef">
-            <canvas ref="canvasRef" class="viewer-canvas" />
-
-            <!-- overlay -->
-            <div class="viewer-overlay" v-if="loading || error">
-              <div v-if="loading" class="overlay-card">
-                <div class="overlay-title">Loading model…</div>
-                <div class="overlay-bar">
-                  <div class="overlay-bar-fill" :style="{ width: `${Math.round(progress * 100)}%` }"></div>
-                </div>
-                <div class="overlay-sub mono">{{ Math.round(progress * 100) }}%</div>
-              </div>
-
-              <div v-else class="overlay-card error">
-                <div class="overlay-title">Failed to load GLB</div>
-                <div class="overlay-sub mono">{{ error }}</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="viewer-caption mono">
-            Asset: <span class="mono">classic_chessboard.glb</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Second row: implementation notes -->
-    <section class="row grid cols-2">
-      <section class="card">
-        <div class="section-label">Implementation notes</div>
-        <h2 class="section-title small">What this page gets right</h2>
-        <ul class="bullets">
-          <li>Auto-centers and scales the GLB so you don’t hand-tune camera positions per model.</li>
-          <li>Disposes materials/geometries on unmount to avoid GPU memory leaks.</li>
-          <li>Click selection uses raycasting and highlights a “selection root” for clean piece-level interaction.</li>
-        </ul>
-
-        <div class="callout">
-          If selection feels “random”, it’s because Sketchfab exports often have deep nested meshes.
-          You’ll want to tweak <span class="mono">getSelectionRoot()</span> to match your piece naming.
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="section-label">Interaction roadmap</div>
-        <h2 class="section-title small">Next steps (clean + robust)</h2>
-        <ol class="pipeline-list">
-          <li>Define square coordinates + invisible square colliders for reliable snapping.</li>
-          <li>Assign each piece an ID in <span class="mono">userData</span> (e.g., <span class="mono">w_pawn_1</span>).</li>
-          <li>On drag: move piece on a plane, then snap to nearest square.</li>
-          <li>Validate moves with a chess rules engine (e.g., chess.js) before committing.</li>
-        </ol>
-      </section>
-    </section>
-  </article>
+		<div class="scroll-spacer" aria-hidden="true"></div>
+	</div>
 </template>
 
 <script setup>
-import { RouterLink } from 'vue-router'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
-// Three.js
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
-// Vite: import as URL so loader can fetch it
-import chessboardUrl from '../assets/chessboard/classic_chessboard.glb?url'
+import chessModelUrl from "../assets/chessboard/chess_set.glb?url";
 
-defineProps({
-  project: {
-    type: Object,
-    required: false
-  }
-})
+import { createChessGame, fileRankToSquare, squareToFileRank } from "../chess/chessGame.js";
+import { StockfishClient, parseUciMove } from "../chess/stockfishClient.js";
 
-/**
- * UI state
- */
-const canvasRef = ref(null)
-const containerRef = ref(null)
+const canvasRef = ref(null);
 
-const loading = ref(true)
-const progress = ref(0)
-const error = ref('')
-const warning = ref('')
+const loading = ref(true);
+const progress = ref(0);
+const error = ref("");
 
-const ready = ref(false)
-const autoRotate = ref(false)
+let renderer = null;
+let scene = null;
+let camera = null;
+let controls = null;
 
-const selectedObject = ref(null)
-const selectedLabel = computed(() => selectedObject.value?.name || selectedObject.value?.uuid || '—')
+let pmrem = null;
+let envTex = null;
 
-const statusText = computed(() => {
-  if (error.value) return 'error'
-  if (loading.value) return 'loading'
-  if (ready.value) return 'ready'
-  return 'idle'
-})
+let root = null;
+let boardMesh = null;
 
-/**
- * Three.js internals
- */
-let renderer = null
-let scene = null
-let camera = null
-let controls = null
-let loader = null
+let piecesGroup = null;
+let meshToPiece = new WeakMap();
 
-let root = null // gltf.scene
-let raf = 0
+let highlightsGroup = null;
+let highlightGeo = null;
+let highlightQuat = new THREE.Quaternion();
+let highlightMatMove = null;
+let highlightMatCapture = null;
+let highlightMatSelect = null;
 
-const raycaster = new THREE.Raycaster()
-const pointer = new THREE.Vector2()
+let raf = 0;
+const clock = new THREE.Clock();
+let elapsed = 0;
 
-// Track highlighted materials so we can revert cleanly.
-const highlightState = new Map() // material.uuid -> { emissive: Color|null, color: Color|null }
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
 
-/**
- * Init / teardown
- */
+let hoveredPiece = null;
+let hoveredBasePos = null;
+let hoveredBaseQuat = null;
+let hoveredEmissiveRestore = [];
+
+const tmpEuler = new THREE.Euler();
+const tmpQuat = new THREE.Quaternion();
+const tmpBox = new THREE.Box3();
+const tmpSize = new THREE.Vector3();
+const tmpCenter = new THREE.Vector3();
+const tmpAxisX = new THREE.Vector3();
+const tmpAxisY = new THREE.Vector3();
+const tmpAxisZ = new THREE.Vector3();
+const tmpNormal = new THREE.Vector3();
+const tmpCorner = new THREE.Vector3();
+const tmpTarget = new THREE.Vector3();
+const tmpV = new THREE.Vector3();
+const tmpM = new THREE.Matrix4();
+
+const colorBase = new THREE.Color(0xffffff);
+const WORLD_UP = new THREE.Vector3(0, 1, 0);
+
+const BOARD_COLORS = {
+	dark: "#769656",
+	light: "#eeeed2",
+	border: "#3b342e",
+};
+
+const GRID = {
+	spacing: 0.92,
+	offsetFile: 0.0,
+	offsetRank: 0.0,
+};
+
+const PIECE = {
+	footprintRatio: 0.55,
+	liftEps: 0.001,
+};
+
+const WHITE_TINT = new THREE.Color(0xd2c7b6);
+const BLACK_TINT = new THREE.Color(0x151515);
+const HOVER_GLOW = 0x2f6bff;
+
+const SHAKE = {
+	rotAmp: 0.10,
+	posAmp: 0.02,
+	freq: 18.0,
+};
+
+const TEMPLATE_NAMES = {
+	pawn: "Pawn_White_0",
+	rook: "Rook_Black_0",
+	knight: "Knight_White_0",
+	bishop: "Bishop_Black_0",
+	queen: "Queen_White_0",
+	king: "King_Black_0",
+};
+
+// ------------------------------------------------------------
+// Cinematic scroll config
+// ------------------------------------------------------------
+const CINEMATIC = {
+	transitionVh: 160,
+	smoothing: 8.0,
+	enableOrbitAt: 0.98,
+
+	titleFadeStart: 0.05,
+	titleFadeEnd: 0.32,
+
+	// Final Position
+	playBack: 1,
+	playUp: 1.10,
+	playSide: -0.0,
+	playTargetUp: 0.10,
+
+	// Start positionnpm
+    introSideDist: 1.5,
+	introUp: 0.0,
+	introForward: 0.00,
+	introSide: 0,
+	introTargetUp: 0,
+
+	twistDeg: 0,
+};
+
+// Scroll state
+let scrollTarget01 = 0;
+const scroll01 = ref(0);
+
+// Cinematic poses
+let cinematicReady = false;
+let introCamPos = new THREE.Vector3();
+let introTarget = new THREE.Vector3();
+let playCamPos = new THREE.Vector3();
+let playTarget = new THREE.Vector3();
+
+// Basis for “white perspective”
+let basisCenter = new THREE.Vector3();
+let basisUp = new THREE.Vector3();
+let basisRight = new THREE.Vector3();
+let basisForward = new THREE.Vector3();
+let boardSpan = 1;
+
+// ------------------------------------------------------------
+// Chess state (logic)
+// ------------------------------------------------------------
+const game = createChessGame();
+let templatesGlobal = null;
+let boardInfoGlobal = null;
+
+const squareToPiece = new Map(); // square => Object3D root
+let selected = null; // { pieceRoot, fromSquare }
+let selectedMoves = []; // verbose moves from chess.js
+
+const lastMove = ref("");
+const featureBlurb = ref("");
+let blurbIndex = 0;
+
+let engine = null;
+const engineThinking = ref(false);
+
+const FEATURE_BLURBS = [
+	"Feature: Deterministic evaluation core + clean C++ API surface.",
+	"Feature: Movegen + legality (pins/checks) validated by test suite.",
+	"Feature: Search scaffolding: iterative deepening + TT-ready hooks.",
+	"Feature: Frontend is purely visual—engine talks via a thin interface layer.",
+	"Feature: Profiling-first mindset: counters, timing, and hotspot visibility.",
+];
+
+// ------------------------------------------------------------
+
 onMounted(() => {
-  initThree()
-  loadModel()
-  startLoop()
-  window.addEventListener('resize', onResize, { passive: true })
-})
+  initThree();
+  loadModel();
+  startLoop();
+
+  // Engine init (doesn't block rendering)
+  engine = new StockfishClient({
+    workerUrl: "/stockfish/stockfish-17.1-lite-single-03e3232.js",
+    skillLevel: 2,
+    movetimeMs: 120,
+  });
+
+  engine.init().catch((e) => {
+    console.error("Stockfish init failed:", e);
+  });
+
+  onScroll();
+  window.addEventListener("resize", onResize, { passive: true });
+  window.addEventListener("scroll", onScroll, { passive: true });
+});
+
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', onResize)
-  stopLoop()
-  disposeScene()
-})
+  window.removeEventListener("resize", onResize);
+  window.removeEventListener("scroll", onScroll);
+
+  try { engine?.terminate?.(); } catch {}
+  engine = null;
+
+  stopLoop();
+  disposeAll();
+});
+
+
+// Hero transforms
+const heroOpacity = computed(() => {
+	const p = scroll01.value;
+	const t = smoothstep(CINEMATIC.titleFadeStart, CINEMATIC.titleFadeEnd, p);
+	return 1 - t;
+});
+
+const heroTranslateY = computed(() => {
+	const p = scroll01.value;
+	const t = smoothstep(0.0, CINEMATIC.titleFadeEnd, p);
+	return -28 * t;
+});
+
+function onScroll() {
+	const lenPx = Math.max(1, window.innerHeight * (CINEMATIC.transitionVh / 100));
+	scrollTarget01 = THREE.MathUtils.clamp(window.scrollY / lenPx, 0, 1);
+}
 
 function initThree() {
-  const canvas = canvasRef.value
-  const container = containerRef.value
-  if (!canvas || !container) {
-    error.value = 'Missing canvas/container refs.'
-    return
-  }
+	const canvas = canvasRef.value;
+	if (!canvas) {
+		error.value = "Missing canvas.";
+		loading.value = false;
+		return;
+	}
 
-  // Renderer
-  renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: true,
-    alpha: true
-  })
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
-  renderer.setSize(container.clientWidth, container.clientHeight)
-  renderer.outputColorSpace = THREE.SRGBColorSpace
+	renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+	renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	renderer.setClearAlpha(0);
+	renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-  // Scene
-  scene = new THREE.Scene()
-  scene.background = new THREE.Color(0x0b1020)
+	scene = new THREE.Scene();
+	scene.background = null;
 
-  // Camera
-  camera = new THREE.PerspectiveCamera(
-    45,
-    container.clientWidth / container.clientHeight,
-    0.01,
-    500
-  )
-  camera.position.set(0, 3.8, 6.2)
+	camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 500);
+	camera.position.set(0, 3.2, 6.2);
 
-  // Controls
-  controls = new OrbitControls(camera, renderer.domElement)
-  controls.enableDamping = true
-  controls.dampingFactor = 0.06
-  controls.target.set(0, 1.0, 0)
+	controls = new OrbitControls(camera, renderer.domElement);
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.06;
+	controls.enablePan = true;
+	controls.target.set(0, 1.0, 0);
 
-  // Lights (simple but good defaults for PBR)
-  const hemi = new THREE.HemisphereLight(0xffffff, 0x223355, 0.7)
-  scene.add(hemi)
+	scene.add(new THREE.HemisphereLight(0xffffff, 0x1a2340, 0.75));
 
-  const dir = new THREE.DirectionalLight(0xffffff, 1.05)
-  dir.position.set(6, 10, 6)
-  dir.castShadow = false
-  scene.add(dir)
+	const key = new THREE.DirectionalLight(0xffffff, 1.15);
+	key.position.set(7, 10, 7);
+	scene.add(key);
 
-  // Pointer selection
-  renderer.domElement.addEventListener('pointerdown', onPointerDown, { passive: true })
+	const rim = new THREE.DirectionalLight(0xffffff, 0.35);
+	rim.position.set(-8, 6, -6);
+	scene.add(rim);
 
-  // Loader
-  loader = new GLTFLoader()
+	pmrem = new THREE.PMREMGenerator(renderer);
+	envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+	scene.environment = envTex;
+
+	renderer.domElement.addEventListener("pointermove", onPointerMove, { passive: true });
+	renderer.domElement.addEventListener("pointerleave", clearHover, { passive: true });
+	renderer.domElement.addEventListener("pointerdown", onPointerDown, { passive: true });
 }
 
 function loadModel() {
-  loading.value = true
-  error.value = ''
-  progress.value = 0
-  ready.value = false
-  warning.value = ''
+	loading.value = true;
+	error.value = "";
+	progress.value = 0;
+	cinematicReady = false;
 
-  loader.load(
-    chessboardUrl,
-    (gltf) => {
-      // Remove previous model if any
-      if (root) {
-        scene.remove(root)
-        disposeObject3D(root)
-      }
+	const loader = new GLTFLoader();
 
-      root = gltf.scene
-      root.traverse((o) => {
-        if (o.isMesh) {
-          // Sketchfab exports sometimes come with huge drawcalls; keep it stable:
-          o.frustumCulled = true
-          // If you later drag pieces, turn this off on those specific meshes:
-          // o.matrixAutoUpdate = true
-        }
-      })
+	loader.load(
+		chessModelUrl,
+		(gltf) => {
+			clearSelection();
 
-      scene.add(root)
+			if (highlightsGroup) {
+				scene.remove(highlightsGroup);
+				disposeObject3D(highlightsGroup);
+				highlightsGroup = null;
+			}
 
-      // Fit & center
-      fitCameraToObject(root)
+			if (piecesGroup) {
+				scene.remove(piecesGroup);
+				disposeObject3D(piecesGroup);
+				piecesGroup = null;
+			}
 
-      loading.value = false
-      ready.value = true
+			if (root) {
+				scene.remove(root);
+				disposeObject3D(root);
+				root = null;
+			}
 
-      // Mild warning if model is heavy (heuristic)
-      const meshCount = countMeshes(root)
-      if (meshCount > 200) {
-        warning.value = `Model is quite heavy (${meshCount} meshes). If interaction/drag feels laggy, consider reducing materials/meshes or using a 1k texture export.`
-      }
-    },
-    (evt) => {
-      if (!evt || !evt.total) return
-      progress.value = Math.min(1, evt.loaded / evt.total)
-    },
-    (e) => {
-      loading.value = false
-      error.value = e?.message || String(e)
-    }
-  )
+			root = gltf.scene;
+			root.traverse((o) => {
+				if (o.isMesh) o.frustumCulled = true;
+			});
+			scene.add(root);
+
+			boardMesh = findBoardMesh(root);
+			if (!boardMesh) {
+				loading.value = false;
+				error.value = "Board mesh not found. Rename the board node or adjust findBoardMesh().";
+				return;
+			}
+
+			let templates;
+			try {
+				templates = getTemplatesStrict(root);
+			} catch (e) {
+				loading.value = false;
+				error.value = e?.message || String(e);
+				return;
+			}
+			templatesGlobal = templates;
+
+			hideTemplates(templates);
+
+			const boardRoot = boardMesh.parent ?? boardMesh;
+			const boardInfo = computeBoardGrid(boardMesh);
+			boardInfoGlobal = boardInfo;
+
+			recolorBoard(boardRoot, boardInfo.squareSize);
+
+			buildFullSetFromTemplates(templates, boardMesh);
+			indexPiecesBySquare();
+
+			setupHighlightSystem(boardInfo);
+
+			setupCinematicFromBoard(boardInfo, boardMesh);
+
+			// Reset chess state to starting position (matches your spawned pieces)
+			game.reset();
+			lastMove.value = "";
+			featureBlurb.value = "";
+
+			loading.value = false;
+		},
+		(evt) => {
+			if (!evt?.total) return;
+			progress.value = Math.min(1, evt.loaded / evt.total);
+		},
+		(e) => {
+			loading.value = false;
+			error.value = e?.message || String(e);
+		}
+	);
 }
 
-function startLoop() {
-  const tick = () => {
-    raf = requestAnimationFrame(tick)
-    if (!renderer || !scene || !camera || !controls) return
+// ------------------------------------------------------------
+// Highlight system (legal move squares)
+// ------------------------------------------------------------
+function setupHighlightSystem(boardInfo) {
+	highlightsGroup = new THREE.Group();
+	highlightsGroup.name = "SquareHighlights";
+	scene.add(highlightsGroup);
 
-    controls.autoRotate = autoRotate.value
-    controls.autoRotateSpeed = 0.8
-    controls.update()
+	const s = boardInfo.squareSize * GRID.spacing;
+	highlightGeo = new THREE.PlaneGeometry(s, s);
 
-    renderer.render(scene, camera)
+	// Orient plane XY => board plane (x=fileAxis, y=rankAxis, z=normal)
+	tmpM.makeBasis(boardInfo.fileAxis, boardInfo.rankAxis, boardInfo.normal);
+	highlightQuat.setFromRotationMatrix(tmpM);
+
+	highlightMatMove = new THREE.MeshBasicMaterial({
+		color: 0x2f6bff,
+		transparent: true,
+		opacity: 0.22,
+		depthWrite: false,
+		polygonOffset: true,
+		polygonOffsetFactor: -1,
+		polygonOffsetUnits: -1,
+	});
+
+	highlightMatCapture = new THREE.MeshBasicMaterial({
+		color: 0xff3b3b,
+		transparent: true,
+		opacity: 0.26,
+		depthWrite: false,
+		polygonOffset: true,
+		polygonOffsetFactor: -1,
+		polygonOffsetUnits: -1,
+	});
+
+	highlightMatSelect = new THREE.MeshBasicMaterial({
+		color: 0xffd54a,
+		transparent: true,
+		opacity: 0.18,
+		depthWrite: false,
+		polygonOffset: true,
+		polygonOffsetFactor: -1,
+		polygonOffsetUnits: -1,
+	});
+}
+
+function clearHighlights() {
+	if (!highlightsGroup) return;
+
+	for (const child of [...highlightsGroup.children]) {
+		highlightsGroup.remove(child);
+		child.geometry?.dispose?.();
+		child.material?.dispose?.();
+	}
+}
+
+function addSquareHighlight(square, kind) {
+	if (!highlightsGroup || !boardInfoGlobal) return;
+
+	const { file, rank } = squareToFileRank(square);
+	const pos = getSquareCenterWorld(file, rank, boardInfoGlobal);
+	snapToBoardTopInPlace(pos, boardInfoGlobal, 0.002);
+
+	const mat =
+		kind === "select" ? highlightMatSelect :
+		kind === "capture" ? highlightMatCapture :
+		highlightMatMove;
+
+	const mesh = new THREE.Mesh(highlightGeo, mat.clone());
+	mesh.quaternion.copy(highlightQuat);
+	mesh.position.copy(pos);
+	mesh.userData.square = square;
+	mesh.renderOrder = 10;
+	highlightsGroup.add(mesh);
+}
+
+function showSelectionAndMoves(fromSquare, movesVerbose) {
+	clearHighlights();
+
+	addSquareHighlight(fromSquare, "select");
+
+	for (const m of movesVerbose) {
+		const isCap = m.flags?.includes("c") || m.flags?.includes("e"); // capture or en-passant
+		addSquareHighlight(m.to, isCap ? "capture" : "move");
+	}
+}
+
+// ------------------------------------------------------------
+// Click handling (select piece / move)
+// ------------------------------------------------------------
+function onPointerDown(ev) {
+	if (!renderer || !camera || loading.value || error.value) return;
+	if (engineThinking.value) return;
+	if (!piecesGroup || !boardMesh || !boardInfoGlobal) return;
+
+	const rect = renderer.domElement.getBoundingClientRect();
+	pointer.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+	pointer.y = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
+
+	raycaster.setFromCamera(pointer, camera);
+
+	// 1) Click on a highlighted square => attempt move immediately
+	if (highlightsGroup) {
+		const hlHits = raycaster.intersectObject(highlightsGroup, true);
+		if (hlHits.length) {
+			const sq = hlHits[0].object?.userData?.square;
+			if (sq) {
+				tryMoveTo(sq);
+				return;
+			}
+		}
+	}
+
+	// 2) Click on a piece => select (if it's that side to move)
+	const pieceHits = raycaster.intersectObject(piecesGroup, true);
+	if (pieceHits.length) {
+		const pieceRoot = meshToPiece.get(pieceHits[0].object);
+		if (pieceRoot) {
+			trySelectPiece(pieceRoot);
+			return;
+		}
+	}
+
+	// 3) Click on board => if selected, try move to that square; else clear selection
+	const boardHits = raycaster.intersectObject(boardMesh, true);
+	if (boardHits.length) {
+		const sq = squareFromWorldPoint(boardHits[0].point, boardInfoGlobal);
+		if (!sq) {
+			clearSelection();
+			return;
+		}
+
+		if (selected) {
+			tryMoveTo(sq);
+			return;
+		}
+
+		clearSelection();
+		return;
+	}
+
+	clearSelection();
+}
+
+function trySelectPiece(pieceRoot) {
+	indexPiecesBySquare();
+
+	const sq = fileRankToSquare(pieceRoot.userData.file, pieceRoot.userData.rank);
+	const turnColor = game.turn() === "w" ? "white" : "black";
+
+	// Enforce turn
+	if (pieceRoot.userData.color !== turnColor) {
+		clearSelection();
+		return;
+	}
+
+	// Toggle off if re-clicked
+	if (selected?.fromSquare === sq) {
+		clearSelection();
+		return;
+	}
+
+	const moves = game.legalMovesFrom(sq);
+	selected = { pieceRoot, fromSquare: sq };
+	selectedMoves = moves;
+
+	showSelectionAndMoves(sq, moves);
+}
+
+function tryMoveTo(toSquare) {
+	if (!selected) return;
+
+	const fromSquare = selected.fromSquare;
+
+	// Only allow squares that are in the current move list
+	const ok = selectedMoves.some((m) => m.to === toSquare);
+	if (!ok) {
+		// Clicking elsewhere just changes selection state more predictably
+		clearSelection();
+		return;
+	}
+
+	// Always promote to queen for now (you can later ask user)
+	const result = game.tryMove(fromSquare, toSquare, "q");
+	if (!result) {
+		clearSelection();
+		return;
+	}
+
+	// Apply 3D updates based on move flags :contentReference[oaicite:3]{index=3}
+	applyMoveToScene(result, selected.pieceRoot, fromSquare, toSquare);
+
+	// Update UI blurb
+	lastMove.value = `Move: ${result.san}`;
+	featureBlurb.value = FEATURE_BLURBS[blurbIndex % FEATURE_BLURBS.length];
+	blurbIndex++;
+
+	clearSelection();
+	void maybePlayBlackMove();
+}
+
+async function maybePlayBlackMove() {
+  if (!engine) return;
+  if (game.isGameOver()) return;
+  if (game.turn() !== "b") return;
+
+  engineThinking.value = true;
+  clearSelection();
+
+  try {
+    // Get engine move
+    const uci = await engine.bestMoveFromFen(game.fen(), { movetimeMs: 120 });
+    if (!uci || uci === "(none)") return;
+
+    const mv = parseUciMove(uci);
+    if (!mv) return;
+
+    // Find the moved piece in the scene
+    indexPiecesBySquare();
+    const pieceRoot = squareToPiece.get(mv.from);
+    if (!pieceRoot) return;
+
+    // Apply to chess.js
+    const result = game.tryMove(mv.from, mv.to, mv.promotion || "q");
+    if (!result) return;
+
+    // Apply to 3D scene
+    applyMoveToScene(result, pieceRoot, mv.from, mv.to);
+
+    // Update UI blurb
+    lastMove.value = `Move: ${result.san}`;
+    featureBlurb.value = FEATURE_BLURBS[blurbIndex % FEATURE_BLURBS.length];
+    blurbIndex++;
+  } catch (e) {
+    console.error("Engine move failed:", e);
+  } finally {
+    engineThinking.value = false;
   }
-  tick()
+}
+
+
+function clearSelection() {
+	selected = null;
+	selectedMoves = [];
+	clearHighlights();
+}
+
+// ------------------------------------------------------------
+// Apply move to scene (captures, castling, en-passant, promotion)
+// ------------------------------------------------------------
+function applyMoveToScene(moveResult, movedPieceRoot, fromSquare, toSquare) {
+	// Captures
+	// - normal capture: captured on 'to'
+	// - en-passant: captured pawn sits on (file(to), rank(from))
+	if (moveResult.flags?.includes("e")) {
+		const { file: tf } = squareToFileRank(toSquare);
+		const { rank: fr } = squareToFileRank(fromSquare);
+		const capSq = fileRankToSquare(tf, fr);
+		removePieceAtSquare(capSq);
+	} else if (moveResult.flags?.includes("c")) {
+		removePieceAtSquare(toSquare);
+	}
+
+	// Move the selected piece
+	movePieceRootToSquare(movedPieceRoot, toSquare);
+
+	// Castling: move rook too :contentReference[oaicite:4]{index=4}
+	if (moveResult.flags?.includes("k") || moveResult.flags?.includes("q")) {
+		const side = moveResult.flags.includes("k") ? "k" : "q";
+		const color = moveResult.color === "w" ? "w" : "b";
+
+		const rookMoves = {
+			w: {
+				k: { from: "h1", to: "f1" },
+				q: { from: "a1", to: "d1" },
+			},
+			b: {
+				k: { from: "h8", to: "f8" },
+				q: { from: "a8", to: "d8" },
+			},
+		};
+
+		const rm = rookMoves[color][side];
+		const rook = squareToPiece.get(rm.from);
+		if (rook) movePieceRootToSquare(rook, rm.to);
+	}
+
+	// Promotion: replace pawn mesh with promoted piece mesh :contentReference[oaicite:5]{index=5}
+	if (moveResult.flags?.includes("p")) {
+		const promo = (moveResult.promotion || "q").toLowerCase();
+		const type =
+			promo === "q" ? "queen" :
+			promo === "r" ? "rook" :
+			promo === "b" ? "bishop" :
+			promo === "n" ? "knight" :
+			"queen";
+
+		replacePieceWithType(movedPieceRoot, type, toSquare);
+	}
+
+	indexPiecesBySquare();
+}
+
+function movePieceRootToSquare(pieceRoot, square) {
+	if (!boardInfoGlobal) return;
+
+	const { file, rank } = squareToFileRank(square);
+	pieceRoot.userData.file = file;
+	pieceRoot.userData.rank = rank;
+
+	placeOnSquare(pieceRoot, boardInfoGlobal, file, rank, pieceRoot.userData.color);
+}
+
+function removePieceAtSquare(square) {
+	const victim = squareToPiece.get(square);
+	if (!victim || !piecesGroup) return;
+
+	piecesGroup.remove(victim);
+	disposeObject3D(victim);
+}
+
+function replacePieceWithType(oldPiece, newType, square) {
+	if (!piecesGroup || !templatesGlobal) return;
+
+	const color = oldPiece.userData.color;
+	const { file, rank } = squareToFileRank(square);
+
+	// Remove old
+	piecesGroup.remove(oldPiece);
+	disposeObject3D(oldPiece);
+
+	// Spawn new
+	const newPiece = clonePieceWithTint(templatesGlobal[newType], color);
+	newPiece.userData.type = newType;
+	newPiece.userData.color = color;
+	newPiece.userData.file = file;
+	newPiece.userData.rank = rank;
+	newPiece.name = `${color}_${newType}_${file}_${rank}`;
+
+	normalizePieceUprightAndScale(newPiece, boardInfoGlobal.squareSize, color);
+	placeOnSquare(newPiece, boardInfoGlobal, file, rank, color);
+
+	newPiece.traverse((o) => {
+		if (o.isMesh) meshToPiece.set(o, newPiece);
+	});
+
+	piecesGroup.add(newPiece);
+}
+
+// ------------------------------------------------------------
+// Square math (world <-> file/rank)
+// ------------------------------------------------------------
+function getSquareCenterWorld(file, rank, boardInfo) {
+	const { center, squareSize, fileAxis, rankAxis } = boardInfo;
+
+	const fx = (file - 3.5) * GRID.spacing + GRID.offsetFile;
+	const rz = (rank - 3.5) * GRID.spacing + GRID.offsetRank;
+
+	return tmpTarget.copy(center)
+		.addScaledVector(fileAxis, fx * squareSize)
+		.addScaledVector(rankAxis, rz * squareSize)
+		.clone();
+}
+
+function snapToBoardTopInPlace(pos, boardInfo, lift = 0.0) {
+	// shift point along normal until its dot(normal) == boardTop, then lift a bit
+	const d = boardInfo.boardTop - pos.dot(boardInfo.normal);
+	pos.addScaledVector(boardInfo.normal, d + lift);
+	return pos;
+}
+
+function squareFromWorldPoint(point, boardInfo) {
+	// Project onto file/rank axes (inverse of placement math)
+	const v = tmpV.copy(point).sub(boardInfo.center);
+
+	const denom = Math.max(1e-6, boardInfo.squareSize * GRID.spacing);
+	const u = v.dot(boardInfo.fileAxis) / denom + 3.5;
+	const w = v.dot(boardInfo.rankAxis) / denom + 3.5;
+
+	const file = Math.round(u);
+	const rank = Math.round(w);
+
+	if (file < 0 || file > 7 || rank < 0 || rank > 7) return null;
+
+	return fileRankToSquare(file, rank);
+}
+
+function indexPiecesBySquare() {
+	squareToPiece.clear();
+	if (!piecesGroup) return;
+
+	for (const piece of piecesGroup.children) {
+		const sq = fileRankToSquare(piece.userData.file, piece.userData.rank);
+		piece.userData.square = sq;
+		squareToPiece.set(sq, piece);
+	}
+}
+
+// ------------------------------------------------------------
+// Cinematic camera path (scroll driven)
+// ------------------------------------------------------------
+function setupCinematicFromBoard(boardInfo, board) {
+	tmpBox.setFromObject(board);
+	tmpBox.getSize(tmpSize);
+	tmpBox.getCenter(tmpCenter);
+
+	boardSpan = Math.max(tmpSize.x, tmpSize.z);
+
+	basisCenter.copy(boardInfo.center);
+	basisRight.copy(boardInfo.fileAxis).normalize();
+	basisForward.copy(boardInfo.rankAxis).normalize();
+	basisUp.copy(boardInfo.normal).normalize();
+	if (basisUp.dot(WORLD_UP) < 0) basisUp.multiplyScalar(-1);
+
+	// INTRO (side spectator)
+	introTarget.copy(basisCenter).addScaledVector(basisUp, boardSpan * CINEMATIC.introTargetUp);
+	introCamPos.copy(basisCenter)
+		.addScaledVector(basisUp, boardSpan * CINEMATIC.introUp)
+		.addScaledVector(basisRight, boardSpan * CINEMATIC.introSideDist)
+		.addScaledVector(basisForward, boardSpan * CINEMATIC.introForward);
+
+	// PLAY (White perspective)
+	playTarget.copy(basisCenter).addScaledVector(basisUp, boardSpan * CINEMATIC.playTargetUp);
+	playCamPos.copy(basisCenter)
+		.addScaledVector(basisUp, boardSpan * CINEMATIC.playUp)
+		.addScaledVector(basisForward, -boardSpan * CINEMATIC.playBack)
+		.addScaledVector(basisRight, boardSpan * CINEMATIC.playSide);
+
+	if (Math.abs(CINEMATIC.twistDeg) > 1e-6) {
+		const twist = THREE.MathUtils.degToRad(CINEMATIC.twistDeg);
+		tmpQuat.setFromAxisAngle(basisUp, twist);
+
+		const off = tmpV.copy(playCamPos).sub(basisCenter).applyQuaternion(tmpQuat);
+		playCamPos.copy(basisCenter).add(off);
+	}
+
+	camera.position.copy(introCamPos);
+	controls.target.copy(introTarget);
+
+	const introDist = camera.position.distanceTo(controls.target);
+	camera.near = Math.max(0.01, introDist / 100);
+	camera.far = Math.max(500, introDist * 6);
+
+	camera.updateProjectionMatrix();
+	controls.update();
+
+	cinematicReady = true;
+	applyCinematic(scrollTarget01, true);
+}
+
+function applyCinematic(p01, force = false) {
+	if (!cinematicReady || !camera || !controls) return;
+
+	const e = easeInOutCubic(p01);
+
+	camera.position.lerpVectors(introCamPos, playCamPos, e);
+	controls.target.lerpVectors(introTarget, playTarget, e);
+
+	controls.enabled = p01 >= CINEMATIC.enableOrbitAt;
+	controls.update();
+
+	if (force) camera.updateProjectionMatrix();
+}
+
+// ------------------------------------------------------------
+// Strict templates (no fallback)
+// ------------------------------------------------------------
+function getTemplatesStrict(rootObj) {
+	const out = {};
+	for (const [type, name] of Object.entries(TEMPLATE_NAMES)) {
+		const node = rootObj.getObjectByName(name);
+		if (!node) throw new Error(`Missing template node "${name}" for type "${type}".`);
+		out[type] = node;
+	}
+	return out;
+}
+
+function hideTemplates(templates) {
+	for (const t of Object.values(templates)) t.visible = false;
+}
+
+// ------------------------------------------------------------
+// Build full set
+// ------------------------------------------------------------
+function buildFullSetFromTemplates(templates, board) {
+	clearHover();
+
+	if (piecesGroup) {
+		scene.remove(piecesGroup);
+		disposeObject3D(piecesGroup);
+		piecesGroup = null;
+	}
+
+	piecesGroup = new THREE.Group();
+	piecesGroup.name = "GeneratedPieces";
+	scene.add(piecesGroup);
+
+	meshToPiece = new WeakMap();
+
+	const boardInfo = computeBoardGrid(board);
+
+	const addPiece = (type, color, file, rank) => {
+		const piece = clonePieceWithTint(templates[type], color);
+
+		piece.userData.type = type;
+		piece.userData.color = color;
+		piece.userData.file = file;
+		piece.userData.rank = rank;
+
+		piece.name = `${color}_${type}_${file}_${rank}`;
+
+		normalizePieceUprightAndScale(piece, boardInfo.squareSize, color);
+		placeOnSquare(piece, boardInfo, file, rank, color);
+
+		piece.traverse((o) => {
+			if (o.isMesh) meshToPiece.set(o, piece);
+		});
+
+		piecesGroup.add(piece);
+	};
+
+	// White
+	addPiece("rook", "white", 0, 0);
+	addPiece("knight", "white", 1, 0);
+	addPiece("bishop", "white", 2, 0);
+	addPiece("queen", "white", 3, 0);
+	addPiece("king", "white", 4, 0);
+	addPiece("bishop", "white", 5, 0);
+	addPiece("knight", "white", 6, 0);
+	addPiece("rook", "white", 7, 0);
+	for (let f = 0; f < 8; f++) addPiece("pawn", "white", f, 1);
+
+	// Black
+	addPiece("rook", "black", 0, 7);
+	addPiece("knight", "black", 1, 7);
+	addPiece("bishop", "black", 2, 7);
+	addPiece("queen", "black", 3, 7);
+	addPiece("king", "black", 4, 7);
+	addPiece("bishop", "black", 5, 7);
+	addPiece("knight", "black", 6, 7);
+	addPiece("rook", "black", 7, 7);
+	for (let f = 0; f < 8; f++) addPiece("pawn", "black", f, 6);
+
+	piecesGroup.updateMatrixWorld(true);
+}
+
+function clonePieceWithTint(template, color) {
+	const clone = template.clone(true);
+	clone.visible = true;
+	clone.traverse((o) => { o.visible = true; });
+
+	const target = (color === "white") ? WHITE_TINT : BLACK_TINT;
+
+	clone.traverse((o) => {
+		if (!o.isMesh || !o.material) return;
+
+		const apply = (m) => {
+			const nm = m.clone();
+			if (nm.color) nm.color.copy(colorBase).lerp(target, 1.0);
+			if (nm.emissive) nm.emissive.setHex(0x000000);
+			nm.needsUpdate = true;
+			return nm;
+		};
+
+		o.material = Array.isArray(o.material) ? o.material.map(apply) : apply(o.material);
+	});
+
+	return clone;
+}
+
+function recolorBoard(boardRoot, squareSize) {
+	if (!boardRoot) return;
+
+	boardRoot.traverse((o) => {
+		if (!o.isMesh || !o.material) return;
+		if (/pawn|rook|knight|bishop|queen|king/i.test(o.name || "")) return;
+
+		tmpBox.setFromObject(o);
+		tmpBox.getSize(tmpSize);
+		const isBorderByThickness = tmpSize.y > squareSize * 0.18;
+
+		const objName = (o.name || "").toLowerCase();
+
+		const apply = (m) => {
+			const nm = m.clone();
+			if (!nm.color) return nm;
+
+			const matName = (nm.name || "").toLowerCase();
+
+			const isBorderByName =
+				/frame|border|rim|edge|base|wood/.test(matName) ||
+				/frame|border|rim|edge|base|wood/.test(objName);
+
+			const isLight =
+				/light|white|tan|beige/.test(matName) ||
+				/light|white|tan|beige/.test(objName);
+
+			const isDark =
+				/dark|black|green/.test(matName) ||
+				/dark|black|green/.test(objName);
+
+			let role = "dark";
+			if (isBorderByThickness || isBorderByName) role = "border";
+			else if (isLight && !isDark) role = "light";
+			else if (isDark && !isLight) role = "dark";
+			else {
+				const c = m.color || nm.color;
+				const l = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+				role = l > 0.55 ? "light" : "dark";
+			}
+
+			nm.color.set(BOARD_COLORS[role]);
+			nm.needsUpdate = true;
+			return nm;
+		};
+
+		o.material = Array.isArray(o.material) ? o.material.map(apply) : apply(o.material);
+	});
+}
+
+// ------------------------------------------------------------
+// Board/grid math
+// ------------------------------------------------------------
+function findBoardMesh(rootObj) {
+	let best = null;
+	let bestScore = -Infinity;
+
+	const box = new THREE.Box3();
+	const size = new THREE.Vector3();
+
+	rootObj.traverse((o) => {
+		if (!o.isMesh) return;
+
+		box.setFromObject(o);
+		box.getSize(size);
+
+		const flatness = size.y / Math.max(size.x, size.z, 1e-6);
+		const area = size.x * size.z;
+
+		let score = area * (flatness < 0.12 ? 1 : 0);
+		if (/board/i.test(o.name || "")) score *= 4;
+
+		if (score > bestScore) {
+			bestScore = score;
+			best = o;
+		}
+	});
+
+	return best;
+}
+
+function computeBoardGrid(board) {
+	tmpBox.setFromObject(board);
+	tmpBox.getSize(tmpSize);
+	tmpBox.getCenter(tmpCenter);
+
+	const squareSize = Math.min(tmpSize.x, tmpSize.z) / 8;
+
+	board.getWorldQuaternion(tmpQuat);
+	tmpAxisX.set(1, 0, 0).applyQuaternion(tmpQuat).normalize();
+	tmpAxisY.set(0, 1, 0).applyQuaternion(tmpQuat).normalize();
+	tmpAxisZ.set(0, 0, 1).applyQuaternion(tmpQuat).normalize();
+
+	const up = tmpV.set(0, 1, 0);
+	let normal = tmpAxisY;
+	let best = Math.abs(tmpAxisY.dot(up));
+
+	const xScore = Math.abs(tmpAxisX.dot(up));
+	if (xScore > best) {
+		best = xScore;
+		normal = tmpAxisX;
+	}
+
+	const zScore = Math.abs(tmpAxisZ.dot(up));
+	if (zScore > best) {
+		best = zScore;
+		normal = tmpAxisZ;
+	}
+
+	tmpNormal.copy(normal).normalize();
+
+	const fileAxis = tmpAxisX.clone().sub(tmpNormal.clone().multiplyScalar(tmpAxisX.dot(tmpNormal)));
+	if (fileAxis.lengthSq() < 1e-10) throw new Error("Board file axis is degenerate after projection.");
+	fileAxis.normalize();
+
+	const rankAxis = tmpNormal.clone().cross(fileAxis).normalize();
+
+	const boardTop = getBoxExtremeAlongNormal(tmpBox, tmpNormal, true);
+
+	return {
+		center: tmpCenter.clone(),
+		squareSize,
+		normal: tmpNormal.clone(),
+		fileAxis,
+		rankAxis,
+		boardTop,
+	};
+}
+
+function getBoxExtremeAlongNormal(box, normal, max) {
+	const x0 = box.min.x, y0 = box.min.y, z0 = box.min.z;
+	const x1 = box.max.x, y1 = box.max.y, z1 = box.max.z;
+
+	let extreme = max ? -Infinity : Infinity;
+
+	const test = (x, y, z) => {
+		tmpCorner.set(x, y, z);
+		const d = tmpCorner.dot(normal);
+		if (max) extreme = Math.max(extreme, d);
+		else extreme = Math.min(extreme, d);
+	};
+
+	test(x0, y0, z0); test(x0, y0, z1); test(x0, y1, z0); test(x0, y1, z1);
+	test(x1, y0, z0); test(x1, y0, z1); test(x1, y1, z0); test(x1, y1, z1);
+
+	return extreme;
+}
+
+// ------------------------------------------------------------
+// Piece placement
+// ------------------------------------------------------------
+function normalizePieceUprightAndScale(piece, squareSize, color) {
+	piece.position.set(0, 0, 0);
+	piece.rotation.set(0, 0, 0);
+	piece.updateWorldMatrix(true, true);
+
+	piece.rotation.x = -Math.PI / 2;
+	piece.rotation.z = Math.PI / 2;
+	piece.updateWorldMatrix(true, true);
+
+	tmpBox.setFromObject(piece);
+	tmpBox.getSize(tmpSize);
+
+	const footprint = Math.max(tmpSize.x, tmpSize.z);
+	if (footprint > 1e-6 && squareSize > 1e-6) {
+		const desired = squareSize * PIECE.footprintRatio;
+		const s = THREE.MathUtils.clamp(desired / footprint, 0.001, 1000);
+		piece.scale.multiplyScalar(s);
+		piece.updateWorldMatrix(true, true);
+	}
+}
+
+function placeOnSquare(piece, boardInfo, file, rank, color) {
+	const { center, squareSize, normal, fileAxis, rankAxis, boardTop } = boardInfo;
+
+	const fx = (file - 3.5) * GRID.spacing + GRID.offsetFile;
+	const rz = (rank - 3.5) * GRID.spacing + GRID.offsetRank;
+
+	tmpTarget.copy(center)
+		.addScaledVector(fileAxis, fx * squareSize)
+		.addScaledVector(rankAxis, rz * squareSize);
+
+	piece.position.copy(tmpTarget);
+
+	const boardRoll = Math.atan2(fileAxis.z, fileAxis.x);
+	piece.rotation.z = boardRoll + (color === "black" ? -0.5 * Math.PI : 0.5 * Math.PI);
+		
+	piece.updateWorldMatrix(true, true);
+
+	const base = getBaseCenterXZWorld(piece);
+	piece.position.x += (tmpTarget.x - base.x);
+	piece.position.z += (tmpTarget.z - base.z);
+
+	piece.updateWorldMatrix(true, true);
+
+	tmpBox.setFromObject(piece);
+	const pieceBottom = getBoxExtremeAlongNormal(tmpBox, normal, false);
+	const lift = (boardTop - pieceBottom) + PIECE.liftEps;
+
+	piece.position.addScaledVector(normal, lift);
+	piece.updateWorldMatrix(true, true);
+}
+
+function getBaseCenterXZWorld(obj) {
+	tmpBox.setFromObject(obj);
+	const minY = tmpBox.min.y;
+	const maxY = tmpBox.max.y;
+
+	const yThresh = minY + (maxY - minY) * 0.08;
+
+	let sx = 0;
+	let sz = 0;
+	let n = 0;
+
+	obj.traverse((o) => {
+		if (!o.isMesh || !o.geometry?.attributes?.position) return;
+
+		const pos = o.geometry.attributes.position;
+		o.updateWorldMatrix(true, false);
+		const mat = o.matrixWorld;
+
+		const step = Math.max(1, Math.floor(pos.count / 1500));
+		for (let i = 0; i < pos.count; i += step) {
+			tmpV.fromBufferAttribute(pos, i).applyMatrix4(mat);
+			if (tmpV.y <= yThresh) {
+				sx += tmpV.x;
+				sz += tmpV.z;
+				n++;
+			}
+		}
+	});
+
+	if (n > 0) return new THREE.Vector3(sx / n, 0, sz / n);
+
+	tmpBox.getCenter(tmpCenter);
+	return new THREE.Vector3(tmpCenter.x, 0, tmpCenter.z);
+}
+
+// ------------------------------------------------------------
+// Hover pick + shake + glow
+// ------------------------------------------------------------
+function onPointerMove(ev) {
+	if (!piecesGroup || loading.value || error.value) return;
+
+	const rect = renderer.domElement.getBoundingClientRect();
+	pointer.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+	pointer.y = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
+
+	raycaster.setFromCamera(pointer, camera);
+
+	const hits = raycaster.intersectObject(piecesGroup, true);
+	if (!hits.length) {
+		clearHover();
+		return;
+	}
+
+	const pieceRoot = meshToPiece.get(hits[0].object);
+	if (!pieceRoot) {
+		clearHover();
+		return;
+	}
+
+	if (hoveredPiece === pieceRoot) return;
+	setHover(pieceRoot);
+}
+
+function setHover(pieceRoot) {
+	clearHover();
+
+	hoveredPiece = pieceRoot;
+	hoveredBasePos = pieceRoot.position.clone();
+	hoveredBaseQuat = pieceRoot.quaternion.clone();
+	document.body.style.cursor = "pointer";
+
+	hoveredEmissiveRestore = [];
+	pieceRoot.traverse((o) => {
+		if (!o.isMesh || !o.material) return;
+
+		const mats = Array.isArray(o.material) ? o.material : [o.material];
+		for (const m of mats) {
+			if (!m?.emissive) continue;
+			hoveredEmissiveRestore.push({ mat: m, emissive: m.emissive.clone() });
+			m.emissive.setHex(HOVER_GLOW);
+			m.needsUpdate = true;
+		}
+	});
+}
+
+function clearHover() {
+	if (!hoveredPiece) return;
+
+	hoveredPiece.position.copy(hoveredBasePos);
+	hoveredPiece.quaternion.copy(hoveredBaseQuat);
+
+	for (const { mat, emissive } of hoveredEmissiveRestore) {
+		mat.emissive.copy(emissive);
+		mat.needsUpdate = true;
+	}
+
+	hoveredPiece = null;
+	hoveredBasePos = null;
+	hoveredBaseQuat = null;
+	hoveredEmissiveRestore = [];
+	document.body.style.cursor = "";
+}
+
+function applyShake(t) {
+	if (!hoveredPiece) return;
+
+	const f = SHAKE.freq;
+
+	hoveredPiece.position.copy(hoveredBasePos);
+	hoveredPiece.quaternion.copy(hoveredBaseQuat);
+
+	tmpEuler.set(
+		SHAKE.rotAmp * Math.sin(t * f * 1.1),
+		SHAKE.rotAmp * 0.8 * Math.sin(t * f * 0.9),
+		SHAKE.rotAmp * 0.6 * Math.sin(t * f * 1.3)
+	);
+
+	tmpQuat.setFromEuler(tmpEuler);
+	hoveredPiece.quaternion.multiply(tmpQuat);
+
+	hoveredPiece.position.x += SHAKE.posAmp * Math.sin(t * f * 1.7);
+	hoveredPiece.position.z += SHAKE.posAmp * Math.cos(t * f * 1.4);
+}
+
+// ------------------------------------------------------------
+// Loop + resize + dispose
+// ------------------------------------------------------------
+function startLoop() {
+	const tick = () => {
+		raf = requestAnimationFrame(tick);
+		if (!renderer || !scene || !camera || !controls) return;
+
+		const delta = clock.getDelta();
+		elapsed += delta;
+
+		scroll01.value = THREE.MathUtils.damp(scroll01.value, scrollTarget01, CINEMATIC.smoothing, delta);
+		applyCinematic(scroll01.value);
+
+		applyShake(elapsed);
+		renderer.render(scene, camera);
+	};
+	tick();
 }
 
 function stopLoop() {
-  if (raf) cancelAnimationFrame(raf)
-  raf = 0
+	if (raf) cancelAnimationFrame(raf);
+	raf = 0;
 }
 
-/**
- * Sizing
- */
 function onResize() {
-  if (!renderer || !camera || !containerRef.value) return
-  const w = containerRef.value.clientWidth
-  const h = containerRef.value.clientHeight
-  renderer.setSize(w, h)
-  camera.aspect = w / h
-  camera.updateProjectionMatrix()
+	if (!renderer || !camera) return;
+
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
 }
 
-/**
- * Fit model to view
- */
-function fitCameraToObject(obj) {
-  const box = new THREE.Box3().setFromObject(obj)
-  const size = box.getSize(new THREE.Vector3())
-  const center = box.getCenter(new THREE.Vector3())
+function disposeAll() {
+	if (renderer?.domElement) {
+		renderer.domElement.removeEventListener("pointermove", onPointerMove);
+		renderer.domElement.removeEventListener("pointerleave", clearHover);
+		renderer.domElement.removeEventListener("pointerdown", onPointerDown);
+	}
 
-  // guard: empty box (bad export)
-  if (!isFinite(size.x + size.y + size.z)) return
+	clearHover();
+	clearSelection();
 
-  // Frame the model
-  const maxDim = Math.max(size.x, size.y, size.z)
-  const fov = camera.fov * (Math.PI / 180)
-  let distance = maxDim / (2 * Math.tan(fov / 2))
-  distance *= 1.35 // margin
+	if (highlightsGroup) {
+		scene?.remove(highlightsGroup);
+		disposeObject3D(highlightsGroup);
+		highlightsGroup = null;
+	}
 
-  // Position camera and controls target
-  controls.target.copy(center)
-  camera.position.set(center.x, center.y + maxDim * 0.35, center.z + distance)
-  camera.near = Math.max(0.01, distance / 100)
-  camera.far = Math.max(500, distance * 4)
-  camera.updateProjectionMatrix()
-  controls.update()
-}
+	if (piecesGroup) {
+		scene?.remove(piecesGroup);
+		disposeObject3D(piecesGroup);
+		piecesGroup = null;
+	}
 
-/**
- * Selection (raycast)
- */
-function onPointerDown(ev) {
-  if (!ready.value || !renderer || !camera || !root) return
+	if (root) {
+		scene?.remove(root);
+		disposeObject3D(root);
+		root = null;
+	}
 
-  const rect = renderer.domElement.getBoundingClientRect()
-  const x = (ev.clientX - rect.left) / rect.width
-  const y = (ev.clientY - rect.top) / rect.height
-  pointer.x = x * 2 - 1
-  pointer.y = -(y * 2 - 1)
+	envTex?.dispose?.();
+	envTex = null;
 
-  raycaster.setFromCamera(pointer, camera)
-  const hits = raycaster.intersectObject(root, true)
-  if (!hits.length) {
-    clearHighlight()
-    selectedObject.value = null
-    return
-  }
+	pmrem?.dispose?.();
+	pmrem = null;
 
-  // Pick the closest mesh
-  const mesh = hits[0].object
-  const selectionRoot = getSelectionRoot(mesh)
+	controls?.dispose();
+	controls = null;
 
-  selectedObject.value = selectionRoot
-  clearHighlight()
-  applyHighlight(selectionRoot)
-}
+	renderer?.dispose();
+	renderer = null;
 
-/**
- * This is the *one* function you’ll likely tweak.
- * Sketchfab GLBs often nest meshes deeply. Ideally each piece is grouped under a node.
- */
-function getSelectionRoot(mesh) {
-  let cur = mesh
-
-  // Heuristic: climb until you hit a named group (not just "Object_12") or a direct child of root
-  while (cur && cur.parent && cur.parent !== root) {
-    const n = (cur.name || '').toLowerCase()
-    const parentName = (cur.parent?.name || '').toLowerCase()
-
-    // If your model has piece names like "white_king", "b_pawn", etc, this helps:
-    const looksLikePiece =
-      /(king|queen|rook|bishop|knight|pawn)/.test(n) ||
-      /(king|queen|rook|bishop|knight|pawn)/.test(parentName)
-
-    if (looksLikePiece) return cur.parent // usually parent node is the piece
-    cur = cur.parent
-  }
-
-  return cur || mesh
-}
-
-function applyHighlight(obj) {
-  obj.traverse((o) => {
-    if (!o.isMesh || !o.material) return
-
-    const mats = Array.isArray(o.material) ? o.material : [o.material]
-    for (const m of mats) {
-      if (!m || !m.isMaterial) continue
-
-      // Save original state once
-      if (!highlightState.has(m.uuid)) {
-        highlightState.set(m.uuid, {
-          emissive: m.emissive ? m.emissive.clone() : null,
-          color: m.color ? m.color.clone() : null
-        })
-      }
-
-      // Prefer emissive highlight (doesn't fight albedo textures too much)
-      if (m.emissive) {
-        m.emissive.setHex(0x2f6bff)
-      } else if (m.color) {
-        // fallback
-        m.color.offsetHSL(0.0, 0.0, 0.12)
-      }
-      m.needsUpdate = true
-    }
-  })
-}
-
-function clearHighlight() {
-  if (!root) return
-  root.traverse((o) => {
-    if (!o.isMesh || !o.material) return
-    const mats = Array.isArray(o.material) ? o.material : [o.material]
-    for (const m of mats) {
-      const saved = highlightState.get(m.uuid)
-      if (!saved) continue
-      if (m.emissive && saved.emissive) m.emissive.copy(saved.emissive)
-      if (m.color && saved.color) m.color.copy(saved.color)
-      m.needsUpdate = true
-    }
-  })
-  highlightState.clear()
-}
-
-/**
- * Buttons
- */
-function resetCamera() {
-  if (!root || !camera || !controls) return
-  clearHighlight()
-  selectedObject.value = null
-  fitCameraToObject(root)
-}
-
-function toggleAutoRotate() {
-  autoRotate.value = !autoRotate.value
-}
-
-/**
- * Disposal (important)
- */
-function disposeScene() {
-  if (renderer?.domElement) {
-    renderer.domElement.removeEventListener('pointerdown', onPointerDown)
-  }
-
-  if (root) {
-    scene?.remove(root)
-    disposeObject3D(root)
-    root = null
-  }
-
-  if (renderer) {
-    renderer.dispose()
-    renderer = null
-  }
-
-  scene = null
-  camera = null
-  controls?.dispose()
-  controls = null
-  loader = null
-  highlightState.clear()
+	scene = null;
+	camera = null;
 }
 
 function disposeObject3D(obj) {
-  obj.traverse((o) => {
-    if (o.isMesh) {
-      if (o.geometry) o.geometry.dispose()
+	obj.traverse((o) => {
+		if (!o.isMesh) return;
 
-      const mats = Array.isArray(o.material) ? o.material : [o.material]
-      for (const m of mats) {
-        if (!m) continue
-        // dispose textures if present
-        for (const k of Object.keys(m)) {
-          const v = m[k]
-          if (v && v.isTexture) v.dispose()
-        }
-        m.dispose?.()
-      }
-    }
-  })
+		o.geometry?.dispose?.();
+
+		const mats = Array.isArray(o.material) ? o.material : [o.material];
+		for (const m of mats) {
+			if (!m) continue;
+
+			for (const k of Object.keys(m)) {
+				const v = m[k];
+				if (v && v.isTexture) v.dispose();
+			}
+
+			m.dispose?.();
+		}
+	});
 }
 
-function countMeshes(obj) {
-  let n = 0
-  obj.traverse((o) => {
-    if (o.isMesh) n++
-  })
-  return n
+// ------------------------------------------------------------
+// Helpers
+// ------------------------------------------------------------
+function smoothstep(edge0, edge1, x) {
+	const t = THREE.MathUtils.clamp((x - edge0) / Math.max(1e-6, (edge1 - edge0)), 0, 1);
+	return t * t * (3 - 2 * t);
+}
+
+function easeInOutCubic(x) {
+	const t = THREE.MathUtils.clamp(x, 0, 1);
+	return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 </script>
 
 <style scoped>
+.page {
+	min-height: 100vh;
+}
+
+.chess-stage {
+	position: fixed;
+	inset: 0;
+	width: 100vw;
+	height: 100vh;
+	overflow: hidden;
+}
+
+.chess-canvas {
+	width: 100%;
+	height: 100%;
+	display: block;
+}
+
 .hero {
-  margin-bottom: 16px;
-}
-
-.hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 9fr) minmax(0, 7fr);
-  gap: 20px;
-  align-items: stretch;
-}
-
-.hero-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	pointer-events: none;
+	z-index: 2;
+	text-align: center;
+	padding: 0 18px;
 }
 
 .hero-title {
-  margin: 4px 0 8px;
+	font-weight: 900;
+	letter-spacing: 0.02em;
+	line-height: 1.0;
+	font-size: clamp(40px, 7vw, 78px);
+	color: rgba(245, 248, 255, 0.96);
+	text-shadow:
+		0 0 14px rgba(80, 140, 255, 0.35),
+		0 0 44px rgba(80, 140, 255, 0.18),
+		0 12px 60px rgba(0, 0, 0, 0.55);
 }
 
-.hero-tags {
-  margin: 10px 0 12px;
+.hero-sub {
+	margin-top: 10px;
+	opacity: 0.88;
+	color: rgba(231, 238, 252, 0.9);
 }
 
-.hero-meta {
-  font-size: 0.9rem;
-  color: var(--muted);
+.info-card {
+	position: absolute;
+	left: 18px;
+	bottom: 18px;
+	width: min(520px, calc(100vw - 36px));
+	border-radius: 14px;
+	padding: 12px 14px;
+	background: rgba(10, 16, 32, 0.62);
+	border: 1px solid rgba(231, 238, 252, 0.16);
+	backdrop-filter: blur(10px);
+	z-index: 2;
+	pointer-events: none;
 }
 
-.hero-summary {
-  color: var(--muted);
+.info-title {
+	font-weight: 800;
+	color: rgba(231, 238, 252, 0.95);
+	margin-bottom: 6px;
 }
 
-.hero-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 8px;
+.info-sub {
+	opacity: 0.88;
+	color: rgba(231, 238, 252, 0.9);
 }
 
-.hero-actions .secondary {
-  opacity: 0.9;
-}
-
-.info-block {
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid var(--border-subtle, rgba(255,255,255,0.12));
-  background: rgba(255,255,255,0.03);
-  color: var(--muted);
-}
-
-.info-line {
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-  margin: 6px 0;
-}
-
-.warn {
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 180, 0, 0.25);
-  background: rgba(255, 180, 0, 0.08);
-  color: rgba(255, 220, 160, 0.95);
-}
-
-.hero-viewer {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.viewer-frame {
-  position: relative;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid var(--border-subtle, #333);
-  background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent);
-  height: 420px;
-  width: 100%;
-}
-
-.viewer-canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.viewer-overlay {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: rgba(10, 16, 32, 0.55);
-  backdrop-filter: blur(6px);
+.overlay {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	pointer-events: none;
+	z-index: 3;
 }
 
 .overlay-card {
-  width: min(320px, 88%);
-  border-radius: 12px;
-  border: 1px solid rgba(231, 238, 252, 0.18);
-  background: rgba(10, 16, 32, 0.85);
-  padding: 12px;
+	width: min(340px, 88vw);
+	border-radius: 14px;
+	padding: 14px;
+	background: rgba(10, 16, 32, 0.72);
+	border: 1px solid rgba(231, 238, 252, 0.18);
+	backdrop-filter: blur(10px);
 }
 
 .overlay-card.error {
-  border-color: rgba(255, 80, 80, 0.25);
+	border-color: rgba(255, 80, 80, 0.26);
 }
 
-.overlay-title {
-  font-weight: 700;
-  margin-bottom: 8px;
+.title {
+	font-weight: 700;
+	margin-bottom: 10px;
+	color: rgba(231, 238, 252, 0.95);
 }
 
-.overlay-sub {
-  opacity: 0.9;
-  font-size: 0.9rem;
+.sub {
+	opacity: 0.85;
+	color: rgba(231, 238, 252, 0.9);
 }
 
-.overlay-bar {
-  height: 10px;
-  border-radius: 999px;
-  overflow: hidden;
-  border: 1px solid rgba(231, 238, 252, 0.15);
-  background: rgba(255,255,255,0.06);
-  margin: 8px 0 6px;
+.bar {
+	height: 10px;
+	border-radius: 999px;
+	overflow: hidden;
+	border: 1px solid rgba(231, 238, 252, 0.14);
+	background: rgba(255, 255, 255, 0.06);
+	margin-bottom: 8px;
 }
 
-.overlay-bar-fill {
-  height: 100%;
-  background: rgba(60, 120, 255, 0.85);
+.fill {
+	height: 100%;
+	background: rgba(60, 120, 255, 0.9);
 }
 
-.viewer-caption {
-  opacity: 0.85;
-  color: var(--muted);
-  font-size: 0.85rem;
+.scroll-spacer {
+	height: 220vh;
 }
 
-.row {
-  margin-top: 18px;
-}
-
-.section-title.small {
-  font-size: 1.05rem;
-  margin: 6px 0 10px;
-}
-
-.bullets {
-  padding-left: 20px;
-  color: var(--muted);
-  line-height: 1.5;
-  margin: 8px 0;
-}
-
-.callout {
-  margin-top: 12px;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid var(--border-subtle, rgba(255,255,255,0.12));
-  background: rgba(255,255,255,0.03);
-  color: var(--muted);
-}
-
-.pipeline-list {
-  padding-left: 20px;
-  color: var(--muted);
-  line-height: 1.5;
-  margin: 8px 0;
+.vignette {
+	pointer-events: none;
+	position: absolute;
+	inset: -2px;
+	z-index: 1;
+	background:
+		radial-gradient(1200px 700px at 50% 35%,
+			rgba(255,255,255,0.08),
+			rgba(0,0,0,0.0) 55%),
+		radial-gradient(1200px 900px at 50% 50%,
+			rgba(0,0,0,0.0),
+			rgba(0,0,0,0.55) 75%),
+		linear-gradient(to bottom,
+			rgba(0,0,0,0.25),
+			rgba(0,0,0,0.35));
 }
 
 .mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-}
-
-@media (max-width: 900px) {
-  .hero-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .viewer-frame {
-    height: 360px;
-  }
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+		"Liberation Mono", "Courier New", monospace;
 }
 </style>

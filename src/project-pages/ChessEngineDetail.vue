@@ -1,9 +1,8 @@
 <template>
-	<div class="page">
+	<div class="page" :class="pageTheme">
 		<section class="chess-stage">
 			<canvas ref="canvasRef" class="chess-canvas"></canvas>
 
-			<!-- Hero title that fades/moves out as you scroll -->
 			<div
 				class="hero"
 				:style="{
@@ -11,40 +10,25 @@
 					transform: `translateY(${heroTranslateY}px)`,
 				}"
 			>
-				<div class="hero-title">Chess Engine C++</div>
-				<div class="hero-sub mono">Scroll to reveal the board</div>
+				<div class="hero-title">{{ heroTitle }}</div>
+				<div class="hero-sub mono">Scroll down to learn more</div>
 			</div>
 
-			<!-- Move / feature info (updates after every move) -->
-			<div v-if="lastMove || featureBlurb" class="info-card">
-				<div v-if="lastMove" class="info-title">{{ lastMove }}</div>
-				<div v-if="featureBlurb" class="info-sub mono">{{ featureBlurb }}</div>
+			<!-- Idle prompt ... -->
+			<div class="idle-prompt" :class="{ 'is-visible': makeMoveVisible }" :aria-hidden="!makeMoveVisible">
+				<div class="hero-sub mono idle-prompt-text">Make a move</div>
 			</div>
 
-			<div v-if="loading || error" class="overlay">
-				<div v-if="loading" class="overlay-card">
-					<div class="title">Loading chess set…</div>
-					<div class="bar">
-						<div class="fill" :style="{ width: `${Math.round(progress * 100)}%` }"></div>
-					</div>
-					<div class="sub mono">{{ Math.round(progress * 100) }}%</div>
-				</div>
-
-				<div v-else class="overlay-card error">
-					<div class="title">Failed to load GLB</div>
-					<div class="sub mono">{{ error }}</div>
-				</div>
-			</div>
-
+			<!-- Loading overlay... -->
 			<div class="vignette" />
 		</section>
 
-		<div class="scroll-spacer" aria-hidden="true"></div>
+		<div class="scroll-spacer" :style="{ height: scrollSpacerHeight }" aria-hidden="true"></div>
 	</div>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -60,7 +44,6 @@ const canvasRef = ref(null);
 
 const loading = ref(true);
 const progress = ref(0);
-const error = ref("");
 
 let renderer = null;
 let scene = null;
@@ -76,9 +59,14 @@ let boardMesh = null;
 let piecesGroup = null;
 let meshToPiece = new WeakMap();
 
+let canvasListenersAttached = false;
+
 // Highlights (selection vs hover preview)
 let selectionHighlightsGroup = null;
 let hoverHighlightsGroup = null;
+
+// Idle hint highlight (separate so it doesn't fight selection/hover)
+let idleHintHighlightsGroup = null;
 
 let dotGeo = null;
 let captureRingGeo = null;
@@ -91,6 +79,8 @@ let matSelectFrom = null;
 
 let matMoveHover = null;
 let matCaptureHover = null;
+
+let matIdleHint = null;
 
 let raf = 0;
 const clock = new THREE.Clock();
@@ -154,11 +144,34 @@ const HOVER_SHAKE = {
 	totalSec: 2.0,
 };
 
-// Move animation
+// Move animation (slightly slower by request)
 const MOVE_ANIM = {
-	durationSec: 0.28,
+	durationSec: 0.38, // was 0.28
 	jumpHeightRatio: 0.32, // relative to square size
+
+	// Drag & drop settle: a touch snappier, and no extra "jump" (you're already lifted)
+	dragDropDurationSec: 0.22,
+	dragDropJumpHeightRatio: 0.0,
+
+	// When cancelling an invalid drag (return to origin)
+	dragCancelDurationSec: 0.18,
 };
+
+// Drag & drop config
+const DRAG = {
+	thresholdPx: 7,
+	liftRatio: 0.20, // relative to square size
+};
+
+let dragCandidate = null; // { pieceRoot, fromSquare, startX, startY }
+let draggingPiece = null;
+let dragFromSquare = null;
+
+let dragPlane = null;
+let dragOffsetPlanar = new THREE.Vector3();
+let dragLift = 0;
+let dragLastPlanePoint = new THREE.Vector3();
+let dragPrevControlsEnabled = false;
 
 // Active piece move animations
 let moveAnims = []; // { piece, startPos, endPos, startQuat, endQuat, startT, dur, jumpH, onComplete? }
@@ -176,39 +189,54 @@ const TEMPLATE_NAMES = {
 // Cinematic scroll config
 // ------------------------------------------------------------
 const CINEMATIC = {
-	transitionVh: 160,
+	// vh per stage
+	transitionVh: 210,
+	stages: 2,
+
 	smoothing: 8.0,
-	enableOrbitAt: 0.98,
 
 	titleFadeStart: 0.05,
 	titleFadeEnd: 0.32,
 
-	// Final Position
-	playBack: 1,
-	playUp: 1.10,
+	// Start position
+	introSideDist: 1.5,
+	introUp: 0.02,
+	introForward: 0,
+	introSide: 0,
+	introTargetUp: 0.08,
+
+	// Final Position (stage 1)
+	playBack: 1.05,
+	playUp: 1.60,
 	playSide: -0.0,
 	playTargetUp: 0.10,
 
-	// Start position
-	introSideDist: 1.5,
-	introUp: 0.0,
-	introForward: 0.0,
-	introSide: 0,
-	introTargetUp: 0,
+	// Learn-more Position (stage 2) — subtle lift + full roll upside down
+	learnBack: 0.88,
+	learnUp: 0.14,
+	learnSide: 0.0,
+	learnTargetUp: 0.14,
+	learnTargetForward: 0.85,
+	learnTargetSide: 0.0,
+	learnRollRad: Math.PI,
 
 	twistDeg: 0,
 };
 
-// Scroll state
-let scrollTarget01 = 0;
-const scroll01 = ref(0);
+// Scroll state (0..2)
+let scrollTargetT = 0;
+const scrollT = ref(0);
+
 
 // Cinematic poses
-let cinematicReady = false;
 let introCamPos = new THREE.Vector3();
 let introTarget = new THREE.Vector3();
 let playCamPos = new THREE.Vector3();
 let playTarget = new THREE.Vector3();
+
+// Stage 2 (learn more) pose
+let learnCamPos = new THREE.Vector3();
+let learnTarget = new THREE.Vector3();
 
 // Basis for “white perspective”
 let basisCenter = new THREE.Vector3();
@@ -216,6 +244,8 @@ let basisUp = new THREE.Vector3();
 let basisRight = new THREE.Vector3();
 let basisForward = new THREE.Vector3();
 let boardSpan = 1;
+
+let cinematicReady = false;
 
 // ------------------------------------------------------------
 // Chess state (logic)
@@ -228,22 +258,225 @@ const squareToPiece = new Map(); // square => Object3D root
 let selected = null; // { pieceRoot, fromSquare }
 let selectedMoves = []; // verbose moves from chess.js
 
-const lastMove = ref("");
-const featureBlurb = ref("");
-let blurbIndex = 0;
-
+// Engine
 let engine = null;
 const engineThinking = ref(false);
 
-const FEATURE_BLURBS = [
-	"Feature: Deterministic evaluation core + clean C++ API surface.",
-	"Feature: Movegen + legality (pins/checks) validated by test suite.",
-	"Feature: Search scaffolding: iterative deepening + TT-ready hooks.",
-	"Feature: Frontend is purely visual—engine talks via a thin interface layer.",
-	"Feature: Profiling-first mindset: counters, timing, and hotspot visibility.",
-];
+// End scene state: null | "win" | "lose" | "draw"
+const endScene = ref(null);
+
+const heroTitle = computed(() => {
+	if (endScene.value === "win") return "You won!";
+	if (endScene.value === "lose") return "You lost";
+	if (endScene.value === "draw") return "Draw";
+	return "Chess Engine C++";
+});
+
+const pageTheme = computed(() => {
+	if (endScene.value === "win") return "theme-win";
+	if (endScene.value === "lose") return "theme-lose";
+	if (endScene.value === "draw") return "theme-draw";
+	return "theme-default";
+});
+
+const scrollHintVisible = computed(() => {
+	if (loading.value) return false;
+	if (!cinematicReady) return false;
+	if (endScene.value) return false;
+	// only show once the board is basically revealed
+	if (scrollT.value < 0.98) return false;
+	// avoid overlapping the idle prompt
+	if (makeMoveVisible.value) return false;
+	return true;
+});
 
 // ------------------------------------------------------------
+// Idle “Make a move” prompt + d2 pawn shake
+// ------------------------------------------------------------
+const IDLE_HINT = {
+	delayMs: 400,
+	square: "e2",
+	settledP01: 0.995,
+};
+
+// subtle, “selected-ish” shake (continuous while hint is visible)
+const IDLE_SHAKE = {
+	rotAmp: 0.022,
+	posAmp: 0.004,
+	freq: 12.0,
+};
+
+const cinematicSettled = computed(() => scrollT.value >= IDLE_HINT.settledP01);
+
+const idleHintVisible = ref(false);
+let idleHintTimeout = 0;
+const didAnyMove = ref(false);
+
+let idleShakePiece = null;
+let idleShakeBasePos = null;
+let idleShakeBaseQuat = null;
+
+const makeMoveVisible = computed(() => idleHintVisible.value);
+
+function shouldShowIdleHint() {
+	if (didAnyMove.value) return false;
+	if (!cinematicSettled.value) return false;
+	if (loading.value) return false;
+	if (engineThinking.value) return false;
+	if (game.isGameOver()) return false;
+	if (game.turn() !== "w") return false;
+	if (isAnimating()) return false;
+	if (isDraggingOrPending()) return false;
+	return true;
+}
+
+
+function clearIdleHintHighlights() {
+	idleHintHighlightsGroup?.clear?.();
+}
+
+function stopIdleShake() {
+	if (!idleShakePiece) return;
+	idleShakePiece.position.copy(idleShakeBasePos);
+	idleShakePiece.quaternion.copy(idleShakeBaseQuat);
+	idleShakePiece.updateWorldMatrix(true, true);
+
+	idleShakePiece = null;
+	idleShakeBasePos = null;
+	idleShakeBaseQuat = null;
+}
+
+function cancelIdleHint() {
+	if (idleHintTimeout) {
+		clearTimeout(idleHintTimeout);
+		idleHintTimeout = 0;
+	}
+	idleHintVisible.value = false;
+	clearIdleHintHighlights();
+	stopIdleShake();
+}
+
+function scheduleIdleHint() {
+	cancelIdleHint();
+	idleHintTimeout = window.setTimeout(() => {
+		if (!shouldShowIdleHint()) return;
+
+		// Only show if the target pawn still exists at d2
+		indexPiecesBySquare();
+		const p = squareToPiece.get(IDLE_HINT.square);
+		if (!p) return;
+
+		idleHintVisible.value = true;
+		startIdleHintVisuals();
+	}, IDLE_HINT.delayMs);
+}
+
+function startIdleHintVisuals() {
+	invariant(boardInfoGlobal, "Idle hint requires boardInfoGlobal.");
+	invariant(basisRight && basisForward && basisUp, "Idle hint requires cinematic basis vectors.");
+
+	indexPiecesBySquare();
+	const pawn = squareToPiece.get(IDLE_HINT.square);
+	if (!pawn) return;
+
+	// Store base transform once (don’t drift)
+	idleShakePiece = pawn;
+	idleShakeBasePos = pawn.position.clone();
+	idleShakeBaseQuat = pawn.quaternion.clone();
+
+	// Add a subtle ring under d2 (separate group so it won’t clobber selection)
+	clearIdleHintHighlights();
+	addIdleHintRing(IDLE_HINT.square);
+}
+
+function addIdleHintRing(square) {
+	invariant(boardInfoGlobal, "addIdleHintRing requires boardInfoGlobal.");
+	invariant(idleHintHighlightsGroup, "addIdleHintRing requires idleHintHighlightsGroup.");
+
+	const { file, rank } = squareToFileRank(square);
+	const pos = getSquareCenterWorld(file, rank, boardInfoGlobal);
+	snapToBoardTopInPlace(pos, boardInfoGlobal, 0.002);
+
+	const mesh = new THREE.Mesh(selectRingGeo, matIdleHint);
+	mesh.quaternion.copy(highlightQuat);
+	mesh.position.copy(pos);
+	mesh.renderOrder = 10; // behind selection (12/13) but above board
+	idleHintHighlightsGroup.add(mesh);
+}
+
+watch(cinematicSettled, (settled) => {
+	if (!settled) {
+		cancelIdleHint();
+		return;
+	}
+	// If we settle while already in a “showable” state, start the timer.
+	if (shouldShowIdleHint()) scheduleIdleHint();
+});
+
+watch(loading, (isLoading) => {
+	if (isLoading) {
+		cancelIdleHint();
+		return;
+	}
+	// If loading finishes after we already settled, start the timer.
+	if (shouldShowIdleHint()) scheduleIdleHint();
+});
+
+// ------------------------------------------------------------
+
+function initThree() {
+	invariant(canvasRef.value, "Canvas ref is not set (canvasRef.value is null).");
+
+	// Renderer
+	renderer = new THREE.WebGLRenderer({
+		canvas: canvasRef.value,
+		antialias: true,
+		alpha: true,
+		powerPreference: "high-performance",
+	});
+	renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+	renderer.setSize(window.innerWidth, window.innerHeight);
+
+	// Color management (support both newer and older three builds)
+	if ("outputColorSpace" in renderer) renderer.outputColorSpace = THREE.SRGBColorSpace;
+	else renderer.outputEncoding = THREE.sRGBEncoding;
+
+	// Scene
+	scene = new THREE.Scene();
+
+	// Camera
+	camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.01, 2000);
+	camera.position.set(0, 1.2, 3.2);
+
+	// Controls (you disable these in your cinematic every frame, but we still need them created)
+	controls = new OrbitControls(camera, renderer.domElement);
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.08;
+	controls.enablePan = false;
+	controls.enableZoom = false;
+	controls.enabled = false;
+	controls.update();
+
+	// Environment lighting
+	pmrem = new THREE.PMREMGenerator(renderer);
+	envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+	scene.environment = envTex;
+
+	// Highlight groups must exist BEFORE loadModel() finishes (your loader callback assumes this)
+	selectionHighlightsGroup = new THREE.Group();
+	selectionHighlightsGroup.name = "SelectionHighlights";
+	scene.add(selectionHighlightsGroup);
+
+	hoverHighlightsGroup = new THREE.Group();
+	hoverHighlightsGroup.name = "HoverHighlights";
+	scene.add(hoverHighlightsGroup);
+
+	idleHintHighlightsGroup = new THREE.Group();
+	idleHintHighlightsGroup.name = "IdleHintHighlights";
+	scene.add(idleHintHighlightsGroup);
+
+	cinematicReady = false;
+}
 
 onMounted(() => {
 	initThree();
@@ -257,9 +490,8 @@ onMounted(() => {
 		movetimeMs: 120,
 	});
 
-	engine.init().catch((e) => {
-		console.error("Stockfish init failed:", e);
-	});
+	// No catch: let init errors surface as unhandled rejections with stack traces.
+	void engine.init();
 
 	onScroll();
 	window.addEventListener("resize", onResize, { passive: true });
@@ -270,81 +502,96 @@ onBeforeUnmount(() => {
 	window.removeEventListener("resize", onResize);
 	window.removeEventListener("scroll", onScroll);
 
-	try {
-		engine?.terminate?.();
-	} catch {}
+	cancelIdleHint();
+	detachDragListeners();
+
+	if (engine) engine.terminate();
 	engine = null;
 
 	stopLoop();
 	disposeAll();
 });
 
+// ------------------------------------------------------------
+// UI / scroll helpers
+// ------------------------------------------------------------
+const allowedStages = computed(() => (endScene.value ? CINEMATIC.stages : 1));
+
+watch(allowedStages, (maxT) => {
+	// If we just reduced the max (eg you started playing and locked),
+	// clamp BOTH the window scroll and the internal scroll state immediately.
+	const lenPx = stageLenPx();
+	const maxY = lenPx * maxT;
+
+	if (window.scrollY > maxY) {
+		window.scrollTo({ top: maxY, behavior: "auto" });
+	}
+
+	scrollTargetT = Math.min(scrollTargetT, maxT);
+	scrollT.value = Math.min(scrollT.value, maxT);
+
+	applyCinematic(scrollT.value, true);
+});
+
+const scrollSpacerHeight = computed(() => {
+	// You need +100vh so max scrollY can reach stageLenPx() * allowedStages
+	return `${CINEMATIC.transitionVh * allowedStages.value + 100}vh`;
+});
+
 // Hero transforms
 const heroOpacity = computed(() => {
-	const p = scroll01.value;
+	const p = scrollT.value;
 	const t = smoothstep(CINEMATIC.titleFadeStart, CINEMATIC.titleFadeEnd, p);
 	return 1 - t;
 });
 
 const heroTranslateY = computed(() => {
-	const p = scroll01.value;
+	const p = scrollT.value;
 	const t = smoothstep(0.0, CINEMATIC.titleFadeEnd, p);
 	return -28 * t;
 });
 
-function onScroll() {
-	const lenPx = Math.max(1, window.innerHeight * (CINEMATIC.transitionVh / 100));
-	scrollTarget01 = THREE.MathUtils.clamp(window.scrollY / lenPx, 0, 1);
+function cachePiecePlacementMetrics(piece, boardInfo) {
+	// Base center (XZ) in world
+	const base = getBaseCenterXZWorld(piece);
+
+	// Constant offset (world X/Z) from base-center to root position
+	piece.userData.rootMinusBaseXZ = {
+		x: piece.position.x - base.x,
+		z: piece.position.z - base.z,
+	};
+
+	// Constant offset (along board normal) from bottom-most point to root
+	tmpBox.setFromObject(piece);
+	const bottomDot = getBoxExtremeAlongNormal(tmpBox, boardInfo.normal, false);
+	piece.userData.rootMinusBottom = piece.position.dot(boardInfo.normal) - bottomDot;
 }
 
-function initThree() {
-	const canvas = canvasRef.value;
-	if (!canvas) {
-		error.value = "Missing canvas.";
-		loading.value = false;
-		return;
+function stageLenPx() {
+	return Math.max(1, window.innerHeight * (CINEMATIC.transitionVh / 100));
+}
+
+function onScroll() {
+	const lenPx = stageLenPx();
+	const maxT = allowedStages.value;
+	const maxY = lenPx * maxT;
+
+	// Hard-stop the document scroll so you physically cannot go past stage 1 while playing.
+	// (Clamping t alone still allows you to scroll into “empty space”, which feels broken.)
+	if (window.scrollY > maxY) {
+		window.scrollTo({ top: maxY, behavior: "auto" });
 	}
 
-	renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-	renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-	renderer.setSize(window.innerWidth, window.innerHeight);
-	renderer.setClearAlpha(0);
-	renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-	scene = new THREE.Scene();
-	scene.background = null;
-
-	camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 500);
-	camera.position.set(0, 3.2, 6.2);
-
-	controls = new OrbitControls(camera, renderer.domElement);
-	controls.enableDamping = true;
-	controls.dampingFactor = 0.06;
-	controls.enablePan = true;
-	controls.target.set(0, 1.0, 0);
-
-	scene.add(new THREE.HemisphereLight(0xffffff, 0x1a2340, 0.75));
-
-	const key = new THREE.DirectionalLight(0xffffff, 1.15);
-	key.position.set(7, 10, 7);
-	scene.add(key);
-
-	const rim = new THREE.DirectionalLight(0xffffff, 0.35);
-	rim.position.set(-8, 6, -6);
-	scene.add(rim);
-
-	pmrem = new THREE.PMREMGenerator(renderer);
-	envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-	scene.environment = envTex;
-
-	renderer.domElement.addEventListener("pointermove", onPointerMove, { passive: true });
-	renderer.domElement.addEventListener("pointerleave", clearHover, { passive: true });
-	renderer.domElement.addEventListener("pointerdown", onPointerDown, { passive: true });
+	const y = Math.min(window.scrollY, maxY);
+	scrollTargetT = THREE.MathUtils.clamp(y / lenPx, 0, maxT);
 }
 
+
 function loadModel() {
+	// Prevent pointer events while loading/reloading
+	detachCanvasListeners();
+
 	loading.value = true;
-	error.value = "";
 	progress.value = 0;
 	cinematicReady = false;
 
@@ -353,9 +600,10 @@ function loadModel() {
 	loader.load(
 		chessModelUrl,
 		(gltf) => {
+			// These now won't crash because groups exist from initThree()
 			clearSelection();
 			clearHover();
-
+			detachDragListeners();
 			disposeHighlightSystem();
 
 			if (piecesGroup) {
@@ -377,31 +625,18 @@ function loadModel() {
 			scene.add(root);
 
 			boardMesh = findBoardMesh(root);
-			if (!boardMesh) {
-				loading.value = false;
-				error.value = "Board mesh not found. Rename the board node or adjust findBoardMesh().";
-				return;
-			}
+			invariant(boardMesh, 'Board mesh not found. Rename the board node or adjust findBoardMesh().');
 
-			let templates;
-			try {
-				templates = getTemplatesStrict(root);
-			} catch (e) {
-				loading.value = false;
-				error.value = e?.message || String(e);
-				return;
-			}
+			const templates = getTemplatesStrict(root);
 			templatesGlobal = templates;
 
 			hideTemplates(templates);
 
 			const boardRoot = boardMesh.parent ?? boardMesh;
 
-			// NEW: build a list of meshes that represent the playable board surface for raycasting
 			boardPickMeshes = [];
 			boardRoot.traverse((o) => {
 				if (!o.isMesh) return;
-				// exclude piece meshes/templates
 				if (/pawn|rook|knight|bishop|queen|king/i.test(o.name || "")) return;
 				boardPickMeshes.push(o);
 			});
@@ -417,12 +652,16 @@ function loadModel() {
 			setupHighlightSystem(boardInfo);
 			setupCinematicFromBoard(boardInfo, boardMesh);
 
-			// Reset chess state to starting position
 			game.reset();
-			lastMove.value = "";
-			featureBlurb.value = "";
+			endScene.value = null;
+			didAnyMove.value = false;
 
 			loading.value = false;
+
+			// Now that piecesGroup/board exist, we can accept pointer input safely.
+			attachCanvasListeners();
+
+			if (shouldShowIdleHint()) scheduleIdleHint();
 		},
 		(evt) => {
 			if (!evt?.total) return;
@@ -430,9 +669,80 @@ function loadModel() {
 		},
 		(e) => {
 			loading.value = false;
-			error.value = e?.message || String(e);
+			throwAsync(e);
 		}
 	);
+}
+
+function attachCanvasListeners() {
+	invariant(renderer, "attachCanvasListeners requires renderer.");
+	const el = renderer.domElement;
+
+	if (canvasListenersAttached) return;
+
+	el.addEventListener("pointermove", onPointerMove, { passive: true });
+	el.addEventListener("pointerleave", clearHover, { passive: true });
+
+	// NOTE: passive:false so we *can* preventDefault during drag start on touchpads/mobile.
+	el.addEventListener("pointerdown", onPointerDown, { passive: false });
+
+	canvasListenersAttached = true;
+}
+
+function detachCanvasListeners() {
+	if (!renderer) return;
+
+	const el = renderer.domElement;
+	if (!canvasListenersAttached) return;
+
+	el.removeEventListener("pointermove", onPointerMove);
+	el.removeEventListener("pointerleave", clearHover);
+	el.removeEventListener("pointerdown", onPointerDown);
+
+	canvasListenersAttached = false;
+}
+
+function getWinnerColorIfCheckmate() {
+	// Assumes chess.js-like API; guarded so it won't crash if wrapper differs.
+	if (!game.isGameOver()) return null;
+
+	// If we can detect checkmate, winner is the side that is NOT to move.
+	if (typeof game.isCheckmate === "function" && game.isCheckmate()) {
+		return game.turn() === "w" ? "black" : "white";
+	}
+
+	// Otherwise treat as draw (stalemate/rep/etc.)
+	return "draw";
+}
+
+function triggerEndSceneIfGameOver() {
+	if (endScene.value) return; // only trigger once
+	if (!game.isGameOver()) return;
+
+	cancelIdleHint();
+	clearSelection();
+	clearHover();
+
+	const o = game.outcome();
+	if (o.status === "checkmate") endScene.value = (o.winner === "white") ? "win" : "lose";
+	else if (o.status === "draw") endScene.value = "draw";
+
+	// Undo the cinematic by scrolling back to top (camera follows via your scroll damp).
+	window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ------------------------------------------------------------
+// “Let errors flow” helpers
+// ------------------------------------------------------------
+function invariant(cond, msg) {
+	if (!cond) throw new Error(msg);
+}
+
+// Surface async errors with a proper uncaught stack (GLTFLoader callbacks, etc.)
+function throwAsync(err) {
+	setTimeout(() => {
+		throw err instanceof Error ? err : new Error(String(err));
+	}, 0);
 }
 
 
@@ -440,17 +750,15 @@ function loadModel() {
 // Highlight system (dots + rings)
 // ------------------------------------------------------------
 function setupHighlightSystem(boardInfo) {
-	selectionHighlightsGroup = new THREE.Group();
-	selectionHighlightsGroup.name = "SelectionMoveDots";
-	scene.add(selectionHighlightsGroup);
+	invariant(selectionHighlightsGroup && hoverHighlightsGroup && idleHintHighlightsGroup, "Highlight groups not initialized.");
 
-	hoverHighlightsGroup = new THREE.Group();
-	hoverHighlightsGroup.name = "HoverMoveDots";
-	scene.add(hoverHighlightsGroup);
+	// Clear any old markers
+	selectionHighlightsGroup.clear();
+	hoverHighlightsGroup.clear();
+	idleHintHighlightsGroup.clear();
 
 	const s = boardInfo.squareSize * GRID.spacing;
 
-	// Dot size tuned to "small" but clickable/visible.
 	const r = s * 0.14;
 
 	dotGeo = new THREE.CircleGeometry(r, 32);
@@ -469,27 +777,21 @@ function setupHighlightSystem(boardInfo) {
 		polygonOffsetUnits: -1,
 	};
 
-	// Selection dots: more solid
 	matMoveSel = new THREE.MeshBasicMaterial({ color: 0x22262f, opacity: 0.88, ...common });
 	matCaptureSel = new THREE.MeshBasicMaterial({ color: 0x22262f, opacity: 0.88, ...common });
 	matSelectFrom = new THREE.MeshBasicMaterial({ color: 0x2f3440, opacity: 0.55, ...common });
 
-	// Hover preview: more subtle
 	matMoveHover = new THREE.MeshBasicMaterial({ color: 0x22262f, opacity: 0.52, ...common });
 	matCaptureHover = new THREE.MeshBasicMaterial({ color: 0x22262f, opacity: 0.52, ...common });
+
+	matIdleHint = new THREE.MeshBasicMaterial({ color: 0x2f3440, opacity: 0.22, ...common });
 }
 
+
 function disposeHighlightSystem() {
-	if (selectionHighlightsGroup) {
-		scene?.remove(selectionHighlightsGroup);
-		selectionHighlightsGroup.clear();
-		selectionHighlightsGroup = null;
-	}
-	if (hoverHighlightsGroup) {
-		scene?.remove(hoverHighlightsGroup);
-		hoverHighlightsGroup.clear();
-		hoverHighlightsGroup = null;
-	}
+	selectionHighlightsGroup?.clear();
+	hoverHighlightsGroup?.clear();
+	idleHintHighlightsGroup?.clear();
 
 	dotGeo?.dispose?.();
 	dotGeo = null;
@@ -509,22 +811,26 @@ function disposeHighlightSystem() {
 	matMoveHover = null;
 	matCaptureHover?.dispose?.();
 	matCaptureHover = null;
+
+	matIdleHint?.dispose?.();
+	matIdleHint = null;
 }
 
 function clearSelectionHighlights() {
-	selectionHighlightsGroup?.clear?.();
+	invariant(selectionHighlightsGroup, "selectionHighlightsGroup is not initialized.");
+	selectionHighlightsGroup.clear();
 }
 
 function clearHoverHighlights() {
-	hoverHighlightsGroup?.clear?.();
+	invariant(hoverHighlightsGroup, "hoverHighlightsGroup is not initialized.");
+	hoverHighlightsGroup.clear();
 }
 
 function addMoveMarker(square, kind, mode) {
-	if (!boardInfoGlobal) return;
+	invariant(boardInfoGlobal, "addMoveMarker requires boardInfoGlobal.");
 
 	const isSel = mode === "selection";
 	const group = isSel ? selectionHighlightsGroup : hoverHighlightsGroup;
-	if (!group) return;
 
 	const { file, rank } = squareToFileRank(square);
 	const pos = getSquareCenterWorld(file, rank, boardInfoGlobal);
@@ -550,7 +856,8 @@ function addMoveMarker(square, kind, mode) {
 }
 
 function addFromMarker(square) {
-	if (!boardInfoGlobal || !selectionHighlightsGroup) return;
+	invariant(boardInfoGlobal, "addFromMarker requires boardInfoGlobal.");
+	invariant(selectionHighlightsGroup, "addFromMarker requires selectionHighlightsGroup.");
 
 	const { file, rank } = squareToFileRank(square);
 	const pos = getSquareCenterWorld(file, rank, boardInfoGlobal);
@@ -578,11 +885,7 @@ function showSelectionAndMoves(fromSquare, movesVerbose) {
 function showHoverMoves(pieceRoot) {
 	clearHoverHighlights();
 	if (!pieceRoot) return;
-	if (!selected || selected?.pieceRoot !== pieceRoot) {
-		// Only preview if not currently selected something
-	} else {
-		return;
-	}
+	if (selected?.pieceRoot === pieceRoot) return;
 	if (engineThinking.value || game.isGameOver()) return;
 
 	const sq = fileRankToSquare(pieceRoot.userData.file, pieceRoot.userData.rank);
@@ -606,25 +909,69 @@ function getPieceRootFromHit(obj) {
 	return null;
 }
 
-
-// ------------------------------------------------------------
-// Click handling (select piece / move)
-// ------------------------------------------------------------
 function isAnimating() {
 	return moveAnims.length > 0;
 }
 
-function onPointerDown(ev) {
-	if (!renderer || !camera || loading.value || error.value) return;
-	if (engineThinking.value) return;
-	if (isAnimating()) return;
-	if (!piecesGroup || !boardMesh || !boardInfoGlobal) return;
+function isDraggingOrPending() {
+	return !!dragCandidate || !!draggingPiece;
+}
+
+function updateRayFromEvent(ev) {
+	invariant(renderer, "renderer is null in updateRayFromEvent.");
+	invariant(camera, "camera is null in updateRayFromEvent.");
 
 	const rect = renderer.domElement.getBoundingClientRect();
 	pointer.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
 	pointer.y = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
 
 	raycaster.setFromCamera(pointer, camera);
+}
+
+function buildBoardTopPlane(boardInfo) {
+	// Point on the board top plane
+	tmpTarget.copy(boardInfo.center);
+	const d = boardInfo.boardTop - tmpTarget.dot(boardInfo.normal);
+	tmpTarget.addScaledVector(boardInfo.normal, d);
+
+	const pl = new THREE.Plane();
+	pl.setFromNormalAndCoplanarPoint(boardInfo.normal, tmpTarget);
+	return pl;
+}
+
+function projectPointToPlane(point, plane, out) {
+	// projection = p - n * distanceToPoint(p)
+	const dist = plane.distanceToPoint(point);
+	return out.copy(point).addScaledVector(plane.normal, -dist);
+}
+
+function setCursor(c) {
+	document.body.style.cursor = c || "";
+}
+
+// ------------------------------------------------------------
+// Click / drag handling
+// ------------------------------------------------------------
+function onPointerDown(ev) {
+	// Any interaction kills the hint immediately (text + ring + shake)
+	cancelIdleHint();
+
+	invariant(!loading.value, "Pointer interaction while model is still loading.");
+	invariant(renderer && camera, "Pointer interaction before renderer/camera ready.");
+	invariant(piecesGroup && boardMesh && boardInfoGlobal, "Pointer interaction before board/pieces are ready.");
+
+	if (engineThinking.value) return;
+	if (isAnimating()) return;
+
+	// If we were mid-drag for any reason, end it cleanly.
+	if (isDraggingOrPending()) {
+		detachDragListeners();
+		dragCandidate = null;
+		draggingPiece = null;
+		dragFromSquare = null;
+	}
+
+	updateRayFromEvent(ev);
 
 	// 1) Click on a selection move dot => attempt move immediately
 	if (selectionHighlightsGroup) {
@@ -632,7 +979,7 @@ function onPointerDown(ev) {
 		if (hlHits.length) {
 			const sq = hlHits[0].object?.userData?.square;
 			if (sq) {
-				tryMoveTo(sq);
+				tryMoveTo(sq, { fromDrag: false });
 				return;
 			}
 		}
@@ -643,27 +990,45 @@ function onPointerDown(ev) {
 	if (pieceHits.length) {
 		const pieceRoot = getPieceRootFromHit(pieceHits[0].object);
 		if (pieceRoot) {
+			const sq = fileRankToSquare(pieceRoot.userData.file, pieceRoot.userData.rank);
+			const turnColor = game.turn() === "w" ? "white" : "black";
+
 			// If we have a selection, clicking an enemy on a legal square should CAPTURE
 			if (selected) {
-				const targetSq = fileRankToSquare(pieceRoot.userData.file, pieceRoot.userData.rank);
-				const legal = selectedMoves.some((m) => m.to === targetSq);
+				const legal = selectedMoves.some((m) => m.to === sq);
 				const enemy = pieceRoot.userData.color !== selected.pieceRoot.userData.color;
 
 				if (legal && enemy) {
-					tryMoveTo(targetSq);
+					tryMoveTo(sq, { fromDrag: false });
 					return;
 				}
 			}
 
-			// Otherwise treat it as (re)select
-			trySelectPiece(pieceRoot);
+			// Own-piece interaction: select + allow drag
+			if (pieceRoot.userData.color === turnColor) {
+				trySelectPiece(pieceRoot);
+
+				// Only set up drag if it actually stayed selected
+				if (selected?.pieceRoot === pieceRoot) {
+					dragCandidate = {
+						pieceRoot,
+						fromSquare: sq,
+						startX: ev.clientX,
+						startY: ev.clientY,
+					};
+
+					attachDragListeners();
+				}
+				return;
+			}
+
+			// Enemy piece clicked when nothing selected: behave like before (clear selection)
+			clearSelection();
 			return;
 		}
 	}
 
-
 	// 3) Click on board => if selected, try move to that square; else clear selection
-	// 3) Click on board (use the pick meshes, not just boardMesh)
 	const boardHits = boardPickMeshes.length
 		? raycaster.intersectObjects(boardPickMeshes, true)
 		: raycaster.intersectObject(boardMesh, true);
@@ -677,7 +1042,7 @@ function onPointerDown(ev) {
 		}
 
 		if (selected) {
-			tryMoveTo(sq);
+			tryMoveTo(sq, { fromDrag: false });
 			return;
 		}
 
@@ -688,7 +1053,170 @@ function onPointerDown(ev) {
 	clearSelection();
 }
 
+function attachDragListeners() {
+	window.addEventListener("pointermove", onDragPointerMove, { passive: false });
+	window.addEventListener("pointerup", onDragPointerUp, { passive: false });
+	window.addEventListener("pointercancel", onDragPointerUp, { passive: false });
+}
+
+function detachDragListeners() {
+	window.removeEventListener("pointermove", onDragPointerMove);
+	window.removeEventListener("pointerup", onDragPointerUp);
+	window.removeEventListener("pointercancel", onDragPointerUp);
+
+	dragCandidate = null;
+
+	// Restore controls if we were dragging
+	if (draggingPiece) {
+		controls.enabled = dragPrevControlsEnabled;
+	}
+
+	draggingPiece = null;
+	dragFromSquare = null;
+	dragPlane = null;
+	dragLift = 0;
+	dragOffsetPlanar.set(0, 0, 0);
+}
+
+function startDraggingFromCandidate(ev) {
+	if (!dragCandidate || draggingPiece) return;
+
+	invariant(boardInfoGlobal, "startDraggingFromCandidate requires boardInfoGlobal.");
+	invariant(controls, "startDraggingFromCandidate requires controls.");
+
+	draggingPiece = dragCandidate.pieceRoot;
+	dragFromSquare = dragCandidate.fromSquare;
+
+	dragCandidate = null;
+
+	clearHover(); // no glow/jiggle fighting drag
+	setCursor("grabbing");
+
+	dragPrevControlsEnabled = controls.enabled;
+	controls.enabled = false;
+
+	dragPlane = buildBoardTopPlane(boardInfoGlobal);
+	dragLift = boardInfoGlobal.squareSize * DRAG.liftRatio;
+
+	// Compute intersection point on plane
+	updateRayFromEvent(ev);
+	const hit = raycaster.ray.intersectPlane(dragPlane, tmpTarget);
+	invariant(hit, "Ray did not intersect drag plane.");
+
+	dragLastPlanePoint.copy(hit);
+
+	// Offset so we don't snap the piece center to cursor
+	const pieceProj = projectPointToPlane(draggingPiece.position, dragPlane, tmpV);
+	dragOffsetPlanar.copy(pieceProj).sub(dragLastPlanePoint);
+
+	// Lift immediately
+	tmpTarget.copy(dragLastPlanePoint).add(dragOffsetPlanar).addScaledVector(boardInfoGlobal.normal, dragLift);
+	draggingPiece.position.copy(tmpTarget);
+	draggingPiece.updateWorldMatrix(true, true);
+}
+
+function updateDragging(ev) {
+	invariant(draggingPiece && dragPlane && boardInfoGlobal, "updateDragging called without active drag.");
+
+	ev.preventDefault?.();
+
+	updateRayFromEvent(ev);
+	const hit = raycaster.ray.intersectPlane(dragPlane, tmpTarget);
+	invariant(hit, "Ray did not intersect drag plane during drag.");
+
+	dragLastPlanePoint.copy(hit);
+
+	tmpTarget.copy(dragLastPlanePoint)
+		.add(dragOffsetPlanar)
+		.addScaledVector(boardInfoGlobal.normal, dragLift);
+
+	draggingPiece.position.copy(tmpTarget);
+	draggingPiece.updateWorldMatrix(true, true);
+}
+
+function onDragPointerMove(ev) {
+	if (!dragCandidate && !draggingPiece) return;
+	if (engineThinking.value) return;
+	if (isAnimating()) return;
+
+	invariant(renderer && camera && boardInfoGlobal, "Drag move before renderer/camera/boardInfoGlobal ready.");
+
+	if (draggingPiece) {
+		updateDragging(ev);
+		return;
+	}
+
+	// Candidate -> decide if we start dragging
+	const dx = ev.clientX - dragCandidate.startX;
+	const dy = ev.clientY - dragCandidate.startY;
+	if (Math.hypot(dx, dy) >= DRAG.thresholdPx) {
+		startDraggingFromCandidate(ev);
+	}
+}
+
+function onDragPointerUp(ev) {
+	if (!dragCandidate && !draggingPiece) return;
+
+	// If we never started dragging: just clean up listeners.
+	if (dragCandidate && !draggingPiece) {
+		detachDragListeners();
+		setCursor("");
+		return;
+	}
+
+	invariant(boardInfoGlobal, "Drop without boardInfoGlobal.");
+
+	// Dropping a piece
+	invariant(draggingPiece, "Drop without draggingPiece.");
+
+	// Compute drop square from the planar position under cursor (plus our planar offset)
+	updateRayFromEvent(ev);
+	const hit = dragPlane ? raycaster.ray.intersectPlane(dragPlane, tmpTarget) : null;
+	invariant(hit, "Ray did not intersect drag plane on drop.");
+	dragLastPlanePoint.copy(hit);
+
+	const planar = tmpV.copy(dragLastPlanePoint).add(dragOffsetPlanar);
+
+	const toSq = squareFromWorldPoint(planar, boardInfoGlobal);
+
+	// Restore cursor / controls now (the animation will run independently)
+	setCursor("");
+	controls.enabled = dragPrevControlsEnabled;
+
+	// Validate move before calling tryMoveTo (because tryMoveTo assumes visuals are still on squares)
+	const fromSq = dragFromSquare;
+	const piece = draggingPiece;
+
+	detachDragListeners();
+
+	// No square / same square => cancel (return + keep selection consistent)
+	if (!toSq || !fromSq || toSq === fromSq) {
+		animatePieceRootToSquare(piece, fromSq, {
+			durationSec: MOVE_ANIM.dragCancelDurationSec,
+			jumpHeightRatio: 0.0,
+		});
+		return;
+	}
+
+	// Must still be selected and legal
+	const ok = !!selected && selected.fromSquare === fromSq && selectedMoves.some((m) => m.to === toSq);
+	if (!ok) {
+		// Return and clear selection (matches your click-to-illegal behavior)
+		animatePieceRootToSquare(piece, fromSq, {
+			durationSec: MOVE_ANIM.dragCancelDurationSec,
+			jumpHeightRatio: 0.0,
+		});
+		clearSelection();
+		return;
+	}
+
+	tryMoveTo(toSq, { fromDrag: true });
+}
+
 function trySelectPiece(pieceRoot) {
+	// User is interacting: hide hint immediately
+	cancelIdleHint();
+
 	indexPiecesBySquare();
 
 	const sq = fileRankToSquare(pieceRoot.userData.file, pieceRoot.userData.rank);
@@ -713,39 +1241,43 @@ function trySelectPiece(pieceRoot) {
 	showSelectionAndMoves(sq, moves);
 }
 
-function tryMoveTo(toSquare) {
+function tryMoveTo(toSquare, { fromDrag = false } = {}) {
 	if (!selected) return;
 	if (isAnimating()) return;
 
+	cancelIdleHint();
+
 	const fromSquare = selected.fromSquare;
 
-	// Only allow squares that are in the current move list
 	const ok = selectedMoves.some((m) => m.to === toSquare);
 	if (!ok) {
 		clearSelection();
 		return;
 	}
 
-	clearHover(); // avoid jitter/glow fighting animation
+	clearHover();
+	clearIdleHintHighlights();
 
-	// Always promote to queen for now
 	const result = game.tryMove(fromSquare, toSquare, "q");
 	if (!result) {
 		clearSelection();
 		return;
 	}
 
-	// Apply 3D updates based on move flags
-	applyMoveToScene(result, selected.pieceRoot, fromSquare, toSquare);
+	applyMoveToScene(result, selected.pieceRoot, fromSquare, toSquare, { fromDrag });
 
-	// Update UI blurb
-	lastMove.value = `Move: ${result.san}`;
-	featureBlurb.value = FEATURE_BLURBS[blurbIndex % FEATURE_BLURBS.length];
-	blurbIndex++;
+	didAnyMove.value = true;
+	cancelIdleHint();
 
 	clearSelection();
+
+	// If user ended the game (mate/stalemate/etc.), show end scene and don't ask engine to move.
+	triggerEndSceneIfGameOver();
+	if (game.isGameOver()) return;
+
 	void maybePlayBlackMove();
 }
+
 
 async function maybePlayBlackMove() {
 	if (!engine) return;
@@ -755,15 +1287,17 @@ async function maybePlayBlackMove() {
 	engineThinking.value = true;
 	clearSelection();
 	clearHover();
+	cancelIdleHint();
 
 	try {
+		await sleep(1000);
+
 		const uci = await engine.bestMoveFromFen(game.fen(), { movetimeMs: 120 });
 		if (!uci || uci === "(none)") return;
 
 		const mv = parseUciMove(uci);
 		if (!mv) return;
 
-		// Find the moved piece in the scene
 		indexPiecesBySquare();
 		const pieceRoot = squareToPiece.get(mv.from);
 		if (!pieceRoot) return;
@@ -771,15 +1305,15 @@ async function maybePlayBlackMove() {
 		const result = game.tryMove(mv.from, mv.to, mv.promotion || "q");
 		if (!result) return;
 
-		applyMoveToScene(result, pieceRoot, mv.from, mv.to);
+		applyMoveToScene(result, pieceRoot, mv.from, mv.to, { fromDrag: false });
 
-		lastMove.value = `Move: ${result.san}`;
-		featureBlurb.value = FEATURE_BLURBS[blurbIndex % FEATURE_BLURBS.length];
-		blurbIndex++;
-	} catch (e) {
-		console.error("Engine move failed:", e);
+		didAnyMove.value = true;
+		cancelIdleHint();
+		triggerEndSceneIfGameOver();
 	} finally {
 		engineThinking.value = false;
+
+		if (shouldShowIdleHint()) scheduleIdleHint();
 	}
 }
 
@@ -790,12 +1324,18 @@ function clearSelection() {
 
 	// If you're currently hovering something (and it's your turn), restore hover preview
 	if (hoveredPiece) showHoverMoves(hoveredPiece);
+
+	// When selection clears, if we’re otherwise eligible, restart idle timer.
+	if (shouldShowIdleHint()) scheduleIdleHint();
 }
 
 // ------------------------------------------------------------
 // Apply move to scene (captures, castling, en-passant, promotion)
 // ------------------------------------------------------------
-function applyMoveToScene(moveResult, movedPieceRoot, fromSquare, toSquare) {
+function applyMoveToScene(moveResult, movedPieceRoot, fromSquare, toSquare, { fromDrag = false } = {}) {
+	const dur = fromDrag ? MOVE_ANIM.dragDropDurationSec : MOVE_ANIM.durationSec;
+	const jumpRatio = fromDrag ? MOVE_ANIM.dragDropJumpHeightRatio : MOVE_ANIM.jumpHeightRatio;
+
 	// Captures
 	if (moveResult.flags?.includes("e")) {
 		const { file: tf } = squareToFileRank(toSquare);
@@ -806,7 +1346,7 @@ function applyMoveToScene(moveResult, movedPieceRoot, fromSquare, toSquare) {
 		removePieceAtSquare(toSquare);
 	}
 
-	// Promotion needs to swap AFTER the jump lands (looks much better)
+	// Promotion needs to swap AFTER the landing (looks better)
 	let promotionType = null;
 	if (moveResult.flags?.includes("p")) {
 		const promo = (moveResult.promotion || "q").toLowerCase();
@@ -818,8 +1358,10 @@ function applyMoveToScene(moveResult, movedPieceRoot, fromSquare, toSquare) {
 			"queen";
 	}
 
-	// Move the piece (jump anim)
+	// Move the piece (jump anim or drag settle)
 	animatePieceRootToSquare(movedPieceRoot, toSquare, {
+		durationSec: dur,
+		jumpHeightRatio: jumpRatio,
 		onComplete: () => {
 			if (promotionType) {
 				replacePieceWithType(movedPieceRoot, promotionType, toSquare);
@@ -828,7 +1370,7 @@ function applyMoveToScene(moveResult, movedPieceRoot, fromSquare, toSquare) {
 		},
 	});
 
-	// Castling: move rook too (jump anim)
+	// Castling: move rook too
 	if (moveResult.flags?.includes("k") || moveResult.flags?.includes("q")) {
 		const side = moveResult.flags.includes("k") ? "k" : "q";
 		const color = moveResult.color === "w" ? "w" : "b";
@@ -847,7 +1389,10 @@ function applyMoveToScene(moveResult, movedPieceRoot, fromSquare, toSquare) {
 		const rm = rookMoves[color][side];
 		const rook = squareToPiece.get(rm.from);
 		if (rook) {
-			animatePieceRootToSquare(rook, rm.to);
+			animatePieceRootToSquare(rook, rm.to, {
+				durationSec: dur,
+				jumpHeightRatio: MOVE_ANIM.jumpHeightRatio, // keep some life on rook movement
+			});
 		}
 	}
 
@@ -856,9 +1401,14 @@ function applyMoveToScene(moveResult, movedPieceRoot, fromSquare, toSquare) {
 }
 
 function animatePieceRootToSquare(pieceRoot, square, opts = {}) {
-	if (!boardInfoGlobal || !pieceRoot) return;
+	invariant(boardInfoGlobal, "animatePieceRootToSquare requires boardInfoGlobal.");
+	invariant(pieceRoot, "animatePieceRootToSquare requires pieceRoot.");
 
-	const { durationSec = MOVE_ANIM.durationSec, onComplete = null } = opts;
+	const {
+		durationSec = MOVE_ANIM.durationSec,
+		onComplete = null,
+		jumpHeightRatio = MOVE_ANIM.jumpHeightRatio,
+	} = opts;
 
 	// Record start
 	const startPos = pieceRoot.position.clone();
@@ -868,6 +1418,7 @@ function animatePieceRootToSquare(pieceRoot, square, opts = {}) {
 	const { file, rank } = squareToFileRank(square);
 	pieceRoot.userData.file = file;
 	pieceRoot.userData.rank = rank;
+	pieceRoot.userData.square = square;
 
 	// Compute end transform by placing, then restore
 	placeOnSquare(pieceRoot, boardInfoGlobal, file, rank, pieceRoot.userData.color);
@@ -878,7 +1429,7 @@ function animatePieceRootToSquare(pieceRoot, square, opts = {}) {
 	pieceRoot.quaternion.copy(startQuat);
 	pieceRoot.updateWorldMatrix(true, true);
 
-	const jumpH = (boardInfoGlobal.squareSize * MOVE_ANIM.jumpHeightRatio);
+	const jumpH = boardInfoGlobal.squareSize * Math.max(0, jumpHeightRatio);
 
 	moveAnims.push({
 		piece: pieceRoot,
@@ -907,7 +1458,7 @@ function updateMoveAnimations(nowT) {
 			a.piece.quaternion.copy(a.endQuat);
 			a.piece.updateWorldMatrix(true, true);
 
-			try { a.onComplete?.(); } catch (e) { console.error(e); }
+			a.onComplete?.();
 
 			moveAnims.splice(i, 1);
 			continue;
@@ -932,7 +1483,9 @@ function removePieceAtSquare(square) {
 }
 
 function replacePieceWithType(oldPiece, newType, square) {
-	if (!piecesGroup || !templatesGlobal) return;
+	invariant(piecesGroup, "replacePieceWithType requires piecesGroup.");
+	invariant(templatesGlobal, "replacePieceWithType requires templatesGlobal.");
+	invariant(boardInfoGlobal, "replacePieceWithType requires boardInfoGlobal.");
 
 	const color = oldPiece.userData.color;
 	const { file, rank } = squareToFileRank(square);
@@ -947,6 +1500,7 @@ function replacePieceWithType(oldPiece, newType, square) {
 	newPiece.userData.color = color;
 	newPiece.userData.file = file;
 	newPiece.userData.rank = rank;
+	newPiece.userData.square = square;
 	newPiece.name = `${color}_${newType}_${file}_${rank}`;
 
 	normalizePieceUprightAndScale(newPiece, boardInfoGlobal.squareSize, color);
@@ -1029,12 +1583,22 @@ function setupCinematicFromBoard(boardInfo, board) {
 		.addScaledVector(basisRight, boardSpan * CINEMATIC.introSideDist)
 		.addScaledVector(basisForward, boardSpan * CINEMATIC.introForward);
 
-	// PLAY (White perspective)
+	// PLAY (White perspective) — stage 1
 	playTarget.copy(basisCenter).addScaledVector(basisUp, boardSpan * CINEMATIC.playTargetUp);
 	playCamPos.copy(basisCenter)
 		.addScaledVector(basisUp, boardSpan * CINEMATIC.playUp)
 		.addScaledVector(basisForward, -boardSpan * CINEMATIC.playBack)
 		.addScaledVector(basisRight, boardSpan * CINEMATIC.playSide);
+
+	// Stage 2
+	learnTarget.copy(basisCenter)
+		.addScaledVector(basisUp, boardSpan * CINEMATIC.learnTargetUp)
+		.addScaledVector(basisForward, boardSpan * CINEMATIC.learnTargetForward)
+		.addScaledVector(basisRight, boardSpan * CINEMATIC.learnTargetSide);
+	learnCamPos.copy(basisCenter)
+		.addScaledVector(basisUp, boardSpan * CINEMATIC.learnUp)
+		.addScaledVector(basisForward, -boardSpan * CINEMATIC.learnBack)
+		.addScaledVector(basisRight, boardSpan * CINEMATIC.learnSide);
 
 	if (Math.abs(CINEMATIC.twistDeg) > 1e-6) {
 		const twist = THREE.MathUtils.degToRad(CINEMATIC.twistDeg);
@@ -1055,20 +1619,49 @@ function setupCinematicFromBoard(boardInfo, board) {
 	controls.update();
 
 	cinematicReady = true;
-	applyCinematic(scrollTarget01, true);
+	applyCinematic(scrollTargetT, true);
 }
 
-function applyCinematic(p01, force = false) {
-	if (!cinematicReady || !camera || !controls) return;
+function applyCinematic(t, force = false) {
+	if (!cinematicReady) return;
 
-	const e = easeInOutCubic(p01);
+	const clamped = THREE.MathUtils.clamp(t, 0, allowedStages.value);
 
-	camera.position.lerpVectors(introCamPos, playCamPos, e);
-	controls.target.lerpVectors(introTarget, playTarget, e);
+	let roll = 0;
 
-	controls.enabled = p01 >= CINEMATIC.enableOrbitAt;
-	controls.update();
+	// We'll compute a target vector each frame (don’t let OrbitControls rebuild camera rotation)
+	const target = tmpTarget;
 
+	if (clamped <= 1) {
+		// Stage 0 -> 1
+		const e = easeInOutCubic(clamped);
+		camera.position.lerpVectors(introCamPos, playCamPos, e);
+		target.lerpVectors(introTarget, playTarget, e);
+		roll = 0;
+	} else {
+		// Stage 1 -> 2
+		const u = THREE.MathUtils.clamp(clamped - 1, 0, 1);
+		const e = easeInOutCubic(u);
+		camera.position.lerpVectors(playCamPos, learnCamPos, e);
+		target.lerpVectors(playTarget, learnTarget, e);
+		roll = CINEMATIC.learnRollRad * e;
+	}
+
+	// Keep controls target in sync for anything else relying on it
+	if (controls) controls.target.copy(target);
+
+	// CRITICAL: reset camera orientation every frame, then apply roll.
+	// This prevents quaternion accumulation (“corkscrew” twisting).
+	const up = (basisUp && basisUp.lengthSq() > 1e-8) ? basisUp : WORLD_UP;
+	camera.up.copy(up);
+	camera.lookAt(target);
+
+	// Roll around the view axis (camera local Z) after lookAt
+	if (Math.abs(roll) > 1e-6) {
+		camera.rotateZ(roll);
+	}
+
+	camera.updateMatrixWorld(true);
 	if (force) camera.updateProjectionMatrix();
 }
 
@@ -1121,6 +1714,7 @@ function buildFullSetFromTemplates(templates, board) {
 
 		normalizePieceUprightAndScale(piece, boardInfo.squareSize, color);
 		placeOnSquare(piece, boardInfo, file, rank, color);
+		cachePiecePlacementMetrics(piece, boardInfo);
 
 		piece.traverse((o) => {
 			if (o.isMesh) meshToPiece.set(o, piece);
@@ -1167,25 +1761,23 @@ function clonePieceWithTint(template, color) {
 		if (!o.isMesh || !o.material) return;
 
 		const apply = (m) => {
-		const nm = m.clone();
+			const nm = m.clone();
 
-		// IMPORTANT: ignore template base color entirely (templates are inconsistent).
-		// Force a uniform base color per side.
-		if (nm.color) nm.color.copy(target);
+			// Force a uniform base color per side.
+			if (nm.color) nm.color.copy(target);
 
-		// Make shape readable with highlights instead of relying on albedo differences
-		if (typeof nm.roughness === "number") nm.roughness = (color === "white") ? 0.10 : 0.30; // rougher black
-		if (typeof nm.metalness === "number") nm.metalness = (color === "white") ? 0.30 : 0.90; // less metallic black
-		if ("envMapIntensity" in nm) nm.envMapIntensity = (color === "white") ? 1.45 : 0.55;   // softer env reflections
+			// Make shape readable with highlights instead of relying on albedo differences
+			if (typeof nm.roughness === "number") nm.roughness = (color === "white") ? 0.10 : 0.30;
+			if (typeof nm.metalness === "number") nm.metalness = (color === "white") ? 0.30 : 0.90;
+			if ("envMapIntensity" in nm) nm.envMapIntensity = (color === "white") ? 1.45 : 0.55;
 
-		// Optional (tiny) contrast help: slightly darken whites / slightly lift blacks
-		// without depending on original template colors.
-		if (nm.color) nm.color.offsetHSL(0, 0, (color === "white") ? -0.06 : 0.03);
+			// Small contrast help
+			if (nm.color) nm.color.offsetHSL(0, 0, (color === "white") ? -0.06 : 0.03);
 
-		if (nm.emissive) nm.emissive.setHex(0x000000);
+			if (nm.emissive) nm.emissive.setHex(0x000000);
 
-		nm.needsUpdate = true;
-		return nm;
+			nm.needsUpdate = true;
+			return nm;
 		};
 
 		o.material = Array.isArray(o.material) ? o.material.map(apply) : apply(o.material);
@@ -1303,7 +1895,6 @@ function computeBoardGrid(board) {
 	}
 
 	tmpNormal.copy(normal).normalize();
-	// Make sure normal points upward (avoids "underside" placement if model axis is flipped)
 	if (tmpNormal.dot(WORLD_UP) < 0) tmpNormal.multiplyScalar(-1);
 
 	const fileAxis = tmpAxisX.clone().sub(tmpNormal.clone().multiplyScalar(tmpAxisX.dot(tmpNormal)));
@@ -1325,12 +1916,8 @@ function computeBoardGrid(board) {
 }
 
 function getBoxExtremeAlongNormal(box, normal, max) {
-	const x0 = box.min.x,
-		y0 = box.min.y,
-		z0 = box.min.z;
-	const x1 = box.max.x,
-		y1 = box.max.y,
-		z1 = box.max.z;
+	const x0 = box.min.x, y0 = box.min.y, z0 = box.min.z;
+	const x1 = box.max.x, y1 = box.max.y, z1 = box.max.z;
 
 	let extreme = max ? -Infinity : Infinity;
 
@@ -1445,15 +2032,14 @@ function getBaseCenterXZWorld(obj) {
 // Hover pick + glow + time-limited jiggle + hover move preview
 // ------------------------------------------------------------
 function onPointerMove(ev) {
-	if (!piecesGroup || loading.value || error.value) return;
-	if (!renderer || !camera) return;
+	invariant(!loading.value, "Pointer move while model is loading.");
+	invariant(piecesGroup, "Pointer move before piecesGroup is ready.");
+	invariant(renderer && camera, "Pointer move before renderer/camera ready.");
+
 	if (isAnimating()) return;
+	if (isDraggingOrPending()) return;
 
-	const rect = renderer.domElement.getBoundingClientRect();
-	pointer.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
-	pointer.y = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
-
-	raycaster.setFromCamera(pointer, camera);
+	updateRayFromEvent(ev);
 
 	const hits = raycaster.intersectObject(piecesGroup, true);
 	if (!hits.length) {
@@ -1479,7 +2065,7 @@ function setHover(pieceRoot) {
 	hoveredBaseQuat = pieceRoot.quaternion.clone();
 	hoverStartTime = elapsed;
 
-	document.body.style.cursor = "pointer";
+	setCursor("pointer");
 
 	hoveredEmissiveRestore = [];
 	pieceRoot.traverse((o) => {
@@ -1513,13 +2099,14 @@ function clearHover() {
 	hoveredBasePos = null;
 	hoveredBaseQuat = null;
 	hoveredEmissiveRestore = [];
-	document.body.style.cursor = "";
+	setCursor("");
 
 	clearHoverHighlights();
 }
 
 function applyHoverShake(nowT) {
 	if (!hoveredPiece) return;
+	if (isDraggingOrPending()) return;
 
 	const dt = nowT - hoverStartTime;
 
@@ -1556,22 +2143,62 @@ function applyHoverShake(nowT) {
 	hoveredPiece.position.z += env * HOVER_SHAKE.posAmp * Math.cos(nowT * f * 1.4);
 }
 
+// Idle shake applied in the main render loop
+function applyIdleShake(nowT) {
+	if (!idleHintVisible.value) return;
+	if (!idleShakePiece) return;
+
+	// If pawn moved / captured / promoted away from d2, just drop the hint.
+	if (idleShakePiece.userData.square !== IDLE_HINT.square) {
+		cancelIdleHint();
+		return;
+	}
+
+	// Don’t fight real interaction / animation
+	if (selected || engineThinking.value || isAnimating() || isDraggingOrPending()) return;
+
+	// Safety: basis vectors exist once cinematic is set up
+	const right = basisRight && basisRight.lengthSq() > 1e-8 ? basisRight : null;
+	const forward = basisForward && basisForward.lengthSq() > 1e-8 ? basisForward : null;
+	const up = basisUp && basisUp.lengthSq() > 1e-8 ? basisUp : (boardInfoGlobal?.normal || WORLD_UP);
+
+	invariant(right && forward, "Idle shake requires basisRight and basisForward.");
+
+	const s1 = Math.sin(nowT * IDLE_SHAKE.freq);
+	const s2 = Math.sin(nowT * IDLE_SHAKE.freq * 1.37);
+
+	idleShakePiece.position.copy(idleShakeBasePos);
+	idleShakePiece.quaternion.copy(idleShakeBaseQuat);
+
+	// Planar wiggle (small)
+	idleShakePiece.position.addScaledVector(right, IDLE_SHAKE.posAmp * s1);
+	idleShakePiece.position.addScaledVector(forward, IDLE_SHAKE.posAmp * 0.6 * s2);
+
+	// Yaw wobble around “up”
+	tmpQuat.setFromAxisAngle(up, IDLE_SHAKE.rotAmp * s2);
+	idleShakePiece.quaternion.multiply(tmpQuat);
+
+	idleShakePiece.updateWorldMatrix(true, true);
+}
+
 // ------------------------------------------------------------
 // Loop + resize + dispose
 // ------------------------------------------------------------
 function startLoop() {
 	const tick = () => {
 		raf = requestAnimationFrame(tick);
-		if (!renderer || !scene || !camera || !controls) return;
+
+		invariant(renderer && scene && camera && controls, "Render loop ticked before three.js was initialized.");
 
 		const delta = clock.getDelta();
 		elapsed += delta;
 
-		scroll01.value = THREE.MathUtils.damp(scroll01.value, scrollTarget01, CINEMATIC.smoothing, delta);
-		applyCinematic(scroll01.value);
+		scrollT.value = THREE.MathUtils.damp(scrollT.value, scrollTargetT, CINEMATIC.smoothing, delta);
+		applyCinematic(scrollT.value);
 
 		updateMoveAnimations(elapsed);
 		applyHoverShake(elapsed);
+		applyIdleShake(elapsed);
 
 		renderer.render(scene, camera);
 	};
@@ -1584,7 +2211,7 @@ function stopLoop() {
 }
 
 function onResize() {
-	if (!renderer || !camera) return;
+	invariant(renderer && camera, "Resize before renderer/camera initialized.");
 
 	renderer.setSize(window.innerWidth, window.innerHeight);
 	camera.aspect = window.innerWidth / window.innerHeight;
@@ -1592,14 +2219,12 @@ function onResize() {
 }
 
 function disposeAll() {
-	if (renderer?.domElement) {
-		renderer.domElement.removeEventListener("pointermove", onPointerMove);
-		renderer.domElement.removeEventListener("pointerleave", clearHover);
-		renderer.domElement.removeEventListener("pointerdown", onPointerDown);
-	}
+	detachCanvasListeners();
 
+	detachDragListeners();
 	clearHover();
 	clearSelection();
+	cancelIdleHint();
 
 	disposeHighlightSystem();
 
@@ -1663,11 +2288,39 @@ function easeInOutCubic(x) {
 	const t = THREE.MathUtils.clamp(x, 0, 1);
 	return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
+
+function sleep(ms) {
+	return new Promise((r) => setTimeout(r, ms));
+}
 </script>
 
 <style scoped>
 .page {
 	min-height: 100vh;
+
+	/* theme tokens */
+	--accent: 80, 140, 255;         /* default blue */
+	--title: 245, 248, 255;         /* default hero title */
+	--sub: 231, 238, 252;           /* default hero sub */
+}
+
+.page.theme-win {
+	--accent: 70, 220, 120;
+	--title: 210, 255, 225;
+	--sub: 200, 255, 215;
+}
+
+.page.theme-lose {
+	--accent: 255, 80, 80;
+	--title: 255, 215, 215;
+	--sub: 255, 205, 205;
+}
+
+/* optional, if you want a distinct draw look */
+.page.theme-draw {
+	--accent: 200, 200, 210;
+	--title: 245, 248, 255;
+	--sub: 231, 238, 252;
 }
 
 .chess-stage {
@@ -1682,6 +2335,7 @@ function easeInOutCubic(x) {
 	width: 100%;
 	height: 100%;
 	display: block;
+	touch-action: pan-y;
 }
 
 .hero {
@@ -1700,15 +2354,90 @@ function easeInOutCubic(x) {
 	letter-spacing: 0.02em;
 	line-height: 1;
 	font-size: clamp(40px, 7vw, 78px);
-	color: rgba(245, 248, 255, 0.96);
-	text-shadow: 0 0 14px rgba(80, 140, 255, 0.35), 0 0 44px rgba(80, 140, 255, 0.18),
+	color: rgba(var(--title), 0.96);
+	text-shadow:
+		0 0 14px rgba(var(--accent), 0.35),
+		0 0 44px rgba(var(--accent), 0.18),
 		0 12px 60px rgba(0, 0, 0, 0.55);
 }
 
 .hero-sub {
 	margin-top: 10px;
 	opacity: 0.88;
-	color: rgba(231, 238, 252, 0.9);
+	color: rgba(var(--sub), 0.90);
+}
+
+.idle-prompt {
+	position: fixed;
+	top: clamp(28px, 6vh, 80px);
+	left: 0;
+	right: 0;
+	display: flex;
+	justify-content: center;
+	z-index: 9999;
+	pointer-events: none;
+
+	opacity: 0;
+	transform: translateY(-8px);
+	transition: opacity 360ms ease, transform 360ms ease;
+	will-change: opacity, transform;
+}
+
+.idle-prompt.is-visible {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+.idle-prompt-text {
+	margin-top: 12vh; /* override .hero-sub margin-top */
+	padding: 0;          /* no pill */
+	background: none;    /* no glass */
+	border: none;
+
+	font-size: clamp(16px, 2.1vw, 20px); /* slightly bigger than hero-sub */
+	font-weight: 600; /* close to “subtitle”, not shouty */
+	letter-spacing: 0; /* keep it calm */
+	text-transform: none;
+
+	/* keep hero-sub's color/opacity look, add only a faint glow */
+	text-shadow:
+		0 0 14px rgba(80, 140, 255, 0.18),
+		0 10px 40px rgba(0, 0, 0, 0.35);
+}
+
+.scroll-hint {
+	position: fixed;
+	top: clamp(28px, 6vh, 80px);
+	left: 0;
+	right: 0;
+	display: flex;
+	justify-content: center;
+	z-index: 9998;
+	pointer-events: none;
+
+	opacity: 0;
+	transform: translateY(-8px);
+	transition: opacity 360ms ease, transform 360ms ease;
+	will-change: opacity, transform;
+}
+
+.scroll-hint.is-visible {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+.scroll-hint-text {
+	margin-top: 0;
+	padding: 0;
+	background: none;
+	border: none;
+
+	font-size: clamp(16px, 2.1vw, 20px);
+	font-weight: 600;
+
+	text-shadow:
+		0 0 14px rgba(var(--accent), 0.18),
+		0 10px 40px rgba(0, 0, 0, 0.35);
 }
 
 .info-card {
@@ -1754,10 +2483,6 @@ function easeInOutCubic(x) {
 	backdrop-filter: blur(10px);
 }
 
-.overlay-card.error {
-	border-color: rgba(255, 80, 80, 0.26);
-}
-
 .title {
 	font-weight: 700;
 	margin-bottom: 10px;
@@ -1780,11 +2505,7 @@ function easeInOutCubic(x) {
 
 .fill {
 	height: 100%;
-	background: rgba(60, 120, 255, 0.9);
-}
-
-.scroll-spacer {
-	height: 220vh;
+	background: rgba(var(--accent), 0.90);
 }
 
 .vignette {
@@ -1792,7 +2513,8 @@ function easeInOutCubic(x) {
 	position: absolute;
 	inset: -2px;
 	z-index: 1;
-	background: radial-gradient(1200px 700px at 50% 35%, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0) 55%),
+	background:
+		radial-gradient(1200px 700px at 50% 35%, rgba(var(--accent), 0.14), rgba(0, 0, 0, 0) 55%),
 		radial-gradient(1200px 900px at 50% 50%, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.55) 75%),
 		linear-gradient(to bottom, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.35));
 }

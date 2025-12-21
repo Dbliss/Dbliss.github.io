@@ -7,7 +7,7 @@ import About from '../pages/About.vue'
 import Contact from '../pages/Contact.vue'
 
 const router = createRouter({
-  history: createWebHashHistory(), // works on GitHub Pages reloads
+  history: createWebHashHistory(),
   routes: [
     { path: '/', name: 'home', component: Home },
     { path: '/projects', name: 'projects', component: Projects },

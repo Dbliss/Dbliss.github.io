@@ -17,6 +17,17 @@ export function squareToFileRank(square) {
 export function createChessGame(fen = undefined) {
 	const chess = fen ? new Chess(fen) : new Chess();
 
+	// Compatibility helpers (chess.js renamed these across versions)
+	const isCheckmate = () =>
+		typeof chess.isCheckmate === "function" ? chess.isCheckmate()
+		: typeof chess.in_checkmate === "function" ? chess.in_checkmate()
+		: false;
+
+	const isDraw = () =>
+		typeof chess.isDraw === "function" ? chess.isDraw()
+		: typeof chess.in_draw === "function" ? chess.in_draw()
+		: false;
+
 	return {
 		chess,
 		reset() {
@@ -26,12 +37,10 @@ export function createChessGame(fen = undefined) {
 			return chess.turn(); // 'w' or 'b'
 		},
 		legalMovesFrom(square) {
-			// chess.js supports verbose legal move generation per square. :contentReference[oaicite:8]{index=8}
 			return chess.moves({ square, verbose: true });
 		},
 		tryMove(from, to, promotion = "q") {
 			try {
-				// chess.js accepts object notation {from,to,promotion}. :contentReference[oaicite:9]{index=9}
 				return chess.move({ from, to, promotion });
 			} catch {
 				return null;
@@ -52,7 +61,34 @@ export function createChessGame(fen = undefined) {
 			return chess.history({ verbose });
 		},
 		isGameOver() {
-			return chess.isGameOver();
+			return typeof chess.isGameOver === "function" ? chess.isGameOver()
+				: typeof chess.game_over === "function" ? chess.game_over()
+				: false;
+		},
+
+		// New: these power your win/lose scene
+		isCheckmate() {
+			return isCheckmate();
+		},
+		isDraw() {
+			return isDraw();
+		},
+
+		// New: single call for UI logic
+		outcome() {
+			if (!this.isGameOver()) return { status: "ongoing", winner: null };
+
+			if (this.isCheckmate()) {
+				// side-to-move is checkmated, so winner is the opposite
+				const winner = this.turn() === "w" ? "black" : "white";
+				return { status: "checkmate", winner };
+			}
+
+			// stalemate / repetition / insufficient / 50-move etc.
+			if (this.isDraw()) return { status: "draw", winner: null };
+
+			// Fallback for any other "game over" condition
+			return { status: "over", winner: null };
 		},
 	};
 }

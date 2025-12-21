@@ -7,7 +7,7 @@ function isString(x) {
 export class StockfishClient {
 	constructor({
 		workerUrl = DEFAULT_WORKER_URL,
-		skillLevel = 2, // 0..20 (lower = weaker)
+		skillLevel = 0, // 0..20 (lower = weaker)
 		movetimeMs = 100,
 		hashMb = 16,
 		threads = 1,

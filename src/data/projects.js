@@ -124,6 +124,8 @@ and master key software fundamentals such as hashing, search trees, bit operatio
     tags: ['Optimisation'],
     repoUrl: '',
     liveUrl: '',
-    featured: true
+    featured: true,
+    hideFooter: true,
+    hideNav: true
   }
 ]

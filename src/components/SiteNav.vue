@@ -1,10 +1,8 @@
 <template>
   <header class="nav">
     <div class="brand">
-      <div class="logo">DB</div>
       <div>
-        <small>Portfolio</small>
-        <div class="mono">Dillon Bliss‑Henaghan</div>
+        <div class="mono">Dillon Bliss</div>
       </div>
     </div>
 
@@ -18,16 +16,13 @@
     <div class="actions">
       <a v-for="s in socials" :key="s.label" :href="s.href" class="btn" target="_blank" rel="noreferrer noopener">
 
-        <!-- LinkedIn -->
-        <span v-if="s.icon === 'in'">in</span>
-
-        <!-- GitHub PNG -->
         <img 
-          v-else-if="s.icon === 'github'"
+          v-if="s.icon === 'github'"
           :src="githubIcon"
           alt="GitHub"
           style="width:24px;height:24px;display:block"
         />
+        <span v-else-if="s.icon === 'in'" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center">in</span>
         <span class="sr-only">{{ s.label }}</span>
       </a>
 

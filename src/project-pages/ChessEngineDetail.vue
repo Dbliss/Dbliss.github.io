@@ -19,6 +19,14 @@
 				<div class="hero-sub mono idle-prompt-text">Make a move</div>
 			</div>
 
+			<!-- Skip-to-content prompt -->
+			<div class="skip-prompt" :class="{ 'is-visible': skipPromptVisible }" :aria-hidden="!skipPromptVisible">
+				<div class="skip-prompt-text mono">Only interested in the content?</div>
+				<button class="skip-button mono" type="button" @click="skipToContent">
+					Skip
+				</button>
+			</div>
+
 			<!-- Loading overlay... -->
 			<div class="vignette" />
 		</section>
@@ -114,6 +122,18 @@ const tmpM = new THREE.Matrix4();
 const colorBase = new THREE.Color(0xffffff);
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
 
+const CAM_LOCAL_UP = new THREE.Vector3(0, 1, 0);
+
+function getCameraUpWorld(out) {
+	invariant(camera, "getCameraUpWorld requires camera.");
+	return out.copy(CAM_LOCAL_UP).applyQuaternion(camera.quaternion).normalize();
+}
+
+// “Down on the screen” in world space = -cameraUpWorld
+function getCameraScreenDownWorld(out) {
+	return getCameraUpWorld(out).multiplyScalar(-1);
+}
+
 const BOARD_COLORS = {
 	dark: "#769656",
 	light: "#eeeed2",
@@ -191,7 +211,7 @@ const TEMPLATE_NAMES = {
 const CINEMATIC = {
 	// vh per stage
 	transitionVh: 210,
-	stages: 2,
+	stages: 3,
 
 	smoothing: 8.0,
 
@@ -206,10 +226,10 @@ const CINEMATIC = {
 	introTargetUp: 0.08,
 
 	// Final Position (stage 1)
-	playBack: 1.05,
-	playUp: 1.60,
+	playBack: 1.1,
+	playUp: 1.5,
 	playSide: -0.0,
-	playTargetUp: 0.10,
+	playTargetUp: 0.0,
 
 	// Learn-more Position (stage 2) — subtle lift + full roll upside down
 	learnBack: 0.88,
@@ -219,6 +239,15 @@ const CINEMATIC = {
 	learnTargetForward: 0.85,
 	learnTargetSide: 0.0,
 	learnRollRad: Math.PI,
+
+	// Stage 3 (content) — camera pans DOWN to a text card
+	contentBack: 0.88,
+	contentUp: 0.14,
+	contentSide: 0.0,
+	contentTargetUp: 0.6,
+	contentTargetForward: 0.85,
+	contentTargetSide: 0.0,
+	contentRollRad: Math.PI,
 
 	twistDeg: 0,
 };
@@ -238,6 +267,10 @@ let playTarget = new THREE.Vector3();
 let learnCamPos = new THREE.Vector3();
 let learnTarget = new THREE.Vector3();
 
+// Stage 3 (content) pose
+let contentCamPos = new THREE.Vector3();
+let contentTarget = new THREE.Vector3();
+
 // Basis for “white perspective”
 let basisCenter = new THREE.Vector3();
 let basisUp = new THREE.Vector3();
@@ -246,6 +279,43 @@ let basisForward = new THREE.Vector3();
 let boardSpan = 1;
 
 let cinematicReady = false;
+
+// ------------------------------------------------------------
+// Stage 2 -> 3 scene objects
+// ------------------------------------------------------------
+let contentGroup = null;
+let contentCardSprite = null;
+let contentCardTexture = null;
+let contentCardMaterial = null;
+
+let fallingPiecesGroup = null;
+let fallingPieces = []; // { obj, speed, angVel: THREE.Vector3 }
+let rainSpawnAcc = 0;
+
+let stage2DropStarted = false;
+let stage2DropStartTime = 0;
+
+const STAGE2_DROP = {
+	startScrollT: 2.0,      // start dropping existing board pieces once you enter stage 2 transition
+	maxDelaySec: 0.75,       // random delay per piece
+	speedMinSpan: 0.55,      // multiplied by boardSpan
+	speedMaxSpan: 1.30,
+	cullBelowSpan: 3.25,     // remove once below center by this span
+};
+
+const BG_RAIN = {
+	startScrollT: 2.00,      // start background rain when camera begins panning to the text card
+	spinScrollT: 2.80,       // “then” -> start spawning spinning pieces late in the transition
+	rateStraight: 6.0,       // pieces/sec (upright)
+	rateSpin: 12.0,          // pieces/sec (random rotation)
+	maxPieces: 140,
+	spawnRadiusSpan: 1.8,
+	spawnHeightSpan: 2.2,
+	speedMinSpan: 0.85,
+	speedMaxSpan: 1.70,
+	angVelMax: 6.0,          // rad/sec
+	cullBelowSpan: 3.8,
+};
 
 // ------------------------------------------------------------
 // Chess state (logic)
@@ -262,13 +332,14 @@ let selectedMoves = []; // verbose moves from chess.js
 let engine = null;
 const engineThinking = ref(false);
 
-// End scene state: null | "win" | "lose" | "draw"
+// End scene state: null | "win" | "lose" | "draw" | "gameover"
 const endScene = ref(null);
 
 const heroTitle = computed(() => {
 	if (endScene.value === "win") return "You won!";
 	if (endScene.value === "lose") return "You lost";
 	if (endScene.value === "draw") return "Draw";
+	if (endScene.value === "gameover") return "Game over";
 	return "Chess Engine C++";
 });
 
@@ -276,18 +347,8 @@ const pageTheme = computed(() => {
 	if (endScene.value === "win") return "theme-win";
 	if (endScene.value === "lose") return "theme-lose";
 	if (endScene.value === "draw") return "theme-draw";
+	if (endScene.value === "gameover") return "theme-draw"; // neutral look; change if you want
 	return "theme-default";
-});
-
-const scrollHintVisible = computed(() => {
-	if (loading.value) return false;
-	if (!cinematicReady) return false;
-	if (endScene.value) return false;
-	// only show once the board is basically revealed
-	if (scrollT.value < 0.98) return false;
-	// avoid overlapping the idle prompt
-	if (makeMoveVisible.value) return false;
-	return true;
 });
 
 // ------------------------------------------------------------
@@ -319,6 +380,7 @@ let idleShakeBaseQuat = null;
 const makeMoveVisible = computed(() => idleHintVisible.value);
 
 function shouldShowIdleHint() {
+	if (endScene.value) return false;
 	if (didAnyMove.value) return false;
 	if (!cinematicSettled.value) return false;
 	if (loading.value) return false;
@@ -328,6 +390,39 @@ function shouldShowIdleHint() {
 	if (isAnimating()) return false;
 	if (isDraggingOrPending()) return false;
 	return true;
+}
+
+const skipPromptVisible = computed(() => {
+	if (loading.value) return false;
+	if (!cinematicReady) return false;
+	if (endScene.value) return false;
+	if (!cinematicSettled.value) return false;
+
+	// avoid offering the button during active interactions
+	if (engineThinking.value) return false;
+	if (isAnimating()) return false;
+	if (isDraggingOrPending()) return false;
+
+	return true;
+});
+
+function skipToContent() {
+	if (endScene.value) return;
+
+	// kill any chess UX state
+	endScene.value = "gameover";
+
+	cancelIdleHint();
+	clearSelection();
+	clearHover();
+	detachDragListeners();
+
+	// match your existing “game ended” behavior (hero screen at top)
+	window.scrollTo({ top: 0, behavior: "smooth" });
+
+	// Optional: if you truly want to jump straight to the content camera (stage 2),
+	// uncomment the next line instead of scrolling to top:
+	// window.scrollTo({ top: stageLenPx() * CINEMATIC.stages, behavior: "smooth" });
 }
 
 
@@ -474,6 +569,17 @@ function initThree() {
 	idleHintHighlightsGroup = new THREE.Group();
 	idleHintHighlightsGroup.name = "IdleHintHighlights";
 	scene.add(idleHintHighlightsGroup);
+
+	// Stage 2 -> 3 props
+	contentGroup = new THREE.Group();
+	contentGroup.name = "ContentGroup";
+	contentGroup.visible = false;
+	scene.add(contentGroup);
+
+	fallingPiecesGroup = new THREE.Group();
+	fallingPiecesGroup.name = "FallingPieces";
+	fallingPiecesGroup.visible = false;
+	scene.add(fallingPiecesGroup);
 
 	cinematicReady = false;
 }
@@ -655,6 +761,8 @@ function loadModel() {
 			game.reset();
 			endScene.value = null;
 			didAnyMove.value = false;
+
+			resetStage23Effects();
 
 			loading.value = false;
 
@@ -954,6 +1062,7 @@ function setCursor(c) {
 // ------------------------------------------------------------
 function onPointerDown(ev) {
 	// Any interaction kills the hint immediately (text + ring + shake)
+	if (endScene.value) return;
 	cancelIdleHint();
 
 	invariant(!loading.value, "Pointer interaction while model is still loading.");
@@ -1280,6 +1389,7 @@ function tryMoveTo(toSquare, { fromDrag = false } = {}) {
 
 
 async function maybePlayBlackMove() {
+	if (endScene.value) return;
 	if (!engine) return;
 	if (game.isGameOver()) return;
 	if (game.turn() !== "b") return;
@@ -1600,6 +1710,18 @@ function setupCinematicFromBoard(boardInfo, board) {
 		.addScaledVector(basisForward, -boardSpan * CINEMATIC.learnBack)
 		.addScaledVector(basisRight, boardSpan * CINEMATIC.learnSide);
 
+	// Stage 3 (content card)
+	contentTarget.copy(basisCenter)
+		.addScaledVector(basisUp, boardSpan * CINEMATIC.contentTargetUp)
+		.addScaledVector(basisForward, boardSpan * CINEMATIC.contentTargetForward)
+		.addScaledVector(basisRight, boardSpan * CINEMATIC.contentTargetSide);
+	contentCamPos.copy(basisCenter)
+		.addScaledVector(basisUp, boardSpan * CINEMATIC.contentUp)
+		.addScaledVector(basisForward, -boardSpan * CINEMATIC.contentBack)
+		.addScaledVector(basisRight, boardSpan * CINEMATIC.contentSide);
+
+	ensureContentCard(); // creates/places the “Carpe diem” text box at contentTarget
+
 	if (Math.abs(CINEMATIC.twistDeg) > 1e-6) {
 		const twist = THREE.MathUtils.degToRad(CINEMATIC.twistDeg);
 		tmpQuat.setFromAxisAngle(basisUp, twist);
@@ -1638,14 +1760,21 @@ function applyCinematic(t, force = false) {
 		camera.position.lerpVectors(introCamPos, playCamPos, e);
 		target.lerpVectors(introTarget, playTarget, e);
 		roll = 0;
-	} else {
+	} else if (clamped <= 2) {
 		// Stage 1 -> 2
 		const u = THREE.MathUtils.clamp(clamped - 1, 0, 1);
 		const e = easeInOutCubic(u);
 		camera.position.lerpVectors(playCamPos, learnCamPos, e);
 		target.lerpVectors(playTarget, learnTarget, e);
 		roll = CINEMATIC.learnRollRad * e;
-	}
+	} else {
+		// Stage 2 -> 3 (pan down to text card)
+		const u = THREE.MathUtils.clamp(clamped - 2, 0, 1);
+		const e = easeInOutCubic(u);
+		camera.position.lerpVectors(learnCamPos, contentCamPos, e);
+		target.lerpVectors(learnTarget, contentTarget, e);
+		roll = THREE.MathUtils.lerp(CINEMATIC.learnRollRad, CINEMATIC.contentRollRad, e);
+ 	}
 
 	// Keep controls target in sync for anything else relying on it
 	if (controls) controls.target.copy(target);
@@ -2032,6 +2161,7 @@ function getBaseCenterXZWorld(obj) {
 // Hover pick + glow + time-limited jiggle + hover move preview
 // ------------------------------------------------------------
 function onPointerMove(ev) {
+	if (endScene.value) return;
 	invariant(!loading.value, "Pointer move while model is loading.");
 	invariant(piecesGroup, "Pointer move before piecesGroup is ready.");
 	invariant(renderer && camera, "Pointer move before renderer/camera ready.");
@@ -2181,6 +2311,310 @@ function applyIdleShake(nowT) {
 	idleShakePiece.updateWorldMatrix(true, true);
 }
 
+function resetStage23Effects(fromDispose = false) {
+	stage2DropStarted = false;
+	stage2DropStartTime = 0;
+
+	// clear per-piece drop metadata (don’t restore pieces; stage 2 is “destructive” by design)
+	if (piecesGroup) {
+		for (const p of piecesGroup.children) {
+			if (p?.userData) delete p.userData.__drop;
+		}
+	}
+
+	// clear background raining pieces
+	if (fallingPiecesGroup) {
+		for (const it of fallingPieces) {
+			fallingPiecesGroup.remove(it.obj);
+			disposeObject3D(it.obj);
+		}
+	}
+	fallingPieces = [];
+	rainSpawnAcc = 0;
+
+	// clear content card
+	if (contentGroup && contentCardSprite) {
+		contentGroup.remove(contentCardSprite);
+		contentCardSprite = null;
+	}
+	if (contentCardMaterial) {
+		contentCardMaterial.dispose();
+		contentCardMaterial = null;
+	}
+	if (contentCardTexture) {
+		contentCardTexture.dispose();
+		contentCardTexture = null;
+	}
+
+	// hide groups if we still exist
+	if (!fromDispose) {
+		contentGroup && (contentGroup.visible = false);
+		fallingPiecesGroup && (fallingPiecesGroup.visible = false);
+	}
+}
+
+function updateStage23Effects(delta) {
+	// No stage 2/3 while playing; your existing allowedStages already enforces this,
+	// but keep this guard so we don’t mutate pieces accidentally.
+	if (!endScene.value) return;
+	if (!cinematicReady) return;
+	if (loading.value) return;
+	if (!boardInfoGlobal) return;
+
+	// Fade/show the content card as we enter stage 2 -> 3
+	if (contentCardMaterial) {
+		const a = smoothstep(2.0, 2.25, scrollT.value);
+		contentCardMaterial.opacity = a;
+	}
+	if (contentGroup) {
+		contentGroup.visible = scrollT.value >= 1.95;
+	}
+
+	// Start dropping the *existing* chess set (stage 2 continuation)
+	if (!stage2DropStarted && scrollT.value >= STAGE2_DROP.startScrollT) {
+		stage2DropStarted = true;
+		stage2DropStartTime = elapsed;
+
+		if (piecesGroup) {
+			for (const p of piecesGroup.children) {
+				p.userData.__drop = {
+					delay: Math.random() * STAGE2_DROP.maxDelaySec,
+					speed: boardSpan * (STAGE2_DROP.speedMinSpan + Math.random() * (STAGE2_DROP.speedMaxSpan - STAGE2_DROP.speedMinSpan)),
+					traveled: 0,
+				};
+			}
+		}
+	}
+
+	if (stage2DropStarted) {
+		updateExistingPieceDrops(delta);
+	}
+
+	// Background rain (late stage 2 -> stage 3)
+	updateBackgroundRain(delta);
+}
+
+function updateExistingPieceDrops(delta) {
+	if (!piecesGroup) return;
+
+	const up = (basisUp && basisUp.lengthSq() > 1e-8) ? basisUp : (boardInfoGlobal.normal || WORLD_UP);
+
+	// Phase A: until we reach the fully “learn” pose (t < 2), drop in board/world down.
+	// Phase B: from stage 2 onward (t >= 2), drop “down the screen” (toward the camera).
+	const down = tmpAxisX; // reuse scratch
+	if (scrollT.value < 2.0) {
+		down.copy(up).multiplyScalar(-1);
+	} else {
+		getCameraScreenDownWorld(down);
+	}
+
+	const cullDist = boardSpan * STAGE2_DROP.cullBelowSpan;
+
+	for (let i = piecesGroup.children.length - 1; i >= 0; i--) {
+		const p = piecesGroup.children[i];
+		const d = p?.userData?.__drop;
+		if (!d) continue;
+
+		if ((elapsed - stage2DropStartTime) < d.delay) continue;
+
+		const ds = d.speed * delta;
+		d.traveled = (d.traveled ?? 0) + ds;
+
+		p.position.addScaledVector(down, ds);
+		p.updateWorldMatrix(true, true);
+
+		// Direction-safe cull: remove after traveling far enough, regardless of direction changes
+		if (d.traveled > cullDist) {
+			piecesGroup.remove(p);
+			disposeObject3D(p);
+		}
+	}
+}
+
+function updateBackgroundRain(delta) {
+	if (!fallingPiecesGroup || !templatesGlobal || !boardInfoGlobal) return;
+
+	const active = scrollT.value >= BG_RAIN.startScrollT;
+	fallingPiecesGroup.visible = active;
+	if (!active) return;
+
+	const spin = scrollT.value >= BG_RAIN.spinScrollT;
+
+	const rate = spin ? BG_RAIN.rateSpin : BG_RAIN.rateStraight;
+	rainSpawnAcc += rate * delta;
+
+	// spawn
+	while (rainSpawnAcc >= 1.0) {
+		rainSpawnAcc -= 1.0;
+		if (fallingPieces.length >= BG_RAIN.maxPieces) break;
+		spawnBackgroundPiece({ spin });
+	}
+
+	const down = getCameraScreenDownWorld(tmpAxisX);
+	const cullDist = boardSpan * BG_RAIN.cullBelowSpan;
+
+	for (let i = fallingPieces.length - 1; i >= 0; i--) {
+		const it = fallingPieces[i];
+		const obj = it.obj;
+
+		const ds = it.speed * delta;
+		it.traveled = (it.traveled ?? 0) + ds;
+
+		obj.position.addScaledVector(down, ds);
+
+		if (spin) {
+			obj.rotation.x += it.angVel.x * delta;
+			obj.rotation.y += it.angVel.y * delta;
+			obj.rotation.z += it.angVel.z * delta;
+		}
+
+		obj.updateWorldMatrix(true, true);
+
+		if (it.traveled > cullDist) {
+			fallingPiecesGroup.remove(obj);
+			disposeObject3D(obj);
+			fallingPieces.splice(i, 1);
+		}
+	}
+}
+
+function spawnBackgroundPiece({ spin }) {
+	// pick template
+	const types = Object.keys(TEMPLATE_NAMES);
+	const type = types[Math.floor(Math.random() * types.length)];
+	const color = Math.random() < 0.5 ? "white" : "black";
+
+	const tpl = templatesGlobal[type];
+	if (!tpl) return;
+
+	const piece = clonePieceWithTint(tpl, color);
+	piece.userData.type = type;
+	piece.userData.color = color;
+
+	// scale consistently with your set
+	normalizePieceUprightAndScale(piece, boardInfoGlobal.squareSize, color);
+
+	// Spawn around the BOARD, but lifted “up on screen” so it falls down toward camera.
+	const screenDown = getCameraScreenDownWorld(tmpAxisX);
+	const screenUp = tmpAxisY.copy(screenDown).multiplyScalar(-1);
+
+	const r = boardSpan * BG_RAIN.spawnRadiusSpan;
+	const h = boardSpan * BG_RAIN.spawnHeightSpan;
+
+	const rx = (Math.random() * 2 - 1) * r;
+	const rz = (Math.random() * 2 - 1) * r;
+
+	const right = (basisRight && basisRight.lengthSq() > 1e-8) ? basisRight : new THREE.Vector3(1, 0, 0);
+	const fwd = (basisForward && basisForward.lengthSq() > 1e-8) ? basisForward : new THREE.Vector3(0, 0, 1);
+
+	piece.position.copy(basisCenter)
+		.addScaledVector(right, rx)
+		.addScaledVector(fwd, rz)
+		.addScaledVector(screenUp, h);
+
+	// stage-2 straight drop: keep upright (no extra rotation)
+	// stage-3 background: random rotation
+	if (spin) {
+		piece.rotation.set(
+			Math.random() * Math.PI * 2,
+			Math.random() * Math.PI * 2,
+			Math.random() * Math.PI * 2
+		);
+	}
+
+	piece.updateWorldMatrix(true, true);
+	fallingPiecesGroup.add(piece);
+
+	const speed = boardSpan * (BG_RAIN.speedMinSpan + Math.random() * (BG_RAIN.speedMaxSpan - BG_RAIN.speedMinSpan));
+
+	const angVel = new THREE.Vector3(
+		(Math.random() * 2 - 1) * BG_RAIN.angVelMax,
+		(Math.random() * 2 - 1) * BG_RAIN.angVelMax,
+		(Math.random() * 2 - 1) * BG_RAIN.angVelMax
+	);
+
+	fallingPieces.push({ obj: piece, speed, angVel, traveled: 0 });
+}
+
+// 3D “text box” the camera pans to
+function ensureContentCard() {
+	if (!contentGroup) return;
+
+	// rebuild every time cinematic basis is recomputed (safe + simple)
+	if (contentCardSprite) {
+		contentGroup.remove(contentCardSprite);
+		contentCardSprite = null;
+	}
+	if (contentCardMaterial) {
+		contentCardMaterial.dispose();
+		contentCardMaterial = null;
+	}
+	if (contentCardTexture) {
+		contentCardTexture.dispose();
+		contentCardTexture = null;
+	}
+
+	contentCardTexture = makeTextCardTexture("Carpe diem");
+	contentCardMaterial = new THREE.SpriteMaterial({
+		map: contentCardTexture,
+		transparent: true,
+		opacity: 0.0,
+		depthWrite: false,
+	});
+
+	contentCardSprite = new THREE.Sprite(contentCardMaterial);
+	contentCardSprite.position.copy(contentTarget);
+	contentCardSprite.scale.set(boardSpan * 1.7, boardSpan * 0.62, 1);
+
+	contentGroup.add(contentCardSprite);
+	contentGroup.visible = false;
+}
+
+function makeTextCardTexture(text) {
+	const c = document.createElement("canvas");
+	c.width = 1024;
+	c.height = 512;
+
+	const ctx = c.getContext("2d");
+	ctx.clearRect(0, 0, c.width, c.height);
+
+	// card bg
+	const pad = 52;
+	const x = pad, y = pad, w = c.width - pad * 2, h = c.height - pad * 2;
+	const r = 44;
+
+	ctx.fillStyle = "rgba(10,16,32,0.78)";
+	ctx.strokeStyle = "rgba(180,200,255,0.28)";
+	ctx.lineWidth = 6;
+
+	roundedRect(ctx, x, y, w, h, r);
+	ctx.fill();
+	ctx.stroke();
+
+	// title text
+	ctx.fillStyle = "rgba(245,248,255,0.96)";
+	ctx.font = "800 92px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.fillText(text, c.width / 2, c.height / 2);
+
+	const tex = new THREE.CanvasTexture(c);
+	tex.colorSpace = THREE.SRGBColorSpace;
+	tex.needsUpdate = true;
+	return tex;
+}
+
+function roundedRect(ctx, x, y, w, h, r) {
+	ctx.beginPath();
+	ctx.moveTo(x + r, y);
+	ctx.arcTo(x + w, y, x + w, y + h, r);
+	ctx.arcTo(x + w, y + h, x, y + h, r);
+	ctx.arcTo(x, y + h, x, y, r);
+	ctx.arcTo(x, y, x + w, y, r);
+	ctx.closePath();
+}
+
+
 // ------------------------------------------------------------
 // Loop + resize + dispose
 // ------------------------------------------------------------
@@ -2195,6 +2629,8 @@ function startLoop() {
 
 		scrollT.value = THREE.MathUtils.damp(scrollT.value, scrollTargetT, CINEMATIC.smoothing, delta);
 		applyCinematic(scrollT.value);
+
+		updateStage23Effects(delta);
 
 		updateMoveAnimations(elapsed);
 		applyHoverShake(elapsed);
@@ -2227,6 +2663,16 @@ function disposeAll() {
 	cancelIdleHint();
 
 	disposeHighlightSystem();
+	resetStage23Effects(true);
+
+	if (contentGroup) {
+		scene?.remove(contentGroup);
+		contentGroup = null;
+	}
+	if (fallingPiecesGroup) {
+		scene?.remove(fallingPiecesGroup);
+		fallingPiecesGroup = null;
+	}
 
 	if (piecesGroup) {
 		scene?.remove(piecesGroup);
@@ -2389,7 +2835,7 @@ function sleep(ms) {
 }
 
 .idle-prompt-text {
-	margin-top: 12vh; /* override .hero-sub margin-top */
+	margin-top: 3vh; /* override .hero-sub margin-top */
 	padding: 0;          /* no pill */
 	background: none;    /* no glass */
 	border: none;
@@ -2404,6 +2850,71 @@ function sleep(ms) {
 		0 0 14px rgba(80, 140, 255, 0.18),
 		0 10px 40px rgba(0, 0, 0, 0.35);
 }
+
+.skip-prompt {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 18px;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 12px;
+
+	z-index: 9999;
+
+	/* container itself doesn't steal clicks from canvas */
+	pointer-events: none;
+
+	opacity: 0;
+	transform: translateY(8px);
+	transition: opacity 360ms ease, transform 360ms ease;
+	will-change: opacity, transform;
+}
+
+.skip-prompt.is-visible {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+.skip-prompt-text {
+	color: rgba(var(--sub), 0.92);
+	text-shadow:
+		0 0 14px rgba(var(--accent), 0.14),
+		0 10px 40px rgba(0, 0, 0, 0.35);
+}
+
+.skip-button {
+	/* button IS clickable */
+	pointer-events: auto;
+
+	cursor: pointer;
+	border-radius: 999px;
+	padding: 10px 14px;
+
+	background: rgba(10, 16, 32, 0.62);
+	border: 1px solid rgba(var(--accent), 0.35);
+	color: rgba(var(--title), 0.95);
+
+	font-weight: 700;
+	letter-spacing: 0.01em;
+	backdrop-filter: blur(10px);
+}
+
+.skip-button:hover {
+	background: rgba(10, 16, 32, 0.78);
+}
+
+.skip-button:active {
+	transform: translateY(1px);
+}
+
+.skip-button:focus-visible {
+	outline: 2px solid rgba(var(--accent), 0.55);
+	outline-offset: 2px;
+}
+
 
 .scroll-hint {
 	position: fixed;

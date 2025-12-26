@@ -4,7 +4,7 @@
 			<canvas ref="canvasRef" class="chess-canvas"></canvas>
 
 			<div
-				class="hero"
+				class="stage-hero"
 				:style="{
 					opacity: heroOpacity,
 					transform: `translateY(${heroTranslateY}px)`,
@@ -32,6 +32,83 @@
 		</section>
 
 		<div class="scroll-spacer" :style="{ height: scrollSpacerHeight }" aria-hidden="true"></div>
+
+		<!-- NEW: Content section (DOM cards) -->
+		<article
+		class="content"
+		:class="{ 'is-visible': contentDomVisible }"
+		:aria-hidden="(!contentDomVisible).toString()"
+		>
+			<section class="card hero">
+				<div class="section-label">Chess · Project</div>
+				<h1 class="hero-title"> </h1>
+				<div class="hero-meta mono"><strong>Stack:</strong> </div>
+
+				<div class="hero-grid">
+					<div class="hero-copy">
+						<p class="hero-summary">&nbsp;</p>
+						<p class="hero-summary">&nbsp;</p>
+
+						<div class="hero-actions">
+							<a class="btn" href="#" @click.prevent> </a>
+							<a class="btn secondary" href="#" @click.prevent> </a>
+						</div>
+					</div>
+
+					<div class="hero-image">
+						<div class="image-wrapper">
+							<div class="image image-placeholder"></div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section class="row grid cols-2">
+				<div class="card">
+					<div class="image-wrapper large">
+						<div class="image image-placeholder large"></div>
+					</div>
+					<div class="image-wrapper large" style="margin-top:14px;">
+						<div class="image image-placeholder large"></div>
+					</div>
+				</div>
+
+				<section class="card">
+					<div class="section-label"> </div>
+					<h2 class="section-title small"> </h2>
+					<p class="section-intro">&nbsp;</p>
+
+					<ol class="pipeline-list">
+						<li>&nbsp;</li>
+						<li>&nbsp;</li>
+						<li>&nbsp;</li>
+						<li>&nbsp;</li>
+					</ol>
+				</section>
+			</section>
+
+			<section class="card outcomes">
+				<div class="section-label"> </div>
+				<h2 class="section-title small"> </h2>
+				<p class="section-intro">&nbsp;</p>
+
+				<div class="outcomes-grid">
+					<div class="outcomes-text">
+						<p>&nbsp;</p>
+						<p>&nbsp;</p>
+					</div>
+
+					<div class="outcomes-images">
+						<div class="image-wrapper large">
+							<div class="image image-placeholder large"></div>
+						</div>
+						<div class="image-wrapper large">
+							<div class="image image-placeholder large"></div>
+						</div>
+					</div>
+				</div>
+			</section>
+		</article>
 	</div>
 </template>
 
@@ -213,7 +290,7 @@ const CINEMATIC = {
 	transitionVh: 210,
 	stages: 3,
 
-	smoothing: 8.0,
+	smoothing: 6.0,
 
 	titleFadeStart: 0.05,
 	titleFadeEnd: 0.32,
@@ -255,6 +332,7 @@ const CINEMATIC = {
 // Scroll state (0..2)
 let scrollTargetT = 0;
 const scrollT = ref(0);
+let endAutoAdvanceDone = false;
 
 
 // Cinematic poses
@@ -304,10 +382,10 @@ const STAGE2_DROP = {
 };
 
 const BG_RAIN = {
-	startScrollT: 2.00,      // start background rain when camera begins panning to the text card
-	spinScrollT: 2.80,       // “then” -> start spawning spinning pieces late in the transition
-	rateStraight: 6.0,       // pieces/sec (upright)
-	rateSpin: 12.0,          // pieces/sec (random rotation)
+	startScrollT: 1.60,      // start background rain when camera begins panning to the text card
+	spinScrollT: 2.8,       // “then” -> start spawning spinning pieces late in the transition
+	rateStraight: 10.0,       // pieces/sec (upright)
+	rateSpin: 14.0,          // pieces/sec (random rotation)
 	maxPieces: 140,
 	spawnRadiusSpan: 1.8,
 	spawnHeightSpan: 2.2,
@@ -316,6 +394,35 @@ const BG_RAIN = {
 	angVelMax: 6.0,          // rad/sec
 	cullBelowSpan: 3.8,
 };
+
+// ------------------------------------------------------------
+// Stage 3 lock (once fully reached, prevent scrolling back up)
+// ------------------------------------------------------------
+const CONTENT_LOCK = {
+	activateAtScrollT: 2.98, // near the end of stage 2->3 (3.0 is fully complete)
+};
+
+let contentLockActive = false;
+let contentLockMinY = 0;
+
+function computeContentLockMinY() {
+	// Full stage-3 completion corresponds to scrollT === 3, which is scrollY === stageLenPx()*3
+	return stageLenPx() * CINEMATIC.stages;
+}
+
+function enforceContentMinScroll() {
+	if (!contentLockActive) return;
+	if (window.scrollY < contentLockMinY) {
+		window.scrollTo({ top: contentLockMinY, behavior: "auto" });
+	}
+}
+
+function setHeaderVisible(visible) {
+	// This assumes your header can be controlled by a global class.
+	// If your header uses a store instead, swap this implementation.
+	document.documentElement.classList.toggle("header-visible", visible);
+}
+
 
 // ------------------------------------------------------------
 // Chess state (logic)
@@ -406,6 +513,10 @@ const skipPromptVisible = computed(() => {
 	return true;
 });
 
+const contentDomVisible = computed(() => {
+	return !!endScene.value && scrollT.value >= 2.85;
+});
+
 function skipToContent() {
 	if (endScene.value) return;
 
@@ -417,12 +528,7 @@ function skipToContent() {
 	clearHover();
 	detachDragListeners();
 
-	// match your existing “game ended” behavior (hero screen at top)
 	window.scrollTo({ top: 0, behavior: "smooth" });
-
-	// Optional: if you truly want to jump straight to the content camera (stage 2),
-	// uncomment the next line instead of scrolling to top:
-	// window.scrollTo({ top: stageLenPx() * CINEMATIC.stages, behavior: "smooth" });
 }
 
 
@@ -589,24 +695,27 @@ onMounted(() => {
 	loadModel();
 	startLoop();
 
-	// Engine init (doesn't block rendering)
 	engine = new StockfishClient({
 		workerUrl: "/stockfish/stockfish-17.1-lite-single-03e3232.js",
 		skillLevel: 2,
 		movetimeMs: 120,
 	});
 
-	// No catch: let init errors surface as unhandled rejections with stack traces.
 	void engine.init();
 
 	onScroll();
 	window.addEventListener("resize", onResize, { passive: true });
 	window.addEventListener("scroll", onScroll, { passive: true });
+
+	window.addEventListener("wheel", onWheelAutoAdvance, { passive: false });
 });
 
 onBeforeUnmount(() => {
 	window.removeEventListener("resize", onResize);
 	window.removeEventListener("scroll", onScroll);
+
+	// NEW
+	window.removeEventListener("wheel", onWheelAutoAdvance);
 
 	cancelIdleHint();
 	detachDragListeners();
@@ -614,9 +723,11 @@ onBeforeUnmount(() => {
 	if (engine) engine.terminate();
 	engine = null;
 
+	cancelEndAutoSequence();
 	stopLoop();
 	disposeAll();
 });
+
 
 // ------------------------------------------------------------
 // UI / scroll helpers
@@ -678,20 +789,39 @@ function stageLenPx() {
 }
 
 function onScroll() {
+	if (endAutoRunning) return;
+
 	const lenPx = stageLenPx();
 	const maxT = allowedStages.value;
 	const maxY = lenPx * maxT;
 
-	// Hard-stop the document scroll so you physically cannot go past stage 1 while playing.
-	// (Clamping t alone still allows you to scroll into “empty space”, which feels broken.)
 	if (window.scrollY > maxY) {
 		window.scrollTo({ top: maxY, behavior: "auto" });
+	}
+
+	if (contentLockActive) {
+		enforceContentMinScroll();
 	}
 
 	const y = Math.min(window.scrollY, maxY);
 	scrollTargetT = THREE.MathUtils.clamp(y / lenPx, 0, maxT);
 }
 
+function onWheelAutoAdvance(ev) {
+	if (!endScene.value) return;
+
+	if (endAutoAdvanceDone) return;
+	if ((ev.deltaY ?? 0) <= 0) return;
+
+	const topGatePx = Math.max(16, stageLenPx() * 0.08);
+	if (window.scrollY > topGatePx) return;
+
+	ev.preventDefault?.();
+
+	endAutoAdvanceDone = true;
+
+	startEndAutoSequence();
+}
 
 function loadModel() {
 	// Prevent pointer events while loading/reloading
@@ -761,6 +891,7 @@ function loadModel() {
 			game.reset();
 			endScene.value = null;
 			didAnyMove.value = false;
+			endAutoAdvanceDone = false;
 
 			resetStage23Effects();
 
@@ -835,9 +966,131 @@ function triggerEndSceneIfGameOver() {
 	if (o.status === "checkmate") endScene.value = (o.winner === "white") ? "win" : "lose";
 	else if (o.status === "draw") endScene.value = "draw";
 
-	// Undo the cinematic by scrolling back to top (camera follows via your scroll damp).
-	window.scrollTo({ top: 0, behavior: "smooth" });
+	window.scrollTo({ top: computeContentLockMinY(), behavior: "smooth" });
 }
+
+// ------------------------------------------------------------
+// End-scene auto-advance timing (seconds per segment)
+// ------------------------------------------------------------
+const END_AUTO = {
+	seg01: 2.0,
+	seg12: 1.5,
+	seg23: 1.0,
+};
+
+let endAutoRaf = 0;
+let endAutoStartMs = 0;
+let endAutoRunning = false;
+
+function cancelEndAutoSequence() {
+	endAutoRunning = false;
+	if (endAutoRaf) cancelAnimationFrame(endAutoRaf);
+	endAutoRaf = 0;
+	endAutoStartMs = 0;
+}
+
+// Cubic Hermite (C1-continuous) for scalar values.
+// p0,p1: values at ends
+// m0,m1: derivatives w.r.t TIME at ends
+// u: 0..1
+// dt: segment duration in seconds
+function hermite1D(p0, p1, m0, m1, u, dt) {
+	const u2 = u * u;
+	const u3 = u2 * u;
+
+	const h00 =  2 * u3 - 3 * u2 + 1;
+	const h10 =      u3 - 2 * u2 + u;
+	const h01 = -2 * u3 + 3 * u2;
+	const h11 =      u3 -     u2;
+
+	// Note: tangents scale by dt for time-parameterized Hermite
+	return h00 * p0 + h10 * (m0 * dt) + h01 * p1 + h11 * (m1 * dt);
+}
+
+function startEndAutoSequence() {
+	cancelEndAutoSequence();
+
+	const lenPx = stageLenPx();
+	const maxT = allowedStages.value; // should be 3 when endScene is set
+
+	// Keyframes in "t space"
+	const P = [0, 1, 2, Math.min(3, maxT)];
+
+	// Segment durations (seconds)
+	const D = [
+		Math.max(0.001, END_AUTO.seg01),
+		Math.max(0.001, END_AUTO.seg12),
+		Math.max(0.001, END_AUTO.seg23),
+	];
+
+	// Velocities per segment (dt/dtime)
+	const V = [
+		(P[1] - P[0]) / D[0],
+		(P[2] - P[1]) / D[1],
+		(P[3] - P[2]) / D[2],
+	];
+
+	// Tangents (derivatives w.r.t time) at keyframes:
+	// - endpoints: 0 for gentle start/end (one smooth animation feel)
+	// - interior: average adjacent velocities -> C1 smooth join
+	const M = [
+		0.0,
+		0.5 * (V[0] + V[1]),
+		0.5 * (V[1] + V[2]),
+		0.0,
+	];
+
+	const Tcum = [0, D[0], D[0] + D[1], D[0] + D[1] + D[2]];
+	const totalDur = Tcum[3];
+
+	endAutoStartMs = performance.now();
+	endAutoRunning = true;
+
+	// Put the scrollbar at the start cleanly once
+	window.scrollTo({ top: 0, behavior: "auto" });
+
+	const step = (nowMs) => {
+		if (!endAutoRunning) return;
+
+		const tSec = (nowMs - endAutoStartMs) / 1000;
+		const s = Math.min(totalDur, Math.max(0, tSec));
+
+		// Which segment?
+		let seg = 0;
+		if (s >= Tcum[2]) seg = 2;
+		else if (s >= Tcum[1]) seg = 1;
+
+		const segStart = Tcum[seg];
+		const segDur = D[seg];
+		const u = THREE.MathUtils.clamp((s - segStart) / segDur, 0, 1);
+
+		// Smooth t with continuous velocity across segments
+		const newT = hermite1D(P[seg], P[seg + 1], M[seg], M[seg + 1], u, segDur);
+
+		// Drive cinematic directly (no per-frame scrollTo jitter)
+		scrollTargetT = newT;
+
+		// OPTIONAL: if you want the scrollbar to match, update it *lightly*.
+		// Updating every frame tends to feel "jittery" due to scroll events.
+		// This keeps it pretty aligned without fighting your onScroll too hard:
+		if ((nowMs | 0) % 2 === 0) {
+			window.scrollTo({ top: newT * lenPx, behavior: "auto" });
+		}
+
+		if (s >= totalDur - 1e-6) {
+			scrollTargetT = P[3];
+			window.scrollTo({ top: P[3] * lenPx, behavior: "auto" });
+			endAutoRunning = false;
+			endAutoRaf = 0;
+			return;
+		}
+
+		endAutoRaf = requestAnimationFrame(step);
+	};
+
+	endAutoRaf = requestAnimationFrame(step);
+}
+
 
 // ------------------------------------------------------------
 // “Let errors flow” helpers
@@ -2560,9 +2813,11 @@ function ensureContentCard() {
 		transparent: true,
 		opacity: 0.0,
 		depthWrite: false,
+		depthTest: false,
 	});
 
 	contentCardSprite = new THREE.Sprite(contentCardMaterial);
+	contentCardSprite.renderOrder = 999; 
 	contentCardSprite.position.copy(contentTarget);
 	contentCardSprite.scale.set(boardSpan * 1.7, boardSpan * 0.62, 1);
 
@@ -2630,6 +2885,14 @@ function startLoop() {
 		scrollT.value = THREE.MathUtils.damp(scrollT.value, scrollTargetT, CINEMATIC.smoothing, delta);
 		applyCinematic(scrollT.value);
 
+		// Activate lock once we fully arrive at stage 3
+		if (endScene.value && !contentLockActive && scrollT.value >= CONTENT_LOCK.activateAtScrollT) {
+			contentLockActive = true;
+			contentLockMinY = computeContentLockMinY();
+			enforceContentMinScroll();       // snap to the lock point if needed
+			setHeaderVisible(true);          // show header now that we’re in content mode
+		}
+
 		updateStage23Effects(delta);
 
 		updateMoveAnimations(elapsed);
@@ -2652,6 +2915,11 @@ function onResize() {
 	renderer.setSize(window.innerWidth, window.innerHeight);
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
+
+	if (contentLockActive) {
+		contentLockMinY = computeContentLockMinY();
+		enforceContentMinScroll();
+	}
 }
 
 function disposeAll() {
@@ -2784,7 +3052,7 @@ function sleep(ms) {
 	touch-action: pan-y;
 }
 
-.hero {
+.stage-hero {
 	position: absolute;
 	inset: 0;
 	display: grid;
@@ -3033,4 +3301,159 @@ function sleep(ms) {
 .mono {
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
+
+.content {
+	position: relative;
+	z-index: 5; /* above the canvas/vignette */
+	padding: 18px;
+	width: min(1100px, calc(100vw - 36px));
+	margin: 0 auto;
+
+	opacity: 0;
+	transform: translateY(10px);
+	transition: opacity 300ms ease, transform 300ms ease;
+	pointer-events: none; /* hidden state */
+}
+
+.content.is-visible {
+	margin-top: 70vh;
+	opacity: 1;
+	transform: translateY(0);
+	pointer-events: auto;
+}
+
+.card {
+	border-radius: 14px;
+	padding: 14px;
+	background: rgba(10, 16, 32, 0.72);
+	border: 1px solid rgba(231, 238, 252, 0.18);
+	backdrop-filter: blur(10px);
+}
+
+.section-label {
+	font-size: 0.75rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	opacity: 0.8;
+	color: rgba(var(--sub), 0.9);
+}
+
+.section-title.small {
+	font-size: 1.05rem;
+	margin: 6px 0 10px;
+	color: rgba(var(--title), 0.95);
+}
+
+.section-intro,
+.hero-summary,
+.outcomes-text {
+	color: rgba(var(--sub), 0.85);
+}
+
+.hero {
+	margin-bottom: 16px;
+}
+
+.hero-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 9fr) minmax(0, 7fr);
+	gap: 20px;
+	align-items: stretch;
+}
+
+.hero-copy {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.hero-meta {
+	font-size: 0.9rem;
+	opacity: 0.9;
+	color: rgba(var(--sub), 0.85);
+	margin-bottom: 10px;
+}
+
+.hero-actions {
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin-top: 8px;
+}
+
+.btn {
+	pointer-events: auto;
+	cursor: pointer;
+	border-radius: 999px;
+	padding: 10px 14px;
+	background: rgba(10, 16, 32, 0.62);
+	border: 1px solid rgba(var(--accent), 0.35);
+	color: rgba(var(--title), 0.95);
+	font-weight: 700;
+	letter-spacing: 0.01em;
+	text-decoration: none;
+}
+
+.btn.secondary {
+	opacity: 0.9;
+}
+
+.row {
+	margin-top: 18px;
+}
+
+.outcomes {
+	margin-top: 18px;
+}
+
+.outcomes-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 11fr) minmax(0, 7fr);
+	gap: 20px;
+	margin-top: 10px;
+}
+
+.outcomes-images {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.pipeline-list {
+	padding-left: 20px;
+	color: rgba(var(--sub), 0.85);
+	line-height: 1.5;
+	margin: 8px 0;
+}
+
+.image-wrapper {
+	border-radius: 10px;
+	overflow: hidden;
+	border: 1px solid rgba(231, 238, 252, 0.16);
+	background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent);
+}
+
+.image-wrapper.large {
+	width: 100%;
+}
+
+.image-placeholder {
+	width: 100%;
+	height: 220px;
+	background: rgba(255, 255, 255, 0.06);
+}
+
+.image-placeholder.large {
+	height: 260px;
+}
+
+@media (max-width: 900px) {
+	.hero-grid {
+		grid-template-columns: 1fr;
+	}
+	.outcomes-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
 </style>

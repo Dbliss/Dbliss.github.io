@@ -38,7 +38,7 @@ The images here are two of the main diagnostics I use:
 - a probability distribution chart to see how often the model leans into strong opinions vs staying conservative
     `,
     stack: ['Python', 'pandas', 'scikit-learn', 'UKF', 'Random forests', 'Gradient Boosting'],
-    tags: ['Machine Learning', 'Sports Analytics', 'Financial Modeling', 'Statistics'],
+    tags: ['Machine Learning', 'Sports Analytics', 'Statistics'],
     repoUrl: 'https://github.com/Dbliss/LoLPredictor',
     liveUrl: '',
     featured: true
@@ -63,54 +63,11 @@ I led the UX, data model, and optimisation orchestration work to make it practic
     featured: true
   },
   {
-    slug: 'smart-lighting-dashboard',
-    title: 'Smart Lighting Control Dashboard',
-    tagline: 'Manage lighting groups, schedules, and live device states',
-    excerpt:
-      'Production-grade dashboard to configure thousands of devices, integrated with an IoT CMS.',
-    description: `
-I led the front-end implementation of a Vue 3 + TypeScript dashboard for smart-city lighting.
-The UI supports schedule editing, device grouping, and live status streaming with WebSockets.
-
-**Constraints**
-- 10k+ devices, flaky field connectivity, and slow vendor APIs
-- Needed optimistic updates with conflict detection
-
-**Outcome**
-- Reduced configuration time from ~20 minutes to <5 minutes for common tasks
-- Cleaner separation of concerns and testable modules for long-term maintainability
-
-*Note:* Code is proprietary; I can walk through the architecture in interviews.
-    `,
-    stack: ['Vue 3', 'TypeScript', 'REST', 'WebSockets'],
-    tags: ['IoT', 'Dashboard'],
-    repoUrl: '',
-    liveUrl: ''
-  },
-  {
-    slug: 'invoice-automation',
-    title: 'Invoice Automation Toolkit',
-    tagline: 'Generate polished PDFs from lesson logs',
-    excerpt:
-      'Scriptable workflow that aggregates lesson logs and generates invoices on a schedule.',
-    description: `
-The toolkit authenticates with Google APIs, normalizes lesson logs from Docs/Sheets, and generates PDF invoices.
-I built templating and rounding rules, then scheduled it on a small VM with email delivery.
-
-**Outcome**
-- Replaced manual monthly work; repeatable and auditable invoice outputs
-    `,
-    stack: ['Python', 'Google APIs'],
-    tags: ['Automation'],
-    repoUrl: 'https://github.com/your-handle/invoice-automation',
-    liveUrl: ''
-  },
-  {
     slug: 'chessEngine',
     title: 'C++ Chess Engine',
     tagline: 'High Performing Chess Engine and UI Built from Scratch',
     excerpt:
-      'Created a high performing chess engine to extend my c++ skillset.',
+      'Created a high performing chess engine to extend my c++ skillset. Includes UI for player vs computer and computer vs computer matches.',
     description: `
 I built a chess engine from scratch in c++ to extend my knowledge of c++ fundamentals, learn about optimisation techniques,
 and master key software fundamentals such as hashing, search trees, bit operations, 
@@ -121,8 +78,8 @@ and master key software fundamentals such as hashing, search trees, bit operatio
 - Extensive understanding of C++ fundamentals and heavily optimised code
     `,
     stack: ['C++', 'Visual Studio executable code', 'Caching'],
-    tags: ['Optimisation'],
-    repoUrl: '',
+    tags: ['Optimisation', 'Game-Tree'],
+    repoUrl: 'https://github.com/Dbliss/Chess-Engine-cpp',
     liveUrl: '',
     featured: true,
     hideFooter: true,

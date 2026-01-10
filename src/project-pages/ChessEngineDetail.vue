@@ -27,87 +27,515 @@
 				</button>
 			</div>
 
-			<!-- Loading overlay... -->
 			<div class="vignette" />
 		</section>
 
 		<div class="scroll-spacer" :style="{ height: scrollSpacerHeight }" aria-hidden="true"></div>
 
-		<!-- NEW: Content section (DOM cards) -->
 		<article
-		class="content"
-		:class="{ 'is-visible': contentDomVisible }"
-		:aria-hidden="(!contentDomVisible).toString()"
+			ref="contentRef"
+			class="content prose"
+			:class="{ 'is-visible': contentDomVisible }"
+			:aria-hidden="(!contentDomVisible).toString()"
 		>
-			<section class="card hero">
-				<div class="section-label">Chess · Project</div>
-				<h1 class="hero-title"> </h1>
-				<div class="hero-meta mono"><strong>Stack:</strong> </div>
+			<!-- Content shell (guided by default, optional "show all") -->
+			<div class="content-shell" :class="{ 'is-guided': contentView === 'guided' }">
+				<section class="overview-card card" v-if="contentDomVisible">
+					<div class="section-label">Chess · Project</div>
 
-				<div class="hero-grid">
-					<div class="hero-copy">
-						<p class="hero-summary">&nbsp;</p>
-						<p class="hero-summary">&nbsp;</p>
+					<h1 class="overview-title">Chess Engine (C++)</h1>
 
-						<div class="hero-actions">
-							<a class="btn" href="#" @click.prevent> </a>
-							<a class="btn secondary" href="#" @click.prevent> </a>
-						</div>
+					<div class="overview-meta mono">
+						<strong>Stack:</strong> C++ · Optimisation · Algorithms · Evaluation & Search
 					</div>
 
-					<div class="hero-image">
-						<div class="image-wrapper">
-							<div class="image image-placeholder"></div>
-						</div>
-					</div>
-				</div>
-			</section>
-
-			<section class="row grid cols-2">
-				<div class="card">
-					<div class="image-wrapper large">
-						<div class="image image-placeholder large"></div>
-					</div>
-					<div class="image-wrapper large" style="margin-top:14px;">
-						<div class="image image-placeholder large"></div>
-					</div>
-				</div>
-
-				<section class="card">
-					<div class="section-label"> </div>
-					<h2 class="section-title small"> </h2>
-					<p class="section-intro">&nbsp;</p>
-
-					<ol class="pipeline-list">
-						<li>&nbsp;</li>
-						<li>&nbsp;</li>
-						<li>&nbsp;</li>
-						<li>&nbsp;</li>
-					</ol>
+					<p class="overview-desc">
+						A chess engine built from scratch in C++. It generates legal moves, searches future positions, and scores them with a
+						hand-tuned evaluation function. The focus is correctness first, then performance, then iteration speed.
+					</p>
 				</section>
-			</section>
 
-			<section class="card outcomes">
-				<div class="section-label"> </div>
-				<h2 class="section-title small"> </h2>
-				<p class="section-intro">&nbsp;</p>
 
-				<div class="outcomes-grid">
-					<div class="outcomes-text">
-						<p>&nbsp;</p>
-						<p>&nbsp;</p>
+				<aside class="content-nav" v-if="contentDomVisible">
+					<div class="nav-title mono">Sections</div>
+					<button
+						v-for="s in CONTENT_SECTIONS"
+						:key="s.id"
+						class="nav-btn"
+						:class="{ 'is-active': activeSection === s.id }"
+						type="button"
+						@click="setActiveSection(s.id)"
+					>
+						<span class="nav-dot" aria-hidden="true"></span>
+						<span class="nav-label">{{ s.label }}</span>
+					</button>
+
+					<div class="nav-hint mono">
+						Tip: keep it “Guided” so the page never dumps a wall of text.
 					</div>
+				</aside>
 
-					<div class="outcomes-images">
-						<div class="image-wrapper large">
-							<div class="image image-placeholder large"></div>
+				<main class="content-main">
+					<!-- Overview -->
+					<section class="card hero" v-show="contentView === 'all' || activeSection === 'overview'">
+						<div class="section-label">Overview</div>
+
+						<div class="content-grid">
+							<div class="card soft">
+								<div class="mini-title mono">What to look for</div>
+								<ul>
+									<li><strong>Fast board representation</strong> and move generation</li>
+									<li><strong>Search engineering</strong> (alpha–beta, move ordering, quiescence)</li>
+									<li><strong>Caching</strong> via transposition tables + Zobrist hashing</li>
+									<li><strong>Validation</strong> (perft + regression harness)</li>
+								</ul>
+							</div>
+
+							<div class="card soft">
+								<div class="mini-title mono">Quick stats (placeholders)</div>
+								<ul>
+									<li><strong>Elo chart:</strong> placeholder</li>
+									<li><strong>Nodes/sec:</strong> placeholder</li>
+									<li><strong>Perft pass-rate:</strong> placeholder</li>
+								</ul>
+							</div>
 						</div>
-						<div class="image-wrapper large">
-							<div class="image image-placeholder large"></div>
+
+						<div class="media-grid">
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Hero screenshot placeholder</div>
+									<div class="media-sub mono">UI / board + controls</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Animation placeholder</div>
+									<div class="media-sub mono">alpha–beta pruning “cuts”</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Diagram placeholder</div>
+									<div class="media-sub mono">engine pipeline overview</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Benchmark chart placeholder</div>
+									<div class="media-sub mono">depth vs time</div>
+								</div>
+							</div>
 						</div>
-					</div>
-				</div>
-			</section>
+					</section>
+
+					<!-- Context -->
+					<section class="card" v-show="contentView === 'all' || activeSection === 'context'">
+						<h2 class="section-title small">Why I built it</h2>
+
+						<p>
+							University projects taught me how to code, but their projects were also small in scope,
+							and often prioritised building to the syllabus, with no push for full code optimisation or competitive benchmarking.
+							I wanted a project with C++ that actually forced real learning of the language, an opportunity for real-optimisation.
+							To succeed, my goal was to thoroughly learn runtime optimisation, proper c++ code layout, bit operations, caching, and memory minimisation.
+						</p>
+
+						<p>
+							A chess engine is the perfect solution. Chess is a game with a strict ruleset, meaning software can easily compute the optimal play.
+							However, the search space of the game is massive, so optimisation is required, with effective code functionality. 
+							Chess engines have also have extensive documentation online about, so learning optimal code structure code be easily followed. 
+							The 3rd appeal to chess as a problem is that progress is easily measurable the speed, and logic of the engine can all be objectively
+							measured using chess's well established elo system, where my engine can compete against other bots or players to gain a rating.
+						</p>				
+					</section>
+
+					<!-- Approach -->
+					<section class="card" v-show="contentView === 'all' || activeSection === 'approach'">
+						<h2 class="section-title small">How the engine thinks</h2>
+
+						<p>At runtime the engine repeats this loop:</p>
+						<ol>
+							<li>Represent the board in a format optimized for speed.</li>
+							<li>Generate legal candidate moves from the position.</li>
+							<li>Search forward (depth-limited) to predict consequences.</li>
+							<li>Evaluate leaf positions using scoring heuristics.</li>
+							<li>Pick the best move under time constraints.</li>
+						</ol>
+
+						<div class="callout">
+							<strong>Pipeline:</strong>
+							<span class="mono">Board State → Move Gen → Search → Evaluate → Best Move</span>
+						</div>
+
+						<div class="media-grid">
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Diagram placeholder</div>
+									<div class="media-sub mono">pipeline boxes + arrows</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Animation placeholder</div>
+									<div class="media-sub mono">iterative deepening “depth ladder”</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Diagram placeholder</div>
+									<div class="media-sub mono">quiescence extension (captures/checks)</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Code snippet placeholder</div>
+									<div class="media-sub mono">search loop pseudocode</div>
+								</div>
+							</div>
+						</div>
+					</section>
+
+					<!-- Features -->
+					<section class="card" v-show="contentView === 'all' || activeSection === 'features'">
+						<h2 class="section-title small">Key implementation features</h2>
+
+						<h3 class="subhead">A) Transposition table + position hashing</h3>
+						<p>
+							The engine uses a fixed-size transposition table to cache evaluated positions during search. This turns the search from a pure tree into an
+							implicit graph: the same position reached via different move orders can reuse work instead of recomputing it.
+						</p>
+						<p>
+							Each entry stores the position hash, score, depth, bound type (exact / upper / lower), and the best move found. During search, the table is
+							probed to reuse exact results, trigger cutoffs, and improve move ordering.
+						</p>
+
+						<h3 class="subhead">B) Zobrist hashing</h3>
+						<p>
+							<strong>Zobrist hashing</strong> provides a compact 64-bit key representing the entire position (pieces, side to move, castling, en passant).
+							Hash updates are incremental (XOR in/out), making them cheap enough to live inside the hot path of the search.
+						</p>
+
+						<h3 class="subhead">C) Search designed for exponential growth</h3>
+						<p>
+							The core is <strong>alpha–beta pruning</strong> with strong <strong>move ordering</strong>. With good ordering, alpha–beta can reduce the
+							effective complexity from roughly <span class="mono">O(b^d)</span> toward <span class="mono">O(b^(d/2))</span> in the best case.
+						</p>
+						<p>
+							At the root, <strong>iterative deepening</strong> gives a usable best move at all times and improves ordering for deeper iterations.
+							At leaf nodes, <strong>quiescence search</strong> extends tactical lines (captures/checks) to avoid evaluating “noisy” positions.
+							Additional pruning like <strong>null move</strong> can safely cut large branches in many positions.
+						</p>
+
+						<h3 class="subhead">D) Evaluation as a readable heuristic</h3>
+						<p>
+							The evaluation function is intentionally transparent: it follows classical chess principles and produces a score you can debug.
+							That makes iteration much faster than an opaque model when your goal is engineering insight and predictable behaviour.
+						</p>
+
+						<div class="media-grid">
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Diagram placeholder</div>
+									<div class="media-sub mono">TT entry layout + replacement policy</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Animation placeholder</div>
+									<div class="media-sub mono">alpha–beta cutoff visualisation</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Diagram placeholder</div>
+									<div class="media-sub mono">Zobrist XOR in/out</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Image placeholder</div>
+									<div class="media-sub mono">evaluation breakdown “score bars”</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Diagram placeholder</div>
+									<div class="media-sub mono">move ordering priority stack</div>
+								</div>
+							</div>
+						</div>
+					</section>
+
+					<!-- Process -->
+					<section class="card" v-show="contentView === 'all' || activeSection === 'process'">
+						<h2 class="section-title small">How I built it</h2>
+
+						<h3 class="subhead">Building the rules (correctness first)</h3>
+						<p>
+							I started with a terminal interface and implemented every move type with a focus on correctness and speed.
+							Chess looks simple until you hit edge cases (castling legality, en passant, promotions, pinned pieces, check rules).
+							I used <strong>perft</strong> positions to validate move generation across many depths and scenarios.
+						</p>
+
+						<h3 class="subhead">Building the engine (performance second)</h3>
+						<p>
+							After the rules were solid, I implemented search and then layered in the features that make engines practical:
+							transposition tables, hashing, move ordering, and quiescence. The goal was always measurable gains, not guesswork.
+						</p>
+
+						<h3 class="subhead">Improving the engine (iteration loop)</h3>
+						<p>
+							I set the project up so each version could be tested against prior versions. That enabled real A/B testing:
+							ship a change, run the suite, measure whether it helps, and keep only improvements that are statistically convincing.
+						</p>
+
+						<h3 class="subhead">Building a UI (so other people can actually use it)</h3>
+						<p>
+							A terminal is fine for development, but a UI makes the project legible. I added piece interaction, engine settings, and feedback
+							(sounds for moves/captures/checks), so the project feels like a real product instead of a demo.
+						</p>
+
+						<div class="media-grid">
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Timeline placeholder</div>
+									<div class="media-sub mono">milestones / iterations</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Image placeholder</div>
+									<div class="media-sub mono">perft test output + harness</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Animation placeholder</div>
+									<div class="media-sub mono">regression suite “green bars”</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Screenshot placeholder</div>
+									<div class="media-sub mono">UI controls panel</div>
+								</div>
+							</div>
+						</div>
+					</section>
+
+					<!-- Results -->
+					<section class="card" v-show="contentView === 'all' || activeSection === 'results'">
+						<h2 class="section-title small">Outcomes</h2>
+
+						<ul>
+							<li><strong>Correctness:</strong> 100% adherence to 12 unique perft tests at depth 8</li>
+							<li><strong>Typical efficiency:</strong> typically prunes the tree by ~99.98%</li>
+							<li><strong>Typical speed:</strong> 8.5B nodes searched, ~130k positions evaluated per second</li>
+							<li><strong>Strength proxy:</strong> over 2000 Elo online vs bots and humans</li>
+						</ul>
+
+						<div class="media-grid">
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Chart placeholder</div>
+									<div class="media-sub mono">Elo over time / versions</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Chart placeholder</div>
+									<div class="media-sub mono">nodes/sec vs depth</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Diagram placeholder</div>
+									<div class="media-sub mono">where time goes (profiling)</div>
+								</div>
+							</div>
+						</div>
+					</section>
+
+					<!-- Learnings -->
+					<section class="card" v-show="contentView === 'all' || activeSection === 'learnings'">
+						<h2 class="section-title small">Key learnings</h2>
+						<ul>
+							<li>I can take an ambiguous, complex problem and decompose it into tractable subsystems</li>
+							<li>I can write performance-critical C++ that stays maintainable</li>
+							<li>I can validate correctness under tricky edge conditions</li>
+							<li>I can iterate using measurements, not vibes</li>
+							<li>I can communicate technical work without assuming specialist knowledge</li>
+						</ul>
+
+						<div class="media-grid">
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Diagram placeholder</div>
+									<div class="media-sub mono">architecture map</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Animation placeholder</div>
+									<div class="media-sub mono">profiling → optimisation loop</div>
+								</div>
+							</div>
+						</div>
+					</section>
+
+					<!-- Tradeoffs -->
+					<section class="card" v-show="contentView === 'all' || activeSection === 'tradeoffs'">
+						<h2 class="section-title small">Future improvements</h2>
+						<ul>
+							<li>Improve move ordering (stronger heuristics → deeper search at the same time)</li>
+							<li>Use “magic bitboards” for faster sliding-piece move generation</li>
+							<li>Explore a neural network evaluation function</li>
+							<li>Improve usability on macOS and for non-Windows users</li>
+						</ul>
+
+						<div class="media-grid">
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Roadmap placeholder</div>
+									<div class="media-sub mono">next 5 upgrades</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Diagram placeholder</div>
+									<div class="media-sub mono">magic bitboards concept</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Chart placeholder</div>
+									<div class="media-sub mono">expected speedup by feature</div>
+								</div>
+							</div>
+						</div>
+					</section>
+
+					<!-- Repo -->
+					<section class="card" v-show="contentView === 'all' || activeSection === 'repo'">
+						<h2 class="section-title small">Repository navigation</h2>
+
+						<div class="callout">
+							<strong>Goal:</strong>
+							<span class="mono">make the structure scannable in 10 seconds</span>
+						</div>
+
+						<ul>
+							<li><strong>UI / Presentation</strong>: <span class="mono">BoardDisplay.h / BoardDisplay.cpp</span> — rendering, controls, sound</li>
+							<li><strong>Application / Orchestration</strong>: <span class="mono">Chess Engine.cpp</span> — main controller and game modes</li>
+							<li><strong>Rules + move system</strong>: <span class="mono">chess.h / chess.cpp</span> — legality, helpers, state progression</li>
+							<li><strong>Search + evaluation</strong>: <span class="mono">engine2.h / engine2.cpp</span> — alpha–beta, quiescence, eval</li>
+							<li><strong>Hashing</strong>: <span class="mono">zobrist.h / zobrist.cpp</span> — position identity + TT keys</li>
+							<li><strong>Assets</strong>: <span class="mono">Resource Files/</span> — PNG pieces + WAV sounds</li>
+							<li><strong>Optional helper data</strong>: <span class="mono">StartingMoves.txt</span> — opening preload for repeatable tests</li>
+						</ul>
+
+						<div class="media-grid">
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Diagram placeholder</div>
+									<div class="media-sub mono">repo tree (collapsed)</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Diagram placeholder</div>
+									<div class="media-sub mono">module dependency arrows</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Image placeholder</div>
+									<div class="media-sub mono">where the hot paths live</div>
+								</div>
+							</div>
+						</div>
+					</section>
+
+					<!-- Add-ons -->
+					<section class="card" v-show="contentView === 'all' || activeSection === 'addons'">
+						<h2 class="section-title small">Add-ons that raise your hiring signal fast</h2>
+
+						<h3 class="subhead">A) “Bugs I fixed” micro-section</h3>
+						<p>Pick 3–5, each in this format:</p>
+						<ul>
+							<li><strong>Symptom:</strong> what went wrong</li>
+							<li><strong>Root cause:</strong> what you discovered</li>
+							<li><strong>Fix:</strong> what changed</li>
+							<li><strong>Prevention:</strong> test/invariant added</li>
+						</ul>
+
+						<h3 class="subhead">B) Resume bullets you can lift directly</h3>
+						<ul>
+							<li>
+								Built a C++ chess engine from scratch emphasizing correctness, performance, and extensibility (move generation, search, evaluation, time control).
+							</li>
+							<li>Implemented validation + benchmarking harnesses to prevent regressions and quantify performance improvements.</li>
+							<li>Used profiling-driven optimisation to improve search throughput and depth under fixed time constraints.</li>
+							<li>Designed readable, tunable heuristics and documented architecture for maintainability.</li>
+						</ul>
+
+						<div class="media-grid">
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Placeholder</div>
+									<div class="media-sub mono">“bugs fixed” screenshot card</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Placeholder</div>
+									<div class="media-sub mono">before/after perf chart</div>
+								</div>
+							</div>
+							<div class="media-card">
+								<div class="media-thumb"></div>
+								<div class="media-cap">
+									<div class="media-title">Placeholder</div>
+									<div class="media-sub mono">profiling flamegraph image</div>
+								</div>
+							</div>
+						</div>
+					</section>
+
+					<!-- (Optional) “All view” helper: tiny footer spacing -->
+					<div class="content-footer-spacer" aria-hidden="true"></div>
+				</main>
+			</div>
 		</article>
 	</div>
 </template>
@@ -126,6 +554,7 @@ import { createChessGame, fileRankToSquare, squareToFileRank } from "../chess/ch
 import { StockfishClient, parseUciMove } from "../chess/stockfishClient.js";
 
 const canvasRef = ref(null);
+const contentRef = ref(null);
 
 const loading = ref(true);
 const progress = ref(0);
@@ -390,9 +819,10 @@ const BG_RAIN = {
 	spawnRadiusSpan: 1.8,
 	spawnHeightSpan: 2.2,
 	speedMinSpan: 0.85,
-	speedMaxSpan: 1.70,
-	angVelMax: 6.0,          // rad/sec
+	speedMaxSpan: 1.0,
+	angVelMax: 3.0,          // rad/sec
 	cullBelowSpan: 3.8,
+	minCamDistSpan: 1.05,
 };
 
 // ------------------------------------------------------------
@@ -406,7 +836,11 @@ let contentLockActive = false;
 let contentLockMinY = 0;
 
 function computeContentLockMinY() {
-	// Full stage-3 completion corresponds to scrollT === 3, which is scrollY === stageLenPx()*3
+	const el = contentRef.value;
+	if (el) {
+		const r = el.getBoundingClientRect();
+		return Math.round(r.top + window.scrollY);
+	}
 	return stageLenPx() * CINEMATIC.stages;
 }
 
@@ -457,6 +891,68 @@ const pageTheme = computed(() => {
 	if (endScene.value === "gameover") return "theme-draw"; // neutral look; change if you want
 	return "theme-default";
 });
+
+// ------------------------------------------------------------
+// Content UX (guided reveal so text doesn't dump all at once)
+// ------------------------------------------------------------
+const CONTENT_SECTIONS = [
+	{ id: "context", label: "Context" },
+	{ id: "approach", label: "Approach" },
+	{ id: "features", label: "Features" },
+	{ id: "process", label: "Process" },
+	{ id: "results", label: "Results" },
+	{ id: "learnings", label: "Key learnings" },
+	{ id: "tradeoffs", label: "Future improvements" },
+	{ id: "repo", label: "Repo navigation" },
+	{ id: "addons", label: "Add-ons" },
+];
+
+const contentView = ref("guided"); // "guided" | "all"
+const activeSection = ref("overview");
+
+const activeIndex = computed(() => {
+	const i = CONTENT_SECTIONS.findIndex((s) => s.id === activeSection.value);
+	return Math.max(0, i);
+});
+
+const activeSectionLabel = computed(() => {
+	return CONTENT_SECTIONS[activeIndex.value]?.label ?? "Overview";
+});
+
+function scrollContentIntoView() {
+	const el = contentRef.value;
+	if (!el) return;
+
+	const r = el.getBoundingClientRect();
+	const y = Math.round(r.top + window.scrollY);
+	const top = Math.max(contentLockActive ? contentLockMinY : y, y) - 12;
+
+	window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+}
+
+function setActiveSection(id) {
+	activeSection.value = id;
+	scrollContentIntoView();
+}
+
+function nextSection() {
+	const i = activeIndex.value;
+	if (i >= CONTENT_SECTIONS.length - 1) return;
+	activeSection.value = CONTENT_SECTIONS[i + 1].id;
+	scrollContentIntoView();
+}
+
+function prevSection() {
+	const i = activeIndex.value;
+	if (i <= 0) return;
+	activeSection.value = CONTENT_SECTIONS[i - 1].id;
+	scrollContentIntoView();
+}
+
+function toggleContentView() {
+	contentView.value = contentView.value === "guided" ? "all" : "guided";
+	scrollContentIntoView();
+}
 
 // ------------------------------------------------------------
 // Idle “Make a move” prompt + d2 pawn shake
@@ -723,6 +1219,8 @@ onBeforeUnmount(() => {
 	if (engine) engine.terminate();
 	engine = null;
 
+	setHeaderVisible(false);
+
 	cancelEndAutoSequence();
 	stopLoop();
 	disposeAll();
@@ -735,12 +1233,12 @@ onBeforeUnmount(() => {
 const allowedStages = computed(() => (endScene.value ? CINEMATIC.stages : 1));
 
 watch(allowedStages, (maxT) => {
-	// If we just reduced the max (eg you started playing and locked),
-	// clamp BOTH the window scroll and the internal scroll state immediately.
 	const lenPx = stageLenPx();
 	const maxY = lenPx * maxT;
 
-	if (window.scrollY > maxY) {
+	// Only clamp scroll position while we're still in cinematic mode.
+	// Once contentLockActive is true, you MUST allow scrolling beyond maxY for the cards.
+	if (!contentLockActive && window.scrollY > maxY) {
 		window.scrollTo({ top: maxY, behavior: "auto" });
 	}
 
@@ -795,17 +1293,22 @@ function onScroll() {
 	const maxT = allowedStages.value;
 	const maxY = lenPx * maxT;
 
-	if (window.scrollY > maxY) {
+	// If we’re NOT in content mode yet, keep the cinematic scroll bounded.
+	// Once contentLockActive is true, DO NOT clamp max scroll anymore (you need normal page scrolling).
+	if (!contentLockActive && window.scrollY > maxY) {
 		window.scrollTo({ top: maxY, behavior: "auto" });
 	}
 
+	// Always enforce the MIN lock once active (prevents returning to cinematic)
 	if (contentLockActive) {
 		enforceContentMinScroll();
 	}
 
-	const y = Math.min(window.scrollY, maxY);
-	scrollTargetT = THREE.MathUtils.clamp(y / lenPx, 0, maxT);
+	// Cinematic should be driven by a clamped scrollY, but the page can keep scrolling past it.
+	const yForCinematic = Math.min(window.scrollY, maxY);
+	scrollTargetT = THREE.MathUtils.clamp(yForCinematic / lenPx, 0, maxT);
 }
+
 
 function onWheelAutoAdvance(ev) {
 	if (!endScene.value) return;
@@ -966,8 +1469,22 @@ function triggerEndSceneIfGameOver() {
 	if (o.status === "checkmate") endScene.value = (o.winner === "white") ? "win" : "lose";
 	else if (o.status === "draw") endScene.value = "draw";
 
-	window.scrollTo({ top: computeContentLockMinY(), behavior: "smooth" });
+	// WAIT STATE:
+	// Snap to the start so the win/lose hero is fully visible (t=0),
+	// and wait for the user to scroll before starting the end credits sequence.
+	cancelEndAutoSequence();
+	endAutoAdvanceDone = false; // re-arm wheel trigger
+
+	// Hard reset scroll + cinematic immediately (avoid mid-fade state)
+	window.scrollTo({ top: 0, behavior: "auto" });
+	scrollTargetT = 0;
+	scrollT.value = 0;
+	applyCinematic(0, true);
+
+	// Optional: keep nav hidden here if your header reveals on hover at top
+	setHeaderVisible(false);
 }
+
 
 // ------------------------------------------------------------
 // End-scene auto-advance timing (seconds per segment)
@@ -989,11 +1506,6 @@ function cancelEndAutoSequence() {
 	endAutoStartMs = 0;
 }
 
-// Cubic Hermite (C1-continuous) for scalar values.
-// p0,p1: values at ends
-// m0,m1: derivatives w.r.t TIME at ends
-// u: 0..1
-// dt: segment duration in seconds
 function hermite1D(p0, p1, m0, m1, u, dt) {
 	const u2 = u * u;
 	const u3 = u2 * u;
@@ -1147,7 +1659,6 @@ function setupHighlightSystem(boardInfo) {
 
 	matIdleHint = new THREE.MeshBasicMaterial({ color: 0x2f3440, opacity: 0.22, ...common });
 }
-
 
 function disposeHighlightSystem() {
 	selectionHighlightsGroup?.clear();
@@ -2638,7 +3149,6 @@ function updateStage23Effects(delta) {
 			}
 		}
 	}
-
 	if (stage2DropStarted) {
 		updateExistingPieceDrops(delta);
 	}
@@ -2765,6 +3275,15 @@ function spawnBackgroundPiece({ spin }) {
 		.addScaledVector(fwd, rz)
 		.addScaledVector(screenUp, h);
 
+	if (camera) {
+		const minD = boardSpan * BG_RAIN.minCamDistSpan;
+		const v = tmpV.copy(piece.position).sub(camera.position);
+		const d = v.length();
+		if (d < minD && d > 1e-6) {
+			piece.position.copy(camera.position).add(v.setLength(minD));
+		}
+	}
+
 	// stage-2 straight drop: keep upright (no extra rotation)
 	// stage-3 background: random rotation
 	if (spin) {
@@ -2889,8 +3408,8 @@ function startLoop() {
 		if (endScene.value && !contentLockActive && scrollT.value >= CONTENT_LOCK.activateAtScrollT) {
 			contentLockActive = true;
 			contentLockMinY = computeContentLockMinY();
-			enforceContentMinScroll();       // snap to the lock point if needed
-			setHeaderVisible(true);          // show header now that we’re in content mode
+			enforceContentMinScroll();
+			setHeaderVisible(true);
 		}
 
 		updateStage23Effects(delta);
@@ -3030,7 +3549,6 @@ function sleep(ms) {
 	--sub: 255, 205, 205;
 }
 
-/* optional, if you want a distinct draw look */
 .page.theme-draw {
 	--accent: 200, 200, 210;
 	--title: 245, 248, 255;
@@ -3103,17 +3621,16 @@ function sleep(ms) {
 }
 
 .idle-prompt-text {
-	margin-top: 3vh; /* override .hero-sub margin-top */
-	padding: 0;          /* no pill */
-	background: none;    /* no glass */
+	margin-top: 3vh;
+	padding: 0;
+	background: none;
 	border: none;
 
-	font-size: clamp(16px, 2.1vw, 20px); /* slightly bigger than hero-sub */
-	font-weight: 600; /* close to “subtitle”, not shouty */
-	letter-spacing: 0; /* keep it calm */
+	font-size: clamp(16px, 2.1vw, 20px);
+	font-weight: 600;
+	letter-spacing: 0;
 	text-transform: none;
 
-	/* keep hero-sub's color/opacity look, add only a faint glow */
 	text-shadow:
 		0 0 14px rgba(80, 140, 255, 0.18),
 		0 10px 40px rgba(0, 0, 0, 0.35);
@@ -3131,8 +3648,6 @@ function sleep(ms) {
 	gap: 12px;
 
 	z-index: 9999;
-
-	/* container itself doesn't steal clicks from canvas */
 	pointer-events: none;
 
 	opacity: 0;
@@ -3154,7 +3669,6 @@ function sleep(ms) {
 }
 
 .skip-button {
-	/* button IS clickable */
 	pointer-events: auto;
 
 	cursor: pointer;
@@ -3183,110 +3697,6 @@ function sleep(ms) {
 	outline-offset: 2px;
 }
 
-
-.scroll-hint {
-	position: fixed;
-	top: clamp(28px, 6vh, 80px);
-	left: 0;
-	right: 0;
-	display: flex;
-	justify-content: center;
-	z-index: 9998;
-	pointer-events: none;
-
-	opacity: 0;
-	transform: translateY(-8px);
-	transition: opacity 360ms ease, transform 360ms ease;
-	will-change: opacity, transform;
-}
-
-.scroll-hint.is-visible {
-	opacity: 1;
-	transform: translateY(0);
-}
-
-.scroll-hint-text {
-	margin-top: 0;
-	padding: 0;
-	background: none;
-	border: none;
-
-	font-size: clamp(16px, 2.1vw, 20px);
-	font-weight: 600;
-
-	text-shadow:
-		0 0 14px rgba(var(--accent), 0.18),
-		0 10px 40px rgba(0, 0, 0, 0.35);
-}
-
-.info-card {
-	position: absolute;
-	left: 18px;
-	bottom: 18px;
-	width: min(520px, calc(100vw - 36px));
-	border-radius: 14px;
-	padding: 12px 14px;
-	background: rgba(10, 16, 32, 0.62);
-	border: 1px solid rgba(231, 238, 252, 0.16);
-	backdrop-filter: blur(10px);
-	z-index: 2;
-	pointer-events: none;
-}
-
-.info-title {
-	font-weight: 800;
-	color: rgba(231, 238, 252, 0.95);
-	margin-bottom: 6px;
-}
-
-.info-sub {
-	opacity: 0.88;
-	color: rgba(231, 238, 252, 0.9);
-}
-
-.overlay {
-	position: absolute;
-	inset: 0;
-	display: grid;
-	place-items: center;
-	pointer-events: none;
-	z-index: 3;
-}
-
-.overlay-card {
-	width: min(340px, 88vw);
-	border-radius: 14px;
-	padding: 14px;
-	background: rgba(10, 16, 32, 0.72);
-	border: 1px solid rgba(231, 238, 252, 0.18);
-	backdrop-filter: blur(10px);
-}
-
-.title {
-	font-weight: 700;
-	margin-bottom: 10px;
-	color: rgba(231, 238, 252, 0.95);
-}
-
-.sub {
-	opacity: 0.85;
-	color: rgba(231, 238, 252, 0.9);
-}
-
-.bar {
-	height: 10px;
-	border-radius: 999px;
-	overflow: hidden;
-	border: 1px solid rgba(231, 238, 252, 0.14);
-	background: rgba(255, 255, 255, 0.06);
-	margin-bottom: 8px;
-}
-
-.fill {
-	height: 100%;
-	background: rgba(var(--accent), 0.90);
-}
-
 .vignette {
 	pointer-events: none;
 	position: absolute;
@@ -3304,19 +3714,19 @@ function sleep(ms) {
 
 .content {
 	position: relative;
-	z-index: 5; /* above the canvas/vignette */
+	z-index: 5;
 	padding: 18px;
-	width: min(1100px, calc(100vw - 36px));
+	width: min(1200px, calc(100vw - 36px));
 	margin: 0 auto;
 
 	opacity: 0;
 	transform: translateY(10px);
 	transition: opacity 300ms ease, transform 300ms ease;
-	pointer-events: none; /* hidden state */
+	pointer-events: none;
 }
 
 .content.is-visible {
-	margin-top: 70vh;
+	margin-top: 22vh;
 	opacity: 1;
 	transform: translateY(0);
 	pointer-events: auto;
@@ -3325,9 +3735,14 @@ function sleep(ms) {
 .card {
 	border-radius: 14px;
 	padding: 14px;
-	background: rgba(10, 16, 32, 0.72);
+	background: rgba(10, 16, 32);
 	border: 1px solid rgba(231, 238, 252, 0.18);
 	backdrop-filter: blur(10px);
+}
+
+.card.soft {
+	background: rgba(10, 16, 32, 0.55);
+	border: 1px solid rgba(231, 238, 252, 0.14);
 }
 
 .section-label {
@@ -3344,27 +3759,20 @@ function sleep(ms) {
 	color: rgba(var(--title), 0.95);
 }
 
-.section-intro,
-.hero-summary,
-.outcomes-text {
-	color: rgba(var(--sub), 0.85);
-}
-
 .hero {
 	margin-bottom: 16px;
 }
 
-.hero-grid {
-	display: grid;
-	grid-template-columns: minmax(0, 9fr) minmax(0, 7fr);
-	gap: 20px;
-	align-items: stretch;
-}
-
-.hero-copy {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
+.content-title {
+	font-weight: 900;
+	letter-spacing: 0.01em;
+	line-height: 1.05;
+	font-size: clamp(28px, 4.6vw, 50px);
+	color: rgba(var(--title), 0.96);
+	margin: 6px 0 8px;
+	text-shadow:
+		0 0 14px rgba(var(--accent), 0.22),
+		0 12px 60px rgba(0, 0, 0, 0.45);
 }
 
 .hero-meta {
@@ -3374,86 +3782,351 @@ function sleep(ms) {
 	margin-bottom: 10px;
 }
 
-.hero-actions {
-	display: flex;
-	gap: 10px;
-	flex-wrap: wrap;
-	margin-top: 8px;
+.prose {
+	overflow-wrap: anywhere;
 }
 
-.btn {
-	pointer-events: auto;
+.prose p {
+	margin: 10px 0;
+	color: rgba(var(--sub), 0.88);
+	line-height: 1.65;
+}
+
+.prose ul,
+.prose ol {
+	margin: 10px 0;
+	padding-left: 22px;
+	color: rgba(var(--sub), 0.88);
+	line-height: 1.6;
+}
+
+.prose li {
+	margin: 6px 0;
+}
+
+.prose .subhead {
+	margin-top: 14px;
+	margin-bottom: 6px;
+	font-size: 1.02rem;
+	font-weight: 800;
+	color: rgba(var(--title), 0.95);
+}
+
+.callout {
+	margin-top: 12px;
+	padding: 12px 12px;
+	border-radius: 12px;
+	background: rgba(10, 16, 32, 0.46);
+	border: 1px solid rgba(var(--accent), 0.18);
+	color: rgba(var(--sub), 0.9);
+}
+
+.content-shell {
+	display: grid;
+	grid-template-columns: 340px minmax(0, 1fr);
+	gap: 14px;
+	align-items: start;
+}
+
+.content-topbar {
+	grid-column: 1 / -1;
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+
+	position: sticky;
+	top: 12px;
+	z-index: 50;
+
+	border-radius: 14px;
+	padding: 12px 12px;
+	background: rgba(10, 16, 32, 0.72);
+	border: 1px solid rgba(231, 238, 252, 0.16);
+	backdrop-filter: blur(12px);
+}
+
+.topbar-left {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 240px;
+}
+
+.topbar-title {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	color: rgba(var(--title), 0.95);
+	font-weight: 800;
+}
+
+.topbar-progress {
+	opacity: 0.75;
+	font-weight: 700;
+}
+
+.topbar-sub {
+	color: rgba(var(--sub), 0.82);
+	font-size: 0.92rem;
+}
+
+.topbar-actions {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+}
+
+.pill {
 	cursor: pointer;
 	border-radius: 999px;
 	padding: 10px 14px;
+
 	background: rgba(10, 16, 32, 0.62);
 	border: 1px solid rgba(var(--accent), 0.35);
 	color: rgba(var(--title), 0.95);
-	font-weight: 700;
+
+	font-weight: 800;
 	letter-spacing: 0.01em;
-	text-decoration: none;
 }
 
-.btn.secondary {
+.pill.secondary {
 	opacity: 0.9;
+	border-color: rgba(231, 238, 252, 0.18);
 }
 
-.row {
-	margin-top: 18px;
+.pill:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
 }
 
-.outcomes {
-	margin-top: 18px;
+.jump select {
+	height: 40px;
+	border-radius: 999px;
+	padding: 0 12px;
+
+	background: rgba(10, 16, 32, 0.62);
+	border: 1px solid rgba(231, 238, 252, 0.18);
+	color: rgba(var(--title), 0.92);
+	outline: none;
 }
 
-.outcomes-grid {
-	display: grid;
-	grid-template-columns: minmax(0, 11fr) minmax(0, 7fr);
-	gap: 20px;
+.jump select:focus-visible {
+	outline: 2px solid rgba(var(--accent), 0.55);
+	outline-offset: 2px;
+}
+
+.content-nav {
+	position: sticky;
+	top: 12px; /* topbar removed, so keep it near the top */
+	border-radius: 14px;
+	padding: 12px;
+
+	background: rgba(10, 16, 32, 0.62);
+	border: 1px solid rgba(231, 238, 252, 0.16);
+	backdrop-filter: blur(12px);
+}
+
+.nav-title {
+	color: rgba(var(--title), 0.92);
+	font-weight: 900;
+	margin-bottom: 10px;
+	letter-spacing: 0.01em;
+}
+
+.nav-btn {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+
+	text-align: left;
+	cursor: pointer;
+
+	border-radius: 12px;
+	padding: 10px 10px;
+
+	background: rgba(255, 255, 255, 0.02);
+	border: 1px solid rgba(231, 238, 252, 0.10);
+	color: rgba(var(--sub), 0.9);
+}
+
+.nav-btn:hover {
+	background: rgba(255, 255, 255, 0.04);
+}
+
+.nav-btn.is-active {
+	border-color: rgba(var(--accent), 0.42);
+	background: rgba(var(--accent), 0.10);
+	color: rgba(var(--title), 0.95);
+}
+
+.nav-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 999px;
+	background: rgba(231, 238, 252, 0.28);
+}
+
+.nav-btn.is-active .nav-dot {
+	background: rgba(var(--accent), 0.95);
+	box-shadow: 0 0 18px rgba(var(--accent), 0.25);
+}
+
+.nav-label {
+	font-weight: 700;
+}
+
+.nav-hint {
 	margin-top: 10px;
+	color: rgba(var(--sub), 0.72);
+	font-size: 0.86rem;
+	line-height: 1.4;
 }
 
-.outcomes-images {
+.content-main {
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
 }
 
-.pipeline-list {
-	padding-left: 20px;
-	color: rgba(var(--sub), 0.85);
-	line-height: 1.5;
-	margin: 8px 0;
+.content-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 12px;
+	margin-top: 12px;
 }
 
-.image-wrapper {
-	border-radius: 10px;
-	overflow: hidden;
+.mini-title {
+	color: rgba(var(--title), 0.92);
+	font-weight: 900;
+	margin-bottom: 8px;
+}
+
+.overview-card {
+	grid-column: 1 / -1;
+	padding: 14px 14px;
+	background: rgba(10, 16, 32, 0.72);
 	border: 1px solid rgba(231, 238, 252, 0.16);
-	background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent);
+	backdrop-filter: blur(12px);
 }
 
-.image-wrapper.large {
-	width: 100%;
+.overview-title {
+	margin: 6px 0 6px;
+	font-weight: 900;
+	letter-spacing: 0.01em;
+	line-height: 1.05;
+	font-size: clamp(26px, 3.8vw, 44px);
+	color: rgba(var(--title), 0.96);
+	text-shadow:
+		0 0 14px rgba(var(--accent), 0.18),
+		0 12px 60px rgba(0, 0, 0, 0.45);
 }
 
-.image-placeholder {
-	width: 100%;
-	height: 220px;
-	background: rgba(255, 255, 255, 0.06);
+.overview-meta {
+	font-size: 0.92rem;
+	opacity: 0.92;
+	color: rgba(var(--sub), 0.85);
+	margin-bottom: 8px;
 }
 
-.image-placeholder.large {
-	height: 260px;
+.overview-desc {
+	margin: 0;
+	color: rgba(var(--sub), 0.88);
+	line-height: 1.65;
 }
 
-@media (max-width: 900px) {
-	.hero-grid {
+.media-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-top: 12px;
+}
+
+.media-card {
+	position: relative;
+	border-radius: 12px;
+	overflow: hidden;
+
+	border: 1px solid rgba(231, 238, 252, 0.14);
+	background: rgba(10, 16, 32, 0.55);
+
+	/* notebook-ish left rail */
+	padding-left: 46px;
+}
+
+.media-card::before {
+	content: "In [ ]:";
+	position: absolute;
+	left: 12px;
+	top: 12px;
+
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+	font-size: 12px;
+	letter-spacing: 0.02em;
+
+	color: rgba(var(--sub), 0.65);
+}
+
+.media-thumb {
+	height: 140px;
+	margin: 10px 10px 0 0;
+	border-radius: 10px;
+
+	background:
+		linear-gradient(135deg, rgba(var(--accent), 0.14), rgba(255, 255, 255, 0.02)),
+		repeating-linear-gradient(90deg,
+			rgba(255, 255, 255, 0.03) 0,
+			rgba(255, 255, 255, 0.03) 10px,
+			rgba(255, 255, 255, 0.01) 10px,
+			rgba(255, 255, 255, 0.01) 20px
+		);
+}
+
+.media-cap {
+	padding: 10px 12px 12px 0;
+}
+
+.media-title {
+	color: rgba(var(--title), 0.92);
+	font-weight: 900;
+	margin-bottom: 2px;
+}
+
+.media-sub {
+	color: rgba(var(--sub), 0.78);
+	font-size: 0.9rem;
+}
+
+.content-footer-spacer {
+	height: 6px;
+}
+
+@media (max-width: 980px) {
+	.content-shell {
 		grid-template-columns: 1fr;
 	}
-	.outcomes-grid {
+	.content-nav {
+		position: relative;
+		top: 0;
+	}
+	.content-grid {
+		grid-template-columns: 1fr;
+	}
+	.media-grid {
 		grid-template-columns: 1fr;
 	}
 }
 
+:global(html.header-visible header),
+:global(html.header-visible .site-nav),
+:global(html.header-visible .navbar) {
+	opacity: 1 !important;
+	transform: translateY(0) !important;
+	pointer-events: auto !important;
+	visibility: visible !important;
+	z-index: 100000 !important;
+}
 </style>

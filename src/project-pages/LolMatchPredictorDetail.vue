@@ -273,11 +273,11 @@
 
 <script setup>
 import { RouterLink } from 'vue-router'
-import calibrationCurve from '../assets/calibration_curve.png'
-import probDistribution from '../assets/prob_distribution.png'
-import featureImportance from '../assets/feature_importance.png'
-import roc from '../assets/roc.png'
-import edgeOverTime from '../assets/edge_over_time.png'
+import calibrationCurve from '../assets/lol-match-predictor/calibration_curve.png'
+import probDistribution from '../assets/lol-match-predictor/prob_distribution.png'
+import featureImportance from '../assets/lol-match-predictor/feature_importance.png'
+import roc from '../assets/lol-match-predictor/roc.png'
+import edgeOverTime from '../assets/lol-match-predictor/edge_over_time.png'
 
 defineProps({
   project: {

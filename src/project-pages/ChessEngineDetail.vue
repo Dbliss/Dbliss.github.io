@@ -548,7 +548,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
-import chessModelUrl from "../assets/chessboard/chess_set.glb?url";
+import chessModelUrl from "../assets/chess-engine/chess_set.glb?url";
 
 import { createChessGame, fileRankToSquare, squareToFileRank } from "../chess/chessGame.js";
 import { StockfishClient, parseUciMove } from "../chess/stockfishClient.js";

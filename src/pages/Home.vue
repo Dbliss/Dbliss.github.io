@@ -91,7 +91,7 @@
 import { RouterLink } from 'vue-router'
 import ProjectCard from '../components/ProjectCard.vue'
 import { projects } from '../data/projects'
-import headshotUrl from '../assets/dillon.png'
+import headshotUrl from '../assets/site/dillon.png'
 
 const featured = projects.filter(p => p.featured).slice(0, 3)
 </script>

@@ -33,7 +33,7 @@
 
 <script setup>
 import { socials } from '../data/socials'
-import githubIcon from '../assets/github.webp'
+import githubIcon from '../assets/site/github.webp'
 </script>
 
 <style scoped>

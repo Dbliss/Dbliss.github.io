@@ -21,6 +21,10 @@ import DefaultProjectDetail from '../project-pages/DefaultProjectDetail.vue'
 import LolMatchPredictorDetail from '../project-pages/LolMatchPredictorDetail.vue'
 import SportsluxDetail from '../project-pages/SportsluxDetail.vue'
 import ChessEngineDetail from '../project-pages/ChessEngineDetail.vue'
+import SportsBookingDetail from '../project-pages/SportsBookingDetail.vue'
+import AssetDataIntegrationDetail from '../project-pages/AssetDataIntegrationDetail.vue'
+import BettingOddsDetail from '../project-pages/BettingOddsDetail.vue'
+import DroneDetail from '../project-pages/DroneDetail.vue'
 
 // 1) get slug from route
 const route = useRoute()
@@ -34,7 +38,11 @@ const project = computed(() =>
 const componentMap = {
   'lol-match-predictor': LolMatchPredictorDetail,
   sportslux: SportsluxDetail,
-  chessEngine: ChessEngineDetail
+  chessEngine: ChessEngineDetail,
+  'sports-booking': SportsBookingDetail,
+  'asset-data-integration': AssetDataIntegrationDetail,
+  'betting-odds': BettingOddsDetail,
+  drone: DroneDetail
 }
 
 // 4) choose component; default if no custom one defined

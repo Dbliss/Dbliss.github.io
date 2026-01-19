@@ -39,6 +39,7 @@ The images here are two of the main diagnostics I use:
     `,
     stack: ['Python', 'pandas', 'scikit-learn', 'UKF', 'Random forests', 'Gradient Boosting'],
     tags: ['Machine Learning', 'Sports Analytics', 'Statistics'],
+    category: 'Personal project',
     repoUrl: 'https://github.com/Dbliss/LoLPredictor',
     liveUrl: '',
     featured: true
@@ -58,6 +59,7 @@ I led the UX, data model, and optimisation orchestration work to make it practic
     `,
     stack: ['Vue', 'JavaScript', 'CSS', 'HTML', 'Python', 'FastAPI', 'PostgreSQL'],
     tags: ['Photometry', 'Optimisation', 'Full-stack'],
+    category: 'Internal',
     repoUrl: '',
     liveUrl: '',
     featured: true
@@ -79,10 +81,67 @@ and master key software fundamentals such as hashing, search trees, bit operatio
     `,
     stack: ['C++', 'Visual Studio executable code', 'Caching'],
     tags: ['Optimisation', 'Game-Tree'],
+    category: 'Personal project',
     repoUrl: 'https://github.com/Dbliss/Chess-Engine-cpp',
     liveUrl: '',
     featured: true,
     hideFooter: true,
     hideNav: true
+  },
+  {
+    slug: 'sports-booking',
+    title: 'Sports Booking Platform',
+    tagline: 'Customer-facing scheduling and lighting automation',
+    excerpt:
+      'Full-stack booking system for sports fields that automates lighting schedules based on reservations.',
+    description: 'Documentation pending',
+    stack: ['Vue', 'Node.js', 'PostgreSQL', 'REST API'],
+    tags: ['Bookings', 'Automation', 'Full-stack'],
+    category: 'External',
+    repoUrl: '',
+    liveUrl: '',
+    featured: false
+  },
+  {
+    slug: 'asset-data-integration',
+    title: 'Asset Data Integration',
+    tagline: 'CMS ingestion and transformation pipeline',
+    excerpt:
+      'Service that ingests CMS API data, filters and transforms it, then syncs to an asset management platform.',
+    description: 'Documentation pending',
+    stack: ['Python', 'Node.js', 'ETL', 'REST API'],
+    tags: ['Data integration', 'Automation', 'ETL'],
+    category: 'External',
+    repoUrl: '',
+    liveUrl: '',
+    featured: false
+  },
+  {
+    slug: 'betting-odds',
+    title: 'Betting Odds Analysis',
+    tagline: 'Personal study of pricing and probability',
+    excerpt:
+      'Explorations of implied probabilities, market movement, and pricing models.',
+    description: 'Documentation pending',
+    stack: ['Python', 'pandas', 'Jupyter'],
+    tags: ['Statistics', 'Sports analytics'],
+    category: 'Personal project',
+    repoUrl: '',
+    liveUrl: '',
+    featured: false
+  },
+  {
+    slug: 'drone',
+    title: 'Autonomous Drone Prototype',
+    tagline: 'Low-latency flight control on Raspberry Pi',
+    excerpt:
+      'Custom-built drone with PID controllers and low-latency control software running on a Raspberry Pi.',
+    description: 'Documentation pending',
+    stack: ['Raspberry Pi', 'C++', 'Python', 'PID Control'],
+    tags: ['Robotics', 'Control systems', 'Embedded'],
+    category: 'Personal project',
+    repoUrl: '',
+    liveUrl: '',
+    featured: false
   }
 ]

@@ -1,5 +1,9 @@
 <template>
   <article class="card">
+    <div class="tags" v-if="project.category" style="margin-bottom:6px">
+      <span class="tag">{{ project.category }}</span>
+    </div>
+
     <div class="tags" v-if="project.tags?.length">
       <span class="tag" v-for="t in project.tags" :key="t">{{ t }}</span>
     </div>

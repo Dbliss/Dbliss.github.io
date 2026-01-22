@@ -34,7 +34,7 @@
         </h1>
 
         <p class="slx-subtitle">
-          Sportslux turns luminaire data and customer requests into an optimisation problem. Any basic user feeds in
+          Sportslux turns luminaire data and customer requests into an optimisation problem. A basic user enters in
           field geometry, target lux levels and allowed hardware; the engine explores thousands of distributions and
           returns optimal solutions within seconds.
         </p>
@@ -78,7 +78,7 @@
         </div>
 
         <p class="slx-hero-footnote mono">
-          From hours of rudimentary selection of lights positions to instant perfect solutions with live photometry.
+          From hours of rudimentary selection of light positions to instant perfect solutions with live photometry.
         </p>
       </div>
 
@@ -105,9 +105,9 @@
             </p>
 
             <p class="section-lead">
-              The users selects the sport, field dimensions, pole positions, and
-              what lumainaires to use. The engine automatically finds the minimun number of Fittings required
-              to reach the optimal solution for the requirements. All done in seconds.
+              The user selects the sport, field dimensions, pole positions, and
+              what luminaires to use. The engine automatically finds the minimum number of Fittings required
+              to reach the optimal solution that meets the requirements. All done in seconds.
             </p>
           </div>
 
@@ -222,14 +222,14 @@
             </h2>
             <p class="section-sub">
               Early sports lighting design is usually a loop of guessing pole layouts, running old photometry software, tweaking fittings
-              and hoping the results satisfy Australian standards. Sportslux steamlines that process. To a computer,
+              and hoping the results satisfy Australian standards. Sportslux streamlines that process. For a computer,
               everything becomes geometry, constraints and objective functions.
             </p>
 
             <div style="margin-bottom: 0.8rem;"></div>
 
             <p class="section-sub">
-              Because the objective is non-differential and discontinous, differential evolution was chosen as the intelligent search algorithm.
+              Because the objective is non-differentiable and discontinuous, Differential Evolution was chosen as the intelligent search algorithm.
               The engine begins by randomly placing luminaires on the poles, then evaluates the photometry grid, isolux curves and glare.
               These metrics are assigned a cost score where heavy penalties are applied for any unmet targets. The algorithm then iteratively refines the solution
               until it converges to a low-cost solution.
@@ -320,7 +320,7 @@
 
         <!-- LEFT / ROW 2 -->
         <div class="slx-section-block slx-feature-left-bottom">
-          <h2 class="section-title">Key Optimisation Stratergies</h2>
+          <h2 class="section-title">Key Optimisation Strategies</h2>
 
           <div class="section-sub slx-feature-block">
             <div class="slx-feature-item">
@@ -405,19 +405,19 @@
         </h2>
 
         <p class="section-sub">
-          The admin page allows key personel to easilyt invite users and revoke access.
+          The admin page allows key personnel to easily invite users and revoke access.
           The role and permissions follow an easily adjustable role based access control (RBAC) model.
           Specific roles also possess the ability to change available luminaires by deleting a luminaire, or upload a new one.
-          Admin also have the ability to monitor usage statistics, looking at total number of runs, and the most active users, 
-          giving information about which employees are generating the most leads, and positions in the orgnisation use the tool most. 
+          Admins also have the ability to monitor usage statistics, looking at the total number of runs, and the most active users, 
+          giving information about which employees are generating the most leads, and which positions in the organisation use the tool most. 
         </p>
         <p class="section-sub">
-          All customer information is secured using bcrypt and JWT tokens. Password are securely hashed and salted before storage, following
+          All customer information is secured using bcrypt and JWT tokens. Passwords are securely hashed and salted before storage, following
           modern industry practices.
         </p>
         <p class="section-sub">
-          Cloud hosting lets Schreder teams and selected customers log in from anywhere with a browser. Specific ip addresses are whitelisted to ensure 
-          only authorised users can access the system. The entire system only runs during extended working hours to reduce attack surface and deduct from
+          Cloud hosting lets Schreder teams and selected customers log in from anywhere with a browser. Specific IP addresses are whitelisted to ensure 
+          only authorised users can access the system. The entire system only runs during extended working hours to minimise attack surface and reduce
           operational costs.
         </p>
       </div>
@@ -680,15 +680,15 @@ const backendRequestPath = [
   'The UI sends a design request to NGINX, which serves the frontend and forwards API calls to FastAPI.',
   'FastAPI validates inputs and checks authentication/roles before the solver runs, so bad or unauthorised requests never reach compute.',
   'The solver runs and either reuses cached results or computes a new solution, then stores the run + outputs for later reuse.',
-  '"In progress" and a loading screen come back to the UI immediately, with ability to cancel a job midway', 
-  'Once a solution is reached, all results and exports are stored locally with persistance, meaning a user can refresh the page or changes tabs so without re-running the job.'
+  '"In progress" and a loading screen come back to the UI immediately, with the ability to cancel a job midway', 
+  'Once a solution is reached, all results and exports are stored locally with persistence, meaning a user can refresh the page or changes tabs without re-running the job.'
 ]
 
 const backendCoreComponents = [
-  'NGINX: a well known fast static delivery for the UI, plus a clean reverse proxy to the API.',
+  'NGINX: a well-known fast static delivery for the UI, plus a clean reverse proxy to the API.',
   'Gunicorn + FastAPI: handles real traffic reliably with multiple workers, and keeps the API strict and predictable with typed requests.',
   'Optimisation engine: kept separate from the web layer so it stays testable and easier for the user to get progress on.',
-  'Postgres (RDS): a industry standard way to record user actions. Tables seperated per user functionality for easy management and future migrations.',
+  'Postgres (RDS): an industry standard way to record user actions. Tables are separated per user features and functionality for easy management and future migrations.',
   'S3 storage: keeps generated reports/exports durable and lightweight to serve, without bloating the database.'
 ]
 
@@ -701,22 +701,22 @@ const backendOps = [
 
 const learnings = [
   'I had to design the overall structure of the system end-to-end, making sure it could scale cleanly and still stay reliable as usage grows.',
-  'I learned that good API design is mostly about preventing misuse, so I built clear schemas, stringent validation, and role based permissions so the system can be managed safely.',
-  'I further improved my code optimising skillset, this time in Python. This consisted of profiling properly, finding the real bottlenecks, and then fixing them with better data structures, caching, and vectorisation.',
+  'I learned that good API design is mostly about preventing misuse, so I built clear schemas, stringent validation, and role-based permissions so the system can be managed safely.',
+  'I further improved my code optimisation skill set, this time in Python. This consisted of profiling properly, finding the real bottlenecks, and then fixing them with better data structures, caching, and vectorisation.',
   'I learned to iterate with the end-user in mind: collecting real feedback from customers, turning it into clear tickets, and planning sprints so we ship improvements without breaking what already works.',
   'How to properly future proof code, designing the database so new luminaire models and new constraints can be added without needing a schema rewrite or breaking existing projects.',
-  'I learned the value of proper observability by storing API calls and run metadata. This made issues easily diagnosable, made solver runs reproducible, enabled monitoring of usage/health, and allowing for result caching.',
+  'I learned the value of proper observability by storing API calls and run metadata. This made issues easily diagnosable, made solver runs reproducible, enabled monitoring of usage/health, and allowed for result caching.',
   'Documentation is what keeps momentum in a intermittent project, so I documented features, decisions, and backend structure, and kept commits clear enough that rollbacks and version tracking are easy.',
 ]
 
 
 const benefits = [
   'Turned early sports-field design from hours of manual work into seconds-long solver runs for typical scopes. Each use saves about 2 hours of designer time.',
-  'Since launch, designers have run Sportslux over 240 times. On average, about 11 times a week. 240 uses x 2 hours = 480 hours saved (at $150/hour) ~ $72 000 of business value within the firt 6 months of use.',
-  'Sales teams can now build and iterate lighting concepts live in front of customers, lifting perceived technical maturity. Sales people who use the tool report increased sales rate. However, this is anectdotal',
-  'Streamlines the handoff between sales teams and lighting designers, as initial designs are now formatted in the exact form a lighting designed desires, reducing rework and miscommunication.',
-  'Customers now immediately recieve a detailed report of their intial design automatically generated by the system, improving customer experience and professionalism.',
-  'All sales meetings now automatically log the customers exact requirements and initial designs, allowing for better follow-up and more tailored proposals.',
+  'Since launch, designers have run Sportslux over 240 times. On average, about 11 times a week. 240 uses x 2 hours = 480 hours saved (at $150/hour) ~ $72 000 of business value within the first 6 months of use.',
+  'Sales teams can now build and iterate lighting concepts live in front of customers, lifting perceived technical maturity. Salespeople who use the tool report increased sales rate. However, this is anecdotal.',
+  'Streamlines the handoff between sales teams and lighting designers, as initial designs are now formatted in the exact form a lighting designer desires, reducing rework and miscommunication.',
+  'Customers now immediately receive a detailed report of their initial design automatically generated by the system, improving customer experience and professionalism.',
+  'All sales meetings now automatically log the customer\'s exact requirements and initial designs, allowing for better follow-up and more tailored proposals.',
   'As a side use-case, the website also hosts a DGI calculator for quick daylight glare analysis, which has been used over 300 times since launch.',
   'Sportslux led to me getting nominated for the Young Achiever Award 2025, recognising the significant impact this project had on the business.'
 ]

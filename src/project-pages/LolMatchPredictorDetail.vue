@@ -27,14 +27,14 @@
           <p class="hero-summary">
             After listening to hours and hours of data science podcasts, I wanted to commit to a project where I could practice with real-world data and apply machine learning techniques.
             Looking at domains I already know, Esports, particularly League of Legends, seemed like an interesting gateway.
-            With the objective of beating to bookmakers, I ambitiously built this tool. 
-            Like most projects, people have already tackled similar challenges, so I first began by reading countless academic papers relating to sports betting, esports feature engineering, and advanced elo models.
+            With the objective of beating the bookmakers, I ambitiously built this tool.
+            Like most projects, people have already tackled similar challenges, so I first began by reading countless academic papers relating to sports betting, esports feature engineering, and advanced Elo models.
           </p>
 
           <p class="hero-summary">
             The focus wasn’t solely on accuracy, but instead on producing a model that
             behaves in a predictable manner: stable across time, leak-free, and comparable to
-            bookmaker numbers. In the world of statistics, calibration makes a profitable project. If the model says a team has a win probability of
+            bookmaker numbers. In statistics, calibration makes a profitable project. If the model says a team has a win probability of
             60%, they should win about 60% of the time. This was my primary goal for the model.
           </p>
 
@@ -109,15 +109,15 @@
 
         <ol class="pipeline-list">
             <li>Names are standardised, ultra–low–sample teams are removed, and incomplete matches are filtered out. </li>
-            <li>Column are created to track patch tags, roster changes, and region strength so the
+            <li>Columns are created to track patch tags, roster changes, and region strength so the
             model can react to meta shifts rather than blindly inferring.</li>
             <li>
             Build rolling features for each team and position, including: recent form, opponent strength, side selection, and
             player-level trends.
             </li>
-            <li>Utilise a random forest to capture non-linear performance scores of individual players. This created another rich feature for the model to consume. </li>
+            <li>Utilise a random forest to capture non-linear performance scores of individual players. This creates another rich feature for the model to consume. </li>
             <li>
-            Build a high-performing elo model using performance scores and match outcomes to track player strength and variance over time.
+            Build a high-performing Elo model using performance scores and match outcomes to track player strength and variance over time.
             </li>
             <li>
             Run a Bayesian state-space rating model with an Unscented Kalman Filter (UKF) and stochastic variance to
@@ -132,7 +132,7 @@
             backtest them against historical bookmaker odds.
             </li>
             <li>
-            Ensemble multiple models with bookkeeper predictions to maximise model strength and minimise variance.
+            Ensemble multiple models with bookmaker predictions to maximise model strength and minimise variance.
             </li>
         </ol>
         </section>
@@ -148,8 +148,8 @@
 
     <p class="section-intro">
             To judge how well my system works, I compare it directly to the models
-            sitting behind bookmaker odds. I built a python-based data collection pipeline that extracted match outcomes and odds from public betting websites, using BeautifulSoup and requests.
-            Then I used validated to measure my models accuracy against those same historical games, recording the accuracy and log loss results.
+            sitting behind bookmaker odds. I built a Python-based data collection pipeline that extracted match outcomes and odds from public betting websites using BeautifulSoup and requests.
+            Then I validated and measured my model's accuracy against those same historical games, recording accuracy and log loss results.
         </p>
 
         <p class="metric-line">
@@ -168,7 +168,7 @@
     <div class="outcomes-grid">
         <div class="outcomes-text">
         <p>
-            Well… not quite. Even when a model is slightly ahead of bookmaker
+            Well, not quite. Even when a model is slightly ahead of bookmaker
             accuracy on held-out data, there are two big caveats. First, bookmaker
             odds always include a built-in margin, so a small edge in raw
             accuracy does not automatically translate into a profitable strategy. Second, bookmakers have dedicated
@@ -190,7 +190,7 @@
         
         <p>
             As the scene matures, the bookmakers’ proprietary models catch up and then pull
-            ahead. By 2025 the gap between my metrics and theirs makes the model redundant. 
+            ahead. By 2025, the gap between my metrics and theirs makes the model redundant. 
             It is also very likely that the few percentage points differentiating my model from theirs are
             the hardest to close without richer data, and a more advanced modelling stack. 
         </p>
@@ -236,15 +236,15 @@
         I treated this project as a long-running skills test rather than a one-off model:
         the goal was to get better at building production-like ML systems that stand
         up against industry standards. While the project isn't profitable in terms of finance, it has forced me to push my data engineering,
-        modelling, evaluation, and coding skills in a realistic setting. This itself was the main win as I got the oppportunity to learn and grow my skillset. 
+        modelling, evaluation, and coding skills in a realistic setting. This was the main win, as I got the opportunity to learn and grow my skill set. 
       </p>
 
       <ul class="learnings-list">
         <li>
           <strong>Data Science & Software Engineering:</strong>
-          Building Elo-style ratings, UKF-based state-space models, bayesian statistics, random forests, 
-          and gradient boosting models taught me how to effectively use tools commonly found in the industry. By actively studying, using and analysing the outputs
-          of these tools, I gained a much more in-depth understanding of their strengths, weaknesses, and appropriate use-cases for each tool.
+          Building Elo-style ratings, UKF-based state-space models, Bayesian statistics, random forests,
+          and gradient boosting models taught me how to effectively use tools commonly found in the industry. By actively studying, using, and analysing the outputs
+          of these tools, I gained a much more in-depth understanding of their strengths, weaknesses, and appropriate use cases for each tool.
         </li>
 
         <li>
@@ -262,7 +262,7 @@
             Brier score, reliability curves, and expected calibration error. This sharpened
             my intuition for diagnosing overconfidence and underconfidence, and for understanding
             when probability estimates truly reflected reality. An essential capability for any
-            high-stakes, statistics decision making.
+            high-stakes statistical decision making.
         </li>
       </ul>
     </section>

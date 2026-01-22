@@ -23,7 +23,7 @@
         <strong>Stack:</strong> {{ project.stack.join(' / ') }}
       </div>
 
-      <p class="section-sub" style="margin-top:12px">Documentation pending</p>
+      <p class="section-sub" style="margin-top:12px">Documentation is pending.</p>
 
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
         <a

@@ -41,6 +41,7 @@
 
         <div class="slx-meta-row">
           <div class="slx-tag-group">
+            <CategoryTag :category="project.category" />
             <span
               v-for="t in project.tags"
               :key="t"
@@ -581,6 +582,7 @@
 import { nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import CategoryTag from '../components/CategoryTag.vue'
 
 import dashboardPreview from '../assets/sportslux/dashboard.png'
 import resultsGrid from '../assets/sportslux/grid.png'

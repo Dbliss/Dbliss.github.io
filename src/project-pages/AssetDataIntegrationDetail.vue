@@ -15,7 +15,7 @@
       <p class="section-sub" style="margin-top:10px">{{ project.excerpt }}</p>
 
       <div class="tags" style="margin:10px 0 12px">
-        <span v-if="project.category" class="tag">{{ project.category }}</span>
+        <CategoryTag :category="project.category" />
         <span class="tag" v-for="t in project.tags" :key="t">{{ t }}</span>
       </div>
 
@@ -51,6 +51,7 @@
 
 <script setup>
 import { RouterLink } from 'vue-router'
+import CategoryTag from '../components/CategoryTag.vue'
 
 defineProps({
   project: {

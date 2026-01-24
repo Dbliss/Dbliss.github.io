@@ -74,6 +74,88 @@ main{flex:1}
   padding:16px;box-shadow:var(--shadow)
 }
 .tag{font-size:.75rem;border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--muted)}
+.tag.tag--category{
+  position:relative;
+  font-size:.84rem;
+  padding:4px 10px;
+  font-weight:700;
+  color:rgba(255,255,255,.90);
+  border-color:rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05);
+  transition:transform .12s ease, background .12s ease, border-color .12s ease;
+}
+.tag.tag--category[data-category="External"]{
+  border-color:rgba(59,130,246,.35);
+  background:rgba(59,130,246,.20);
+}
+.tag.tag--category[data-category="Internal"]{
+  border-color:rgba(245,158,11,.40);
+  background:rgba(245,158,11,.20);
+}
+.tag.tag--category[data-category="Personal project"]{
+  border-color:rgba(167,139,250,.45);
+  background:rgba(167,139,250,.20);
+}
+.tag.tag--category:hover,
+.tag.tag--category:focus-visible{
+  transform:translateY(-1px);
+  border-color:rgba(255,255,255,.22);
+}
+.tag.tag--category[data-tooltip]{cursor:help}
+.tag.tag--category[data-tooltip]::after{
+  content:attr(data-tooltip);
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 10px);
+  transform:translateX(-50%);
+  width:max-content;
+  max-width:min(320px, 80vw);
+  padding:8px 10px;
+  border-radius:12px;
+  background:rgba(10,10,20,.96);
+  border:1px solid rgba(148,163,184,.22);
+  color:rgba(248,250,252,.92);
+  font-size:.78rem;
+  line-height:1.35;
+  letter-spacing:.01em;
+  box-shadow:0 14px 36px rgba(0,0,0,.55);
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition:opacity .16s ease, transform .16s ease, visibility 0s linear .16s;
+  z-index:50;
+}
+.tag.tag--category[data-tooltip]::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 4px);
+  transform:translateX(-50%);
+  width:10px;
+  height:10px;
+  background:rgba(10,10,20,.96);
+  border-left:1px solid rgba(148,163,184,.22);
+  border-top:1px solid rgba(148,163,184,.22);
+  transform:translateX(-50%) rotate(45deg);
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition:opacity .16s ease, visibility 0s linear .16s;
+  z-index:49;
+}
+.tag.tag--category[data-tooltip]:hover::after,
+.tag.tag--category[data-tooltip]:focus-visible::after{
+  opacity:1;
+  visibility:visible;
+  transform:translateX(-50%) translateY(-2px);
+  transition:opacity .16s ease, transform .16s ease, visibility 0s;
+}
+.tag.tag--category[data-tooltip]:hover::before,
+.tag.tag--category[data-tooltip]:focus-visible::before{
+  opacity:1;
+  visibility:visible;
+  transition:opacity .16s ease, visibility 0s;
+}
 .tags{display:flex;gap:6px;flex-wrap:wrap}
 .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
 

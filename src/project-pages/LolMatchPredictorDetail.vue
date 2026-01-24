@@ -14,6 +14,7 @@
       <div class="section-label">Machine Learning · Sports Analytics</div>
       <h1 class="hero-title">{{ project.title }}</h1>
       <div class="tags hero-tags">
+        <CategoryTag :category="project.category" />
         <span class="tag" v-for="t in project.tags" :key="t">{{ t }}</span>
       </div>
 
@@ -273,6 +274,7 @@
 
 <script setup>
 import { RouterLink } from 'vue-router'
+import CategoryTag from '../components/CategoryTag.vue'
 import calibrationCurve from '../assets/lol-match-predictor/calibration_curve.png'
 import probDistribution from '../assets/lol-match-predictor/prob_distribution.png'
 import featureImportance from '../assets/lol-match-predictor/feature_importance.png'

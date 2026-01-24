@@ -15,6 +15,7 @@
         <p class="section-sub">{{ project.tagline }}</p>
 
         <div class="tags" style="margin:8px 0 12px">
+          <CategoryTag :category="project.category" />
           <span class="tag" v-for="t in project.tags" :key="t">{{ t }}</span>
         </div>
 
@@ -89,6 +90,7 @@
 <script setup>
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import CategoryTag from '../components/CategoryTag.vue'
 
 const props = defineProps({
   project: {

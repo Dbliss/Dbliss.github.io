@@ -1,7 +1,7 @@
 <template>
   <article class="card">
     <div class="tags" v-if="project.category" style="margin-bottom:6px">
-      <span class="tag">{{ project.category }}</span>
+      <CategoryTag :category="project.category" />
     </div>
 
     <div class="tags" v-if="project.tags?.length">
@@ -24,6 +24,8 @@
 </template>
 
 <script setup>
+import CategoryTag from './CategoryTag.vue'
+
 defineProps({
   project: { type: Object, required: true }
 })

@@ -129,5 +129,32 @@ and master key software fundamentals such as hashing, search trees, bit operatio
     repoUrl: '',
     liveUrl: '',
     featured: false
+  },
+  {
+    slug: 'wealth-pathways-au',
+    title: 'Australian Wealth Pathways Calculator',
+    tagline: 'Interactive comparison tool for rent, investing, houses, and apartments',
+    excerpt:
+      'Monte Carlo-based browser calculator that compares wealth-building pathways for Australians across 10 to 30 year horizons.',
+    description: `
+Australian Wealth Pathways is a scenario-planning tool built for Australians trying to decide between renting and investing,
+an optional live-at-home runway, buying a home to live in, and buying a property as an investment while renting.
+
+The page is designed as a live calculator rather than a static case study. Users can edit assumptions for:
+- income growth and savings rate
+- move-out rent, live-at-home duration, and at-home living costs
+- ASX200, QQQ, and bond allocations
+- mortgage rates, deposits, and property growth
+- first-home-buyer settings, selected property intention, and rentvesting assumptions
+
+The engine uses Monte Carlo simulation in a web worker so the UI stays responsive while percentile bands update.
+The goal is not to give personal advice, but to make the trade-offs and drivers of each pathway visible.
+    `,
+    stack: ['Vue', 'Vite', 'Web Workers', 'Monte Carlo Simulation'],
+    tags: ['Finance Modelling', 'Interactive UI', 'Australia'],
+    category: 'Personal project',
+    repoUrl: '',
+    liveUrl: '',
+    featured: false
   }
 ]

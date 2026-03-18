@@ -23,7 +23,6 @@ import SportsluxDetail from '../project-pages/SportsluxDetail.vue'
 import ChessEngineDetail from '../project-pages/ChessEngineDetail.vue'
 import SportsBookingDetail from '../project-pages/SportsBookingDetail.vue'
 import AssetDataIntegrationDetail from '../project-pages/AssetDataIntegrationDetail.vue'
-import BettingOddsDetail from '../project-pages/BettingOddsDetail.vue'
 import DroneDetail from '../project-pages/DroneDetail.vue'
 
 // 1) get slug from route
@@ -41,7 +40,6 @@ const componentMap = {
   chessEngine: ChessEngineDetail,
   'sports-booking': SportsBookingDetail,
   'asset-data-integration': AssetDataIntegrationDetail,
-  'betting-odds': BettingOddsDetail,
   drone: DroneDetail
 }
 

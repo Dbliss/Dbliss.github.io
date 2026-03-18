@@ -117,20 +117,6 @@ and master key software fundamentals such as hashing, search trees, bit operatio
     featured: false
   },
   {
-    slug: 'betting-odds',
-    title: 'Betting Odds Analysis',
-    tagline: 'Personal study of pricing and probability',
-    excerpt:
-      'Explorations of implied probabilities, market movement, and pricing models.',
-    description: 'Documentation pending',
-    stack: ['Python', 'pandas', 'Jupyter'],
-    tags: ['Statistics', 'Sports analytics'],
-    category: 'Personal project',
-    repoUrl: '',
-    liveUrl: '',
-    featured: false
-  },
-  {
     slug: 'drone',
     title: 'Autonomous Drone Prototype',
     tagline: 'Low-latency flight control on Raspberry Pi',

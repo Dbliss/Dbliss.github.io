@@ -35,26 +35,12 @@
 		<article
 			ref="contentRef"
 			class="content prose"
-			:class="{ 'is-visible': contentDomVisible }"
+			:class="{ 'is-visible': contentDomVisible, 'is-guided': contentView === 'guided' }"
 			:aria-hidden="(!contentDomVisible).toString()"
 		>
 			<!-- Content shell (guided by default, optional "show all") -->
 			<div class="content-shell" :class="{ 'is-guided': contentView === 'guided' }">
-				<section class="overview-card card" v-if="contentDomVisible">
-					<div class="section-label">Chess · Project</div>
-
-					<h1 class="overview-title">Chess Engine (C++)</h1>
-
-					<div class="overview-meta mono">
-						<strong>Stack:</strong> C++ · Optimisation · Algorithms · Evaluation & Search
-					</div>
-
-					<p class="overview-desc">
-						A chess engine built from scratch in C++. It generates legal moves, searches future positions, and scores them with a
-						hand-tuned evaluation function. The focus is correctness first, then performance, then iteration speed.
-					</p>
-				</section>
-
+				
 
 				<aside class="content-nav" v-if="contentDomVisible">
 					<div class="nav-title mono">Sections</div>
@@ -69,72 +55,60 @@
 						<span class="nav-dot" aria-hidden="true"></span>
 						<span class="nav-label">{{ s.label }}</span>
 					</button>
-
-					<div class="nav-hint mono">
-						Tip: keep it “Guided” so the page never dumps a wall of text.
-					</div>
 				</aside>
 
 				<main class="content-main">
-					<!-- Overview -->
-					<section class="card hero" v-show="contentView === 'all' || activeSection === 'overview'">
+					
+					<!-- Context -->
+					<section
+						class="card"
+						data-section="context"
+						v-show="contentView === 'all' || activeSection === 'context'"
+					>
+						<div class="content-intro">
+							<div class="section-label">Chess · Project</div>
+							<h1 class="content-title">Chess Engine (C++)</h1>
+							<div class="hero-meta mono">
+								<strong>Stack:</strong> C++ · Optimisation · Algorithms · Evaluation & Search
+							</div>
+							<p class="intro-desc">
+								A chess engine built from scratch in C++. It generates legal moves, searches future positions, and scores them with a
+								hand-tuned evaluation function. The focus is correctness first, then performance, then iteration speed.
+							</p>
+						</div>
+
 						<div class="section-label">Overview</div>
 
 						<div class="content-grid">
-							<div class="card soft">
+							<div>
 								<div class="mini-title mono">What to look for</div>
 								<ul>
 									<li><strong>Fast board representation</strong> and move generation</li>
-									<li><strong>Search engineering</strong> (alpha–beta, move ordering, quiescence)</li>
+									<li><strong>Search engineering</strong> (alpha-beta, move ordering, quiescence)</li>
 									<li><strong>Caching</strong> via transposition tables + Zobrist hashing</li>
 									<li><strong>Validation</strong> (perft + regression harness)</li>
 								</ul>
 							</div>
 
-							<div class="card soft">
-								<div class="mini-title mono">Quick stats (placeholders)</div>
+							<div>
+								<div class="mini-title mono">Benchmarks I track</div>
 								<ul>
-									<li><strong>Elo chart:</strong> placeholder</li>
-									<li><strong>Nodes/sec:</strong> placeholder</li>
-									<li><strong>Perft pass-rate:</strong> placeholder</li>
+									<li><strong>Perft validation:</strong> 12 reference positions up to depth 8</li>
+									<li><strong>Search pruning:</strong> ~99.98% of branches removed in typical games</li>
+									<li><strong>Throughput:</strong> ~130k positions evaluated per second</li>
 								</ul>
 							</div>
 						</div>
 
-						<div class="media-grid">
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Hero screenshot placeholder</div>
-									<div class="media-sub mono">UI / board + controls</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Animation placeholder</div>
-									<div class="media-sub mono">alpha–beta pruning “cuts”</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Diagram placeholder</div>
-									<div class="media-sub mono">engine pipeline overview</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Benchmark chart placeholder</div>
-									<div class="media-sub mono">depth vs time</div>
-								</div>
-							</div>
+						<div class="media-row">
+							<figure class="media-figure media-figure-board">
+								<img class="media-img media-img-board" :src="chessBoardImg" alt="Chess engine UI board view" loading="lazy" />
+								<figcaption class="media-cap">
+									Engine UI with board state, move feedback, and controls.
+								</figcaption>
+							</figure>
 						</div>
-					</section>
 
-					<!-- Context -->
-					<section class="card" v-show="contentView === 'all' || activeSection === 'context'">
 						<h2 class="section-title small">Why I built it</h2>
 
 						<p>
@@ -154,7 +128,11 @@
 					</section>
 
 					<!-- Approach -->
-					<section class="card" v-show="contentView === 'all' || activeSection === 'approach'">
+					<section
+						class="card"
+						data-section="approach"
+						v-show="contentView === 'all' || activeSection === 'approach'"
+					>
 						<h2 class="section-title small">How the engine thinks</h2>
 
 						<p>At runtime the engine repeats this loop:</p>
@@ -166,45 +144,22 @@
 							<li>Pick the best move under time constraints.</li>
 						</ol>
 
-						<div class="callout">
-							<strong>Pipeline:</strong>
-							<span class="mono">Board State → Move Gen → Search → Evaluate → Best Move</span>
-						</div>
+						<p class="mono pipeline-line">Board State -> Move Gen -> Search -> Evaluate -> Best Move</p>
 
-						<div class="media-grid">
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Diagram placeholder</div>
-									<div class="media-sub mono">pipeline boxes + arrows</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Animation placeholder</div>
-									<div class="media-sub mono">iterative deepening “depth ladder”</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Diagram placeholder</div>
-									<div class="media-sub mono">quiescence extension (captures/checks)</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Code snippet placeholder</div>
-									<div class="media-sub mono">search loop pseudocode</div>
-								</div>
-							</div>
+						<div class="media-row">
+							<figure class="media-figure media-figure-log">
+								<img class="media-img media-img-log" :src="engineLogImg" alt="Engine search log output" loading="lazy" />
+								<figcaption class="media-cap">Search output while deepening and scoring positions.</figcaption>
+							</figure>
 						</div>
 					</section>
 
 					<!-- Features -->
-					<section class="card" v-show="contentView === 'all' || activeSection === 'features'">
+					<section
+						class="card"
+						data-section="features"
+						v-show="contentView === 'all' || activeSection === 'features'"
+					>
 						<h2 class="section-title small">Key implementation features</h2>
 
 						<h3 class="subhead">A) Transposition table + position hashing</h3>
@@ -225,12 +180,12 @@
 
 						<h3 class="subhead">C) Search designed for exponential growth</h3>
 						<p>
-							The core is <strong>alpha–beta pruning</strong> with strong <strong>move ordering</strong>. With good ordering, alpha–beta can reduce the
+							The core is <strong>alpha-beta pruning</strong> with strong <strong>move ordering</strong>. With good ordering, alpha-beta can reduce the
 							effective complexity from roughly <span class="mono">O(b^d)</span> toward <span class="mono">O(b^(d/2))</span> in the best case.
 						</p>
 						<p>
 							At the root, <strong>iterative deepening</strong> gives a usable best move at all times and improves ordering for deeper iterations.
-							At leaf nodes, <strong>quiescence search</strong> extends tactical lines (captures/checks) to avoid evaluating “noisy” positions.
+							At leaf nodes, <strong>quiescence search</strong> extends tactical lines (captures/checks) to avoid evaluating noisy positions.
 							Additional pruning like <strong>null move</strong> can safely cut large branches in many positions.
 						</p>
 
@@ -239,48 +194,14 @@
 							The evaluation function is intentionally transparent: it follows classical chess principles and produces a score you can debug.
 							That makes iteration much faster than an opaque model when your goal is engineering insight and predictable behaviour.
 						</p>
-
-						<div class="media-grid">
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Diagram placeholder</div>
-									<div class="media-sub mono">TT entry layout + replacement policy</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Animation placeholder</div>
-									<div class="media-sub mono">alpha–beta cutoff visualisation</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Diagram placeholder</div>
-									<div class="media-sub mono">Zobrist XOR in/out</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Image placeholder</div>
-									<div class="media-sub mono">evaluation breakdown “score bars”</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Diagram placeholder</div>
-									<div class="media-sub mono">move ordering priority stack</div>
-								</div>
-							</div>
-						</div>
 					</section>
 
 					<!-- Process -->
-					<section class="card" v-show="contentView === 'all' || activeSection === 'process'">
+					<section
+						class="card"
+						data-section="process"
+						v-show="contentView === 'all' || activeSection === 'process'"
+					>
 						<h2 class="section-title small">How I built it</h2>
 
 						<h3 class="subhead">Building the rules (correctness first)</h3>
@@ -308,40 +229,20 @@
 							(sounds for moves/captures/checks), so the project feels like a real product instead of a demo.
 						</p>
 
-						<div class="media-grid">
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Timeline placeholder</div>
-									<div class="media-sub mono">milestones / iterations</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Image placeholder</div>
-									<div class="media-sub mono">perft test output + harness</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Animation placeholder</div>
-									<div class="media-sub mono">regression suite “green bars”</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Screenshot placeholder</div>
-									<div class="media-sub mono">UI controls panel</div>
-								</div>
-							</div>
+						<div class="media-row">
+							<figure class="media-figure media-figure-perft">
+								<img class="media-img media-img-perft" :src="perftImg" alt="Perft validation output and test suite" loading="lazy" />
+								<figcaption class="media-cap">Perft test suite used to validate move generation and edge cases.</figcaption>
+							</figure>
 						</div>
 					</section>
 
 					<!-- Results -->
-					<section class="card" v-show="contentView === 'all' || activeSection === 'results'">
+					<section
+						class="card"
+						data-section="results"
+						v-show="contentView === 'all' || activeSection === 'results'"
+					>
 						<h2 class="section-title small">Outcomes</h2>
 
 						<ul>
@@ -350,34 +251,14 @@
 							<li><strong>Typical speed:</strong> 8.5B nodes searched, ~130k positions evaluated per second</li>
 							<li><strong>Strength proxy:</strong> over 2000 Elo online vs bots and humans</li>
 						</ul>
-
-						<div class="media-grid">
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Chart placeholder</div>
-									<div class="media-sub mono">Elo over time / versions</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Chart placeholder</div>
-									<div class="media-sub mono">nodes/sec vs depth</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Diagram placeholder</div>
-									<div class="media-sub mono">where time goes (profiling)</div>
-								</div>
-							</div>
-						</div>
 					</section>
 
 					<!-- Learnings -->
-					<section class="card" v-show="contentView === 'all' || activeSection === 'learnings'">
+					<section
+						class="card"
+						data-section="learnings"
+						v-show="contentView === 'all' || activeSection === 'learnings'"
+					>
 						<h2 class="section-title small">Key learnings</h2>
 						<ul>
 							<li>I can take an ambiguous, complex problem and decompose it into tractable subsystems</li>
@@ -386,150 +267,21 @@
 							<li>I can iterate using measurements, not vibes</li>
 							<li>I can communicate technical work without assuming specialist knowledge</li>
 						</ul>
-
-						<div class="media-grid">
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Diagram placeholder</div>
-									<div class="media-sub mono">architecture map</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Animation placeholder</div>
-									<div class="media-sub mono">profiling → optimisation loop</div>
-								</div>
-							</div>
-						</div>
 					</section>
 
 					<!-- Tradeoffs -->
-					<section class="card" v-show="contentView === 'all' || activeSection === 'tradeoffs'">
+					<section
+						class="card"
+						data-section="tradeoffs"
+						v-show="contentView === 'all' || activeSection === 'tradeoffs'"
+					>
 						<h2 class="section-title small">Future improvements</h2>
 						<ul>
-							<li>Improve move ordering (stronger heuristics → deeper search at the same time)</li>
-							<li>Use “magic bitboards” for faster sliding-piece move generation</li>
+							<li>Improve move ordering (stronger heuristics -> deeper search at the same time)</li>
+							<li>Use magic bitboards for faster sliding-piece move generation</li>
 							<li>Explore a neural network evaluation function</li>
 							<li>Improve usability on macOS and for non-Windows users</li>
 						</ul>
-
-						<div class="media-grid">
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Roadmap placeholder</div>
-									<div class="media-sub mono">next 5 upgrades</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Diagram placeholder</div>
-									<div class="media-sub mono">magic bitboards concept</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Chart placeholder</div>
-									<div class="media-sub mono">expected speedup by feature</div>
-								</div>
-							</div>
-						</div>
-					</section>
-
-					<!-- Repo -->
-					<section class="card" v-show="contentView === 'all' || activeSection === 'repo'">
-						<h2 class="section-title small">Repository navigation</h2>
-
-						<div class="callout">
-							<strong>Goal:</strong>
-							<span class="mono">make the structure scannable in 10 seconds</span>
-						</div>
-
-						<ul>
-							<li><strong>UI / Presentation</strong>: <span class="mono">BoardDisplay.h / BoardDisplay.cpp</span> — rendering, controls, sound</li>
-							<li><strong>Application / Orchestration</strong>: <span class="mono">Chess Engine.cpp</span> — main controller and game modes</li>
-							<li><strong>Rules + move system</strong>: <span class="mono">chess.h / chess.cpp</span> — legality, helpers, state progression</li>
-							<li><strong>Search + evaluation</strong>: <span class="mono">engine2.h / engine2.cpp</span> — alpha–beta, quiescence, eval</li>
-							<li><strong>Hashing</strong>: <span class="mono">zobrist.h / zobrist.cpp</span> — position identity + TT keys</li>
-							<li><strong>Assets</strong>: <span class="mono">Resource Files/</span> — PNG pieces + WAV sounds</li>
-							<li><strong>Optional helper data</strong>: <span class="mono">StartingMoves.txt</span> — opening preload for repeatable tests</li>
-						</ul>
-
-						<div class="media-grid">
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Diagram placeholder</div>
-									<div class="media-sub mono">repo tree (collapsed)</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Diagram placeholder</div>
-									<div class="media-sub mono">module dependency arrows</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Image placeholder</div>
-									<div class="media-sub mono">where the hot paths live</div>
-								</div>
-							</div>
-						</div>
-					</section>
-
-					<!-- Add-ons -->
-					<section class="card" v-show="contentView === 'all' || activeSection === 'addons'">
-						<h2 class="section-title small">Add-ons that raise your hiring signal fast</h2>
-
-						<h3 class="subhead">A) “Bugs I fixed” micro-section</h3>
-						<p>Pick 3–5, each in this format:</p>
-						<ul>
-							<li><strong>Symptom:</strong> what went wrong</li>
-							<li><strong>Root cause:</strong> what you discovered</li>
-							<li><strong>Fix:</strong> what changed</li>
-							<li><strong>Prevention:</strong> test/invariant added</li>
-						</ul>
-
-						<h3 class="subhead">B) Resume bullets you can lift directly</h3>
-						<ul>
-							<li>
-								Built a C++ chess engine from scratch emphasizing correctness, performance, and extensibility (move generation, search, evaluation, time control).
-							</li>
-							<li>Implemented validation + benchmarking harnesses to prevent regressions and quantify performance improvements.</li>
-							<li>Used profiling-driven optimisation to improve search throughput and depth under fixed time constraints.</li>
-							<li>Designed readable, tunable heuristics and documented architecture for maintainability.</li>
-						</ul>
-
-						<div class="media-grid">
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Placeholder</div>
-									<div class="media-sub mono">“bugs fixed” screenshot card</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Placeholder</div>
-									<div class="media-sub mono">before/after perf chart</div>
-								</div>
-							</div>
-							<div class="media-card">
-								<div class="media-thumb"></div>
-								<div class="media-cap">
-									<div class="media-title">Placeholder</div>
-									<div class="media-sub mono">profiling flamegraph image</div>
-								</div>
-							</div>
-						</div>
 					</section>
 
 					<!-- (Optional) “All view” helper: tiny footer spacing -->
@@ -541,7 +293,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -549,6 +301,9 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
 import chessModelUrl from "../assets/chess-engine/chess_set.glb?url";
+import chessBoardImg from "../assets/chess-engine/board.PNG";
+import engineLogImg from "../assets/chess-engine/log.PNG";
+import perftImg from "../assets/chess-engine/perft_tests.PNG";
 
 import { createChessGame, fileRankToSquare, squareToFileRank } from "../chess/chessGame.js";
 import { StockfishClient, parseUciMove } from "../chess/stockfishClient.js";
@@ -903,12 +658,10 @@ const CONTENT_SECTIONS = [
 	{ id: "results", label: "Results" },
 	{ id: "learnings", label: "Key learnings" },
 	{ id: "tradeoffs", label: "Future improvements" },
-	{ id: "repo", label: "Repo navigation" },
-	{ id: "addons", label: "Add-ons" },
 ];
 
 const contentView = ref("guided"); // "guided" | "all"
-const activeSection = ref("overview");
+const activeSection = ref("context");
 
 const activeIndex = computed(() => {
 	const i = CONTENT_SECTIONS.findIndex((s) => s.id === activeSection.value);
@@ -916,7 +669,7 @@ const activeIndex = computed(() => {
 });
 
 const activeSectionLabel = computed(() => {
-	return CONTENT_SECTIONS[activeIndex.value]?.label ?? "Overview";
+	return CONTENT_SECTIONS[activeIndex.value]?.label ?? "Context";
 });
 
 function scrollContentIntoView() {
@@ -930,28 +683,47 @@ function scrollContentIntoView() {
 	window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
 }
 
+function scrollSectionIntoView(id) {
+	const root = contentRef.value;
+	if (!root) {
+		scrollContentIntoView();
+		return;
+	}
+
+	const target = root.querySelector(`[data-section="${id}"]`);
+	if (!target) {
+		scrollContentIntoView();
+		return;
+	}
+
+	const r = target.getBoundingClientRect();
+	const y = Math.round(r.top + window.scrollY);
+	const top = Math.max(contentLockActive ? contentLockMinY : y, y) - 12;
+	window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+}
+
 function setActiveSection(id) {
 	activeSection.value = id;
-	scrollContentIntoView();
+	nextTick(() => scrollSectionIntoView(id));
 }
 
 function nextSection() {
 	const i = activeIndex.value;
 	if (i >= CONTENT_SECTIONS.length - 1) return;
 	activeSection.value = CONTENT_SECTIONS[i + 1].id;
-	scrollContentIntoView();
+	nextTick(() => scrollSectionIntoView(activeSection.value));
 }
 
 function prevSection() {
 	const i = activeIndex.value;
 	if (i <= 0) return;
 	activeSection.value = CONTENT_SECTIONS[i - 1].id;
-	scrollContentIntoView();
+	nextTick(() => scrollSectionIntoView(activeSection.value));
 }
 
 function toggleContentView() {
 	contentView.value = contentView.value === "guided" ? "all" : "guided";
-	scrollContentIntoView();
+	nextTick(() => scrollSectionIntoView(activeSection.value));
 }
 
 // ------------------------------------------------------------
@@ -3716,8 +3488,10 @@ function sleep(ms) {
 	position: relative;
 	z-index: 5;
 	padding: 18px;
-	width: min(1200px, calc(100vw - 36px));
+	width: min(1600px, calc(100vw - 36px));
 	margin: 0 auto;
+	max-width: 100%;
+	box-sizing: border-box;
 
 	opacity: 0;
 	transform: translateY(10px);
@@ -3726,10 +3500,14 @@ function sleep(ms) {
 }
 
 .content.is-visible {
-	margin-top: 22vh;
+	margin-top: 12px;
 	opacity: 1;
 	transform: translateY(0);
 	pointer-events: auto;
+}
+
+.content.is-visible.is-guided {
+	margin-top: 12px;
 }
 
 .card {
@@ -3823,9 +3601,12 @@ function sleep(ms) {
 
 .content-shell {
 	display: grid;
-	grid-template-columns: 340px minmax(0, 1fr);
-	gap: 14px;
+	grid-template-columns: 210px minmax(0, 920px);
+	gap: 16px;
 	align-items: start;
+	min-width: 0;
+	justify-content: center;
+	align-content: start;
 }
 
 .content-topbar {
@@ -3927,6 +3708,9 @@ function sleep(ms) {
 	background: rgba(10, 16, 32, 0.62);
 	border: 1px solid rgba(231, 238, 252, 0.16);
 	backdrop-filter: blur(12px);
+	min-width: 0;
+	margin-left: -12px;
+	align-self: start;
 }
 
 .nav-title {
@@ -3990,6 +3774,11 @@ function sleep(ms) {
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
+	min-width: 0;
+	max-width: 920px;
+	width: 100%;
+	margin: 0 auto;
+	align-self: start;
 }
 
 .content-grid {
@@ -3997,6 +3786,7 @@ function sleep(ms) {
 	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 	gap: 12px;
 	margin-top: 12px;
+	min-width: 0;
 }
 
 .mini-title {
@@ -4005,103 +3795,73 @@ function sleep(ms) {
 	margin-bottom: 8px;
 }
 
-.overview-card {
-	grid-column: 1 / -1;
-	padding: 14px 14px;
-	background: rgba(10, 16, 32, 0.72);
-	border: 1px solid rgba(231, 238, 252, 0.16);
-	backdrop-filter: blur(12px);
+.content-intro {
+	margin-bottom: 14px;
 }
 
-.overview-title {
-	margin: 6px 0 6px;
-	font-weight: 900;
-	letter-spacing: 0.01em;
-	line-height: 1.05;
-	font-size: clamp(26px, 3.8vw, 44px);
-	color: rgba(var(--title), 0.96);
-	text-shadow:
-		0 0 14px rgba(var(--accent), 0.18),
-		0 12px 60px rgba(0, 0, 0, 0.45);
-}
-
-.overview-meta {
-	font-size: 0.92rem;
-	opacity: 0.92;
-	color: rgba(var(--sub), 0.85);
-	margin-bottom: 8px;
-}
-
-.overview-desc {
+.intro-desc {
 	margin: 0;
 	color: rgba(var(--sub), 0.88);
 	line-height: 1.65;
 }
 
-.media-grid {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	margin-top: 12px;
+.media-row {
+	margin-top: 14px;
 }
 
-.media-card {
-	position: relative;
+.media-figure {
+	margin: 0;
+}
+
+.media-figure img {
+	width: 100%;
+	height: auto;
+	display: block;
 	border-radius: 12px;
-	overflow: hidden;
-
-	border: 1px solid rgba(231, 238, 252, 0.14);
-	background: rgba(10, 16, 32, 0.55);
-
-	/* notebook-ish left rail */
-	padding-left: 46px;
 }
 
-.media-card::before {
-	content: "In [ ]:";
-	position: absolute;
-	left: 12px;
-	top: 12px;
-
-	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-	font-size: 12px;
-	letter-spacing: 0.02em;
-
-	color: rgba(var(--sub), 0.65);
+.media-img {
+	margin: 0 auto;
+	max-width: 760px;
 }
 
-.media-thumb {
-	height: 140px;
-	margin: 10px 10px 0 0;
-	border-radius: 10px;
+.media-img-board {
+	max-width: 820px;
+}
 
-	background:
-		linear-gradient(135deg, rgba(var(--accent), 0.14), rgba(255, 255, 255, 0.02)),
-		repeating-linear-gradient(90deg,
-			rgba(255, 255, 255, 0.03) 0,
-			rgba(255, 255, 255, 0.03) 10px,
-			rgba(255, 255, 255, 0.01) 10px,
-			rgba(255, 255, 255, 0.01) 20px
-		);
+.media-img-log {
+	max-width: 680px;
+}
+
+.media-img-perft {
+	max-width: 720px;
 }
 
 .media-cap {
-	padding: 10px 12px 12px 0;
+	margin-top: 8px;
+	color: rgba(var(--sub), 0.82);
+	font-size: 0.92rem;
+	line-height: 1.5;
 }
 
-.media-title {
-	color: rgba(var(--title), 0.92);
-	font-weight: 900;
-	margin-bottom: 2px;
-}
-
-.media-sub {
-	color: rgba(var(--sub), 0.78);
-	font-size: 0.9rem;
+.pipeline-line {
+	margin: 10px 0 0;
+	color: rgba(var(--sub), 0.85);
 }
 
 .content-footer-spacer {
 	height: 6px;
+}
+
+.content-shell.is-guided .content-footer-spacer {
+	height: clamp(24px, 22vh, 240px);
+}
+
+.content-shell.is-guided .content-main::after {
+	content: "";
+	display: block;
+	height: min(80vh, 720px);
+	flex: 0 0 auto;
 }
 
 @media (max-width: 980px) {
@@ -4111,6 +3871,7 @@ function sleep(ms) {
 	.content-nav {
 		position: relative;
 		top: 0;
+		margin-left: 0;
 	}
 	.content-grid {
 		grid-template-columns: 1fr;

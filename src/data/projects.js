@@ -90,17 +90,23 @@ and master key software fundamentals such as hashing, search trees, bit operatio
   },
   {
     slug: 'sports-booking',
-    title: 'Sports Booking Platform',
-    tagline: 'Customer-facing scheduling and lighting automation',
+    title: 'FrontRunner Sports Booking Platform',
+    tagline: 'Council-grade booking, policy enforcement, and lighting automation',
     excerpt:
-      'Full-stack booking system for sports fields that automates lighting schedules based on reservations.',
-    description: 'Documentation pending',
-    stack: ['Vue', 'Node.js', 'PostgreSQL', 'REST API'],
-    tags: ['Bookings', 'Automation', 'Full-stack'],
+      'Customer-facing multi-tenant booking system that validates reservations in real time and commissions lighting schedules through EXEDRA.',
+    description: `
+FrontRunner is a full-stack booking and operations platform for councils and sports operators.
+It centralises reservations, enforces configurable booking policies, and automates lighting schedules via EXEDRA integration.
+The product includes role-based administration, subtenancy delegation, recurring bookings, and reporting exports for operational workflows.
+    `,
+    stack: ['Vue 3', 'Node.js', 'PostgreSQL', 'JWT Auth', 'SMTP', 'EXEDRA API'],
+    tags: ['Multi-tenant', 'RBAC', 'Automation', 'Scheduling'],
     category: 'External',
     repoUrl: '',
     liveUrl: '',
-    featured: false
+    featured: true,
+    hideFooter: true,
+    hideNav: true
   },
   {
     slug: 'asset-data-integration',

@@ -2,9 +2,13 @@ import {
   amortizeOneYear,
   calculateAnnualMortgagePayment,
   calculatePurchaseCosts,
+  estimateGenericPurchaseCosts,
+  estimateLmi,
   estimatePortfolioTaxImpact,
-  getEffectiveDepositPct,
-  normalisePortfolioWeights
+  getEffectiveInvestmentDepositPct,
+  getEffectiveOwnerDepositPct,
+  normalisePortfolioWeights,
+  scalePurchaseCostsWithPrice
 } from '../finance.js'
 
 describe('wealth finance helpers', () => {
@@ -17,25 +21,56 @@ describe('wealth finance helpers', () => {
     expect(year.interestPaid).toBeGreaterThan(0)
   })
 
-  it('applies first-home-buyer benefits to purchase costs', () => {
+  it('waives owner stamp duty below 800k and tapers it to 1m', () => {
     const config = {
       stampDuty: 32000,
       legalFees: 2500,
-      buyersCosts: 1800,
-      firstHomeBuyerDutyReductionPct: 0.5,
-      firstHomeBuyerGrant: 10000
+      buyersCosts: 1800
     }
 
-    const regular = calculatePurchaseCosts(config, false)
-    const firstHomeBuyer = calculatePurchaseCosts(config, true)
+    const regular = calculatePurchaseCosts(config, false, 900000)
+    const fullyExempt = calculatePurchaseCosts(config, true, 750000)
+    const tapered = calculatePurchaseCosts(config, true, 900000)
 
-    expect(firstHomeBuyer.total).toBeLessThan(regular.total)
-    expect(firstHomeBuyer.grant).toBe(10000)
+    expect(fullyExempt.stampDuty).toBe(0)
+    expect(fullyExempt.total).toBe(4300)
+    expect(tapered.stampDuty).toBe(16000)
+    expect(tapered.total).toBeLessThan(regular.total)
   })
 
-  it('forces a 5 percent deposit when first-home-buyer support is enabled', () => {
-    expect(getEffectiveDepositPct({ depositPct: 0.2 }, false)).toBeCloseTo(0.2)
-    expect(getEffectiveDepositPct({ depositPct: 0.2 }, true)).toBeCloseTo(0.05)
+  it('keeps owner and investment deposit settings distinct', () => {
+    expect(getEffectiveOwnerDepositPct({ ownerDepositPct: 0.05, depositPct: 0.2 })).toBeCloseTo(0.05)
+    expect(getEffectiveOwnerDepositPct({ ownerDepositPct: 0.12, depositPct: 0.2 })).toBeCloseTo(0.12)
+    expect(getEffectiveInvestmentDepositPct({ ownerDepositPct: 0.05, depositPct: 0.2 })).toBeCloseTo(0.2)
+  })
+
+  it('removes LMI for eligible first-home-buyer purchases and scales it with higher LVRs otherwise', () => {
+    expect(estimateLmi(1_400_000, 0.05, true)).toBe(0)
+    expect(estimateLmi(900000, 0.15, false)).toBeLessThan(estimateLmi(900000, 0.1, false))
+    expect(estimateLmi(900000, 0.1, false)).toBeLessThan(estimateLmi(900000, 0.05, false))
+  })
+
+  it('scales shared purchase costs with property value using the generic formulas', () => {
+    const base = estimateGenericPurchaseCosts(700000)
+    const scaled = scalePurchaseCostsWithPrice(base, 700000, 900000)
+
+    expect(scaled.stampDuty).toBeGreaterThan(base.stampDuty)
+    expect(scaled.legalFees).toBeGreaterThan(base.legalFees)
+    expect(scaled.buyersCosts).toBeGreaterThan(base.buyersCosts)
+  })
+
+  it('preserves manual purchase-cost overrides as a ratio to the generic baseline when price changes', () => {
+    const base = estimateGenericPurchaseCosts(700000)
+    const scaled = scalePurchaseCostsWithPrice({
+      stampDuty: base.stampDuty * 1.1,
+      legalFees: base.legalFees * 0.9,
+      buyersCosts: base.buyersCosts * 1.25
+    }, 700000, 900000)
+    const next = estimateGenericPurchaseCosts(900000)
+
+    expect(scaled.stampDuty / next.stampDuty).toBeCloseTo(1.1, 2)
+    expect(scaled.legalFees / next.legalFees).toBeCloseTo(0.9, 2)
+    expect(scaled.buyersCosts / next.buyersCosts).toBeCloseTo(1.25, 2)
   })
 
   it('normalises portfolio weights while preserving the bond cap behaviour', () => {

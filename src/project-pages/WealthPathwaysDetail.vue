@@ -1,101 +1,19 @@
 <template>
   <article class="wealth-page">
-    <RouterLink to="/projects" class="wealth-back">&larr; Back to projects</RouterLink>
+    <div class="wealth-back-row">
+      <RouterLink to="/projects" class="wealth-back">&larr; Back to projects</RouterLink>
+    </div>
 
-    <section class="wealth-hero">
-      <div class="wealth-hero__copy">
-        <p class="wealth-kicker">Australian wealth pathways calculator</p>
-        <h1>{{ project.title }}</h1>
-        <p class="wealth-tagline">{{ project.tagline }}</p>
-        <p class="wealth-copy">
-          Start with an optional live-at-home runway, choose the portfolio mix, then compare three move-out paths:
-          rent + invest, buy to live in, or buy as an investment while renting.
-        </p>
-
-        <div class="wealth-tags">
-          <CategoryTag :category="project.category" />
-          <span v-for="tag in project.tags" :key="tag" class="tag wealth-tag">{{ tag }}</span>
-        </div>
-
-        <div class="wealth-hero__stats">
-          <div>
-            <span>Defaults</span>
-            <strong>{{ wealthSimulationMetadata.version }} - {{ wealthSimulationMetadata.lastUpdated }}</strong>
-          </div>
-          <div>
-            <span>Horizon</span>
-            <strong>{{ form.profile.horizonYears }} years</strong>
-          </div>
-        </div>
-      </div>
-
-      <div class="wealth-hero__panel">
-        <p class="wealth-kicker">Workflow</p>
-        <h2>{{ currentStage === 1 ? 'Stage 1: Fill inputs' : 'Stage 2: Explore results' }}</h2>
-        <p class="wealth-copy">
-          {{
-            currentStage === 1
-              ? 'Set the live-at-home plan, portfolio mix, and property intention. When you are ready, generate the results stage.'
-              : 'Hover the charts for exact values and click any scenario chip to grey it out or bring it back into focus.'
-          }}
-        </p>
-
-        <div class="wealth-stage-tabs">
-          <button
-            type="button"
-            class="wealth-stage-tab"
-            :class="{ 'is-active': currentStage === 1 }"
-            @click="goToInputs"
-          >
-            1. Inputs
-          </button>
-          <button
-            type="button"
-            class="wealth-stage-tab"
-            :class="{ 'is-active': currentStage === 2 }"
-            :disabled="!result"
-            @click="goToResults"
-          >
-            2. Results
-          </button>
-        </div>
-
-        <div class="wealth-hero__mini">
-          <div>
-            <span>Status</span>
-            <strong>{{ loading ? 'Running' : resultsStale ? 'Inputs changed' : 'Ready' }}</strong>
-          </div>
-          <div>
-            <span>Last run</span>
-            <strong>{{ lastRunAt || 'Not yet run' }}</strong>
-          </div>
-          <div>
-            <span>Current lead</span>
-            <strong>{{ bestMedianStrategy ? bestMedianStrategy.label : 'Pending' }}</strong>
-          </div>
-          <div>
-            <span>Note</span>
-            <strong>Not financial advice</strong>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="wealth-banner">
-      <p>
-        The model uses simplified Australian tax, property, and return assumptions. It is for scenario comparison rather
-        than advice, delays property entry until the deposit is actually affordable, and invests surplus cash for the ownership pathways.
-      </p>
-      <span class="wealth-pill" :class="{ 'is-live': !loading && !resultsStale && !errorMessage }">
-        {{ loading ? 'Simulation running' : errorMessage ? 'Review inputs' : resultsStale ? 'Results out of date' : 'Simulation ready' }}
-      </span>
+    <section ref="heroRef" class="wealth-hero">
+      <h1 ref="heroTitleRef">{{ project.title }}</h1>
+      <p class="wealth-tagline">{{ project.tagline }}</p>
     </section>
 
     <div v-if="errorMessage" class="wealth-error">{{ errorMessage }}</div>
 
     <section v-if="currentStage === 1" class="wealth-stage wealth-stage--inputs">
-      <div class="wealth-input-layout">
-        <div class="wealth-form-stack">
+      <div class="wealth-form-stack">
+        <div class="wealth-panel-grid wealth-panel-grid--primary">
           <details class="wealth-panel" open>
             <summary>Profile</summary>
             <div class="wealth-panel__body">
@@ -122,42 +40,39 @@
                 </label>
                 <label>
                   <span v-bind="labelAttrs('annualIncome')">Gross income</span>
-                  <input v-model.number="form.profile.annualIncome" v-bind="valueAttrs('annualIncome')" type="number" min="0" step="1000" />
+                  <input
+                    data-testid="annual-income"
+                    v-model.number="form.profile.annualIncome"
+                    v-bind="valueAttrs('annualIncome')"
+                    type="number"
+                    min="0"
+                    step="1000"
+                  />
+                </label>
+                <label>
+                  <span v-bind="labelAttrs('taxYear')">Tax year</span>
+                  <select v-model="form.profile.taxYear" v-bind="valueAttrs('taxYear')">
+                    <option value="2025-26">2025-26</option>
+                    <option value="2026-27">2026-27</option>
+                  </select>
                 </label>
                 <label>
                   <span v-bind="labelAttrs('incomeGrowthRate')">Income growth %</span>
                   <input v-model.number="profileIncomeGrowthPct" v-bind="valueAttrs('incomeGrowthRate')" type="number" min="0" max="10" step="0.1" />
                 </label>
                 <label>
-                  <span v-bind="labelAttrs('weeklyAvailableToSave')">Weekly investable cash</span>
-                  <input v-model.number="form.profile.weeklyAvailableToSave" v-bind="valueAttrs('weeklyAvailableToSave')" type="number" min="0" step="25" />
-                </label>
-              </div>
-            </div>
-          </details>
-
-          <details class="wealth-panel" open>
-            <summary>Housing plan</summary>
-            <div class="wealth-panel__body">
-              <div class="wealth-grid">
-                <label>
-                  <span v-bind="labelAttrs('targetPropertyType')">Property intention</span>
-                  <select v-model="form.propertyConfig.targetPropertyType" v-bind="valueAttrs('targetPropertyType')">
-                    <option value="house">House</option>
-                    <option value="apartment">Apartment</option>
-                  </select>
+                  <span v-bind="labelAttrs('weeklyNonHousingLivingCosts')">Weekly non-housing living costs</span>
+                  <input
+                    v-model.number="form.profile.weeklyNonHousingLivingCosts"
+                    v-bind="valueAttrs('weeklyNonHousingLivingCosts')"
+                    type="number"
+                    min="0"
+                    step="25"
+                  />
                 </label>
                 <label class="wealth-toggle wealth-toggle--card">
                   <input data-testid="live-at-home-toggle" v-model="form.housingCosts.liveAtHome" v-bind="valueAttrs('liveAtHome')" type="checkbox" />
-                  <span v-bind="labelAttrs('liveAtHome')">Live at home first</span>
-                </label>
-                <label>
-                  <span v-bind="labelAttrs('weeklyRent')">Move-out weekly rent</span>
-                  <input v-model.number="form.housingCosts.weeklyRent" v-bind="valueAttrs('weeklyRent')" type="number" min="0" step="10" />
-                </label>
-                <label>
-                  <span v-bind="labelAttrs('rentGrowthRate')">Rent growth %</span>
-                  <input v-model.number="rentGrowthPct" v-bind="valueAttrs('rentGrowthRate')" type="number" min="0" max="10" step="0.1" />
+                  <span v-bind="labelAttrs('liveAtHome')">Currently living at home</span>
                 </label>
                 <label v-if="form.housingCosts.liveAtHome">
                   <span v-bind="labelAttrs('liveAtHomeYears')">Years living at home</span>
@@ -171,48 +86,91 @@
                   />
                 </label>
                 <label v-if="form.housingCosts.liveAtHome">
-                  <span v-bind="labelAttrs('weeklyBoardAtHome')">Weekly board at home</span>
+                  <span v-bind="labelAttrs('weeklyBoardAtHome')">Weekly rent + expenses at home</span>
                   <input v-model.number="form.housingCosts.weeklyBoardAtHome" v-bind="valueAttrs('weeklyBoardAtHome')" type="number" min="0" step="10" />
                 </label>
                 <label v-if="form.housingCosts.liveAtHome">
-                  <span v-bind="labelAttrs('boardGrowthRate')">Board growth %</span>
+                  <span v-bind="labelAttrs('boardGrowthRate')">Rent + expenses growth %</span>
                   <input v-model.number="boardGrowthPct" v-bind="valueAttrs('boardGrowthRate')" type="number" min="0" max="10" step="0.1" />
                 </label>
               </div>
 
-              <p class="wealth-field-note wealth-field-note--section">
-                After the live-at-home period ends, every path assumes you move out. The selected {{ targetPropertyLabel.toLowerCase() }}
-                settings drive both property strategies and the affordability signal shown on the right.
+              <p v-if="form.housingCosts.liveAtHome" class="wealth-field-note wealth-field-note--section">
+                Rent + invest and investment-property paths treat living at home as lower housing costs for the selected
+                years. Buy-to-live paths move into the purchased home as soon as the deposit and buying costs are covered.
               </p>
             </div>
           </details>
 
           <details class="wealth-panel" open>
+            <summary>Housing plan</summary>
+            <div class="wealth-panel__body">
+              <div class="wealth-grid">
+                <div class="wealth-toggle-card">
+                  <span v-bind="labelAttrs('investWhileSavingForDeposit')">Saving mode</span>
+                  <label class="wealth-toggle wealth-toggle--card">
+                    <input
+                      data-testid="invest-while-saving-toggle"
+                      v-model="form.propertyConfig.investWhileSavingForDeposit"
+                      type="checkbox"
+                    />
+                    <span>Invest while saving for deposit</span>
+                  </label>
+                </div>
+                <label>
+                  <span v-bind="labelAttrs('surplusAllocationMode')">Property surplus</span>
+                  <select v-model="form.propertyConfig.surplusAllocationMode" v-bind="valueAttrs('surplusAllocationMode')">
+                    <option value="portfolio">Invest surplus</option>
+                    <option value="mortgagePrepayment">Prepay mortgage</option>
+                  </select>
+                </label>
+                <label>
+                  <span v-bind="labelAttrs('weeklyRent')">Move-out weekly rent</span>
+                  <input v-model.number="form.housingCosts.weeklyRent" v-bind="valueAttrs('weeklyRent')" type="number" min="0" step="10" />
+                </label>
+                <label>
+                  <span v-bind="labelAttrs('rentGrowthRate')">Rent growth %</span>
+                  <input v-model.number="rentGrowthPct" v-bind="valueAttrs('rentGrowthRate')" type="number" min="0" max="10" step="0.1" />
+                </label>
+              </div>
+
+              <p class="wealth-field-note wealth-field-note--section">
+                Move-out rent applies once a rent-based path leaves home. The yearly ledger starts from gross salary,
+                subtracts tax and your non-housing living costs, then applies each strategy&apos;s rent, mortgage, property
+                cashflow, and any surplus routing choice.
+              </p>
+            </div>
+          </details>
+        </div>
+
+          <details class="wealth-panel" open>
             <summary>Portfolio</summary>
             <div class="wealth-panel__body">
-              <label class="wealth-range">
-                <span v-bind="labelAttrs('bondWeight')">Bond allocation</span>
-                <div class="wealth-range__row">
-                  <input
-                    data-testid="bond-allocation"
-                    v-model.number="bondWeightPct"
-                    v-bind="valueAttrs('bondWeight')"
-                    type="range"
-                    min="0"
-                    max="40"
-                    step="1"
-                  />
-                  <input v-model.number="bondWeightPct" v-bind="valueAttrs('bondWeight')" type="number" min="0" max="40" step="1" />
-                </div>
-              </label>
+              <div class="wealth-slider-grid">
+                <label class="wealth-range">
+                  <span v-bind="labelAttrs('bondWeight')">Bond allocation</span>
+                  <div class="wealth-range__row">
+                    <input
+                      data-testid="bond-allocation"
+                      v-model.number="bondWeightPct"
+                      v-bind="valueAttrs('bondWeight')"
+                      type="range"
+                      min="0"
+                      max="40"
+                      step="1"
+                    />
+                    <input v-model.number="bondWeightPct" v-bind="valueAttrs('bondWeight')" type="number" min="0" max="40" step="1" />
+                  </div>
+                </label>
 
-              <label class="wealth-range">
-                <span v-bind="labelAttrs('asxEquitySplit')">ASX share of equities</span>
-                <div class="wealth-range__row">
-                  <input v-model.number="asxEquitySplitPct" v-bind="valueAttrs('asxEquitySplit')" type="range" min="0" max="100" step="1" />
-                  <input v-model.number="asxEquitySplitPct" v-bind="valueAttrs('asxEquitySplit')" type="number" min="0" max="100" step="1" />
-                </div>
-              </label>
+                <label class="wealth-range">
+                  <span v-bind="labelAttrs('asxEquitySplit')">ASX share of equities</span>
+                  <div class="wealth-range__row">
+                    <input v-model.number="asxEquitySplitPct" v-bind="valueAttrs('asxEquitySplit')" type="range" min="0" max="100" step="1" />
+                    <input v-model.number="asxEquitySplitPct" v-bind="valueAttrs('asxEquitySplit')" type="number" min="0" max="100" step="1" />
+                  </div>
+                </label>
+              </div>
 
               <div class="wealth-mini-grid">
                 <div><span>ASX</span><strong>{{ formatPercent(form.portfolioConfig.asxWeight) }}</strong></div>
@@ -220,7 +178,7 @@
                 <div><span>Bonds</span><strong>{{ formatPercent(form.portfolioConfig.bondWeight) }}</strong></div>
               </div>
 
-              <div class="wealth-grid wealth-grid--compact">
+              <div class="wealth-grid wealth-grid--compact wealth-grid--triple">
                 <label>
                   <span v-bind="labelAttrs('asxReturnMean')">ASX return %</span>
                   <input v-model.number="asxReturnPct" v-bind="valueAttrs('asxReturnMean')" type="number" min="0" max="20" step="0.1" />
@@ -259,51 +217,51 @@
           </details>
 
           <details class="wealth-panel" open>
-            <summary>Property and tax rules</summary>
-            <div class="wealth-panel__body">
-              <label class="wealth-toggle">
-                <input data-testid="fhb-toggle" v-model="form.propertyConfig.firstHomeBuyerEligible" v-bind="valueAttrs('firstHomeBuyerEligible')" type="checkbox" />
-                <span v-bind="labelAttrs('firstHomeBuyerEligible')">Apply first-home-buyer support</span>
-              </label>
-              <p v-if="form.propertyConfig.firstHomeBuyerEligible" class="wealth-field-note wealth-field-note--section">
-                First-home-buyer support now applies the reduced duty and grant settings plus a modeled 5% deposit,
-                so the upfront cash is lower but the loan and repayments are higher.
-              </p>
-              <div class="wealth-grid wealth-grid--compact">
-                <label>
-                  <span v-bind="labelAttrs('rentYield')">Rent yield %</span>
-                  <input v-model.number="rentYieldPct" v-bind="valueAttrs('rentYield')" type="number" min="0" max="10" step="0.1" />
-                </label>
-                <label>
-                  <span v-bind="labelAttrs('vacancyRate')">Vacancy %</span>
-                  <input v-model.number="vacancyPct" v-bind="valueAttrs('vacancyRate')" type="number" min="0" max="15" step="0.1" />
-                </label>
-                <label>
-                  <span v-bind="labelAttrs('propertyManagementPct')">Management fee %</span>
-                  <input v-model.number="managementPct" v-bind="valueAttrs('propertyManagementPct')" type="number" min="0" max="15" step="0.1" />
-                </label>
-              </div>
-
-              <p class="wealth-field-note wealth-field-note--section">
-                These assumptions are used by the "{{ targetPropertyLabel }} as investment + rent" pathway once you have moved out.
-              </p>
-            </div>
-          </details>
-
-          <details class="wealth-panel" open>
             <summary>House and apartment assumptions</summary>
             <div class="wealth-panel__body wealth-property-grid">
-              <section>
-                <h4>House <small v-if="targetPropertyKey === 'house'" class="wealth-inline-note">selected</small></h4>
-                <div class="wealth-grid wealth-grid--compact">
+              <p class="wealth-field-note wealth-field-note--section">
+                First-home-buyer support is automatically applied to the buy-and-live path. The investment + rent path
+                keeps the standard deposit and buying costs because those concessions usually depend on living in the
+                property. Owner paths waive stamp duty below $800k, taper the duty concession to $1m, and default to a
+                5% owner deposit with no LMI up to $1.5m, but you can model a higher deposit. Investment-property
+                cash flow assumes a 3% vacancy baseline.
+              </p>
+              <div class="wealth-property-panels">
+                <section class="wealth-property-panel">
+                  <h4>House</h4>
+                  <div class="wealth-grid wealth-grid--compact">
                   <label>
-                    <span v-bind="labelAttrs('housePurchasePrice')">Price</span>
-                    <input v-model.number="form.propertyConfig.house.purchasePrice" v-bind="valueAttrs('housePurchasePrice')" type="number" min="0" step="1000" />
+                    <span v-bind="labelAttrs('housePurchasePrice')">Target price</span>
+                    <input
+                      data-testid="house-target-price"
+                      v-model.number="form.propertyConfig.house.purchasePrice"
+                      v-bind="valueAttrs('housePurchasePrice')"
+                      type="number"
+                      min="0"
+                      step="1000"
+                    />
                   </label>
                   <label>
-                    <span v-bind="labelAttrs('houseDepositPct')">Deposit %</span>
+                    <span v-bind="labelAttrs('houseOwnerDepositPct')">Owner deposit %</span>
                     <input
-                      v-if="!form.propertyConfig.firstHomeBuyerEligible"
+                      data-testid="house-owner-deposit"
+                      v-model.number="houseOwnerDepositPct"
+                      v-bind="valueAttrs('houseOwnerDepositPct')"
+                      type="number"
+                      min="5"
+                      max="80"
+                      step="1"
+                    />
+                  </label>
+                  <label>
+                    <span>Max affordable today</span>
+                    <div class="wealth-static-value" data-testid="house-max-purchase-price">
+                      {{ formatCurrency(maxAffordableToday.house) }}
+                    </div>
+                  </label>
+                  <label>
+                    <span v-bind="labelAttrs('houseDepositPct')">Investment deposit %</span>
+                    <input
                       v-model.number="houseDepositPct"
                       v-bind="valueAttrs('houseDepositPct')"
                       type="number"
@@ -311,18 +269,6 @@
                       max="80"
                       step="1"
                     />
-                    <input
-                      v-else
-                      :value="houseEffectiveDepositPctInput"
-                      type="number"
-                      min="5"
-                      max="80"
-                      step="1"
-                      disabled
-                    />
-                    <small v-if="form.propertyConfig.firstHomeBuyerEligible" class="wealth-field-note">
-                      Locked to 5% while first-home-buyer support is on.
-                    </small>
                   </label>
                   <label>
                     <span v-bind="labelAttrs('houseMortgageYears')">Mortgage term</span>
@@ -337,51 +283,128 @@
                   <label>
                     <span v-bind="labelAttrs('houseLongRunInterestRate')">Long-run rate %</span>
                     <input v-model.number="houseLongRunRatePct" v-bind="valueAttrs('houseLongRunInterestRate')" type="number" min="1" max="12" step="0.1" />
-                    <small class="wealth-field-note">{{ houseLongRunRateNote }}</small>
                   </label>
                   <label>
                     <span v-bind="labelAttrs('houseGrowthMean')">Growth %</span>
                     <input v-model.number="houseGrowthPct" v-bind="valueAttrs('houseGrowthMean')" type="number" min="0" max="12" step="0.1" />
                   </label>
                   <label>
-                    <span v-bind="labelAttrs('houseStampDuty')">Stamp duty</span>
-                    <input v-model.number="form.propertyConfig.house.stampDuty" v-bind="valueAttrs('houseStampDuty')" type="number" min="0" step="100" />
-                  </label>
-                  <label>
                     <span v-bind="labelAttrs('houseAnnualCosts')">Base annual costs</span>
                     <input v-model.number="houseAnnualCosts" v-bind="valueAttrs('houseAnnualCosts')" type="number" min="0" step="100" />
                   </label>
-                </div>
-                <div class="wealth-cost-breakdown">
-                  <div>
-                    <span>Council rates</span>
-                    <strong>{{ formatCurrency(form.propertyConfig.house.councilRates) }}</strong>
-                    <small>{{ houseAnnualCostFormula.council }}</small>
-                  </div>
-                  <div>
-                    <span>Insurance</span>
-                    <strong>{{ formatCurrency(form.propertyConfig.house.insurance) }}</strong>
-                    <small>{{ houseAnnualCostFormula.insurance }}</small>
-                  </div>
-                  <div>
-                    <span>Maintenance</span>
-                    <strong>{{ formatCurrency(form.propertyConfig.house.maintenance) }}</strong>
-                    <small>{{ houseAnnualCostFormula.maintenance }}</small>
-                  </div>
-                </div>
-              </section>
-
-              <section>
-                <h4>Apartment <small v-if="targetPropertyKey === 'apartment'" class="wealth-inline-note">selected</small></h4>
-                <div class="wealth-grid wealth-grid--compact">
                   <label>
-                    <span v-bind="labelAttrs('apartmentPurchasePrice')">Price</span>
-                    <input v-model.number="form.propertyConfig.apartment.purchasePrice" v-bind="valueAttrs('apartmentPurchasePrice')" type="number" min="0" step="1000" />
+                    <span v-bind="labelAttrs('houseRentYield')">Rent yield %</span>
+                    <input v-model.number="houseRentYieldPct" v-bind="valueAttrs('houseRentYield')" type="number" min="0" max="10" step="0.1" />
                   </label>
                   <label>
-                    <span v-bind="labelAttrs('apartmentDepositPct')">Deposit %</span>
+                    <span v-bind="labelAttrs('housePropertyManagementPct')">Management fee %</span>
                     <input
-                      v-if="!form.propertyConfig.firstHomeBuyerEligible"
+                      v-model.number="houseManagementPct"
+                      v-bind="valueAttrs('housePropertyManagementPct')"
+                      type="number"
+                      min="0"
+                      max="15"
+                      step="0.1"
+                    />
+                  </label>
+                  </div>
+                  <p v-if="form.propertyConfig.house.purchasePrice > maxAffordableToday.house" class="wealth-field-note wealth-field-note--section">
+                    This target is above today&apos;s owner-occupier serviceability. The model will wait until both income and
+                    cash support the purchase, while the target price keeps compounding with house growth.
+                  </p>
+                  <div class="wealth-cost-breakdown">
+                  <label class="wealth-cost-breakdown__item">
+                    <span>Council rates</span>
+                    <input v-model.number="form.propertyConfig.house.councilRates" type="number" min="0" step="100" />
+                  </label>
+                  <label class="wealth-cost-breakdown__item">
+                    <span>Water rates</span>
+                    <input v-model.number="form.propertyConfig.house.waterRates" type="number" min="0" step="100" />
+                  </label>
+                  <label class="wealth-cost-breakdown__item">
+                    <span>Insurance</span>
+                    <input v-model.number="form.propertyConfig.house.insurance" type="number" min="0" step="100" />
+                  </label>
+                  <label class="wealth-cost-breakdown__item">
+                    <span>Maintenance</span>
+                    <input v-model.number="form.propertyConfig.house.maintenance" type="number" min="0" step="100" />
+                  </label>
+                  </div>
+                  <div class="wealth-cost-breakdown wealth-cost-breakdown--three">
+                    <label class="wealth-cost-breakdown__item">
+                      <span v-bind="labelAttrs('houseStampDuty')">Stamp duty</span>
+                      <input v-model.number="houseStampDuty" v-bind="valueAttrs('houseStampDuty')" type="number" min="0" step="100" />
+                    </label>
+                    <label class="wealth-cost-breakdown__item">
+                      <span v-bind="labelAttrs('houseLegalFees')">Legal fees</span>
+                      <input v-model.number="houseLegalFees" v-bind="valueAttrs('houseLegalFees')" type="number" min="0" step="100" />
+                    </label>
+                    <label class="wealth-cost-breakdown__item">
+                      <span v-bind="labelAttrs('houseBuyersCosts')">Buyer costs</span>
+                      <input v-model.number="houseBuyersCosts" v-bind="valueAttrs('houseBuyersCosts')" type="number" min="0" step="100" />
+                    </label>
+                  </div>
+                  <div class="wealth-cost-breakdown wealth-cost-breakdown--three">
+                    <label class="wealth-cost-breakdown__item">
+                      <span v-bind="labelAttrs('houseLandTax')">Land tax</span>
+                      <input v-model.number="form.propertyConfig.house.landTax" type="number" min="0" step="100" />
+                    </label>
+                    <label class="wealth-cost-breakdown__item">
+                      <span v-bind="labelAttrs('houseBorrowingExpensesTotal')">Borrowing expenses</span>
+                      <input v-model.number="form.propertyConfig.house.borrowingExpensesTotal" type="number" min="0" step="100" />
+                    </label>
+                    <label class="wealth-cost-breakdown__item">
+                      <span v-bind="labelAttrs('houseOtherDeductibleExpensesAnnual')">Other deductible</span>
+                      <input v-model.number="form.propertyConfig.house.otherDeductibleExpensesAnnual" type="number" min="0" step="100" />
+                    </label>
+                  </div>
+                  <div class="wealth-cost-breakdown wealth-cost-breakdown--two">
+                    <label class="wealth-cost-breakdown__item">
+                      <span v-bind="labelAttrs('houseCapitalWorksDeductionAnnual')">Capital works deduction</span>
+                      <input v-model.number="form.propertyConfig.house.capitalWorksDeductionAnnual" type="number" min="0" step="100" />
+                    </label>
+                    <label class="wealth-cost-breakdown__item">
+                      <span v-bind="labelAttrs('houseDepreciationDeductionAnnual')">Depreciation deduction</span>
+                      <input v-model.number="form.propertyConfig.house.depreciationDeductionAnnual" type="number" min="0" step="100" />
+                    </label>
+                  </div>
+                </section>
+
+                <section class="wealth-property-panel">
+                  <h4>Apartment</h4>
+                  <div class="wealth-grid wealth-grid--compact">
+                  <label>
+                    <span v-bind="labelAttrs('apartmentPurchasePrice')">Target price</span>
+                    <input
+                      data-testid="apartment-target-price"
+                      v-model.number="form.propertyConfig.apartment.purchasePrice"
+                      v-bind="valueAttrs('apartmentPurchasePrice')"
+                      type="number"
+                      min="0"
+                      step="1000"
+                    />
+                  </label>
+                  <label>
+                    <span v-bind="labelAttrs('apartmentOwnerDepositPct')">Owner deposit %</span>
+                    <input
+                      data-testid="apartment-owner-deposit"
+                      v-model.number="apartmentOwnerDepositPct"
+                      v-bind="valueAttrs('apartmentOwnerDepositPct')"
+                      type="number"
+                      min="5"
+                      max="80"
+                      step="1"
+                    />
+                  </label>
+                  <label>
+                    <span>Max affordable today</span>
+                    <div class="wealth-static-value" data-testid="apartment-max-purchase-price">
+                      {{ formatCurrency(maxAffordableToday.apartment) }}
+                    </div>
+                  </label>
+                  <label>
+                    <span v-bind="labelAttrs('apartmentDepositPct')">Investment deposit %</span>
+                    <input
                       v-model.number="apartmentDepositPct"
                       v-bind="valueAttrs('apartmentDepositPct')"
                       type="number"
@@ -389,18 +412,6 @@
                       max="80"
                       step="1"
                     />
-                    <input
-                      v-else
-                      :value="apartmentEffectiveDepositPctInput"
-                      type="number"
-                      min="5"
-                      max="80"
-                      step="1"
-                      disabled
-                    />
-                    <small v-if="form.propertyConfig.firstHomeBuyerEligible" class="wealth-field-note">
-                      Locked to 5% while first-home-buyer support is on.
-                    </small>
                   </label>
                   <label>
                     <span v-bind="labelAttrs('apartmentMortgageYears')">Mortgage term</span>
@@ -415,99 +426,173 @@
                   <label>
                     <span v-bind="labelAttrs('apartmentLongRunInterestRate')">Long-run rate %</span>
                     <input v-model.number="apartmentLongRunRatePct" v-bind="valueAttrs('apartmentLongRunInterestRate')" type="number" min="1" max="12" step="0.1" />
-                    <small class="wealth-field-note">{{ apartmentLongRunRateNote }}</small>
                   </label>
                   <label>
                     <span v-bind="labelAttrs('apartmentGrowthMean')">Growth %</span>
                     <input v-model.number="apartmentGrowthPct" v-bind="valueAttrs('apartmentGrowthMean')" type="number" min="0" max="12" step="0.1" />
                   </label>
                   <label>
-                    <span v-bind="labelAttrs('apartmentStampDuty')">Stamp duty</span>
-                    <input v-model.number="form.propertyConfig.apartment.stampDuty" v-bind="valueAttrs('apartmentStampDuty')" type="number" min="0" step="100" />
-                  </label>
-                  <label>
                     <span v-bind="labelAttrs('apartmentAnnualCosts')">Base annual costs</span>
                     <input v-model.number="apartmentAnnualCosts" v-bind="valueAttrs('apartmentAnnualCosts')" type="number" min="0" step="100" />
                   </label>
-                </div>
-                <div class="wealth-cost-breakdown wealth-cost-breakdown--four">
-                  <div>
+                  <label>
+                    <span v-bind="labelAttrs('apartmentRentYield')">Rent yield %</span>
+                    <input v-model.number="apartmentRentYieldPct" v-bind="valueAttrs('apartmentRentYield')" type="number" min="0" max="10" step="0.1" />
+                  </label>
+                  <label>
+                    <span v-bind="labelAttrs('apartmentPropertyManagementPct')">Management fee %</span>
+                    <input
+                      v-model.number="apartmentManagementPct"
+                      v-bind="valueAttrs('apartmentPropertyManagementPct')"
+                      type="number"
+                      min="0"
+                      max="15"
+                      step="0.1"
+                    />
+                  </label>
+                  </div>
+                  <p v-if="form.propertyConfig.apartment.purchasePrice > maxAffordableToday.apartment" class="wealth-field-note wealth-field-note--section">
+                    This target is above today&apos;s owner-occupier serviceability. The model will wait until both income and
+                    cash support the purchase, while the target price keeps compounding with apartment growth.
+                  </p>
+                  <div class="wealth-cost-breakdown wealth-cost-breakdown--four">
+                  <label class="wealth-cost-breakdown__item">
                     <span>Council rates</span>
-                    <strong>{{ formatCurrency(form.propertyConfig.apartment.councilRates) }}</strong>
-                    <small>{{ apartmentAnnualCostFormula.council }}</small>
-                  </div>
-                  <div>
+                    <input v-model.number="form.propertyConfig.apartment.councilRates" type="number" min="0" step="100" />
+                  </label>
+                  <label class="wealth-cost-breakdown__item">
+                    <span>Water rates</span>
+                    <input v-model.number="form.propertyConfig.apartment.waterRates" type="number" min="0" step="100" />
+                  </label>
+                  <label class="wealth-cost-breakdown__item">
                     <span>Insurance</span>
-                    <strong>{{ formatCurrency(form.propertyConfig.apartment.insurance) }}</strong>
-                    <small>{{ apartmentAnnualCostFormula.insurance }}</small>
-                  </div>
-                  <div>
+                    <input v-model.number="form.propertyConfig.apartment.insurance" type="number" min="0" step="100" />
+                  </label>
+                  <label class="wealth-cost-breakdown__item">
                     <span>Maintenance</span>
-                    <strong>{{ formatCurrency(form.propertyConfig.apartment.maintenance) }}</strong>
-                    <small>{{ apartmentAnnualCostFormula.maintenance }}</small>
-                  </div>
-                  <div>
+                    <input v-model.number="form.propertyConfig.apartment.maintenance" type="number" min="0" step="100" />
+                  </label>
+                  <label class="wealth-cost-breakdown__item">
                     <span>Strata</span>
-                    <strong>{{ formatCurrency(form.propertyConfig.apartment.strata) }}</strong>
-                    <small>{{ apartmentAnnualCostFormula.strata }}</small>
+                    <input v-model.number="form.propertyConfig.apartment.strata" type="number" min="0" step="100" />
+                  </label>
                   </div>
-                </div>
-              </section>
+                  <div class="wealth-cost-breakdown wealth-cost-breakdown--three">
+                    <label class="wealth-cost-breakdown__item">
+                      <span v-bind="labelAttrs('apartmentStampDuty')">Stamp duty</span>
+                      <input v-model.number="apartmentStampDuty" v-bind="valueAttrs('apartmentStampDuty')" type="number" min="0" step="100" />
+                    </label>
+                    <label class="wealth-cost-breakdown__item">
+                      <span v-bind="labelAttrs('apartmentLegalFees')">Legal fees</span>
+                      <input v-model.number="apartmentLegalFees" v-bind="valueAttrs('apartmentLegalFees')" type="number" min="0" step="100" />
+                    </label>
+                    <label class="wealth-cost-breakdown__item">
+                      <span v-bind="labelAttrs('apartmentBuyersCosts')">Buyer costs</span>
+                      <input v-model.number="apartmentBuyersCosts" v-bind="valueAttrs('apartmentBuyersCosts')" type="number" min="0" step="100" />
+                    </label>
+                  </div>
+                  <div class="wealth-cost-breakdown wealth-cost-breakdown--three">
+                    <label class="wealth-cost-breakdown__item">
+                      <span v-bind="labelAttrs('apartmentLandTax')">Land tax</span>
+                      <input v-model.number="form.propertyConfig.apartment.landTax" type="number" min="0" step="100" />
+                    </label>
+                    <label class="wealth-cost-breakdown__item">
+                      <span v-bind="labelAttrs('apartmentBorrowingExpensesTotal')">Borrowing expenses</span>
+                      <input v-model.number="form.propertyConfig.apartment.borrowingExpensesTotal" type="number" min="0" step="100" />
+                    </label>
+                    <label class="wealth-cost-breakdown__item">
+                      <span v-bind="labelAttrs('apartmentOtherDeductibleExpensesAnnual')">Other deductible</span>
+                      <input v-model.number="form.propertyConfig.apartment.otherDeductibleExpensesAnnual" type="number" min="0" step="100" />
+                    </label>
+                  </div>
+                  <div class="wealth-cost-breakdown wealth-cost-breakdown--two">
+                    <label class="wealth-cost-breakdown__item">
+                      <span v-bind="labelAttrs('apartmentCapitalWorksDeductionAnnual')">Capital works deduction</span>
+                      <input v-model.number="form.propertyConfig.apartment.capitalWorksDeductionAnnual" type="number" min="0" step="100" />
+                    </label>
+                    <label class="wealth-cost-breakdown__item">
+                      <span v-bind="labelAttrs('apartmentDepreciationDeductionAnnual')">Depreciation deduction</span>
+                      <input v-model.number="form.propertyConfig.apartment.depreciationDeductionAnnual" type="number" min="0" step="100" />
+                    </label>
+                  </div>
+                </section>
+              </div>
             </div>
           </details>
-        </div>
 
-        <div class="wealth-stage-card">
-          <section class="wealth-card">
-            <p class="wealth-kicker">What happens in stage 2</p>
-            <h3>Interactive charts and scenario focus</h3>
-            <p class="wealth-copy">
-              Hover either chart to inspect exact values. Click a scenario chip like Rent + Invest to grey it out, or
-              click again to bring it back into focus.
-            </p>
-          </section>
+      </div>
 
-          <section class="wealth-card">
-            <p class="wealth-kicker">Affordability snapshot</p>
-            <h3>{{ targetPropertyLabel }} entry requirements today</h3>
-            <div class="wealth-mini-grid wealth-mini-grid--dense">
-              <div>
-                <span>Upfront now</span>
-                <strong>{{ formatCurrency(selectedPropertySnapshot.upfront) }}</strong>
+      <div class="wealth-stage-footer">
+        <section class="wealth-card">
+          <p class="wealth-kicker">Affordability snapshot</p>
+          <h3>House and apartment entry requirements today</h3>
+          <div class="wealth-property-panels">
+            <article v-for="card in affordabilityCards" :key="card.key" class="wealth-property-panel">
+              <h4>{{ card.label }}</h4>
+              <div class="wealth-mini-grid wealth-mini-grid--dense">
+                <div>
+                  <span>Manual target</span>
+                  <strong>{{ formatCurrency(card.targetPrice) }}</strong>
+                </div>
+                <div>
+                  <span>Max affordable today</span>
+                  <strong>{{ formatCurrency(card.maxAffordablePurchasePrice) }}</strong>
+                </div>
+                <div>
+                  <span>Owner upfront now</span>
+                  <strong>{{ formatCurrency(card.ownerSnapshot.upfront) }}</strong>
+                </div>
+                <div>
+                  <span>Investment upfront now</span>
+                  <strong>{{ formatCurrency(card.investmentSnapshot.upfront) }}</strong>
+                </div>
+                <div>
+                  <span>Owner loan now</span>
+                  <strong>{{ formatCurrency(card.ownerSnapshot.loan) }}</strong>
+                </div>
+                <div>
+                  <span>Investment loan now</span>
+                  <strong>{{ formatCurrency(card.investmentSnapshot.loan) }}</strong>
+                </div>
+                <div>
+                  <span>Live and own today</span>
+                  <strong>{{ card.ownerAffordable ? 'Yes' : 'No' }}</strong>
+                </div>
+                <div>
+                  <span>Investment + rent today</span>
+                  <strong>{{ card.rentvestAffordable ? 'Yes' : 'No' }}</strong>
+                </div>
               </div>
-              <div>
-                <span>Loan now</span>
-                <strong>{{ formatCurrency(selectedPropertySnapshot.loan) }}</strong>
-              </div>
-              <div>
-                <span>Live and own today</span>
-                <strong>{{ affordabilitySummary.ownerAffordable ? 'Yes' : 'No' }}</strong>
-              </div>
-              <div>
-                <span>Investment + rent today</span>
-                <strong>{{ affordabilitySummary.rentvestAffordable ? 'Yes' : 'No' }}</strong>
-              </div>
-            </div>
-            <p class="wealth-field-note wealth-field-note--section">
-              Deposit ready: {{ affordabilitySummary.depositReady ? 'Yes' : 'No' }}. Owner-occupier carry uses
-              {{ formatCurrency(affordabilitySummary.ownerCarry) }} per year. Investment + rent uses
-              {{ formatCurrency(affordabilitySummary.rentvestCarry) }} per year against
-              {{ formatCurrency(affordabilitySummary.annualSavingsCapacity) }} of annual housing capacity.
-            </p>
-          </section>
+              <p class="wealth-field-note wealth-field-note--section">
+                {{ card.targetPrice > card.maxAffordablePurchasePrice
+                  ? 'Target is above today\'s owner serviceability, so the simulation waits until income and cash catch up while the target value keeps growing.'
+                  : 'Target is within today\'s owner serviceability range, so the main remaining gate is having enough cash to transact without going negative.'
+                }}
+              </p>
+              <p class="wealth-field-note wealth-field-note--section">
+                Deposit ready: owner {{ card.ownerDepositReady ? 'Yes' : 'No' }}, investment
+                {{ card.investmentDepositReady ? 'Yes' : 'No' }}. Owner-occupier carry uses
+                {{ formatCurrency(card.ownerCarry) }} per year. Investment + rent uses
+                {{ formatCurrency(card.rentvestCarry) }} per year after a first-year rental tax
+                {{ card.propertyTaxImpact < 0 ? 'benefit' : 'cost' }} of
+                {{ formatCurrency(Math.abs(card.propertyTaxImpact)) }} against annual disposable cash after tax and
+                non-housing living costs of {{ formatCurrency(card.annualDisposableAfterLiving) }}.
+              </p>
+            </article>
+          </div>
+        </section>
 
-          <section class="wealth-card">
-            <p class="wealth-kicker">Next step</p>
-            <h3>Generate the results stage</h3>
-            <p class="wealth-copy">
-              The simulation will use the current inputs and move you into the chart stage. If you come back and change
-              assumptions later, the results will be marked stale until you rerun them.
-            </p>
-            <button type="button" class="wealth-primary-btn" data-testid="continue-results" @click="generateResults">
-              {{ loading ? 'Running simulation...' : 'Continue to results' }}
-            </button>
-          </section>
-        </div>
+        <section class="wealth-card">
+          <p class="wealth-kicker">Next step</p>
+          <h3>Generate the results stage</h3>
+          <p class="wealth-copy">
+            The simulation will use the current inputs and move you into the chart stage. If you come back and change
+            assumptions later, the results will be marked stale until you rerun them.
+          </p>
+          <button type="button" class="wealth-primary-btn" data-testid="continue-results" @click="generateResults">
+            {{ loading ? 'Running simulation...' : 'Continue to results' }}
+          </button>
+        </section>
       </div>
     </section>
 
@@ -527,12 +612,12 @@
           <p class="wealth-kicker">Median winner</p>
           <h3>{{ bestMedianStrategy ? bestMedianStrategy.label : 'Running simulation...' }}</h3>
           <p class="wealth-copy">
-            {{
-              bestMedianStrategy
-                ? `${bestMedianStrategy.label} finishes with a median net worth of ${formatCurrency(bestMedianStrategy.summary.finalMedianNetWorth)}.`
-                : 'Waiting for the first completed run.'
-            }}
-          </p>
+              {{
+                bestMedianStrategy
+                  ? `${bestMedianStrategy.label} finishes with a median after-tax sell-down value of ${formatCurrency(bestMedianStrategy.summary.finalMedianNetWorth)}.`
+                  : 'Waiting for the first completed run.'
+              }}
+            </p>
         </article>
         <article class="wealth-card">
           <p class="wealth-kicker">Best downside case</p>
@@ -540,7 +625,7 @@
           <p class="wealth-copy">
             {{
               downsideLeader
-                ? `${downsideLeader.label} keeps the strongest 10th-percentile result at ${formatCurrency(downsideLeader.summary.downsideRisk)}.`
+                ? `${downsideLeader.label} keeps the strongest 10th-percentile after-tax sell-down result at ${formatCurrency(downsideLeader.summary.downsideRisk)}.`
                 : 'Downside results will appear after the first run.'
             }}
           </p>
@@ -554,7 +639,7 @@
 
       <WealthLineChart
         title="Net worth projection bands"
-        subtitle="Hover to inspect exact values. Click a chip to grey out a scenario without removing the others."
+        subtitle="Each year assumes you sold down the remaining assets in that year and netted out the model's estimated CGT before comparing scenarios."
         kicker="Outcome distribution"
         :series="netWorthSeries"
         :muted-series-ids="mutedStrategyKeys"
@@ -564,7 +649,7 @@
       <div class="wealth-dashboard-grid">
         <WealthCompositionBars
           title="Final-year balance composition"
-          subtitle="Median liquid assets, housing equity, and remaining debt at the end of the chosen horizon."
+          subtitle="Hold-only median liquid assets, housing equity, and remaining debt at the end of the chosen horizon before any sale tax is applied."
           :rows="compositionRows"
         />
 
@@ -591,6 +676,16 @@
                   }}
                 </span>
               </div>
+              <div class="wealth-strategy-item__meta">
+                <span>Tax delta {{ formatCurrency(strategy.summary.finalMedianTaxDelta) }}</span>
+                <span>
+                  {{
+                    strategy.summary.maxMedianCashDeficit > 0
+                      ? `Median cash deficit ${formatCurrency(strategy.summary.maxMedianCashDeficit)}`
+                      : 'No median cash deficit'
+                  }}
+                </span>
+              </div>
               <div v-if="strategy.purchaseYear !== null" class="wealth-strategy-item__meta">
                 <span>Buys in year {{ strategy.purchaseYear }}</span>
                 <span>{{ strategy.purchaseNote }}</span>
@@ -601,8 +696,8 @@
       </div>
 
       <WealthLineChart
-        title="Annual cashflow pressure"
-        subtitle="Median annual housing-linked cash outflow. Lower is easier to carry."
+        title="Annual after-tax surplus or deficit"
+        subtitle="Positive values mean the annual ledger still has cash left after tax, living costs, rent, and property cashflows. Negative values show cash burn."
         kicker="Cashflow"
         :series="cashflowSeries"
         :muted-series-ids="mutedStrategyKeys"
@@ -621,12 +716,16 @@
 
           <div class="wealth-mini-grid wealth-mini-grid--dense">
             <div>
-              <span>Median final wealth</span>
+              <span>Median after-tax sale value</span>
               <strong>{{ formatCurrency(strategy.summary.finalMedianNetWorth) }}</strong>
             </div>
             <div>
               <span>P10 outcome</span>
               <strong>{{ formatCurrency(strategy.summary.downsideRisk) }}</strong>
+            </div>
+            <div>
+              <span>Hold-only balance</span>
+              <strong>{{ formatCurrency(strategy.summary.finalMedianHoldNetWorth) }}</strong>
             </div>
             <div>
               <span>Liquid assets</span>
@@ -641,8 +740,16 @@
               <strong>{{ formatCurrency(strategy.summary.finalMedianDebt) }}</strong>
             </div>
             <div>
-              <span>Cashflow drag</span>
-              <strong>{{ formatCurrency(strategy.summary.finalMedianCashOutflow) }}</strong>
+              <span>Annual surplus</span>
+              <strong>{{ formatCurrency(strategy.summary.finalMedianAnnualSurplus) }}</strong>
+            </div>
+            <div>
+              <span>Tax delta</span>
+              <strong>{{ formatCurrency(strategy.summary.finalMedianTaxDelta) }}</strong>
+            </div>
+            <div>
+              <span>Estimated sale tax</span>
+              <strong>{{ formatCurrency(strategy.summary.finalMedianEstimatedSaleTax) }}</strong>
             </div>
           </div>
         </article>
@@ -667,6 +774,9 @@
             <article v-for="source in wealthSimulationMetadata.sources" :key="source.label">
               <h4>{{ source.label }}</h4>
               <p class="wealth-copy">{{ source.detail }}</p>
+              <p v-if="source.url" class="wealth-copy">
+                <a :href="source.url" target="_blank" rel="noreferrer">Open source</a>
+              </p>
             </article>
           </div>
         </details>
@@ -676,13 +786,23 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import CategoryTag from '../components/CategoryTag.vue'
 import WealthLineChart from '../components/wealth/WealthLineChart.vue'
 import WealthCompositionBars from '../components/wealth/WealthCompositionBars.vue'
-import { cloneSimulationRequest, wealthAssumptionSections, wealthSimulationMetadata, wealthStrategyOrder } from '../data/wealthDefaults.js'
-import { calculateAnnualMortgagePayment, calculatePurchaseCosts, clamp, estimateLmi, getAustralianTaxBreakdown, getEffectiveDepositPct } from '../wealth/finance.js'
+import { cloneSimulationRequest, wealthAssumptionSections, wealthSimulationMetadata, wealthStrategyOrder, wealthVacancyRate } from '../data/wealthDefaults.js'
+import {
+  FIRST_HOME_BUYER_LOW_DEPOSIT_LIMIT,
+  calculateAnnualMortgagePayment,
+  calculateAustralianAnnualTax,
+  calculateInvestmentPropertyTaxPosition,
+  calculatePurchaseCosts,
+  clamp,
+  estimateLmi,
+  getEffectiveInvestmentDepositPct,
+  getEffectiveOwnerDepositPct,
+  scalePurchaseCostsWithPrice
+} from '../wealth/finance.js'
 import { WealthSimulationClient } from '../wealth/client.js'
 
 const props = defineProps({
@@ -693,15 +813,17 @@ const labelHelp = {
   horizonYears: 'How many years the model runs for. Longer horizons give ownership and compounding more time to separate.',
   startingSavings: 'Cash already available on day one. It can fund a deposit, buying costs, or the starting investment balance.',
   annualIncome: 'Gross annual salary before tax. The model estimates take-home pay from this figure each year.',
-  incomeGrowthRate: 'Expected annual growth in your gross income. This lifts future take-home pay and the cash available to save.',
-  weeklyAvailableToSave: 'Weekly surplus available after normal living spending. This becomes the core amount directed to investing or ownership costs.',
-  liveAtHome: 'If enabled, every pathway starts with a period living at home before moving into the main strategy.',
-  liveAtHomeYears: 'How long you stay at home before the model forces a move into renting or the selected property pathway.',
+  taxYear: 'Resident tax settings used by the annual tax engine. 2025-26 remains on the 16 percent second bracket, while 2026-27 applies the later 15 percent cut.',
+  incomeGrowthRate: 'Expected annual growth in your gross income. The annual salary and non-housing living-cost baseline both step up using this setting.',
+  weeklyNonHousingLivingCosts: 'Weekly living costs before housing. The model starts from gross salary, deducts tax, then subtracts these non-housing costs plus the strategy-specific housing cashflows.',
+  liveAtHome: 'If enabled, the model starts from you currently living at home. Rent + invest and investment-property paths treat it as lower housing costs, while buy-to-live paths move into the property as soon as they can buy.',
+  liveAtHomeYears: 'How long you remain at home before rent-based paths switch to market rent. Buy-to-live paths stop using the at-home setting as soon as the property purchase happens.',
   weeklyRent: 'Weekly rent assumed once you have moved out or for any strategy that keeps you renting.',
-  rentGrowthRate: 'Expected annual rent inflation. The simulation also adds year-to-year variation around this baseline.',
-  weeklyBoardAtHome: 'Weekly board or household contribution paid while living at home.',
-  boardGrowthRate: 'Expected annual increase in at-home living costs, with some annual variation layered on in the simulation.',
-  targetPropertyType: 'Select whether the property pathways and affordability check should use the house or apartment assumptions.',
+  rentGrowthRate: 'Expected annual rent inflation. Higher rent raises the housing cash-cost line in renting and rentvest scenarios.',
+  weeklyBoardAtHome: 'Weekly rent and household expenses paid while living at home.',
+  boardGrowthRate: 'Expected annual increase in at-home rent and household expenses, with some annual variation layered on in the simulation.',
+  investWhileSavingForDeposit: 'If enabled, pre-purchase savings for the property pathways stay invested in the portfolio while you wait. If disabled, those savings are held as cash until buying is possible.',
+  surplusAllocationMode: 'Choose whether positive surplus in property strategies is invested into the portfolio or directed to extra mortgage repayments.',
   bondWeight: 'Portfolio share held in bonds. Raising this usually lowers expected return and smooths the overall portfolio path.',
   asxEquitySplit: 'How the equity portion is split between ASX and QQQ after the bond allocation is set.',
   asxReturnMean: 'The expected average annual return of the ASX allocation.',
@@ -711,26 +833,45 @@ const labelHelp = {
   bondIncomeYield: 'Income yield for the bond sleeve. This feeds recurring income and tax drag in the model.',
   qqqDividendYield: 'Cash distribution yield assumed for the QQQ sleeve. It is kept low because most return is modeled as capital growth.',
   asxFrankingPct: 'Share of ASX dividends assumed to arrive with franking credits. This offsets some tax drag in the simplified tax model.',
-  firstHomeBuyerEligible: 'Turns on the built-in first-home-buyer duty reduction, grant assumptions, and the modeled 5 percent deposit path for property purchases.',
-  rentYield: 'Gross rental yield used in the investment-property plus rent scenario.',
-  vacancyRate: 'Share of rent lost to vacancy when the selected property is used as an investment.',
-  propertyManagementPct: 'Property manager fee applied to rental income in the investment-property path.',
-  housePurchasePrice: 'Current house purchase price used to size the deposit, loan, buying costs, and later capital growth.',
-  houseDepositPct: 'Deposit share for the house purchase. Lower deposits increase leverage and can trigger lenders mortgage insurance.',
+  firstHomeBuyerEligible: 'First-home-buyer support is automatically applied to owner-occupier purchases only.',
+  houseRentYield: 'Gross rental yield used when the house is held as an investment property.',
+  housePropertyManagementPct: 'Property manager fee applied to collected rent for the house investment path.',
+  housePurchasePrice: 'Manual house target in today\'s dollars. If it is above today\'s serviceability limit, the model waits and lets the target grow with house prices until income and cash catch up.',
+  houseOwnerDepositPct: 'Owner-occupier deposit share used for the buy-to-live path and the max-affordable-today calculation. First-home-buyer cases default to 5 percent below $1.5m, but you can raise it.',
+  houseDepositPct: 'Deposit share for the house investment purchase. Lower deposits increase leverage and can trigger lenders mortgage insurance.',
   houseMortgageYears: 'Length of the house mortgage used for amortization and repayment calculations.',
   houseInterestRate: 'Starting mortgage rate for the house path before the simulation drifts toward the long-run rate.',
   houseLongRunInterestRate: 'Steadier mortgage rate assumption used after the opening years. It represents a normalized mortgage setting rather than today\'s spot rate.',
   houseGrowthMean: 'Baseline annual house price growth used for the house path.',
-  houseStampDuty: 'Upfront transfer duty added to buying costs. First-home-buyer support can reduce the effective amount.',
-  houseAnnualCosts: 'Base annual non-mortgage holding cost used to derive council rates, insurance, and maintenance.',
-  apartmentPurchasePrice: 'Current apartment purchase price used to size the deposit, loan, buying costs, and later capital growth.',
-  apartmentDepositPct: 'Deposit share for the apartment purchase. Lower deposits increase leverage and can trigger lenders mortgage insurance.',
+  houseStampDuty: 'Shared baseline stamp duty for the house purchase. The owner path still applies first-home-buyer relief automatically, while the investment path uses the full amount.',
+  houseLegalFees: 'Shared legal and conveyancing cost baseline for the house purchase. It feeds both owner and investment paths.',
+  houseBuyersCosts: 'Shared buyer-side purchase cost baseline for the house purchase, such as inspections and settlement extras.',
+  houseAnnualCosts: 'Base annual owner-occupier holding cost total for council rates, water, insurance, and maintenance.',
+  houseWaterRates: 'Annual water charges. They count as a cash housing cost for owner-occupier paths and as a deductible rental expense for investment-property paths.',
+  houseLandTax: 'Annual land tax applied to the investment-property path only.',
+  houseBorrowingExpensesTotal: 'Upfront loan-establishment style costs for the investment-property path. The model treats them as upfront cash and amortises the deduction over time.',
+  houseCapitalWorksDeductionAnnual: 'Manual annual capital-works deduction used only in the investment-property taxable-income calculation.',
+  houseDepreciationDeductionAnnual: 'Manual annual depreciation deduction used only in the investment-property taxable-income calculation.',
+  houseOtherDeductibleExpensesAnnual: 'Other annual deductible rental expenses that are not already broken out above.',
+  apartmentRentYield: 'Gross rental yield used when the apartment is held as an investment property.',
+  apartmentPropertyManagementPct: 'Property manager fee applied to collected rent for the apartment investment path.',
+  apartmentPurchasePrice: 'Manual apartment target in today\'s dollars. If it is above today\'s serviceability limit, the model waits and lets the target grow with apartment prices until income and cash catch up.',
+  apartmentOwnerDepositPct: 'Owner-occupier deposit share used for the buy-to-live path and the max-affordable-today calculation. First-home-buyer cases default to 5 percent below $1.5m, but you can raise it.',
+  apartmentDepositPct: 'Deposit share for the apartment investment purchase. Lower deposits increase leverage and can trigger lenders mortgage insurance.',
   apartmentMortgageYears: 'Length of the apartment mortgage used for amortization and repayment calculations.',
   apartmentInterestRate: 'Starting mortgage rate for the apartment path before drifting toward the long-run rate.',
   apartmentLongRunInterestRate: 'Steadier mortgage rate assumption used after the opening years for apartments.',
   apartmentGrowthMean: 'Baseline annual apartment price growth used for the apartment path.',
-  apartmentStampDuty: 'Upfront transfer duty added to apartment buying costs. First-home-buyer support can reduce the effective amount.',
-  apartmentAnnualCosts: 'Base annual non-mortgage holding cost used to derive council rates, insurance, maintenance, and strata.'
+  apartmentStampDuty: 'Shared baseline stamp duty for the apartment purchase. The owner path still applies first-home-buyer relief automatically, while the investment path uses the full amount.',
+  apartmentLegalFees: 'Shared legal and conveyancing cost baseline for the apartment purchase. It feeds both owner and investment paths.',
+  apartmentBuyersCosts: 'Shared buyer-side purchase cost baseline for the apartment purchase, such as inspections and settlement extras.',
+  apartmentAnnualCosts: 'Base annual owner-occupier holding cost total for council rates, water, insurance, maintenance, and strata.',
+  apartmentWaterRates: 'Annual water charges applied to apartment ownership.',
+  apartmentLandTax: 'Annual land tax applied to the apartment investment path only.',
+  apartmentBorrowingExpensesTotal: 'Upfront borrowing expenses for the apartment investment path.',
+  apartmentCapitalWorksDeductionAnnual: 'Manual annual capital-works deduction for the apartment investment path.',
+  apartmentDepreciationDeductionAnnual: 'Manual annual depreciation deduction for the apartment investment path.',
+  apartmentOtherDeductibleExpensesAnnual: 'Other annual deductible apartment rental expenses.'
 }
 
 const valueHelp = {
@@ -741,12 +882,23 @@ const valueHelp = {
   bondIncomeYield: 'Based on a representative long-run bond income yield.',
   qqqDividendYield: 'Based on a recent long-run QQQ cash distribution average.',
   houseLongRunInterestRate: 'Set below the opening mortgage rate to represent a steadier long-run borrowing environment.',
+  houseRentYield: 'Gross rent is modeled as property value x rent yield x (1 - vacancy).',
+  housePropertyManagementPct: 'Management is modeled as a share of collected rent, so higher rents increase the dollar fee automatically.',
+  houseStampDuty: 'Changing the house target price scales this baseline stamp-duty input using a generic duty curve before owner concessions are applied.',
+  houseLegalFees: 'Changing the house target price scales this legal-fee baseline using a generic conveyancing formula.',
+  houseBuyersCosts: 'Changing the house target price scales this buyer-cost baseline using a generic closing-cost formula.',
   apartmentLongRunInterestRate: 'Set below the opening mortgage rate to represent a steadier long-run borrowing environment.',
-  houseAnnualCosts: 'This base annual cost is split into council rates, insurance, and maintenance using the formulas shown below.',
-  apartmentAnnualCosts: 'This base annual cost is split into council rates, insurance, maintenance, and strata using the formulas shown below.'
+  apartmentRentYield: 'Gross rent is modeled as property value x rent yield x (1 - vacancy).',
+  apartmentPropertyManagementPct: 'Management is modeled as a share of collected rent, so higher rents increase the dollar fee automatically.',
+  apartmentStampDuty: 'Changing the apartment target price scales this baseline stamp-duty input using a generic duty curve before owner concessions are applied.',
+  apartmentLegalFees: 'Changing the apartment target price scales this legal-fee baseline using a generic conveyancing formula.',
+  apartmentBuyersCosts: 'Changing the apartment target price scales this buyer-cost baseline using a generic closing-cost formula.',
+  houseAnnualCosts: 'Editing this total scales the current council rates, water, insurance, and maintenance mix.',
+  apartmentAnnualCosts: 'Editing this total scales the current council rates, water, insurance, maintenance, and strata mix.'
 }
 
 const form = reactive(cloneSimulationRequest())
+form.propertyConfig.vacancyRate = wealthVacancyRate
 const result = ref(null)
 const loading = ref(false)
 const errorMessage = ref('')
@@ -756,7 +908,41 @@ const resultsStale = ref(true)
 const mutedStrategyKeys = ref([])
 const client = new WealthSimulationClient()
 const mortgageYearOptions = [20, 25, 30]
+const ownerOccupierFirstHomeBuyerSupport = true
+const heroRef = ref(null)
+const heroTitleRef = ref(null)
 let runToken = 0
+let heroResizeFrame = 0
+let heroResizeObserver = null
+
+async function resizeHeroTitle() {
+  await nextTick()
+
+  const hero = heroRef.value
+  const title = heroTitleRef.value
+
+  if (!hero || !title) return
+
+  const maxFontSize = 72
+  const minFontSize = 14
+  const availableWidth = hero.clientWidth
+  let fontSize = maxFontSize
+
+  title.style.fontSize = `${maxFontSize}px`
+
+  while (fontSize > minFontSize && title.scrollWidth > availableWidth) {
+    fontSize -= 1
+    title.style.fontSize = `${fontSize}px`
+  }
+}
+
+function scheduleHeroTitleResize() {
+  if (heroResizeFrame) cancelAnimationFrame(heroResizeFrame)
+  heroResizeFrame = requestAnimationFrame(() => {
+    heroResizeFrame = 0
+    void resizeHeroTitle()
+  })
+}
 
 function labelAttrs(key) {
   const help = labelHelp[key]
@@ -779,7 +965,10 @@ function valueAttrs(key) {
 }
 
 function cloneRequest() {
-  return JSON.parse(JSON.stringify(form))
+  const request = JSON.parse(JSON.stringify(form))
+  request.propertyConfig.firstHomeBuyerEligible = ownerOccupierFirstHomeBuyerSupport
+  request.propertyConfig.vacancyRate = wealthVacancyRate
+  return request
 }
 
 async function runSimulation() {
@@ -835,6 +1024,13 @@ watch(form, () => {
 }, { deep: true })
 
 watch(
+  () => props.project.title,
+  () => {
+    scheduleHeroTitleResize()
+  }
+)
+
+watch(
   () => form.profile.horizonYears,
   (value) => {
     form.profile.horizonYears = Math.round(clamp(value, 10, 30))
@@ -859,8 +1055,60 @@ watch(
   }
 )
 
+watch(
+  () => form.propertyConfig.house.purchasePrice,
+  (value, previousValue) => {
+    const safeValue = Math.max(0, Number(value) || 0)
+    if (safeValue !== value) {
+      form.propertyConfig.house.purchasePrice = safeValue
+      return
+    }
+
+    syncSharedPurchaseCosts(form.propertyConfig.house, previousValue, safeValue)
+  }
+)
+
+watch(
+  () => form.propertyConfig.apartment.purchasePrice,
+  (value, previousValue) => {
+    const safeValue = Math.max(0, Number(value) || 0)
+    if (safeValue !== value) {
+      form.propertyConfig.apartment.purchasePrice = safeValue
+      return
+    }
+
+    syncSharedPurchaseCosts(form.propertyConfig.apartment, previousValue, safeValue)
+  }
+)
+
+onMounted(() => {
+  scheduleHeroTitleResize()
+
+  if (typeof ResizeObserver === 'function') {
+    heroResizeObserver = new ResizeObserver(() => {
+      scheduleHeroTitleResize()
+    })
+
+    if (heroRef.value) {
+      heroResizeObserver.observe(heroRef.value)
+    }
+  } else {
+    window.addEventListener('resize', scheduleHeroTitleResize)
+  }
+})
+
 onBeforeUnmount(() => {
   client.destroy()
+
+  if (heroResizeFrame) {
+    cancelAnimationFrame(heroResizeFrame)
+  }
+
+  if (heroResizeObserver) {
+    heroResizeObserver.disconnect()
+  } else {
+    window.removeEventListener('resize', scheduleHeroTitleResize)
+  }
 })
 
 function percentProxy(getter, setter, min, max) {
@@ -880,9 +1128,8 @@ const asxDividendPct = percentProxy(() => form.portfolioConfig.asxDividendYield,
 const bondIncomePct = percentProxy(() => form.portfolioConfig.bondIncomeYield, value => { form.portfolioConfig.bondIncomeYield = value }, 0, 8)
 const qqqDividendPct = percentProxy(() => form.portfolioConfig.qqqDividendYield, value => { form.portfolioConfig.qqqDividendYield = value }, 0, 5)
 const asxFrankingPct = percentProxy(() => form.portfolioConfig.asxFrankingPct, value => { form.portfolioConfig.asxFrankingPct = value }, 0, 100)
-const rentYieldPct = percentProxy(() => form.propertyConfig.rentYield, value => { form.propertyConfig.rentYield = value }, 0, 10)
-const vacancyPct = percentProxy(() => form.propertyConfig.vacancyRate, value => { form.propertyConfig.vacancyRate = value }, 0, 15)
-const managementPct = percentProxy(() => form.propertyConfig.propertyManagementPct, value => { form.propertyConfig.propertyManagementPct = value }, 0, 15)
+const houseOwnerDepositPct = percentProxy(() => form.propertyConfig.house.ownerDepositPct, value => { form.propertyConfig.house.ownerDepositPct = value }, 5, 80)
+const apartmentOwnerDepositPct = percentProxy(() => form.propertyConfig.apartment.ownerDepositPct, value => { form.propertyConfig.apartment.ownerDepositPct = value }, 5, 80)
 const houseDepositPct = percentProxy(() => form.propertyConfig.house.depositPct, value => { form.propertyConfig.house.depositPct = value }, 5, 80)
 const apartmentDepositPct = percentProxy(() => form.propertyConfig.apartment.depositPct, value => { form.propertyConfig.apartment.depositPct = value }, 5, 80)
 const houseRatePct = percentProxy(() => form.propertyConfig.house.interestRate, value => { form.propertyConfig.house.interestRate = value }, 1, 12)
@@ -891,14 +1138,79 @@ const houseLongRunRatePct = percentProxy(() => form.propertyConfig.house.longRun
 const apartmentLongRunRatePct = percentProxy(() => form.propertyConfig.apartment.longRunInterestRate, value => { form.propertyConfig.apartment.longRunInterestRate = value }, 1, 12)
 const houseGrowthPct = percentProxy(() => form.propertyConfig.house.growthMean, value => { form.propertyConfig.house.growthMean = value }, 0, 12)
 const apartmentGrowthPct = percentProxy(() => form.propertyConfig.apartment.growthMean, value => { form.propertyConfig.apartment.growthMean = value }, 0, 12)
-const houseEffectiveDepositPct = computed(() => getEffectiveDepositPct(form.propertyConfig.house, form.propertyConfig.firstHomeBuyerEligible))
-const apartmentEffectiveDepositPct = computed(() => getEffectiveDepositPct(form.propertyConfig.apartment, form.propertyConfig.firstHomeBuyerEligible))
-const houseEffectiveDepositPctInput = computed(() => Math.round(houseEffectiveDepositPct.value * 100))
-const apartmentEffectiveDepositPctInput = computed(() => Math.round(apartmentEffectiveDepositPct.value * 100))
+const houseRentYieldPct = percentProxy(() => form.propertyConfig.house.rentYield, value => { form.propertyConfig.house.rentYield = value }, 0, 10)
+const apartmentRentYieldPct = percentProxy(() => form.propertyConfig.apartment.rentYield, value => { form.propertyConfig.apartment.rentYield = value }, 0, 10)
+const houseManagementPct = percentProxy(
+  () => form.propertyConfig.house.propertyManagementPct,
+  value => { form.propertyConfig.house.propertyManagementPct = value },
+  0,
+  15
+)
+const apartmentManagementPct = percentProxy(
+  () => form.propertyConfig.apartment.propertyManagementPct,
+  value => { form.propertyConfig.apartment.propertyManagementPct = value },
+  0,
+  15
+)
+const houseRecurringCostKeys = ['councilRates', 'waterRates', 'insurance', 'maintenance']
+const apartmentRecurringCostKeys = ['councilRates', 'waterRates', 'insurance', 'maintenance', 'strata']
 
-const targetPropertyKey = computed(() => form.propertyConfig.targetPropertyType === 'apartment' ? 'apartment' : 'house')
-const targetPropertyLabel = computed(() => targetPropertyKey.value === 'apartment' ? 'Apartment' : 'House')
-const targetPropertyConfig = computed(() => form.propertyConfig[targetPropertyKey.value])
+function getSharedPurchaseCost(property, key) {
+  return Math.max(
+    0,
+    Number(property.ownerPurchaseCosts?.[key] ?? property.investmentPurchaseCosts?.[key]) || 0
+  )
+}
+
+function setSharedPurchaseCost(property, key, value) {
+  const safeValue = Math.max(0, Number(value) || 0)
+  property.ownerPurchaseCosts[key] = safeValue
+  property.investmentPurchaseCosts[key] = safeValue
+}
+
+function syncSharedPurchaseCosts(property, previousPrice, nextPrice) {
+  const scaledCosts = scalePurchaseCostsWithPrice(
+    {
+      stampDuty: getSharedPurchaseCost(property, 'stampDuty'),
+      legalFees: getSharedPurchaseCost(property, 'legalFees'),
+      buyersCosts: getSharedPurchaseCost(property, 'buyersCosts')
+    },
+    previousPrice,
+    nextPrice
+  )
+
+  setSharedPurchaseCost(property, 'stampDuty', scaledCosts.stampDuty)
+  setSharedPurchaseCost(property, 'legalFees', scaledCosts.legalFees)
+  setSharedPurchaseCost(property, 'buyersCosts', scaledCosts.buyersCosts)
+}
+
+function createSharedPurchaseCostProxy(propertyGetter, key) {
+  return computed({
+    get: () => getSharedPurchaseCost(propertyGetter(), key),
+    set: value => setSharedPurchaseCost(propertyGetter(), key, value)
+  })
+}
+
+const houseStampDuty = createSharedPurchaseCostProxy(() => form.propertyConfig.house, 'stampDuty')
+const houseLegalFees = createSharedPurchaseCostProxy(() => form.propertyConfig.house, 'legalFees')
+const houseBuyersCosts = createSharedPurchaseCostProxy(() => form.propertyConfig.house, 'buyersCosts')
+const apartmentStampDuty = createSharedPurchaseCostProxy(() => form.propertyConfig.apartment, 'stampDuty')
+const apartmentLegalFees = createSharedPurchaseCostProxy(() => form.propertyConfig.apartment, 'legalFees')
+const apartmentBuyersCosts = createSharedPurchaseCostProxy(() => form.propertyConfig.apartment, 'buyersCosts')
+
+syncSharedPurchaseCosts(form.propertyConfig.house, form.propertyConfig.house.purchasePrice, form.propertyConfig.house.purchasePrice)
+syncSharedPurchaseCosts(form.propertyConfig.apartment, form.propertyConfig.apartment.purchasePrice, form.propertyConfig.apartment.purchasePrice)
+
+const annualSalaryTax = computed(() => calculateAustralianAnnualTax({
+  taxYear: form.profile.taxYear,
+  salaryIncome: form.profile.annualIncome
+}))
+
+const annualDisposableAfterLiving = computed(() =>
+  form.profile.annualIncome -
+  annualSalaryTax.value.totalTax -
+  form.profile.weeklyNonHousingLivingCosts * 52
+)
 
 const bondWeightPct = computed({
   get: () => Math.round(form.portfolioConfig.bondWeight * 100),
@@ -935,7 +1247,7 @@ const strategyCards = computed(() => {
     if (key !== 'rentInvest') {
       const hit = strategy.points.find(point => {
         const rentPoint = rent.points.find(candidate => candidate.year === point.year)
-        return rentPoint && point.p50 >= rentPoint.p50
+        return rentPoint && point.p50 > rentPoint.p50
       })
       breakevenYear = hit ? hit.year : null
     }
@@ -944,7 +1256,7 @@ const strategyCards = computed(() => {
       ...strategy,
       breakevenYear,
       purchaseYear: purchasePoint ? purchasePoint.year : null,
-      purchaseNote: key === 'buyInvestmentProperty'
+      purchaseNote: key.includes('InvestmentProperty')
         ? 'Then shifts into rent plus investment-property cashflows'
         : 'Then shifts into owner-occupier cashflows'
     }
@@ -984,7 +1296,7 @@ const breakevenSummary = computed(() => {
 
   return {
     title: `${winner.label} in year ${winner.breakevenYear}`,
-    body: `${winner.label} is the first non-renting strategy to overtake rent + invest on the median path.`
+    body: `${winner.label} is the first non-renting strategy to overtake rent + invest on the median after-tax path.`
   }
 })
 
@@ -1011,9 +1323,9 @@ const cashflowSeries = computed(() =>
     accent: strategy.accent,
     points: strategy.points.map(point => ({
       year: point.year,
-      low: point.annualCashOutflowP10,
-      mid: point.annualCashOutflowP50,
-      high: point.annualCashOutflowP90
+      low: point.annualSurplusP10,
+      mid: point.annualSurplusP50,
+      high: point.annualSurplusP90
     }))
   }))
 )
@@ -1025,115 +1337,244 @@ const compositionRows = computed(() =>
     liquid: Math.max(0, strategy.summary.finalMedianLiquidAssets),
     equity: Math.max(0, strategy.summary.finalMedianHomeEquity),
     debt: Math.max(0, strategy.summary.finalMedianDebt),
-    total: strategy.summary.finalMedianNetWorth
+    total: strategy.summary.finalMedianHoldNetWorth
   }))
 )
 
-const propertySnapshots = computed(() => {
-  const houseCosts = calculatePurchaseCosts(form.propertyConfig.house, form.propertyConfig.firstHomeBuyerEligible)
-  const apartmentCosts = calculatePurchaseCosts(form.propertyConfig.apartment, form.propertyConfig.firstHomeBuyerEligible)
-  const houseDeposit = form.propertyConfig.house.purchasePrice * houseEffectiveDepositPct.value
-  const apartmentDeposit = form.propertyConfig.apartment.purchasePrice * apartmentEffectiveDepositPct.value
+function getPropertySnapshot(property, purchaseCosts, occupancyMode, firstHomeBuyerEligible, includeBorrowingExpenses = false) {
+  const depositPct = occupancyMode === 'owner'
+    ? getEffectiveOwnerDepositPct(property)
+    : getEffectiveInvestmentDepositPct(property)
+  const resolvedPurchaseCosts = calculatePurchaseCosts(purchaseCosts, firstHomeBuyerEligible, property.purchasePrice)
+  const deposit = property.purchasePrice * depositPct
+  const borrowingExpenses = includeBorrowingExpenses ? (Number(property.borrowingExpensesTotal) || 0) : 0
   return {
-    house: {
-      upfront: houseDeposit + houseCosts.total,
-      loan: form.propertyConfig.house.purchasePrice - houseDeposit + estimateLmi(form.propertyConfig.house.purchasePrice, houseEffectiveDepositPct.value)
-    },
-    apartment: {
-      upfront: apartmentDeposit + apartmentCosts.total,
-      loan: form.propertyConfig.apartment.purchasePrice - apartmentDeposit + estimateLmi(form.propertyConfig.apartment.purchasePrice, apartmentEffectiveDepositPct.value)
+    upfront: deposit + resolvedPurchaseCosts.total + borrowingExpenses,
+    loan: property.purchasePrice - deposit + estimateLmi(property.purchasePrice, depositPct, firstHomeBuyerEligible)
+  }
+}
+
+function getOwnerRecurringCosts(property) {
+  return (
+    (Number(property.councilRates) || 0) +
+    (Number(property.waterRates) || 0) +
+    (Number(property.insurance) || 0) +
+    (Number(property.maintenance) || 0) +
+    (Number(property.strata) || 0)
+  )
+}
+
+function getOwnerLoanForPrice(property, purchasePrice, depositPct, firstHomeBuyerEligible) {
+  const safePrice = Math.max(0, Number(purchasePrice) || 0)
+  const safeDepositPct = clamp(Number(depositPct) || 0.05, 0.05, 0.95)
+  const deposit = safePrice * safeDepositPct
+  return safePrice - deposit + estimateLmi(safePrice, safeDepositPct, firstHomeBuyerEligible)
+}
+
+function getOwnerAnnualCarryForPrice(property, purchasePrice, depositPct, firstHomeBuyerEligible) {
+  const loan = getOwnerLoanForPrice(property, purchasePrice, depositPct, firstHomeBuyerEligible)
+  return getOwnerRecurringCosts(property) + calculateAnnualMortgagePayment(loan, property.interestRate, property.mortgageYears)
+}
+
+function solveMaxServiceablePriceRange(property, minimumPrice, maximumPrice, depositPct, firstHomeBuyerEligible) {
+  if (maximumPrice <= minimumPrice) return 0
+
+  const annualBudget = annualDisposableAfterLiving.value
+  if (annualBudget <= 0) return 0
+  if (getOwnerAnnualCarryForPrice(property, minimumPrice, depositPct, firstHomeBuyerEligible) > annualBudget) return 0
+  if (getOwnerAnnualCarryForPrice(property, maximumPrice, depositPct, firstHomeBuyerEligible) <= annualBudget) {
+    return Math.floor(maximumPrice / 1000) * 1000
+  }
+
+  let low = minimumPrice
+  let high = maximumPrice
+  for (let step = 0; step < 32; step += 1) {
+    const midpoint = (low + high) / 2
+    const annualCarry = getOwnerAnnualCarryForPrice(property, midpoint, depositPct, firstHomeBuyerEligible)
+    if (annualCarry <= annualBudget) {
+      low = midpoint
+    } else {
+      high = midpoint
     }
   }
-})
 
-const selectedPropertySnapshot = computed(() => propertySnapshots.value[targetPropertyKey.value])
+  return Math.floor(low / 1000) * 1000
+}
 
-const affordabilitySummary = computed(() => {
-  const property = targetPropertyConfig.value
-  const snapshot = selectedPropertySnapshot.value
-  const annualSavingsCapacity = form.profile.weeklyAvailableToSave * 52
-  const recurringCosts =
-    property.councilRates +
-    property.insurance +
-    property.maintenance +
-    property.strata
-  const annualMortgagePayment = calculateAnnualMortgagePayment(snapshot.loan, property.interestRate, property.mortgageYears)
-  const ownerCarry = annualMortgagePayment + recurringCosts
-  const depositReady = form.profile.startingSavings >= snapshot.upfront
+function calculateMaxServiceablePurchasePrice(property) {
+  const configuredDepositPct = getEffectiveOwnerDepositPct(property)
+  const serviceableSegments = []
+
+  if (ownerOccupierFirstHomeBuyerSupport) {
+    serviceableSegments.push(
+      solveMaxServiceablePriceRange(property, 0, FIRST_HOME_BUYER_LOW_DEPOSIT_LIMIT, configuredDepositPct, true)
+    )
+  }
+
+  serviceableSegments.push(
+    solveMaxServiceablePriceRange(
+      property,
+      ownerOccupierFirstHomeBuyerSupport ? FIRST_HOME_BUYER_LOW_DEPOSIT_LIMIT : 0,
+      20_000_000,
+      configuredDepositPct,
+      false
+    )
+  )
+
+  return Math.max(0, ...serviceableSegments)
+}
+
+const maxAffordableToday = computed(() => ({
+  house: calculateMaxServiceablePurchasePrice(form.propertyConfig.house),
+  apartment: calculateMaxServiceablePurchasePrice(form.propertyConfig.apartment)
+}))
+
+const propertySnapshots = computed(() => ({
+  house: {
+    owner: getPropertySnapshot(
+      form.propertyConfig.house,
+      form.propertyConfig.house.ownerPurchaseCosts,
+      'owner',
+      ownerOccupierFirstHomeBuyerSupport
+    ),
+    investment: getPropertySnapshot(
+      form.propertyConfig.house,
+      form.propertyConfig.house.investmentPurchaseCosts,
+      'investment',
+      false,
+      true
+    )
+  },
+  apartment: {
+    owner: getPropertySnapshot(
+      form.propertyConfig.apartment,
+      form.propertyConfig.apartment.ownerPurchaseCosts,
+      'owner',
+      ownerOccupierFirstHomeBuyerSupport
+    ),
+    investment: getPropertySnapshot(
+      form.propertyConfig.apartment,
+      form.propertyConfig.apartment.investmentPurchaseCosts,
+      'investment',
+      false,
+      true
+    )
+  }
+}))
+
+function buildAffordabilitySummary(property, ownerSnapshot, investmentSnapshot, maxAffordablePurchasePrice) {
+  const ownerRecurringCosts = getOwnerRecurringCosts(property)
+  const ownerAnnualMortgagePayment = calculateAnnualMortgagePayment(ownerSnapshot.loan, property.interestRate, property.mortgageYears)
+  const investmentAnnualMortgagePayment = calculateAnnualMortgagePayment(investmentSnapshot.loan, property.interestRate, property.mortgageYears)
+  const ownerCarry = ownerAnnualMortgagePayment + ownerRecurringCosts
+  const ownerDepositReady = form.profile.startingSavings >= ownerSnapshot.upfront
+  const investmentDepositReady = form.profile.startingSavings >= investmentSnapshot.upfront
+  const ownerServiceableToday = annualDisposableAfterLiving.value >= ownerCarry
 
   const annualRent = form.housingCosts.weeklyRent * 52
-  const rentIncome = property.purchasePrice * form.propertyConfig.rentYield * (1 - form.propertyConfig.vacancyRate)
-  const managementFee = rentIncome * form.propertyConfig.propertyManagementPct
-  const firstYearInterest = snapshot.loan * property.interestRate
-  const propertyTaxImpact =
-    (rentIncome - managementFee - recurringCosts - firstYearInterest) *
-    getAustralianTaxBreakdown(form.profile.annualIncome).marginalRate
-  const netPropertyCashflow =
-    rentIncome -
-    managementFee -
-    recurringCosts -
-    annualMortgagePayment -
-    propertyTaxImpact
-  const rentvestCarry = Math.max(0, annualRent - netPropertyCashflow)
+  const rentalTaxPosition = calculateInvestmentPropertyTaxPosition({
+    propertyConfig: property,
+    propertyValue: property.purchasePrice,
+    vacancyRate: wealthVacancyRate,
+    interestPaid: investmentSnapshot.loan * property.interestRate,
+    yearsOwned: 0
+  })
+  const investmentTax = calculateAustralianAnnualTax({
+    taxYear: form.profile.taxYear,
+    salaryIncome: form.profile.annualIncome,
+    taxableRentalIncome: rentalTaxPosition.taxableRentalIncome
+  })
+  const rentvestCarry =
+    annualRent +
+    investmentAnnualMortgagePayment +
+    rentalTaxPosition.cashOperatingExpenses -
+    rentalTaxPosition.rentReceived +
+    investmentTax.deltaVsSalaryOnly
+  const rentvestServiceableToday = annualDisposableAfterLiving.value >= rentvestCarry
 
   return {
-    annualSavingsCapacity,
-    depositReady,
+    targetPrice: property.purchasePrice,
+    maxAffordablePurchasePrice,
+    ownerSnapshot,
+    investmentSnapshot,
+    annualDisposableAfterLiving: annualDisposableAfterLiving.value,
+    ownerDepositReady,
+    investmentDepositReady,
+    ownerServiceableToday,
+    rentvestServiceableToday,
     ownerCarry,
     rentvestCarry,
-    ownerAffordable: depositReady && annualSavingsCapacity >= ownerCarry,
-    rentvestAffordable: depositReady && annualSavingsCapacity >= rentvestCarry,
-    ownerGap: Math.max(0, ownerCarry - annualSavingsCapacity),
-    rentvestGap: Math.max(0, rentvestCarry - annualSavingsCapacity)
+    propertyTaxImpact: investmentTax.deltaVsSalaryOnly,
+    ownerAffordable: ownerDepositReady && ownerServiceableToday,
+    rentvestAffordable: investmentDepositReady && rentvestServiceableToday,
+    ownerNeedsIncomeWait: property.purchasePrice > maxAffordablePurchasePrice,
+    ownerGap: Math.max(0, ownerCarry - annualDisposableAfterLiving.value),
+    rentvestGap: Math.max(0, rentvestCarry - annualDisposableAfterLiving.value)
   }
-})
+}
+
+const affordabilityCards = computed(() => ([
+  {
+    key: 'house',
+    label: 'House',
+    ...buildAffordabilitySummary(
+      form.propertyConfig.house,
+      propertySnapshots.value.house.owner,
+      propertySnapshots.value.house.investment,
+      maxAffordableToday.value.house
+    )
+  },
+  {
+    key: 'apartment',
+    label: 'Apartment',
+    ...buildAffordabilitySummary(
+      form.propertyConfig.apartment,
+      propertySnapshots.value.apartment.owner,
+      propertySnapshots.value.apartment.investment,
+      maxAffordableToday.value.apartment
+    )
+  }
+]))
+
+function getRecurringCostTotal(property, keys) {
+  return Math.round(keys.reduce((sum, key) => sum + (Number(property[key]) || 0), 0))
+}
+
+function scaleRecurringCosts(property, keys, nextTotal) {
+  const targetTotal = Math.max(0, Math.round(Number(nextTotal) || 0))
+  const currentTotal = keys.reduce((sum, key) => sum + (Number(property[key]) || 0), 0)
+
+  if (currentTotal <= 0) {
+    const equalShare = Math.round(targetTotal / keys.length)
+    let assigned = 0
+    keys.forEach((key, index) => {
+      const value = index === keys.length - 1 ? Math.max(0, targetTotal - assigned) : equalShare
+      property[key] = value
+      assigned += value
+    })
+    return
+  }
+
+  let assigned = 0
+  keys.forEach((key, index) => {
+    const currentValue = Number(property[key]) || 0
+    const value = index === keys.length - 1
+      ? Math.max(0, targetTotal - assigned)
+      : Math.max(0, Math.round((currentValue / currentTotal) * targetTotal))
+    property[key] = value
+    assigned += value
+  })
+}
 
 const houseAnnualCosts = computed({
-  get: () => Math.round(form.propertyConfig.house.councilRates + form.propertyConfig.house.insurance + form.propertyConfig.house.maintenance),
-  set: value => {
-    const total = Math.max(0, Number(value) || 0)
-    form.propertyConfig.house.councilRates = total * 0.3
-    form.propertyConfig.house.insurance = total * 0.2
-    form.propertyConfig.house.maintenance = total * 0.5
-  }
+  get: () => getRecurringCostTotal(form.propertyConfig.house, houseRecurringCostKeys),
+  set: value => scaleRecurringCosts(form.propertyConfig.house, houseRecurringCostKeys, value)
 })
 
 const apartmentAnnualCosts = computed({
-  get: () => Math.round(
-    form.propertyConfig.apartment.councilRates +
-    form.propertyConfig.apartment.insurance +
-    form.propertyConfig.apartment.maintenance +
-    form.propertyConfig.apartment.strata
-  ),
-  set: value => {
-    const total = Math.max(0, Number(value) || 0)
-    form.propertyConfig.apartment.councilRates = total * 0.18
-    form.propertyConfig.apartment.insurance = total * 0.1
-    form.propertyConfig.apartment.maintenance = total * 0.14
-    form.propertyConfig.apartment.strata = total * 0.58
-  }
+  get: () => getRecurringCostTotal(form.propertyConfig.apartment, apartmentRecurringCostKeys),
+  set: value => scaleRecurringCosts(form.propertyConfig.apartment, apartmentRecurringCostKeys, value)
 })
-
-const houseLongRunRateNote = computed(() =>
-  `Default rule of thumb: start near today\'s house rate, then ease toward a steadier long-run mortgage setting over time.`
-)
-
-const apartmentLongRunRateNote = computed(() =>
-  `Default rule of thumb: start near today\'s apartment rate, then ease toward a steadier long-run mortgage setting over time.`
-)
-
-const houseAnnualCostFormula = computed(() => ({
-  council: `${formatCurrency(houseAnnualCosts.value)} x 30%`,
-  insurance: `${formatCurrency(houseAnnualCosts.value)} x 20%`,
-  maintenance: `${formatCurrency(houseAnnualCosts.value)} x 50%`
-}))
-
-const apartmentAnnualCostFormula = computed(() => ({
-  council: `${formatCurrency(apartmentAnnualCosts.value)} x 18%`,
-  insurance: `${formatCurrency(apartmentAnnualCosts.value)} x 10%`,
-  maintenance: `${formatCurrency(apartmentAnnualCosts.value)} x 14%`,
-  strata: `${formatCurrency(apartmentAnnualCosts.value)} x 58%`
-}))
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('en-AU', {
@@ -1150,14 +1591,42 @@ function formatPercent(value) {
 
 <style scoped>
 .wealth-page {
+  --wealth-content-max: 1500px;
+  --wealth-results-max: 1360px;
+  --wealth-chart-max: 1140px;
   color: #173050;
+  box-sizing: border-box;
+  font-size: 0.96rem;
   width: 100vw;
   margin-inline: calc(50% - 50vw);
-  padding: 1.4rem 1rem 3rem;
+  padding: 1.4rem clamp(1.4rem, 4vw, 4.75rem) 3rem;
   background:
     radial-gradient(circle at 15% 0%, rgba(125, 211, 252, 0.12), transparent 34%),
     radial-gradient(circle at 85% 10%, rgba(110, 231, 183, 0.12), transparent 28%),
     linear-gradient(180deg, #f8fbff 0%, #eef5ff 42%, #f5f8fd 100%);
+}
+
+.wealth-back-row,
+.wealth-hero,
+.wealth-banner,
+.wealth-error,
+.wealth-stage {
+  width: min(100%, var(--wealth-content-max));
+  margin-inline: auto;
+}
+
+.wealth-back-row {
+  margin-bottom: 1rem;
+}
+
+.wealth-stage--results {
+  width: min(100%, var(--wealth-results-max));
+}
+
+.wealth-stage--results :deep(.wealth-chart),
+.wealth-stage--results :deep(.wealth-bars) {
+  width: min(100%, var(--wealth-chart-max));
+  margin-inline: auto;
 }
 
 .wealth-page :deep(.card) {
@@ -1168,9 +1637,7 @@ function formatPercent(value) {
 .wealth-back,
 .wealth-banner,
 .wealth-panel,
-.wealth-card,
-.wealth-hero__copy,
-.wealth-hero__panel {
+.wealth-card {
   border: 1px solid rgba(154, 174, 204, 0.22);
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 18px 38px rgba(95, 122, 160, 0.12);
@@ -1179,30 +1646,14 @@ function formatPercent(value) {
 .wealth-back {
   display: inline-flex;
   align-items: center;
-  margin-bottom: 1rem;
   padding: 0.55rem 0.9rem;
   border-radius: 999px;
 }
 
 .wealth-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr);
-  gap: 1rem;
-}
-
-.wealth-hero__copy,
-.wealth-hero__panel,
-.wealth-banner,
-.wealth-panel,
-.wealth-card {
-  border-radius: 24px;
-}
-
-.wealth-hero__copy,
-.wealth-hero__panel,
-.wealth-banner,
-.wealth-card {
-  padding: 1.15rem 1.2rem;
+  max-width: 960px;
+  padding: clamp(2.1rem, 5vw, 4rem) clamp(1.4rem, 4vw, 3.6rem);
+  text-align: center;
 }
 
 .wealth-kicker {
@@ -1213,22 +1664,36 @@ function formatPercent(value) {
   color: #5c7ca1;
 }
 
-.wealth-hero__copy h1 {
-  margin: 0.35rem 0 0.7rem;
-  font-size: clamp(2.2rem, 4vw, 3.8rem);
-  line-height: 0.96;
-  letter-spacing: -0.04em;
+.wealth-hero h1 {
+  margin: 0;
+  font-size: 72px;
+  line-height: 0.94;
+  letter-spacing: -0.05em;
+  white-space: nowrap;
 }
 
-.wealth-hero__panel h2,
 .wealth-card h3 {
   margin: 0.35rem 0 0.6rem;
   font-size: 1.2rem;
 }
 
+.wealth-banner,
+.wealth-panel,
+.wealth-card {
+  border-radius: 24px;
+}
+
+.wealth-banner,
+.wealth-card {
+  padding: 1rem 1.05rem;
+}
+
 .wealth-tagline {
-  margin: 0 0 0.7rem;
-  color: #27415f;
+  max-width: 680px;
+  margin: 0.95rem auto 0;
+  color: #39597d;
+  font-size: clamp(1.05rem, 0.98rem + 0.55vw, 1.34rem);
+  line-height: 1.5;
 }
 
 .wealth-copy {
@@ -1236,62 +1701,33 @@ function formatPercent(value) {
   color: #5d7394;
 }
 
-.wealth-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.7rem;
-}
-
-.wealth-tag {
-  color: #27415f;
-  background: rgba(225, 238, 255, 0.86);
-  border-color: rgba(145, 178, 227, 0.28);
-}
-
-.wealth-hero__stats,
-.wealth-hero__mini,
 .wealth-mini-grid,
 .wealth-strategy-item__meta,
 .wealth-strategy-item__top,
 .wealth-strategy-item__title,
-.wealth-stage-tabs,
 .wealth-results-toolbar {
   display: flex;
   flex-wrap: wrap;
   gap: 0.7rem;
 }
 
-.wealth-hero__stats,
-.wealth-hero__mini,
 .wealth-mini-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   margin-top: 1rem;
 }
 
-.wealth-hero__mini {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.wealth-hero__stats div,
-.wealth-hero__mini div,
 .wealth-mini-grid div {
   padding: 0.8rem;
   border-radius: 16px;
   background: rgba(243, 247, 255, 0.96);
 }
 
-.wealth-hero__stats span,
-.wealth-hero__mini span,
 .wealth-mini-grid span {
   display: block;
   margin-bottom: 0.25rem;
   color: #5d7394;
   font-size: 0.76rem;
-}
-
-.wealth-stage-tabs {
-  margin-top: 1rem;
 }
 
 .wealth-stage-tab,
@@ -1340,6 +1776,11 @@ function formatPercent(value) {
   gap: 1rem;
 }
 
+.wealth-banner__note {
+  margin: 0;
+  color: #5d7394;
+}
+
 .wealth-pill,
 .wealth-filter-note {
   padding: 0.45rem 0.75rem;
@@ -1367,15 +1808,8 @@ function formatPercent(value) {
   margin-top: 1rem;
 }
 
-.wealth-input-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.18fr) minmax(300px, 0.82fr);
-  gap: 1rem;
-  align-items: start;
-}
-
 .wealth-form-stack,
-.wealth-stage-card,
+.wealth-stage-footer,
 .wealth-summary-grid,
 .wealth-dashboard-grid,
 .wealth-strategy-grid,
@@ -1384,6 +1818,21 @@ function formatPercent(value) {
 .wealth-strategy-list {
   display: grid;
   gap: 1rem;
+}
+
+.wealth-stage-footer {
+  margin-top: 1rem;
+}
+
+.wealth-panel-grid,
+.wealth-property-panels {
+  display: grid;
+  gap: 1rem;
+}
+
+.wealth-panel-grid--primary,
+.wealth-property-panels {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .wealth-grid {
@@ -1396,10 +1845,32 @@ function formatPercent(value) {
   gap: 0.7rem;
 }
 
+.wealth-grid--triple,
+.wealth-slider-grid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.wealth-grid--triple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.wealth-slider-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .wealth-grid label,
 .wealth-range {
   display: grid;
   gap: 0.35rem;
+  color: #5d7394;
+  font-size: 0.82rem;
+}
+
+.wealth-toggle-card {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
   color: #5d7394;
   font-size: 0.82rem;
 }
@@ -1436,6 +1907,18 @@ function formatPercent(value) {
   background: rgba(248, 251, 255, 0.98);
   color: #173050;
   font: inherit;
+}
+
+.wealth-static-value {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0.75rem 0.8rem;
+  border-radius: 14px;
+  border: 1px solid rgba(154, 174, 204, 0.22);
+  background: rgba(248, 251, 255, 0.98);
+  color: #173050;
+  font-weight: 600;
 }
 
 .wealth-panel summary {
@@ -1485,6 +1968,13 @@ function formatPercent(value) {
   gap: 1rem;
 }
 
+.wealth-property-panel {
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(154, 174, 204, 0.18);
+  background: rgba(243, 247, 255, 0.72);
+}
+
 .wealth-cost-breakdown {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1496,7 +1986,15 @@ function formatPercent(value) {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.wealth-cost-breakdown div {
+.wealth-cost-breakdown--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.wealth-cost-breakdown--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wealth-cost-breakdown > * {
   display: grid;
   gap: 0.28rem;
   padding: 0.75rem 0.8rem;
@@ -1510,14 +2008,14 @@ function formatPercent(value) {
   font-size: 0.76rem;
 }
 
-.wealth-cost-breakdown strong {
+.wealth-cost-breakdown input {
+  width: 100%;
+  padding: 0.75rem 0.8rem;
+  border-radius: 14px;
+  border: 1px solid rgba(154, 174, 204, 0.22);
+  background: rgba(248, 251, 255, 0.98);
   color: #173050;
-}
-
-.wealth-cost-breakdown small {
-  color: #7187a6;
-  font-size: 0.72rem;
-  line-height: 1.35;
+  font: inherit;
 }
 
 .wealth-results-toolbar {
@@ -1591,6 +2089,10 @@ function formatPercent(value) {
   margin: 0 0 0.45rem;
 }
 
+.wealth-source-list a {
+  color: #2a5ca5;
+}
+
 .wealth-inline-note {
   margin-left: 0.4rem;
   color: #5c7ca1;
@@ -1599,14 +2101,10 @@ function formatPercent(value) {
   letter-spacing: 0.08em;
 }
 
-@media (max-width: 1100px) {
-  .wealth-input-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 960px) {
   .wealth-hero,
+  .wealth-panel-grid--primary,
+  .wealth-property-panels,
   .wealth-summary-grid,
   .wealth-dashboard-grid,
   .wealth-strategy-grid,
@@ -1617,16 +2115,22 @@ function formatPercent(value) {
 
 @media (max-width: 720px) {
   .wealth-page {
-    padding: 1rem 0.85rem 2.4rem;
+    font-size: 1rem;
+    padding: 1rem 1rem 2.4rem;
   }
 
   .wealth-grid,
-  .wealth-hero__stats,
-  .wealth-hero__mini,
+  .wealth-slider-grid,
   .wealth-mini-grid,
   .wealth-cost-breakdown,
+  .wealth-cost-breakdown--two,
+  .wealth-cost-breakdown--three,
   .wealth-cost-breakdown--four {
     grid-template-columns: 1fr;
+  }
+
+  .wealth-hero {
+    padding: 1.8rem 1.15rem;
   }
 
   .wealth-banner {

@@ -50,32 +50,125 @@ export function formatShortCurrency(value) {
   return `${value < 0 ? '-' : ''}$${Math.round(abs)}`
 }
 
-export function getAustralianTaxBreakdown(income) {
-  const taxableIncome = Math.max(0, Number(income) || 0)
-  let incomeTax = 0
+export const FIRST_HOME_BUYER_STAMP_DUTY_FREE_LIMIT = 800_000
+export const FIRST_HOME_BUYER_STAMP_DUTY_PHASE_OUT_LIMIT = 1_000_000
+export const FIRST_HOME_BUYER_LOW_DEPOSIT_LIMIT = 1_500_000
 
-  if (taxableIncome <= 18_200) {
-    incomeTax = 0
-  } else if (taxableIncome <= 45_000) {
-    incomeTax = (taxableIncome - 18_200) * 0.16
-  } else if (taxableIncome <= 135_000) {
-    incomeTax = 4_288 + (taxableIncome - 45_000) * 0.30
-  } else if (taxableIncome <= 190_000) {
-    incomeTax = 31_288 + (taxableIncome - 135_000) * 0.37
-  } else {
-    incomeTax = 51_638 + (taxableIncome - 190_000) * 0.45
+const residentTaxBandsByYear = {
+  '2025-26': [
+    { threshold: 0, baseTax: 0, rate: 0 },
+    { threshold: 18_200, baseTax: 0, rate: 0.16 },
+    { threshold: 45_000, baseTax: 4_288, rate: 0.30 },
+    { threshold: 135_000, baseTax: 31_288, rate: 0.37 },
+    { threshold: 190_000, baseTax: 51_638, rate: 0.45 }
+  ],
+  '2026-27': [
+    { threshold: 0, baseTax: 0, rate: 0 },
+    { threshold: 18_200, baseTax: 0, rate: 0.15 },
+    { threshold: 45_000, baseTax: 4_020, rate: 0.30 },
+    { threshold: 135_000, baseTax: 31_020, rate: 0.37 },
+    { threshold: 190_000, baseTax: 51_370, rate: 0.45 }
+  ]
+}
+
+const defaultTaxYear = '2025-26'
+const medicareLevyRate = 0.02
+const companyTaxRate = 0.3
+
+function getResidentTaxBands(taxYear = defaultTaxYear) {
+  return residentTaxBandsByYear[taxYear] || residentTaxBandsByYear[defaultTaxYear]
+}
+
+export function getAustralianTaxBreakdown(income, taxYear = defaultTaxYear) {
+  const taxableIncome = Math.max(0, Number(income) || 0)
+  const taxBands = getResidentTaxBands(taxYear)
+  let selectedBand = taxBands[0]
+
+  for (const band of taxBands) {
+    if (taxableIncome >= band.threshold) selectedBand = band
   }
 
-  const medicareLevy = taxableIncome * 0.02
-  const totalTax = incomeTax + medicareLevy
-  const marginalRate = totalTax <= 0 ? 0 : incomeTax / taxableIncome + 0.02
+  const incomeTax = selectedBand.baseTax + Math.max(0, taxableIncome - selectedBand.threshold) * selectedBand.rate
+  const medicareLevy = taxableIncome * medicareLevyRate
+  const totalTaxBeforeOffsets = incomeTax + medicareLevy
+  const marginalRate = taxableIncome <= 0 ? 0 : clamp(selectedBand.rate + medicareLevyRate, 0, 0.47)
 
   return {
+    taxYear,
     taxableIncome,
     incomeTax,
     medicareLevy,
+    totalTaxBeforeOffsets,
+    totalTax: totalTaxBeforeOffsets,
+    marginalRate
+  }
+}
+
+export function calculateAustralianAnnualTax({
+  taxYear = defaultTaxYear,
+  salaryIncome = 0,
+  taxablePortfolioIncome = 0,
+  taxableRentalIncome = 0,
+  frankingCredits = 0
+} = {}) {
+  const safeSalaryIncome = Math.max(0, Number(salaryIncome) || 0)
+  const safePortfolioIncome = Number(taxablePortfolioIncome) || 0
+  const safeRentalIncome = Number(taxableRentalIncome) || 0
+  const safeFrankingCredits = Math.max(0, Number(frankingCredits) || 0)
+  const taxableIncome = Math.max(0, safeSalaryIncome + safePortfolioIncome + safeRentalIncome)
+  const salaryOnlyTax = getAustralianTaxBreakdown(safeSalaryIncome, taxYear)
+  const taxBeforeCredits = getAustralianTaxBreakdown(taxableIncome, taxYear)
+  const totalTax = taxBeforeCredits.totalTaxBeforeOffsets - safeFrankingCredits
+
+  return {
+    taxYear,
+    taxableIncome,
+    salaryOnlyTax: salaryOnlyTax.totalTax,
+    incomeTax: taxBeforeCredits.incomeTax,
+    medicareLevy: taxBeforeCredits.medicareLevy,
+    frankingCredits: safeFrankingCredits,
     totalTax,
-    marginalRate: clamp(marginalRate, 0, 0.47)
+    deltaVsSalaryOnly: totalTax - salaryOnlyTax.totalTax
+  }
+}
+
+export function calculateIncomeTaxDelta(baseTaxableIncome, incomeAdjustment, taxYear = defaultTaxYear) {
+  const annualTax = calculateAustralianAnnualTax({
+    taxYear,
+    salaryIncome: baseTaxableIncome,
+    taxableRentalIncome: incomeAdjustment
+  })
+  return annualTax.deltaVsSalaryOnly
+}
+
+export function estimateCapitalGainsTax({
+  taxYear = defaultTaxYear,
+  salaryIncome = 0,
+  grossCapitalGain = 0,
+  discountPct = 0.5,
+  taxableCapitalGain
+} = {}) {
+  const safeGrossCapitalGain = Number(grossCapitalGain) || 0
+  const resolvedTaxableCapitalGain =
+    taxableCapitalGain === undefined
+      ? safeGrossCapitalGain * (1 - clamp(Number(discountPct) || 0, 0, 1))
+      : Math.max(0, Number(taxableCapitalGain) || 0)
+
+  if (safeGrossCapitalGain <= 0 || resolvedTaxableCapitalGain <= 0) {
+    return {
+      grossCapitalGain: 0,
+      taxableCapitalGain: 0,
+      capitalGainsTax: 0
+    }
+  }
+
+  const taxWithGain = getAustralianTaxBreakdown(Math.max(0, Number(salaryIncome) || 0) + resolvedTaxableCapitalGain, taxYear)
+  const salaryOnlyTax = getAustralianTaxBreakdown(salaryIncome, taxYear)
+
+  return {
+    grossCapitalGain: safeGrossCapitalGain,
+    taxableCapitalGain: resolvedTaxableCapitalGain,
+    capitalGainsTax: Math.max(0, taxWithGain.totalTax - salaryOnlyTax.totalTax)
   }
 }
 
@@ -92,7 +185,7 @@ export function normalisePortfolioWeights(portfolioConfig) {
   }
 }
 
-export function simulatePortfolioYear(portfolioConfig, random, taxableIncome) {
+export function simulatePortfolioYear(portfolioConfig, random) {
   const weights = normalisePortfolioWeights(portfolioConfig)
   const asxReturn = clamp(sampleNormal(random, portfolioConfig.asxReturnMean, portfolioConfig.asxVolatility), -0.75, 0.75)
   const qqqReturn = clamp(sampleNormal(random, portfolioConfig.qqqReturnMean, portfolioConfig.qqqVolatility), -0.85, 0.95)
@@ -108,58 +201,56 @@ export function simulatePortfolioYear(portfolioConfig, random, taxableIncome) {
   const bondIncome = weights.bondWeight * (portfolioConfig.bondIncomeYield || 0)
   const distributionYield = asxDividendIncome + qqqDividendIncome + bondIncome
 
-  const tax = estimatePortfolioTaxImpact({
-    asxDistributionYield: asxDividendIncome,
-    qqqDistributionYield: qqqDividendIncome,
-    bondIncomeYield: bondIncome,
-    frankingPct: portfolioConfig.asxFrankingPct || 0,
-    taxableIncome
-  })
-
   return {
     weights,
     totalReturn,
-    distributionYield,
-    taxImpactRate: tax.netTaxRate,
-    frankingBenefitRate: tax.frankingBenefitRate
+    distributionYield
   }
 }
 
-export function estimatePortfolioTaxImpact({
-  asxDistributionYield,
-  qqqDistributionYield,
-  bondIncomeYield,
-  frankingPct,
-  taxableIncome
-}) {
-  const { marginalRate } = getAustralianTaxBreakdown(taxableIncome)
-  const asxDistribution = Math.max(0, asxDistributionYield || 0)
-  const qqqDistribution = Math.max(0, qqqDistributionYield || 0)
-  const bondIncome = Math.max(0, bondIncomeYield || 0)
-  const frankedShare = asxDistribution * clamp(frankingPct || 0, 0, 1)
-  const frankingCreditRate = frankedShare * (0.3 / 0.7)
-  const grossedUpFranked = frankedShare + frankingCreditRate
-  const taxOnFranked = grossedUpFranked * marginalRate
-  const taxOnUnfranked = (asxDistribution - frankedShare + qqqDistribution + bondIncome) * marginalRate
-  const netTaxRate = taxOnFranked + taxOnUnfranked - frankingCreditRate
+export function estimatePortfolioTaxableIncome(portfolioConfig, portfolioBalance) {
+  const safeBalance = Math.max(0, Number(portfolioBalance) || 0)
+  const weights = normalisePortfolioWeights(portfolioConfig)
+  const asxDistribution = safeBalance * weights.asxWeight * Math.max(0, Number(portfolioConfig.asxDividendYield) || 0)
+  const qqqDistribution = safeBalance * weights.qqqWeight * Math.max(0, Number(portfolioConfig.qqqDividendYield) || 0)
+  const bondIncome = safeBalance * weights.bondWeight * Math.max(0, Number(portfolioConfig.bondIncomeYield) || 0)
+  const frankedDistribution = asxDistribution * clamp(Number(portfolioConfig.asxFrankingPct) || 0, 0, 1)
+  const frankingCredits = frankedDistribution * (companyTaxRate / (1 - companyTaxRate))
+  const cashIncome = asxDistribution + qqqDistribution + bondIncome
+  const taxableIncome = cashIncome + frankingCredits
 
   return {
-    netTaxRate,
-    frankingBenefitRate: frankingCreditRate
+    weights,
+    cashIncome,
+    taxableIncome,
+    frankingCredits,
+    asxDistribution,
+    qqqDistribution,
+    bondIncome
   }
 }
 
-export function estimateLmi(purchasePrice, depositPct) {
+export function estimateLmi(purchasePrice, depositPct, firstHomeBuyerEligible = false) {
   const safePrice = Math.max(0, Number(purchasePrice) || 0)
-  const safeDepositPct = clamp(Number(depositPct) || 0, 0, 1)
-  if (safeDepositPct >= 0.2) return 0
-  const leverageGap = 0.2 - safeDepositPct
-  return safePrice * (0.012 + leverageGap * 0.14)
+  const safeDepositPct = clamp(Number(depositPct) || 0, 0.05, 1)
+  if (qualifiesForFirstHomeBuyerDepositScheme(safePrice, firstHomeBuyerEligible)) return 0
+  const lvr = clamp(1 - safeDepositPct, 0, 0.95)
+  if (lvr <= 0.8) return 0
+  const baseLoan = safePrice * lvr
+  return roundCurrency(baseLoan * getLmiRate(lvr))
 }
 
-export function getEffectiveDepositPct(propertyConfig, firstHomeBuyerEligible) {
-  const configuredDepositPct = clamp(Number(propertyConfig.depositPct) || 0, 0.05, 0.95)
-  return firstHomeBuyerEligible ? 0.05 : configuredDepositPct
+export function getEffectiveOwnerDepositPct(propertyConfig) {
+  const configuredDepositPct = clamp(
+    Number(propertyConfig.ownerDepositPct ?? propertyConfig.depositPct) || 0,
+    0.05,
+    0.95
+  )
+  return configuredDepositPct
+}
+
+export function getEffectiveInvestmentDepositPct(propertyConfig) {
+  return clamp(Number(propertyConfig.depositPct) || 0, 0.05, 0.95)
 }
 
 export function calculateAnnualMortgagePayment(principal, annualRate, yearsRemaining) {
@@ -195,28 +286,149 @@ export function amortizeOneYear(balance, annualRate, yearsRemaining) {
   }
 }
 
-export function applyFirstHomeBenefits(propertyConfig, firstHomeBuyerEligible) {
+export function qualifiesForFirstHomeBuyerDepositScheme(purchasePrice, firstHomeBuyerEligible) {
+  const safePrice = Math.max(0, Number(purchasePrice) || 0)
+  return Boolean(firstHomeBuyerEligible) && safePrice > 0 && safePrice <= FIRST_HOME_BUYER_LOW_DEPOSIT_LIMIT
+}
+
+export function getFirstHomeBuyerStampDutyReductionPct(purchasePrice, firstHomeBuyerEligible) {
+  const safePrice = Math.max(0, Number(purchasePrice) || 0)
+  if (!firstHomeBuyerEligible || safePrice <= 0) return 0
+  if (safePrice <= FIRST_HOME_BUYER_STAMP_DUTY_FREE_LIMIT) return 1
+  if (safePrice >= FIRST_HOME_BUYER_STAMP_DUTY_PHASE_OUT_LIMIT) return 0
+  return 1 - ((safePrice - FIRST_HOME_BUYER_STAMP_DUTY_FREE_LIMIT) / (FIRST_HOME_BUYER_STAMP_DUTY_PHASE_OUT_LIMIT - FIRST_HOME_BUYER_STAMP_DUTY_FREE_LIMIT))
+}
+
+export function getLmiRate(lvr) {
+  const safeLvr = clamp(Number(lvr) || 0, 0, 0.95)
+  if (safeLvr <= 0.8) return 0
+  if (safeLvr <= 0.85) return ((safeLvr - 0.8) / 0.05) * 0.015
+  if (safeLvr <= 0.9) return 0.015 + ((safeLvr - 0.85) / 0.05) * 0.015
+  return 0.03 + ((safeLvr - 0.9) / 0.05) * 0.02
+}
+
+export function applyFirstHomeBenefits(propertyConfig, firstHomeBuyerEligible, purchasePrice) {
   const stampDuty = Math.max(0, Number(propertyConfig.stampDuty) || 0)
-  const grant = firstHomeBuyerEligible ? Math.max(0, Number(propertyConfig.firstHomeBuyerGrant) || 0) : 0
-  const reductionPct = firstHomeBuyerEligible ? clamp(Number(propertyConfig.firstHomeBuyerDutyReductionPct) || 0, 0, 1) : 0
+  const reductionPct = getFirstHomeBuyerStampDutyReductionPct(purchasePrice, firstHomeBuyerEligible)
   return {
-    adjustedStampDuty: stampDuty * (1 - reductionPct),
-    grant
+    adjustedStampDuty: roundCurrency(stampDuty * (1 - reductionPct)),
+    grant: 0
   }
 }
 
-export function calculatePurchaseCosts(propertyConfig, firstHomeBuyerEligible) {
-  const fhb = applyFirstHomeBenefits(propertyConfig, firstHomeBuyerEligible)
+export function estimateGenericPurchaseCosts(purchasePrice) {
+  const safePrice = Math.max(0, Number(purchasePrice) || 0)
+  return {
+    stampDuty: roundCurrency(safePrice * (0.0175 + safePrice / 41_000_000)),
+    legalFees: roundCurrency(1700 + safePrice * 0.00092),
+    buyersCosts: roundCurrency(1350 + safePrice * 0.00107)
+  }
+}
+
+export function scalePurchaseCostsWithPrice(purchaseCosts, previousPurchasePrice, nextPurchasePrice) {
+  const currentCosts = {
+    stampDuty: Math.max(0, Number(purchaseCosts?.stampDuty) || 0),
+    legalFees: Math.max(0, Number(purchaseCosts?.legalFees) || 0),
+    buyersCosts: Math.max(0, Number(purchaseCosts?.buyersCosts) || 0)
+  }
+  const previousEstimate = estimateGenericPurchaseCosts(previousPurchasePrice)
+  const nextEstimate = estimateGenericPurchaseCosts(nextPurchasePrice)
+  const scaleField = (currentValue, previousValue, nextValue) => {
+    if (nextValue <= 0) return 0
+    if (previousValue <= 0) return roundCurrency(nextValue)
+    return roundCurrency((currentValue / previousValue) * nextValue)
+  }
+
+  return {
+    ...(purchaseCosts || {}),
+    stampDuty: scaleField(currentCosts.stampDuty, previousEstimate.stampDuty, nextEstimate.stampDuty),
+    legalFees: scaleField(currentCosts.legalFees, previousEstimate.legalFees, nextEstimate.legalFees),
+    buyersCosts: scaleField(currentCosts.buyersCosts, previousEstimate.buyersCosts, nextEstimate.buyersCosts)
+  }
+}
+
+export function calculatePurchaseCosts(propertyConfig, firstHomeBuyerEligible, purchasePrice) {
+  const fhb = applyFirstHomeBenefits(propertyConfig, firstHomeBuyerEligible, purchasePrice)
+  const legalFees = Math.max(0, Number(propertyConfig.legalFees) || 0)
+  const buyersCosts = Math.max(0, Number(propertyConfig.buyersCosts) || 0)
   return {
     stampDuty: fhb.adjustedStampDuty,
-    legalFees: Math.max(0, Number(propertyConfig.legalFees) || 0),
-    buyersCosts: Math.max(0, Number(propertyConfig.buyersCosts) || 0),
+    legalFees,
+    buyersCosts,
     grant: fhb.grant,
-    total:
-      fhb.adjustedStampDuty +
-      Math.max(0, Number(propertyConfig.legalFees) || 0) +
-      Math.max(0, Number(propertyConfig.buyersCosts) || 0) -
-      fhb.grant
+    total: roundCurrency(fhb.adjustedStampDuty + legalFees + buyersCosts - fhb.grant)
+  }
+}
+
+export function calculateBorrowingExpenseDeduction(borrowingExpensesTotal, mortgageYears, yearsOwned) {
+  const total = Math.max(0, Number(borrowingExpensesTotal) || 0)
+  if (total <= 0) return 0
+  if (total <= 100) return yearsOwned <= 0 ? total : 0
+
+  const deductionYears = Math.max(1, Math.min(5, Math.round(Number(mortgageYears) || 0) || 5))
+  if (yearsOwned >= deductionYears) return 0
+  return total / deductionYears
+}
+
+export function calculateInvestmentPropertyTaxPosition({
+  propertyConfig,
+  propertyValue,
+  vacancyRate,
+  interestPaid,
+  yearsOwned
+}) {
+  const safePropertyValue = Math.max(0, Number(propertyValue) || 0)
+  const rentReceived =
+    safePropertyValue *
+    Math.max(0, Number(propertyConfig.rentYield) || 0) *
+    (1 - clamp(Number(vacancyRate) || 0, 0, 1))
+  const managementFee = rentReceived * clamp(Number(propertyConfig.propertyManagementPct) || 0, 0, 1)
+  const councilRates = Math.max(0, Number(propertyConfig.councilRates) || 0)
+  const waterRates = Math.max(0, Number(propertyConfig.waterRates) || 0)
+  const insurance = Math.max(0, Number(propertyConfig.insurance) || 0)
+  const maintenance = Math.max(0, Number(propertyConfig.maintenance) || 0)
+  const strata = Math.max(0, Number(propertyConfig.strata) || 0)
+  const landTax = Math.max(0, Number(propertyConfig.landTax) || 0)
+  const otherDeductibleExpensesAnnual = Math.max(0, Number(propertyConfig.otherDeductibleExpensesAnnual) || 0)
+  const capitalWorksDeductionAnnual = Math.max(0, Number(propertyConfig.capitalWorksDeductionAnnual) || 0)
+  const depreciationDeductionAnnual = Math.max(0, Number(propertyConfig.depreciationDeductionAnnual) || 0)
+  const borrowingExpenseDeduction = calculateBorrowingExpenseDeduction(
+    propertyConfig.borrowingExpensesTotal,
+    propertyConfig.mortgageYears,
+    yearsOwned
+  )
+  const cashOperatingExpenses =
+    managementFee +
+    councilRates +
+    waterRates +
+    insurance +
+    maintenance +
+    strata +
+    landTax +
+    otherDeductibleExpensesAnnual
+  const taxableRentalIncome =
+    rentReceived -
+    managementFee -
+    councilRates -
+    waterRates -
+    insurance -
+    maintenance -
+    strata -
+    landTax -
+    Math.max(0, Number(interestPaid) || 0) -
+    borrowingExpenseDeduction -
+    capitalWorksDeductionAnnual -
+    depreciationDeductionAnnual -
+    otherDeductibleExpensesAnnual
+
+  return {
+    rentReceived,
+    managementFee,
+    borrowingExpenseDeduction,
+    capitalWorksDeductionAnnual,
+    depreciationDeductionAnnual,
+    cashOperatingExpenses,
+    taxableRentalIncome
   }
 }
 

@@ -378,8 +378,8 @@ function onPointerMove(event) {
 
 .wealth-chart__body {
   position: relative;
-  aspect-ratio: 16 / 9;
-  min-height: 360px;
+  aspect-ratio: 16 / 8;
+  min-height: 320px;
   padding: 0.2rem 0 0;
 }
 
@@ -489,7 +489,7 @@ function onPointerMove(event) {
 @media (max-width: 720px) {
   .wealth-chart__body {
     aspect-ratio: 4 / 3;
-    min-height: 300px;
+    min-height: 280px;
   }
 
   .wealth-chart__svg {

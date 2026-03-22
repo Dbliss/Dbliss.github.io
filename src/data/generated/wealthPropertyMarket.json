@@ -1,0 +1,34 @@
+{
+  "metadata": {
+    "generatedAt": "2026-03-22T13:23:41Z",
+    "generatedFor": "wealth defaults property lookup",
+    "sources": [
+      {
+        "label": "property.com.au suburb profile pages",
+        "notes": "Primary market source for prices, growth, rent, and yield."
+      },
+      {
+        "label": "Wikipedia list of Sydney suburbs",
+        "url": "https://en.wikipedia.org/wiki/List_of_Sydney_suburbs",
+        "notes": "Used to discover Sydney suburb names for the one-off batch run."
+      }
+    ],
+    "caveats": [
+      "property.com.au can rate-limit scripted requests, so the script caches raw HTML, supports cache-first mode, and can reuse browser cookies.",
+      "Vacancy is estimated rather than directly scraped.",
+      "Apartment strata is heuristic, not a scraped suburb median."
+    ],
+    "suburbCount": 0,
+    "recordCount": 0,
+    "failureCount": 1
+  },
+  "failures": [
+    {
+      "suburb": "Rhodes, NSW 2138",
+      "slug": "rhodes-nsw-2138",
+      "error": "HTTP 429 Too Many Requests from https://www.property.com.au/nsw/rhodes-2138/. Save the suburb page HTML to cache\\wealth-property-market\\rhodes-nsw-2138.html and rerun with --prefer-cache."
+    }
+  ],
+  "suburbs": {},
+  "records": []
+}

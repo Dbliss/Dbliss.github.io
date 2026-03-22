@@ -1,5 +1,6 @@
 import {
   FIRST_HOME_BUYER_LOW_DEPOSIT_LIMIT,
+  assessPropertyPurchaseServiceability,
   calculateAnnualMortgagePayment,
   amortizeOneYear,
   calculateAustralianAnnualTax,
@@ -8,16 +9,19 @@ import {
   clamp,
   createMulberry32,
   estimateCapitalGainsTax,
-  estimateGenericPurchaseCosts,
   estimateLmi,
   estimatePortfolioTaxableIncome,
   formatShortCurrency,
   getEffectiveInvestmentDepositPct,
   getEffectiveOwnerDepositPct,
+  getOwnerHoldingCosts,
+  getPropertyInterestRate,
+  getPropertyLongRunInterestRate,
   interpolateRate,
   normalisePortfolioWeights,
   percentileSummary,
   roundCurrency,
+  scalePurchaseCostsWithPrice,
   sampleNormal,
   simulatePortfolioYear
 } from './finance.js'
@@ -162,14 +166,6 @@ function getAnnualNonHousingLivingCosts(profile, yearIndex) {
   return profile.weeklyNonHousingLivingCosts * 52 * Math.pow(1 + profile.incomeGrowthRate, yearIndex)
 }
 
-function getAnnualDisposableAfterLiving(market, taxYear) {
-  const salaryOnlyTax = calculateAustralianAnnualTax({
-    taxYear,
-    salaryIncome: market.income
-  })
-  return market.income - salaryOnlyTax.totalTax - market.nonHousingLivingCosts
-}
-
 function getInvestedBalance(liquidAssets) {
   return Math.max(0, Number(liquidAssets) || 0)
 }
@@ -212,15 +208,13 @@ function estimateLiquidationPosition({
   mortgageBalance = 0,
   propertyCostBase = 0,
   propertyYearsOwned = 0,
-  propertyCapitalWorksClaimed = 0,
   propertyMainResidenceExempt = false
 }) {
   const portfolioMarketValue = getInvestedBalance(liquidAssets)
   const propertyMarketValue = Math.max(0, Number(propertyValue) || 0)
   const debt = Math.max(0, Number(mortgageBalance) || 0)
-  const adjustedPropertyCostBase = Math.max(0, Number(propertyCostBase) || 0) - Math.max(0, Number(propertyCapitalWorksClaimed) || 0)
   const portfolioRawGain = portfolioMarketValue - Math.max(0, Number(portfolioCostBasis) || 0)
-  const propertyRawGain = propertyMainResidenceExempt ? 0 : propertyMarketValue - Math.max(0, adjustedPropertyCostBase)
+  const propertyRawGain = propertyMainResidenceExempt ? 0 : propertyMarketValue - Math.max(0, Number(propertyCostBase) || 0)
   const capitalLoss = Math.abs(Math.min(0, portfolioRawGain)) + Math.abs(Math.min(0, propertyRawGain))
   const positiveGainBuckets = [
     {
@@ -287,44 +281,17 @@ function createSnapshot({
   }
 }
 
-function getOwnerHoldingCosts(property) {
-  return (
-    Math.max(0, Number(property.councilRates) || 0) +
-    Math.max(0, Number(property.waterRates) || 0) +
-    Math.max(0, Number(property.insurance) || 0) +
-    Math.max(0, Number(property.maintenance) || 0) +
-    Math.max(0, Number(property.strata) || 0)
-  )
-}
-
 function getPurchaseCostsInput(property, occupancyMode) {
   return occupancyMode === 'owner' ? property.ownerPurchaseCosts : property.investmentPurchaseCosts
 }
 
-function scalePurchaseCosts(purchaseCosts, basePurchasePrice, nextPurchasePrice) {
-  const currentCosts = normalisePurchaseCosts(purchaseCosts)
-  const baseEstimate = estimateGenericPurchaseCosts(basePurchasePrice)
-  const nextEstimate = estimateGenericPurchaseCosts(nextPurchasePrice)
-  const scaleField = (currentValue, previousValue, nextValue) => {
-    if (nextValue <= 0) return 0
-    if (previousValue <= 0) return roundCurrency(nextValue)
-    return roundCurrency((currentValue / previousValue) * nextValue)
-  }
-
-  return {
-    ...currentCosts,
-    stampDuty: scaleField(currentCosts.stampDuty, baseEstimate.stampDuty, nextEstimate.stampDuty),
-    legalFees: scaleField(currentCosts.legalFees, baseEstimate.legalFees, nextEstimate.legalFees),
-    buyersCosts: scaleField(currentCosts.buyersCosts, baseEstimate.buyersCosts, nextEstimate.buyersCosts)
-  }
-}
-
-function getPurchasePlan(property, propertyValue, occupancyMode, firstHomeBuyerEligible) {
+function getPurchasePlan(propertyKey, property, propertyValue, occupancyMode, firstHomeBuyerEligible) {
   const scaledValue = Math.max(0, Number(propertyValue) || 0)
-  const purchaseCostsInput = scalePurchaseCosts(
+  const purchaseCostsInput = scalePurchaseCostsWithPrice(
     getPurchaseCostsInput(property, occupancyMode),
     property.purchasePrice,
-    scaledValue
+    scaledValue,
+    propertyKey
   )
   const effectiveDepositPct = occupancyMode === 'owner'
     ? getEffectiveOwnerDepositPct(property)
@@ -348,48 +315,18 @@ function getPurchasePlan(property, propertyValue, occupancyMode, firstHomeBuyerE
 }
 
 function getPurchaseServiceability(request, market, occupancyMode, property, propertyValue, purchasePlan, atHomeHousingCosts) {
-  const annualDisposableAfterLiving = getAnnualDisposableAfterLiving(market, request.profile.taxYear)
-  const annualMortgagePayment = calculateAnnualMortgagePayment(
-    purchasePlan.openingMortgageBalance,
-    property.interestRate,
-    property.mortgageYears
-  )
-
-  if (occupancyMode === 'owner') {
-    const annualCarry = annualMortgagePayment + getOwnerHoldingCosts(property)
-    return {
-      annualDisposableAfterLiving,
-      annualCarry,
-      taxDelta: 0,
-      affordable: annualDisposableAfterLiving >= annualCarry
-    }
-  }
-
-  const rentalTaxPosition = calculateInvestmentPropertyTaxPosition({
+  return assessPropertyPurchaseServiceability({
+    taxYear: request.profile.taxYear,
+    annualIncome: market.income,
+    weeklyNonHousingLivingCosts: request.profile.weeklyNonHousingLivingCosts,
+    occupancyMode,
     propertyConfig: property,
     propertyValue,
-    vacancyRate: wealthVacancyRate,
-    interestPaid: purchasePlan.openingMortgageBalance * property.interestRate,
-    yearsOwned: 0
+    mortgageYears: property.mortgageYears,
+    openingLoanBalance: purchasePlan.openingMortgageBalance,
+    personalHousingCostAnnual: occupancyMode === 'investment' ? atHomeHousingCosts : 0,
+    vacancyRate: wealthVacancyRate
   })
-  const taxPosition = calculateAustralianAnnualTax({
-    taxYear: request.profile.taxYear,
-    salaryIncome: market.income,
-    taxableRentalIncome: rentalTaxPosition.taxableRentalIncome
-  })
-  const annualCarry =
-    atHomeHousingCosts +
-    annualMortgagePayment +
-    rentalTaxPosition.cashOperatingExpenses -
-    rentalTaxPosition.rentReceived +
-    taxPosition.deltaVsSalaryOnly
-
-  return {
-    annualDisposableAfterLiving,
-    annualCarry,
-    taxDelta: taxPosition.deltaVsSalaryOnly,
-    affordable: annualDisposableAfterLiving >= annualCarry
-  }
 }
 
 function getPortfolioLedger(portfolioConfig, openingLiquidAssets, market) {
@@ -425,7 +362,12 @@ function simulateOwnedPropertyYear({
   const property = request.propertyConfig[propertyKey]
   const openingPropertyValue = Math.max(0, Number(propertyValue) || 0)
   const yearsRemaining = Math.max(1, property.mortgageYears - yearsOwned)
-  const baseRate = interpolateRate(property.interestRate, property.longRunInterestRate, yearsOwned, 5)
+  const baseRate = interpolateRate(
+    getPropertyInterestRate(property, occupancyMode),
+    getPropertyLongRunInterestRate(property, occupancyMode),
+    yearsOwned,
+    5
+  )
   const mortgageRate = clamp(baseRate + market.mortgageRateJitter, 0.03, 0.11)
   const amortization = amortizeOneYear(mortgageBalance, mortgageRate, yearsRemaining)
   const endMortgageBalance = amortization.endingBalance
@@ -546,7 +488,7 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
   const property = propertyConfig[propertyKey]
   const firstHomeBuyerEligible = shouldApplyFirstHomeBuyerSupport(request, occupancyMode)
   const investWhileSavingForDeposit = Boolean(propertyConfig.investWhileSavingForDeposit)
-  const initialPlan = getPurchasePlan(property, property.purchasePrice, occupancyMode, firstHomeBuyerEligible)
+  const initialPlan = getPurchasePlan(propertyKey, property, property.purchasePrice, occupancyMode, firstHomeBuyerEligible)
 
   let liquidAssets = profile.startingSavings
   let targetPropertyValue = property.purchasePrice
@@ -625,9 +567,6 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
     mortgageBalance,
     propertyCostBase,
     propertyYearsOwned: yearsOwned,
-    propertyCapitalWorksClaimed: occupancyMode === 'investment'
-      ? property.capitalWorksDeductionAnnual * yearsOwned
-      : 0,
     propertyMainResidenceExempt: occupancyMode === 'owner'
   })
   const points = [createSnapshot({ liquidAssets, propertyValue, mortgageBalance, ...openingLiquidation })]
@@ -671,7 +610,7 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
         market.nonHousingLivingCosts -
         housingCashCosts
 
-      const purchasePlan = getPurchasePlan(property, targetPropertyValue, occupancyMode, firstHomeBuyerEligible)
+      const purchasePlan = getPurchasePlan(propertyKey, property, targetPropertyValue, occupancyMode, firstHomeBuyerEligible)
       if (openingLiquidAssets >= purchasePlan.upfrontCash) {
         const purchaseServiceability = getPurchaseServiceability(
           request,
@@ -802,9 +741,6 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
       mortgageBalance,
       propertyCostBase,
       propertyYearsOwned: yearsOwned,
-      propertyCapitalWorksClaimed: occupancyMode === 'investment'
-        ? property.capitalWorksDeductionAnnual * yearsOwned
-        : 0,
       propertyMainResidenceExempt: occupancyMode === 'owner'
     })
 
@@ -826,9 +762,7 @@ function normalisePurchaseCosts(rawCosts, fallbackStampDuty = 0, fallbackLegalFe
   return {
     stampDuty: Math.max(0, Number(rawCosts?.stampDuty ?? fallbackStampDuty) || 0),
     legalFees: Math.max(0, Number(rawCosts?.legalFees ?? fallbackLegalFees) || 0),
-    buyersCosts: Math.max(0, Number(rawCosts?.buyersCosts ?? fallbackBuyersCosts) || 0),
-    firstHomeBuyerDutyReductionPct: clamp(Number(rawCosts?.firstHomeBuyerDutyReductionPct) || 0, 0, 1),
-    firstHomeBuyerGrant: Math.max(0, Number(rawCosts?.firstHomeBuyerGrant) || 0)
+    buyersCosts: Math.max(0, Number(rawCosts?.buyersCosts ?? fallbackBuyersCosts) || 0)
   }
 }
 
@@ -858,8 +792,10 @@ function normaliseProperty(property, fallback = {}) {
     ownerDepositPct: clamp(Number(property.ownerDepositPct ?? defaultOwnerDepositPct) || 0, 0.05, 0.95),
     depositPct: investmentDepositPct,
     mortgageYears: Math.max(1, Math.round(Number(property.mortgageYears) || 30)),
-    interestRate: clamp(Number(property.interestRate) || 0, 0, 0.2),
-    longRunInterestRate: clamp(Number(property.longRunInterestRate) || 0, 0, 0.2),
+    ownerInterestRate: getPropertyInterestRate(property, 'owner'),
+    ownerLongRunInterestRate: getPropertyLongRunInterestRate(property, 'owner'),
+    investmentInterestRate: getPropertyInterestRate(property, 'investment'),
+    investmentLongRunInterestRate: getPropertyLongRunInterestRate(property, 'investment'),
     growthMean: clamp(Number(property.growthMean) || 0, -0.1, 0.2),
     growthVolatility: clamp(Number(property.growthVolatility) || 0, 0, 0.3),
     rentYield: clamp(Number(property.rentYield ?? fallback.rentYield) || 0, 0, 0.1),
@@ -871,8 +807,6 @@ function normaliseProperty(property, fallback = {}) {
     strata: Math.max(0, Number(property.strata) || 0),
     landTax: Math.max(0, Number(property.landTax) || 0),
     borrowingExpensesTotal: Math.max(0, Number(property.borrowingExpensesTotal) || 0),
-    capitalWorksDeductionAnnual: Math.max(0, Number(property.capitalWorksDeductionAnnual) || 0),
-    depreciationDeductionAnnual: Math.max(0, Number(property.depreciationDeductionAnnual) || 0),
     otherDeductibleExpensesAnnual: Math.max(0, Number(property.otherDeductibleExpensesAnnual) || 0),
     ownerPurchaseCosts,
     investmentPurchaseCosts
@@ -886,7 +820,7 @@ function normaliseRequest(request) {
   safe.profile.incomeGrowthRate = clamp(safe.profile.incomeGrowthRate, 0, 0.1)
   safe.profile.startingSavings = Math.max(0, Number(safe.profile.startingSavings) || 0)
   safe.profile.annualIncome = Math.max(0, Number(safe.profile.annualIncome) || 0)
-  safe.profile.taxYear = typeof safe.profile.taxYear === 'string' ? safe.profile.taxYear : '2025-26'
+  safe.profile.taxYear = '2026-27'
   safe.profile.weeklyNonHousingLivingCosts = Math.max(
     0,
     Number(safe.profile.weeklyNonHousingLivingCosts ?? safe.profile.weeklyHousingAndInvestingBudget ?? safe.profile.weeklyAvailableToSave) || 0

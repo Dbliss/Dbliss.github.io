@@ -41,7 +41,7 @@ describe('wealth simulator', () => {
     const request = cloneSimulationRequest()
     request.simulationSettings.iterations = 120
     request.profile.startingSavings = 20000
-    request.profile.weeklyHousingAndInvestingBudget = 2100
+    request.profile.weeklyNonHousingLivingCosts = 2100
 
     const result = simulateWealthPathways(request)
     const homePoints = result.strategies.buyHouseHome.points
@@ -58,7 +58,7 @@ describe('wealth simulator', () => {
     request.housingCosts.liveAtHome = true
     request.housingCosts.liveAtHomeYears = 4
     request.profile.startingSavings = 150000
-    request.profile.weeklyHousingAndInvestingBudget = 2600
+    request.profile.weeklyNonHousingLivingCosts = 2600
 
     const result = simulateWealthPathways(request)
     const ownerPurchasePoint = result.strategies.buyHouseHome.points.find(point => point.homeEquityP50 > 0)
@@ -96,13 +96,13 @@ describe('wealth simulator', () => {
     const rentingRequest = cloneSimulationRequest()
     rentingRequest.simulationSettings.iterations = 120
     rentingRequest.profile.startingSavings = 80000
-    rentingRequest.profile.weeklyHousingAndInvestingBudget = 1000
+    rentingRequest.profile.weeklyNonHousingLivingCosts = 1000
     rentingRequest.housingCosts.weeklyRent = 700
 
     const liveAtHomeRequest = cloneSimulationRequest()
     liveAtHomeRequest.simulationSettings.iterations = 120
     liveAtHomeRequest.profile.startingSavings = 80000
-    liveAtHomeRequest.profile.weeklyHousingAndInvestingBudget = 1000
+    liveAtHomeRequest.profile.weeklyNonHousingLivingCosts = 1000
     liveAtHomeRequest.housingCosts.liveAtHome = true
     liveAtHomeRequest.housingCosts.liveAtHomeYears = 2
     liveAtHomeRequest.housingCosts.weeklyRent = 700
@@ -224,6 +224,8 @@ describe('wealth simulator', () => {
     request.propertyConfig.house.purchasePrice = 780000
     request.propertyConfig.house.ownerDepositPct = 0.2
     request.propertyConfig.house.depositPct = 0.2
+    request.propertyConfig.house.ownerInterestRate = 0.05
+    request.propertyConfig.house.investmentInterestRate = 0.072
     request.propertyConfig.house.growthMean = 0
     request.propertyConfig.house.growthVolatility = 0
     request.propertyConfig.house.rentYield = 0.02

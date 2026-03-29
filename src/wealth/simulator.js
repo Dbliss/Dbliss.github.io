@@ -26,7 +26,7 @@ import {
   scalePurchaseCostsWithPrice,
   sampleNormal
 } from './finance.js'
-import { sampleBootstrapAssetYear } from './assetBootstrap.js'
+import { createBootstrapPortfolioSampler } from './assetBootstrap.js'
 import {
   getWealthStrategyMeta,
   resolveScenarioSelection,
@@ -34,6 +34,7 @@ import {
   wealthVacancyRate,
   wealthVacancyRateVolatility
 } from '../data/wealthDefaults.js'
+import { getIncomeForYear, getIncomeScaleForYear, normaliseIncomeProfile } from './incomeSeries.js'
 
 function createStrategyBuckets(horizonYears) {
   return Array.from({ length: horizonYears + 1 }, () => ({
@@ -56,7 +57,10 @@ function sampleMarketPath(request, random) {
   return Array.from({ length: profile.horizonYears }, (_, yearIndex) => ({
     income: getAnnualSalary(profile, yearIndex),
     nonHousingLivingCosts: getAnnualNonHousingLivingCosts(profile, yearIndex),
-    sleeveReturns: samplePortfolioSleeveReturns(random, sampleBootstrapAssetYear),
+    sleeveReturns: samplePortfolioSleeveReturns(
+      random,
+      createBootstrapPortfolioSampler(random, request.portfolioConfig)
+    ),
     houseGrowth: clamp(sampleNormal(random, propertyConfig.house.growthMean, propertyConfig.house.growthVolatility), -0.25, 0.25),
     apartmentGrowth: clamp(sampleNormal(random, propertyConfig.apartment.growthMean, propertyConfig.apartment.growthVolatility), -0.18, 0.18),
     mortgageRateJitter: sampleNormal(random, 0, 0.0045),
@@ -168,11 +172,11 @@ function shouldApplyFirstHomeBuyerSupport(request, occupancyMode) {
 }
 
 function getAnnualSalary(profile, yearIndex) {
-  return profile.annualIncome * Math.pow(1 + profile.incomeGrowthRate, yearIndex)
+  return getIncomeForYear(profile, yearIndex)
 }
 
 function getAnnualNonHousingLivingCosts(profile, yearIndex) {
-  return profile.weeklyNonHousingLivingCosts * 52 * Math.pow(1 + profile.incomeGrowthRate, yearIndex)
+  return profile.weeklyNonHousingLivingCosts * 52 * getIncomeScaleForYear(profile, yearIndex)
 }
 
 function getInvestedBalance(liquidAssets) {
@@ -828,9 +832,11 @@ function normaliseRequest(request) {
   const safe = JSON.parse(JSON.stringify(request))
   safe.profile.horizonYears = Math.round(clamp(safe.profile.horizonYears, 10, 30))
   safe.simulationSettings.iterations = Math.round(clamp(safe.simulationSettings.iterations, 120, 800))
-  safe.profile.incomeGrowthRate = clamp(safe.profile.incomeGrowthRate, 0, 0.1)
   safe.profile.startingSavings = Math.max(0, Number(safe.profile.startingSavings) || 0)
-  safe.profile.annualIncome = Math.max(0, Number(safe.profile.annualIncome) || 0)
+  safe.profile = {
+    ...safe.profile,
+    ...normaliseIncomeProfile(safe.profile)
+  }
   safe.profile.taxYear = '2026-27'
   safe.profile.weeklyNonHousingLivingCosts = Math.max(
     0,
@@ -848,6 +854,15 @@ function normaliseRequest(request) {
     ...safe.portfolioConfig,
     ...normalisePortfolioWeights(safe.portfolioConfig)
   }
+  safe.portfolioConfig.bootstrapMethod =
+    safe.portfolioConfig.bootstrapMethod === 'historical-monthly'
+      ? 'historical-monthly'
+      : 'historical-block'
+  safe.portfolioConfig.bootstrapBlockSizeMonths = Math.round(clamp(
+    Number(safe.portfolioConfig.bootstrapBlockSizeMonths) || 3,
+    1,
+    12
+  ))
   safe.propertyConfig.surplusAllocationMode =
     safe.propertyConfig.surplusAllocationMode === 'mortgagePrepayment'
       ? 'mortgagePrepayment'

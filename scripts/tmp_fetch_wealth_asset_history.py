@@ -5,6 +5,7 @@ import datetime as dt
 import json
 import math
 import pathlib
+import ssl
 import sys
 import urllib.parse
 import urllib.request
@@ -16,7 +17,7 @@ ASSET_SPECS = [
         "key": "qqq",
         "label": "QQQ",
         "ticker": "QQQ",
-        "lookback_years": 10,
+        "max_lookback_years": 30,
         "currency": "USD",
         "source_url": "https://finance.yahoo.com/quote/QQQ/history/",
     },
@@ -24,7 +25,7 @@ ASSET_SPECS = [
         "key": "asx200",
         "label": "ASX200",
         "ticker": "STW.AX",
-        "lookback_years": 10,
+        "max_lookback_years": 30,
         "currency": "AUD",
         "source_url": "https://finance.yahoo.com/quote/STW.AX/history/",
     },
@@ -32,7 +33,7 @@ ASSET_SPECS = [
         "key": "bonds",
         "label": "Bonds",
         "ticker": "VAF.AX",
-        "lookback_years": 10,
+        "max_lookback_years": 30,
         "currency": "AUD",
         "source_url": "https://finance.yahoo.com/quote/VAF.AX/history/",
     },
@@ -40,7 +41,7 @@ ASSET_SPECS = [
         "key": "cash",
         "label": "High Interest Cash",
         "ticker": "AAA.AX",
-        "lookback_years": 10,
+        "max_lookback_years": 30,
         "currency": "AUD",
         "source_url": "https://finance.yahoo.com/quote/AAA.AX/history/",
     },
@@ -48,24 +49,24 @@ ASSET_SPECS = [
         "key": "bitcoin",
         "label": "Bitcoin",
         "ticker": "BTC-USD",
-        "lookback_years": 4,
+        "max_lookback_years": 4,
         "currency": "USD",
         "source_url": "https://finance.yahoo.com/quote/BTC-USD/history/",
     },
 ]
 
 
-def build_chart_url(ticker: str, lookback_years: int) -> str:
+def build_chart_url(ticker: str, range_value: str) -> str:
     encoded_ticker = urllib.parse.quote(ticker)
     return (
         f"https://query1.finance.yahoo.com/v8/finance/chart/{encoded_ticker}"
-        f"?interval=1d&range={lookback_years}y&includeAdjustedClose=true&events=div%2Csplits"
+        f"?interval=1d&range={range_value}&includeAdjustedClose=true&events=div%2Csplits"
     )
 
 
-def fetch_chart_payload(ticker: str, lookback_years: int) -> dict:
+def fetch_chart_payload(ticker: str, range_value: str) -> dict:
     request = urllib.request.Request(
-        build_chart_url(ticker, lookback_years),
+        build_chart_url(ticker, range_value),
         headers={
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -74,7 +75,8 @@ def fetch_chart_payload(ticker: str, lookback_years: int) -> dict:
             )
         },
     )
-    with urllib.request.urlopen(request, timeout=30) as response:
+    ssl_context = ssl._create_unverified_context()
+    with urllib.request.urlopen(request, timeout=30, context=ssl_context) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
@@ -134,18 +136,31 @@ def build_monthly_returns(month_rows: list[tuple[str, dt.date, float]]) -> list[
     return monthly_returns
 
 
+def trim_monthly_returns(monthly_returns: list[dict], max_lookback_years: int) -> list[dict]:
+    safe_max_years = max(1, int(max_lookback_years))
+    max_months = safe_max_years * 12
+    if len(monthly_returns) <= max_months:
+        return monthly_returns
+    return monthly_returns[-max_months:]
+
+
+def resolve_range_value(spec: dict) -> str:
+    max_lookback_years = int(spec["max_lookback_years"])
+    return f"{max_lookback_years}y" if max_lookback_years <= 4 else "max"
+
+
 def fetch_asset_history(spec: dict) -> dict:
-    payload = fetch_chart_payload(spec["ticker"], spec["lookback_years"])
+    payload = fetch_chart_payload(spec["ticker"], resolve_range_value(spec))
     daily_rows = extract_daily_adjusted_closes(payload)
     month_rows = collapse_to_month_end(daily_rows)
-    monthly_returns = build_monthly_returns(month_rows)
+    monthly_returns = trim_monthly_returns(build_monthly_returns(month_rows), spec["max_lookback_years"])
 
     return {
         "key": spec["key"],
         "label": spec["label"],
         "ticker": spec["ticker"],
         "currency": spec["currency"],
-        "lookbackYears": spec["lookback_years"],
+        "lookbackYears": round(len(monthly_returns) / 12, 1),
         "source": "Yahoo Finance chart API",
         "sourceUrl": spec["source_url"],
         "startMonth": monthly_returns[0]["month"],

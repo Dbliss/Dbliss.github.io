@@ -2,6 +2,7 @@ import {
   estimateGenericPurchaseCosts,
   estimatePropertyCostFromPrice
 } from '../wealth/finance.js'
+import { buildFlatIncomeSeries } from '../wealth/incomeSeries.js'
 
 export const wealthProjectSlug = 'wealth-pathways-au'
 
@@ -280,8 +281,11 @@ export const defaultSimulationRequest = {
     annualIncome: 100000,
     taxYear: '2026-27',
     incomeGrowthRate: 0.034,
+    incomeCurve: 'exponential',
     weeklyNonHousingLivingCosts: 400,
-    horizonYears: 30
+    horizonYears: 30,
+    useCustomIncomeSeries: false,
+    annualIncomeSeries: []
   },
   housingCosts: {
     liveAtHome: false,
@@ -297,12 +301,14 @@ export const defaultSimulationRequest = {
     bondWeight: 0.10,
     cashWeight: 0.05,
     bitcoinWeight: 0,
+    lockedWeights: [],
     asxDividendYield: 0.032,
     asxFrankingPct: 0.75,
     qqqDividendYield: 0.0045,
     bondIncomeYield: 0.042,
     cashReturnMean: 0.035,
-    bootstrapMethod: 'historical-monthly'
+    bootstrapMethod: 'historical-block',
+    bootstrapBlockSizeMonths: 3
   },
   propertyConfig: {
     firstHomeBuyerEligible: true,
@@ -381,6 +387,13 @@ defaultSimulationRequest.propertyConfig.apartment = {
     ...apartmentPurchaseCosts
   }
 }
+
+defaultSimulationRequest.profile.annualIncomeSeries = buildFlatIncomeSeries(
+  defaultSimulationRequest.profile.annualIncome,
+  defaultSimulationRequest.profile.incomeGrowthRate,
+  defaultSimulationRequest.profile.horizonYears,
+  defaultSimulationRequest.profile.incomeCurve
+)
 
 export function cloneSimulationRequest() {
   return JSON.parse(JSON.stringify(defaultSimulationRequest))

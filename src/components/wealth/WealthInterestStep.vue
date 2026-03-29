@@ -50,10 +50,22 @@
           v-for="allocation in allocationFields"
           :key="allocation.key"
           class="wealth-interest__allocation"
+          :class="{ 'is-locked': isLocked(allocation.key) }"
         >
-          <span class="wealth-interest__allocation-title">
-            <i class="wealth-interest__allocation-swatch" :style="{ background: allocation.color }"></i>
-            {{ allocation.label }}
+          <span class="wealth-interest__allocation-head">
+            <span class="wealth-interest__allocation-title">
+              <i class="wealth-interest__allocation-swatch" :style="{ background: allocation.color }"></i>
+              {{ allocation.label }}
+            </span>
+            <button
+              type="button"
+              class="wealth-interest__lock-btn"
+              :class="{ 'is-active': isLocked(allocation.key) }"
+              :aria-pressed="isLocked(allocation.key)"
+              @click.prevent="toggleLock(allocation.key)"
+            >
+              {{ isLocked(allocation.key) ? 'Locked' : 'Lock' }}
+            </button>
           </span>
           <div class="wealth-interest__allocation-controls">
             <input
@@ -62,7 +74,8 @@
               min="0"
               max="100"
               step="1"
-              @input="setAllocation(allocation.key, $event.target.value)"
+              :disabled="isLocked(allocation.key) && !hasUnlockedPeers(allocation.key)"
+              @input="handleAllocationInput(allocation.key, $event)"
             />
             <input
               :value="getAllocationPct(allocation.key)"
@@ -70,20 +83,29 @@
               min="0"
               max="100"
               step="1"
-              @input="setAllocation(allocation.key, $event.target.value)"
+              :disabled="isLocked(allocation.key) && !hasUnlockedPeers(allocation.key)"
+              @input="handleAllocationInput(allocation.key, $event)"
             />
           </div>
         </label>
       </div>
 
       <p class="wealth-interest__note">
-        This baseline also feeds the portfolio scenario shown in the results dashboard.
+        Lock a sleeve to keep that exact percentage while the unlocked sleeves rebalance around it. This baseline also feeds the portfolio scenario shown in the results dashboard.
       </p>
     </div>
   </section>
 </template>
 
 <script setup>
+import {
+  getLockedWeightKeys,
+  isPortfolioWeightLocked,
+  portfolioAllocationFields as allocationFields,
+  setPortfolioAllocation,
+  togglePortfolioWeightLock
+} from '../../wealth/portfolioAllocation.js'
+
 const props = defineProps({
   scenarioSelection: { type: Object, required: true },
   portfolioConfig: { type: Object, required: true }
@@ -91,53 +113,33 @@ const props = defineProps({
 
 defineEmits(['toggle-stocks', 'toggle-housing'])
 
-const allocationFields = [
-  { key: 'qqqWeight', label: 'US Stock - QQQ', color: '#2563eb' },
-  { key: 'asxWeight', label: 'AU Stocks - ASX200', color: '#16a34a' },
-  { key: 'bondWeight', label: 'Bonds', color: '#f59e0b' },
-  { key: 'cashWeight', label: 'High Interest Cash', color: '#475569' },
-  { key: 'bitcoinWeight', label: 'Bitcoin', color: '#f97316' }
-]
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max)
-}
-
 function getAllocationPct(key) {
   return Math.round((Math.max(0, Number(props.portfolioConfig[key]) || 0) * 100))
 }
 
 function setAllocation(targetKey, value) {
-  const keys = allocationFields.map(field => field.key)
-  const nextWeight = clamp(Number(value) || 0, 0, 100) / 100
-  const otherKeys = keys.filter(key => key !== targetKey)
-  const otherValues = otherKeys.map(key => Math.max(0, Number(props.portfolioConfig[key]) || 0))
-  const otherTotal = otherValues.reduce((sum, weight) => sum + weight, 0)
-  const remainingWeight = 1 - nextWeight
+  setPortfolioAllocation(props.portfolioConfig, targetKey, value)
+}
 
-  props.portfolioConfig[targetKey] = nextWeight
+function handleAllocationInput(targetKey, event) {
+  setAllocation(targetKey, event?.target?.value)
 
-  if (remainingWeight <= 0) {
-    otherKeys.forEach((key) => {
-      props.portfolioConfig[key] = 0
-    })
-    return
+  if (event?.target) {
+    event.target.value = String(getAllocationPct(targetKey))
   }
+}
 
-  let assignedWeight = nextWeight
-  otherKeys.forEach((key, index) => {
-    const nextShare = otherTotal > 0
-      ? remainingWeight * (otherValues[index] / otherTotal)
-      : remainingWeight / otherKeys.length
+function toggleLock(key) {
+  togglePortfolioWeightLock(props.portfolioConfig, key)
+}
 
-    if (index === otherKeys.length - 1) {
-      props.portfolioConfig[key] = Math.max(0, 1 - assignedWeight)
-      return
-    }
+function isLocked(key) {
+  return isPortfolioWeightLocked(props.portfolioConfig, key)
+}
 
-    props.portfolioConfig[key] = nextShare
-    assignedWeight += nextShare
-  })
+function hasUnlockedPeers(key) {
+  const lockedKeys = new Set(getLockedWeightKeys(props.portfolioConfig))
+  return allocationFields.some(field => field.key !== key && !lockedKeys.has(field.key))
 }
 </script>
 
@@ -256,6 +258,22 @@ function setAllocation(targetKey, value) {
   gap: 0.45rem;
   color: #587090;
   font-size: 0.84rem;
+  padding: 0.85rem;
+  border-radius: 18px;
+  border: 1px solid rgba(154, 174, 204, 0.18);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.wealth-interest__allocation.is-locked {
+  border-color: rgba(37, 99, 235, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+}
+
+.wealth-interest__allocation-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
 }
 
 .wealth-interest__allocation-title {
@@ -269,6 +287,23 @@ function setAllocation(targetKey, value) {
   height: 0.72rem;
   border-radius: 999px;
   flex: 0 0 auto;
+}
+
+.wealth-interest__lock-btn {
+  border: 1px solid rgba(154, 174, 204, 0.24);
+  border-radius: 999px;
+  padding: 0.38rem 0.72rem;
+  background: rgba(244, 248, 255, 0.96);
+  color: #355474;
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.wealth-interest__lock-btn.is-active {
+  border-color: rgba(37, 99, 235, 0.28);
+  background: rgba(219, 234, 254, 0.92);
+  color: #1d4ed8;
 }
 
 .wealth-interest__allocation-controls {
@@ -292,6 +327,11 @@ function setAllocation(targetKey, value) {
 .wealth-interest__allocation-controls input[type='range'] {
   min-height: 0;
   padding-inline: 0;
+}
+
+.wealth-interest__allocation-controls input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 @media (max-width: 820px) {

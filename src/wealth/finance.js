@@ -237,11 +237,12 @@ export function normalisePortfolioWeights(portfolioConfig) {
 
 export function samplePortfolioSleeveReturns(random, sampleAssetYear) {
   const sampler = typeof sampleAssetYear === 'function' ? sampleAssetYear : (() => 0)
-  const asxReturn = clamp(sampler('asx200', random), -0.75, 0.75)
-  const qqqReturn = clamp(sampler('qqq', random), -0.85, 0.95)
-  const bondReturn = clamp(sampler('bonds', random), -0.25, 0.25)
-  const cashReturn = clamp(sampler('cash', random), -0.02, 0.12)
-  const bitcoinReturn = clamp(sampler('bitcoin', random), -0.95, 2.5)
+  const sharedSample = typeof sampler.sampleAll === 'function' ? sampler.sampleAll(random) : null
+  const asxReturn = clamp(sharedSample?.asxReturn ?? sampler('asx200', random), -0.75, 0.75)
+  const qqqReturn = clamp(sharedSample?.qqqReturn ?? sampler('qqq', random), -0.85, 0.95)
+  const bondReturn = clamp(sharedSample?.bondReturn ?? sampler('bonds', random), -0.25, 0.25)
+  const cashReturn = clamp(sharedSample?.cashReturn ?? sampler('cash', random), -0.02, 0.12)
+  const bitcoinReturn = clamp(sharedSample?.bitcoinReturn ?? sampler('bitcoin', random), -0.95, 2.5)
 
   return {
     asxReturn,

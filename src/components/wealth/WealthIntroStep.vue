@@ -17,14 +17,6 @@
         <input v-model.number="form.profile.startingSavings" type="number" min="0" step="1000" />
       </label>
       <label>
-        <span>Gross income</span>
-        <input v-model.number="form.profile.annualIncome" type="number" min="0" step="1000" />
-      </label>
-      <label>
-        <span>Expected Income growth %</span>
-        <input v-model.number="incomeGrowthPct" type="number" min="0" max="12" step="0.1" />
-      </label>
-      <label>
         <span>Time horizon of interest</span>
         <input v-model.number="form.profile.horizonYears" type="number" min="10" max="30" step="1" />
       </label>
@@ -60,11 +52,39 @@
         <input v-model.number="boardGrowthPct" type="number" min="0" max="10" step="0.1" />
       </label>
     </div>
+
+    <section class="wealth-sheet__subsection">
+      <div class="wealth-sheet__subsection-head">
+        <h3>Income trajectory</h3>
+      </div>
+
+      <div class="wealth-sheet__subsection-grid">
+        <label>
+          <span>Gross income</span>
+          <input v-model.number="form.profile.annualIncome" type="number" min="0" step="1000" />
+        </label>
+        <label>
+          <span>Expected income growth %</span>
+          <input v-model.number="incomeGrowthPct" type="number" min="0" max="12" step="0.1" />
+        </label>
+        <label>
+          <span>Income growth style</span>
+          <select v-model="incomeCurve">
+            <option value="exponential">Exponential</option>
+            <option value="logarithmic">Logarithmic</option>
+            <option value="sigmoid">Sigmoid</option>
+          </select>
+        </label>
+      </div>
+
+      <WealthIncomeGrowthEditor :form="form" />
+    </section>
   </section>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import WealthIncomeGrowthEditor from './WealthIncomeGrowthEditor.vue'
 
 const props = defineProps({
   form: { type: Object, required: true }
@@ -74,6 +94,17 @@ const incomeGrowthPct = computed({
   get: () => Number(((Number(props.form.profile.incomeGrowthRate) || 0) * 100).toFixed(1)),
   set: (value) => {
     props.form.profile.incomeGrowthRate = Math.max(0, Number(value) || 0) / 100
+  }
+})
+
+const incomeCurve = computed({
+  get: () => {
+    if (props.form.profile.incomeCurve === 'logarithmic') return 'logarithmic'
+    if (props.form.profile.incomeCurve === 'sigmoid') return 'sigmoid'
+    return 'exponential'
+  },
+  set: (value) => {
+    props.form.profile.incomeCurve = ['logarithmic', 'sigmoid'].includes(value) ? value : 'exponential'
   }
 })
 
@@ -153,7 +184,9 @@ const currentHousingStatus = computed({
 }
 
 .wealth-sheet__grid input,
-.wealth-sheet__grid select {
+.wealth-sheet__grid select,
+.wealth-sheet__subsection-grid select,
+.wealth-sheet__subsection-grid input {
   width: 100%;
   min-height: 3.35rem;
   padding: 0.8rem 0.95rem;
@@ -181,12 +214,37 @@ const currentHousingStatus = computed({
   color: #4f6887;
 }
 
+.wealth-sheet__subsection {
+  display: grid;
+  gap: 1rem;
+}
+
+.wealth-sheet__subsection-head h3 {
+  margin: 0.2rem 0 0;
+  font-size: 1.15rem;
+  color: #173050;
+}
+
+.wealth-sheet__subsection-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.wealth-sheet__subsection-grid label {
+  display: grid;
+  gap: 0.35rem;
+  color: #5b7192;
+  font-size: 0.84rem;
+}
+
 @media (max-width: 820px) {
   .wealth-sheet__header {
     flex-direction: column;
   }
 
-  .wealth-sheet__grid {
+  .wealth-sheet__grid,
+  .wealth-sheet__subsection-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -35,10 +35,22 @@
               v-for="allocation in allocationFields"
               :key="allocation.key"
               class="wealth-workbook__allocation"
+              :class="{ 'is-locked': isLocked(allocation.key) }"
             >
-              <span class="wealth-workbook__allocation-title">
-                <i class="wealth-workbook__allocation-swatch" :style="{ background: allocation.color }"></i>
-                {{ allocation.label }}
+              <span class="wealth-workbook__allocation-head">
+                <span class="wealth-workbook__allocation-title">
+                  <i class="wealth-workbook__allocation-swatch" :style="{ background: allocation.color }"></i>
+                  {{ allocation.label }}
+                </span>
+                <button
+                  type="button"
+                  class="wealth-workbook__lock-btn"
+                  :class="{ 'is-active': isLocked(allocation.key) }"
+                  :aria-pressed="isLocked(allocation.key)"
+                  @click.prevent="toggleLock(allocation.key)"
+                >
+                  {{ isLocked(allocation.key) ? 'Locked' : 'Lock' }}
+                </button>
               </span>
               <div class="wealth-workbook__allocation-controls">
                 <input
@@ -47,7 +59,8 @@
                   min="0"
                   max="100"
                   step="1"
-                  @input="setAllocation(allocation.key, $event.target.value)"
+                  :disabled="isLocked(allocation.key) && !hasUnlockedPeers(allocation.key)"
+                  @input="handleAllocationInput(allocation.key, $event)"
                 />
                 <input
                   :value="getAllocationPct(allocation.key)"
@@ -55,7 +68,8 @@
                   min="0"
                   max="100"
                   step="1"
-                  @input="setAllocation(allocation.key, $event.target.value)"
+                  :disabled="isLocked(allocation.key) && !hasUnlockedPeers(allocation.key)"
+                  @input="handleAllocationInput(allocation.key, $event)"
                 />
               </div>
             </label>
@@ -73,11 +87,11 @@
               <p>
                 {{ asset.lookbackYears }} year bootstrap window from {{ asset.startMonth }} to {{ asset.endMonth }}.
               </p>
-              <span>{{ asset.months }} historical months sampled with replacement.</span>
+              <span>{{ asset.months }} historical months in the bootstrap pool.</span>
             </article>
           </div>
           <p class="wealth-workbook__note">
-            Stock paths now bootstrap historical monthly total returns. Each simulated year compounds 12 random months from the selected asset history, and Bitcoin uses a shorter 4 year window than the other liquid assets.
+            {{ bootstrapSamplingNote }}
           </p>
         </template>
 
@@ -337,6 +351,13 @@
 import { computed } from 'vue'
 import SuburbSearchSelector from './SuburbSearchSelector.vue'
 import { getWealthBootstrapAssets } from '../../wealth/assetBootstrap.js'
+import {
+  getLockedWeightKeys,
+  isPortfolioWeightLocked,
+  portfolioAllocationFields as allocationFields,
+  setPortfolioAllocation,
+  togglePortfolioWeightLock
+} from '../../wealth/portfolioAllocation.js'
 
 const props = defineProps({
   form: { type: Object, required: true },
@@ -368,15 +389,19 @@ const availableSheets = computed(() => {
   return sheets
 })
 
-const allocationFields = [
-  { key: 'qqqWeight', label: 'US Stock - QQQ', color: '#2563eb' },
-  { key: 'asxWeight', label: 'AU Stocks - ASX200', color: '#16a34a' },
-  { key: 'bondWeight', label: 'Bonds', color: '#f59e0b' },
-  { key: 'cashWeight', label: 'High Interest Cash', color: '#475569' },
-  { key: 'bitcoinWeight', label: 'Bitcoin', color: '#f97316' }
-]
-
 const bootstrapAssets = getWealthBootstrapAssets()
+const bootstrapSamplingNote = computed(() => {
+  const method = props.form.portfolioConfig.bootstrapMethod === 'historical-monthly'
+    ? 'historical-monthly'
+    : 'historical-block'
+  const blockSizeMonths = Math.max(1, Math.round(Number(props.form.portfolioConfig.bootstrapBlockSizeMonths) || 3))
+
+  if (method === 'historical-monthly') {
+    return 'Stock paths bootstrap shared historical months across QQQ, ASX200, bonds, and cash so cross-asset moves stay aligned within each simulated year. Bitcoin still uses its shorter 4 year history.'
+  }
+
+  return `Stock paths bootstrap shared ${blockSizeMonths}-month historical blocks across QQQ, ASX200, bonds, and cash so crashes and momentum clusters stay intact within each simulated year. Bitcoin still uses its shorter 4 year history.`
+})
 
 function percentProxy(getter, setter) {
   return computed({
@@ -385,45 +410,33 @@ function percentProxy(getter, setter) {
   })
 }
 
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max)
-}
-
 function getAllocationPct(key) {
   return Math.round((Math.max(0, Number(props.form.portfolioConfig[key]) || 0) * 100))
 }
 
 function setAllocation(targetKey, value) {
-  const keys = allocationFields.map(field => field.key)
-  const nextWeight = clamp(Number(value) || 0, 0, 100) / 100
-  const otherKeys = keys.filter(key => key !== targetKey)
-  const otherValues = otherKeys.map(key => Math.max(0, Number(props.form.portfolioConfig[key]) || 0))
-  const otherTotal = otherValues.reduce((sum, weight) => sum + weight, 0)
-  const remainingWeight = 1 - nextWeight
+  setPortfolioAllocation(props.form.portfolioConfig, targetKey, value)
+}
 
-  props.form.portfolioConfig[targetKey] = nextWeight
+function handleAllocationInput(targetKey, event) {
+  setAllocation(targetKey, event?.target?.value)
 
-  if (remainingWeight <= 0) {
-    otherKeys.forEach((key) => {
-      props.form.portfolioConfig[key] = 0
-    })
-    return
+  if (event?.target) {
+    event.target.value = String(getAllocationPct(targetKey))
   }
+}
 
-  let assignedWeight = nextWeight
-  otherKeys.forEach((key, index) => {
-    const nextShare = otherTotal > 0
-      ? remainingWeight * (otherValues[index] / otherTotal)
-      : remainingWeight / otherKeys.length
+function toggleLock(key) {
+  togglePortfolioWeightLock(props.form.portfolioConfig, key)
+}
 
-    if (index === otherKeys.length - 1) {
-      props.form.portfolioConfig[key] = Math.max(0, 1 - assignedWeight)
-      return
-    }
+function isLocked(key) {
+  return isPortfolioWeightLocked(props.form.portfolioConfig, key)
+}
 
-    props.form.portfolioConfig[key] = nextShare
-    assignedWeight += nextShare
-  })
+function hasUnlockedPeers(key) {
+  const lockedKeys = new Set(getLockedWeightKeys(props.form.portfolioConfig))
+  return allocationFields.some(field => field.key !== key && !lockedKeys.has(field.key))
 }
 
 const vacancyRatePct = percentProxy(() => props.form.propertyConfig.vacancyRate, value => { props.form.propertyConfig.vacancyRate = value })
@@ -610,6 +623,22 @@ function formatPercent(value) {
   gap: 0.45rem;
   color: #5b7192;
   font-size: 0.84rem;
+  padding: 0.85rem;
+  border-radius: 18px;
+  border: 1px solid rgba(154, 174, 204, 0.18);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.wealth-workbook__allocation.is-locked {
+  border-color: rgba(37, 99, 235, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+}
+
+.wealth-workbook__allocation-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .wealth-workbook__allocation-title {
@@ -623,6 +652,23 @@ function formatPercent(value) {
   height: 0.72rem;
   border-radius: 999px;
   flex: 0 0 auto;
+}
+
+.wealth-workbook__lock-btn {
+  border: 1px solid rgba(154, 174, 204, 0.24);
+  border-radius: 999px;
+  padding: 0.38rem 0.72rem;
+  background: rgba(244, 248, 255, 0.96);
+  color: #355474;
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.wealth-workbook__lock-btn.is-active {
+  border-color: rgba(37, 99, 235, 0.28);
+  background: rgba(219, 234, 254, 0.92);
+  color: #1d4ed8;
 }
 
 .wealth-workbook__allocation-controls {
@@ -664,6 +710,11 @@ function formatPercent(value) {
 .wealth-workbook__allocation-controls input[type='range'] {
   min-height: 0;
   padding-inline: 0;
+}
+
+.wealth-workbook__allocation-controls input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .wealth-workbook__toggle {

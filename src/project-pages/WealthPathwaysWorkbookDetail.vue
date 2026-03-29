@@ -32,9 +32,7 @@
         <template v-else-if="currentStage === 'interests'">
           <WealthInterestStep
             :scenario-selection="form.scenarioSelection"
-            :portfolio-config="form.portfolioConfig"
-            @toggle-stocks="toggleStocks"
-            @toggle-housing="toggleHousing"
+            @select-mode="selectComparisonMode"
           />
           <div class="wealth-stage-footer">
             <button type="button" class="wealth-secondary-btn" @click="currentStage = 'introduction'">Back</button>
@@ -51,9 +49,6 @@
             <div class="wealth-banner__chips">
               <span v-if="form.scenarioSelection.includeStocks" class="wealth-pill">Stocks</span>
               <span v-if="form.scenarioSelection.includeHousing" class="wealth-pill wealth-pill--housing">Housing</span>
-              <span v-if="form.scenarioSelection.stockBaselineKey && form.scenarioSelection.includeHousing && form.scenarioSelection.includeStocks" class="wealth-pill wealth-pill--baseline">
-                Baseline {{ strategyMeta[form.scenarioSelection.stockBaselineKey]?.label || 'Portfolio Mix' }}
-              </span>
             </div>
           </div>
 
@@ -118,6 +113,7 @@ import {
   getWealthStrategyMeta,
   resolveScenarioSelection,
   wealthDefaultStockBaselineKey,
+  wealthHousingStrategyKeys,
   wealthStockStrategyKeys,
   wealthStrategyOrder,
   wealthVacancyRate
@@ -137,6 +133,11 @@ const stageDefinitions = [
   { key: 'inputs', label: 'Inputs' },
   { key: 'results', label: 'Results' }
 ]
+const comparisonModeScenarioKeys = {
+  portfolioDeepDive: [...wealthStockStrategyKeys],
+  propertyVsStocks: [wealthDefaultStockBaselineKey, ...wealthHousingStrategyKeys],
+  propertyInvestmentVsLiving: [...wealthHousingStrategyKeys]
+}
 
 const housePropertyCostKeys = ['councilRates', 'waterRates', 'insurance', 'maintenance', 'borrowingExpensesTotal', 'otherDeductibleExpensesAnnual']
 const apartmentPropertyCostKeys = ['councilRates', 'waterRates', 'insurance', 'maintenance', 'strata', 'borrowingExpensesTotal', 'otherDeductibleExpensesAnnual']
@@ -270,37 +271,52 @@ function initialisePropertyCosts() {
 initialisePropertyCosts()
 
 function syncScenarioSelection(nextPatch = {}) {
-  const draft = resolveScenarioSelection({
+  const nextSelectedScenarioKeys = Array.isArray(nextPatch.selectedScenarioKeys)
+    ? nextPatch.selectedScenarioKeys
+    : form.scenarioSelection.selectedScenarioKeys
+  const selectedScenarioKeys = wealthStrategyOrder.filter(key => nextSelectedScenarioKeys.includes(key))
+
+  if (!selectedScenarioKeys.length) return
+
+  const includeStocks = selectedScenarioKeys.some(key => wealthStockStrategyKeys.includes(key))
+  const includeHousing = selectedScenarioKeys.some(key => wealthHousingStrategyKeys.includes(key))
+  const preferredBaselineKey = nextPatch.stockBaselineKey ?? form.scenarioSelection.stockBaselineKey
+  let stockBaselineKey = null
+
+  if (includeStocks) {
+    const selectedStockKeys = wealthStockStrategyKeys.filter(key => selectedScenarioKeys.includes(key))
+    if (preferredBaselineKey && selectedStockKeys.includes(preferredBaselineKey)) {
+      stockBaselineKey = preferredBaselineKey
+    } else if (selectedStockKeys.includes(wealthDefaultStockBaselineKey)) {
+      stockBaselineKey = wealthDefaultStockBaselineKey
+    } else {
+      stockBaselineKey = selectedStockKeys[0] || null
+    }
+  }
+
+  form.scenarioSelection = resolveScenarioSelection({
     ...form.scenarioSelection,
-    ...nextPatch
+    ...nextPatch,
+    includeStocks,
+    includeHousing,
+    selectedScenarioKeys,
+    stockBaselineKey
   })
-
-  draft.selectedScenarioKeys = wealthStrategyOrder.filter((key) =>
-    (draft.includeStocks && wealthStockStrategyKeys.includes(key)) ||
-    (draft.includeHousing && !wealthStockStrategyKeys.includes(key))
-  )
-
-  if (!draft.selectedScenarioKeys.length) {
-    draft.includeStocks = true
-    draft.selectedScenarioKeys = [...wealthStockStrategyKeys]
-  }
-
-  if (!draft.stockBaselineKey || !draft.selectedScenarioKeys.includes(draft.stockBaselineKey)) {
-    draft.stockBaselineKey = draft.selectedScenarioKeys.find(key => wealthStockStrategyKeys.includes(key)) || wealthDefaultStockBaselineKey
-  }
-
-  form.scenarioSelection = draft
 }
 
-function toggleStocks() {
-  if (form.scenarioSelection.includeStocks && !form.scenarioSelection.includeHousing) return
-  syncScenarioSelection({ includeStocks: !form.scenarioSelection.includeStocks })
+function selectComparisonMode(modeKey) {
+  const selectedScenarioKeys = comparisonModeScenarioKeys[modeKey] || comparisonModeScenarioKeys.propertyVsStocks
+  const stockBaselineKey = selectedScenarioKeys.includes(wealthDefaultStockBaselineKey)
+    ? wealthDefaultStockBaselineKey
+    : null
+
+  syncScenarioSelection({
+    selectedScenarioKeys,
+    stockBaselineKey
+  })
 }
 
-function toggleHousing() {
-  if (form.scenarioSelection.includeHousing && !form.scenarioSelection.includeStocks) return
-  syncScenarioSelection({ includeHousing: !form.scenarioSelection.includeHousing })
-}
+selectComparisonMode('propertyVsStocks')
 
 function goToInputs() {
   void enterWorkspace()
@@ -665,11 +681,6 @@ onBeforeUnmount(() => {
 .wealth-pill--housing {
   background: rgba(220, 252, 231, 0.86);
   color: #166534;
-}
-
-.wealth-pill--baseline {
-  background: rgba(254, 249, 195, 0.9);
-  color: #854d0e;
 }
 
 .wealth-primary-btn,

@@ -32,34 +32,36 @@
     <section class="wealth-results__kpis">
       <article class="wealth-results__kpi card">
         <p class="wealth-results__kpi-kicker">Best median</p>
-        <h3>{{ dashboard.kpis.bestMedian?.label || 'No result' }}</h3>
-        <p>{{ dashboard.kpis.bestMedian ? `${dashboard.kpis.bestMedian.summary.finalMedianDisplay} median sell-down result.` : 'Run the model to populate this card.' }}</p>
+        <h3>{{ visibleKpis.bestMedian?.label || (noVisibleStrategies ? 'No visible strategy' : 'No result') }}</h3>
+        <p>{{ visibleKpis.bestMedian ? `${visibleKpis.bestMedian.summary.finalMedianDisplay} median sell-down result.` : noVisibleStrategies ? 'Use the strategy visibility chips above to show at least one strategy.' : 'Run the model to populate this card.' }}</p>
       </article>
       <article class="wealth-results__kpi card">
         <p class="wealth-results__kpi-kicker">Strongest downside</p>
-        <h3>{{ dashboard.kpis.downsideLeader?.label || 'No result' }}</h3>
-        <p>{{ dashboard.kpis.downsideLeader ? `${formatCurrency(dashboard.kpis.downsideLeader.summary.downsideRisk)} at the 10th percentile.` : 'Run the model to populate this card.' }}</p>
+        <h3>{{ visibleKpis.downsideLeader?.label || (noVisibleStrategies ? 'No visible strategy' : 'No result') }}</h3>
+        <p>{{ visibleKpis.downsideLeader ? `${formatCurrency(visibleKpis.downsideLeader.summary.downsideRisk)} at the 10th percentile.` : noVisibleStrategies ? 'Use the strategy visibility chips above to show at least one strategy.' : 'Run the model to populate this card.' }}</p>
       </article>
       <article class="wealth-results__kpi card">
         <p class="wealth-results__kpi-kicker">First to beat baseline</p>
-        <h3>{{ dashboard.kpis.firstHousingBeatBaseline?.label || 'No housing overtake' }}</h3>
-        <p>{{ dashboard.kpis.firstHousingBeatBaseline ? `Beats ${dashboard.baseline?.label} in year ${dashboard.kpis.firstHousingBeatBaseline.breakevenYearVsBaseline}.` : 'No housing path overtakes the selected portfolio baseline on the median track.' }}</p>
+        <h3>{{ visibleKpis.firstHousingBeatBaseline?.label || (noVisibleStrategies ? 'No visible strategy' : 'No housing overtake') }}</h3>
+        <p>{{ visibleKpis.firstHousingBeatBaseline ? `Beats ${dashboard.baseline?.label} in year ${visibleKpis.firstHousingBeatBaseline.breakevenYearVsBaseline}.` : noVisibleStrategies ? 'Use the strategy visibility chips above to show at least one strategy.' : 'No housing path overtakes the selected portfolio baseline on the median track.' }}</p>
       </article>
       <article class="wealth-results__kpi card">
         <p class="wealth-results__kpi-kicker">Widest variability</p>
-        <h3>{{ dashboard.kpis.variabilityLeader?.label || 'No result' }}</h3>
-        <p>{{ dashboard.kpis.variabilityLeader ? `${formatCurrency(dashboard.kpis.variabilityLeader.variabilitySpread)} spread between P10 and P90 at the horizon.` : 'Run the model to populate this card.' }}</p>
+        <h3>{{ visibleKpis.variabilityLeader?.label || (noVisibleStrategies ? 'No visible strategy' : 'No result') }}</h3>
+        <p>{{ visibleKpis.variabilityLeader ? `${formatCurrency(visibleKpis.variabilityLeader.variabilitySpread)} spread between P10 and P90 at the horizon.` : noVisibleStrategies ? 'Use the strategy visibility chips above to show at least one strategy.' : 'Run the model to populate this card.' }}</p>
       </article>
     </section>
 
     <div class="wealth-results__narratives card">
       <p class="wealth-results__kpi-kicker">Synthesized takeaways</p>
-      <p v-for="line in dashboard.narratives" :key="line" class="wealth-results__copy">{{ line }}</p>
+      <p v-for="line in visibleNarratives" :key="line" class="wealth-results__copy">{{ line }}</p>
+      <p v-if="!visibleNarratives.length && filteredStrategies.length" class="wealth-results__copy">All strategies in this view are currently hidden.</p>
       <p v-if="resultsStale" class="wealth-results__stale">Inputs changed since the last run. Recalculate to refresh the dashboard.</p>
       <p v-else-if="loading" class="wealth-results__stale">Simulation is running.</p>
     </div>
 
-    <div class="wealth-results__chips">
+    <div class="wealth-results__visibility card">
+      <p class="wealth-results__kpi-kicker">Strategy visibility</p>
       <button
         v-for="strategy in filteredStrategies"
         :key="strategy.key"
@@ -73,7 +75,7 @@
       </button>
     </div>
 
-    <div class="wealth-results__grid">
+    <div class="wealth-results__chart-block">
       <WealthLineChart
         class="wealth-results__chart"
         :title="metricMeta.title"
@@ -81,33 +83,33 @@
         kicker="Scenario comparison"
         :series="series"
         :muted-series-ids="mutedStrategyKeys"
-        @toggle-series="$emit('toggle-series', $event)"
       />
-
-      <section class="wealth-results__readout card">
-        <p class="wealth-results__kpi-kicker">Scenario readout</p>
-        <div class="wealth-results__list">
-          <article v-for="strategy in filteredStrategies" :key="strategy.key" class="wealth-results__item">
-            <div class="wealth-results__item-top">
-              <div class="wealth-results__item-title">
-                <span class="wealth-results__chip-dot" :style="{ background: strategy.color }"></span>
-                <strong>{{ strategy.label }}</strong>
-              </div>
-              <span>{{ strategy.summary.finalMedianDisplay }}</span>
-            </div>
-            <p>{{ strategy.narrative }}</p>
-            <div class="wealth-results__item-meta">
-              <span>Downside {{ formatCurrency(strategy.summary.downsideRisk) }}</span>
-              <span v-if="strategy.group === 'housing'">Vs baseline {{ formatSignedCurrency(strategy.deltaVsBaseline) }}</span>
-              <span>Variability {{ formatCurrency(strategy.variabilitySpread) }}</span>
-              <span v-if="strategy.purchaseYear !== null">Purchase year {{ strategy.purchaseYear }}</span>
-              <span v-if="strategy.group === 'housing' && strategy.breakevenYearVsBaseline !== null">Beats baseline in year {{ strategy.breakevenYearVsBaseline }}</span>
-              <span>Max median cash deficit {{ formatCurrency(strategy.summary.maxMedianCashDeficit) }}</span>
-            </div>
-          </article>
-        </div>
-      </section>
     </div>
+
+    <section class="wealth-results__readout card">
+      <p class="wealth-results__kpi-kicker">Scenario readout</p>
+      <div class="wealth-results__list">
+        <article v-for="strategy in visibleStrategies" :key="strategy.key" class="wealth-results__item">
+          <div class="wealth-results__item-top">
+            <div class="wealth-results__item-title">
+              <span class="wealth-results__chip-dot" :style="{ background: strategy.color }"></span>
+              <strong>{{ strategy.label }}</strong>
+            </div>
+            <span>{{ strategy.summary.finalMedianDisplay }}</span>
+          </div>
+          <p>{{ strategy.narrative }}</p>
+          <div class="wealth-results__item-meta">
+            <span>Downside {{ formatCurrency(strategy.summary.downsideRisk) }}</span>
+            <span v-if="strategy.group === 'housing'">Vs baseline {{ formatSignedCurrency(strategy.deltaVsBaseline) }}</span>
+            <span>Variability {{ formatCurrency(strategy.variabilitySpread) }}</span>
+            <span v-if="strategy.purchaseYear !== null">Purchase year {{ strategy.purchaseYear }}</span>
+            <span v-if="strategy.group === 'housing' && strategy.breakevenYearVsBaseline !== null">Beats baseline in year {{ strategy.breakevenYearVsBaseline }}</span>
+            <span>Max median cash deficit {{ formatCurrency(strategy.summary.maxMedianCashDeficit) }}</span>
+          </div>
+        </article>
+        <p v-if="!visibleStrategies.length && filteredStrategies.length" class="wealth-results__copy">Use the strategy visibility chips above to show scenarios here.</p>
+      </div>
+    </section>
 
     <WealthCompositionBars
       v-if="visibleCompositionRows.length"
@@ -155,6 +157,14 @@ const filteredStrategies = computed(() => {
   return props.dashboard.strategies.filter(strategy => strategy.group === props.groupFilter)
 })
 
+const visibleStrategies = computed(() =>
+  filteredStrategies.value.filter(strategy => !props.mutedStrategyKeys.includes(strategy.key))
+)
+
+const noVisibleStrategies = computed(() =>
+  !visibleStrategies.value.length && filteredStrategies.value.length > 0
+)
+
 const metricMeta = computed(() => {
   if (props.metric === 'inflationAdjusted') {
     return {
@@ -184,8 +194,32 @@ const series = computed(() =>
   buildDashboardSeries(filteredStrategies.value, props.metric, props.inflationRate)
 )
 
+const visibleKpis = computed(() => {
+  const strategies = visibleStrategies.value
+  const housingStrategies = strategies.filter(strategy => strategy.group === 'housing')
+
+  return {
+    bestMedian: strategies.reduce((best, strategy) =>
+      !best || strategy.summary.finalMedianNetWorth > best.summary.finalMedianNetWorth ? strategy : best
+    , null),
+    downsideLeader: strategies.reduce((best, strategy) =>
+      !best || strategy.summary.downsideRisk > best.summary.downsideRisk ? strategy : best
+    , null),
+    variabilityLeader: strategies.reduce((best, strategy) =>
+      !best || strategy.variabilitySpread > best.variabilitySpread ? strategy : best
+    , null),
+    firstHousingBeatBaseline: housingStrategies
+      .filter(strategy => strategy.breakevenYearVsBaseline !== null)
+      .sort((left, right) => left.breakevenYearVsBaseline - right.breakevenYearVsBaseline)[0] || null
+  }
+})
+
+const visibleNarratives = computed(() =>
+  visibleStrategies.value.slice(0, 3).map(strategy => strategy.narrative)
+)
+
 const visibleCompositionRows = computed(() => {
-  const visibleKeys = new Set(filteredStrategies.value.map(strategy => strategy.key))
+  const visibleKeys = new Set(visibleStrategies.value.map(strategy => strategy.key))
   return props.dashboard.compositionRows.filter(row => visibleKeys.has(row.key))
 })
 
@@ -213,7 +247,7 @@ function formatSignedCurrency(value) {
 
 .wealth-results__toolbar,
 .wealth-results__controls,
-.wealth-results__chips,
+.wealth-results__visibility,
 .wealth-results__item-top,
 .wealth-results__item-meta {
   display: flex;
@@ -223,6 +257,10 @@ function formatSignedCurrency(value) {
 
 .wealth-results__toolbar {
   justify-content: space-between;
+  align-items: end;
+}
+
+.wealth-results__controls {
   align-items: end;
 }
 
@@ -285,6 +323,15 @@ function formatSignedCurrency(value) {
   border-color: rgba(45, 118, 212, 0.3);
 }
 
+.wealth-results__visibility {
+  padding: 1rem;
+  align-items: center;
+}
+
+.wealth-results__visibility .wealth-results__kpi-kicker {
+  margin-right: 0.35rem;
+}
+
 .wealth-results__kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -320,6 +367,12 @@ function formatSignedCurrency(value) {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+  transition: opacity 140ms ease, transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.wealth-results__chip:hover,
+.wealth-results__filter:hover {
+  transform: translateY(-1px);
 }
 
 .wealth-results__chip.is-muted {
@@ -333,11 +386,9 @@ function formatSignedCurrency(value) {
   flex: 0 0 auto;
 }
 
-.wealth-results__grid {
+.wealth-results__chart-block {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
-  gap: 1rem;
-  align-items: start;
+  gap: 1.2rem;
 }
 
 .wealth-results__readout {
@@ -375,7 +426,7 @@ function formatSignedCurrency(value) {
 
 @media (max-width: 1080px) {
   .wealth-results__kpis,
-  .wealth-results__grid {
+  .wealth-results__chart-block {
     grid-template-columns: 1fr;
   }
 }

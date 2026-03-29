@@ -39,6 +39,17 @@ describe('wealth simulator', () => {
     expect(result.strategyOrder).toEqual(wealthHousingStrategyKeys)
   })
 
+  it('supports a mixed custom subset of stock and housing scenarios', () => {
+    const request = cloneSimulationRequest()
+    request.simulationSettings.iterations = 120
+    request.scenarioSelection.selectedScenarioKeys = ['stockPortfolio', 'buyHouseHome']
+
+    const result = simulateWealthPathways(request)
+
+    expect(Object.keys(result.strategies)).toEqual(['stockPortfolio', 'buyHouseHome'])
+    expect(result.strategyOrder).toEqual(['stockPortfolio', 'buyHouseHome'])
+  })
+
   it('keeps the standalone stock scenarios distinct', () => {
     const request = cloneSimulationRequest()
     request.simulationSettings.iterations = 120

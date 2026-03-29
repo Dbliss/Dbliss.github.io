@@ -6,142 +6,129 @@
         <h3>{{ title }}</h3>
         <p v-if="subtitle" class="wealth-chart__subtitle">{{ subtitle }}</p>
       </div>
-
-      <div class="wealth-chart__legend">
-        <button
-          v-for="item in series"
-          :key="item.id"
-          type="button"
-          class="wealth-chart__legend-item"
-          :class="{ 'is-active': !isMuted(item.id), 'is-muted': isMuted(item.id) }"
-          :aria-pressed="String(!isMuted(item.id))"
-          @click="$emit('toggle-series', item.id)"
-        >
-          <span class="wealth-chart__dot" :style="{ background: item.color }"></span>
-          <span>{{ item.label }}</span>
-        </button>
-      </div>
     </div>
 
-    <p v-if="series.length > 1" class="wealth-chart__hint">
-      Click a scenario to grey it out. Click it again to bring it back into focus.
-    </p>
-
-    <div
-      ref="bodyRef"
-      class="wealth-chart__body"
-      @pointerleave="hoveredYear = null"
-    >
-      <svg
-        v-if="activeSeries.length"
-        class="wealth-chart__svg"
-        :viewBox="`0 0 ${viewWidth} ${viewHeight}`"
-        preserveAspectRatio="xMidYMid meet"
-        role="img"
-        :aria-label="title"
-        @pointermove="onPointerMove"
+    <div class="wealth-chart__layout">
+      <div
+        ref="bodyRef"
+        class="wealth-chart__body"
+        @pointerleave="hoveredYear = null"
       >
-        <rect
-          :x="padding.left"
-          :y="padding.top"
-          :width="viewWidth - padding.left - padding.right"
-          :height="viewHeight - padding.top - padding.bottom"
-          rx="20"
-          ry="20"
-          class="wealth-chart__plot-bg"
-        />
+        <svg
+          v-if="activeSeries.length"
+          class="wealth-chart__svg"
+          :viewBox="`0 0 ${viewWidth} ${viewHeight}`"
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          :aria-label="title"
+          @pointermove="onPointerMove"
+        >
+          <rect
+            :x="padding.left"
+            :y="padding.top"
+            :width="viewWidth - padding.left - padding.right"
+            :height="viewHeight - padding.top - padding.bottom"
+            rx="20"
+            ry="20"
+            class="wealth-chart__plot-bg"
+          />
 
-        <g v-for="tick in yTicks" :key="`grid-${tick.value}`">
+          <g v-for="tick in yTicks" :key="`grid-${tick.value}`">
+            <line
+              :x1="padding.left"
+              :x2="viewWidth - padding.right"
+              :y1="yPos(tick.value)"
+              :y2="yPos(tick.value)"
+              class="wealth-chart__grid"
+            />
+            <text
+              :x="padding.left - 12"
+              :y="yPos(tick.value) + 5"
+              class="wealth-chart__axis wealth-chart__axis--y"
+            >
+              {{ tick.label }}
+            </text>
+          </g>
+
+          <g v-for="year in yearTicks" :key="`year-${year}`">
+            <line
+              :x1="xPos(year)"
+              :x2="xPos(year)"
+              :y1="padding.top"
+              :y2="viewHeight - padding.bottom"
+              class="wealth-chart__grid wealth-chart__grid--vertical"
+            />
+            <text
+              :x="xPos(year)"
+              :y="viewHeight - 12"
+              text-anchor="middle"
+              class="wealth-chart__axis"
+            >
+              Y{{ year }}
+            </text>
+          </g>
+
           <line
+            v-if="crossesZero"
             :x1="padding.left"
             :x2="viewWidth - padding.right"
-            :y1="yPos(tick.value)"
-            :y2="yPos(tick.value)"
-            class="wealth-chart__grid"
-          />
-          <text
-            :x="padding.left - 12"
-            :y="yPos(tick.value) + 5"
-            class="wealth-chart__axis wealth-chart__axis--y"
-          >
-            {{ tick.label }}
-          </text>
-        </g>
-
-        <g v-for="year in yearTicks" :key="`year-${year}`">
-          <line
-            :x1="xPos(year)"
-            :x2="xPos(year)"
-            :y1="padding.top"
-            :y2="viewHeight - padding.bottom"
-            class="wealth-chart__grid wealth-chart__grid--vertical"
-          />
-          <text
-            :x="xPos(year)"
-            :y="viewHeight - 12"
-            text-anchor="middle"
-            class="wealth-chart__axis"
-          >
-            Y{{ year }}
-          </text>
-        </g>
-
-        <line
-          v-if="crossesZero"
-          :x1="padding.left"
-          :x2="viewWidth - padding.right"
-          :y1="yPos(0)"
-          :y2="yPos(0)"
-          class="wealth-chart__zero"
-        />
-
-        <g v-for="item in renderedSeries" :key="item.id">
-          <path :d="item.bandPath" :fill="item.bandFill" class="wealth-chart__band" />
-          <path :d="item.midPath" :stroke="item.lineColor" class="wealth-chart__line" />
-        </g>
-
-        <g v-if="hoveredYear !== null">
-          <line
-            :x1="xPos(hoveredYear)"
-            :x2="xPos(hoveredYear)"
-            :y1="padding.top"
-            :y2="viewHeight - padding.bottom"
-            class="wealth-chart__hover-line"
+            :y1="yPos(0)"
+            :y2="yPos(0)"
+            class="wealth-chart__zero"
           />
 
-          <g v-for="point in hoveredPoints" :key="`${point.id}-${hoveredYear}`">
-            <circle
-              :cx="xPos(hoveredYear)"
-              :cy="yPos(point.mid)"
-              r="5.5"
-              :fill="point.color"
-              class="wealth-chart__hover-dot"
-            />
+          <g v-for="item in renderedSeries" :key="item.id">
+            <path :d="item.bandPath" :fill="item.bandFill" class="wealth-chart__band" />
+            <path :d="item.midPath" :stroke="item.lineColor" class="wealth-chart__line" />
           </g>
-        </g>
-      </svg>
 
-      <div
-        v-if="hoveredYear !== null && hoveredPoints.length"
-        class="wealth-chart__tooltip"
-        :style="tooltipStyle"
-      >
-        <div class="wealth-chart__tooltip-title">Year {{ hoveredYear }}</div>
-        <div v-for="point in hoveredPoints" :key="point.id" class="wealth-chart__tooltip-row">
-          <div class="wealth-chart__tooltip-column">
-            <span class="wealth-chart__tooltip-label">
-              <i class="wealth-chart__tooltip-swatch" :style="{ background: point.color }"></i>
-              {{ point.label }}
-            </span>
-            <span class="wealth-chart__tooltip-stat">P10 {{ formatShortCurrency(point.low) }}</span>
-            <span class="wealth-chart__tooltip-stat">P50 {{ formatShortCurrency(point.mid) }}</span>
-            <span class="wealth-chart__tooltip-stat">P90 {{ formatShortCurrency(point.high) }}</span>
-          </div>
-        </div>
+          <g v-if="displayYear !== null">
+            <line
+              :x1="xPos(displayYear)"
+              :x2="xPos(displayYear)"
+              :y1="padding.top"
+              :y2="viewHeight - padding.bottom"
+              class="wealth-chart__hover-line"
+            />
+
+            <g v-for="point in displayPoints" :key="`${point.id}-${displayYear}`">
+              <circle
+                :cx="xPos(displayYear)"
+                :cy="yPos(point.mid)"
+                r="5.5"
+                :fill="point.color"
+                class="wealth-chart__hover-dot"
+              />
+            </g>
+          </g>
+        </svg>
+
+        <p v-if="series.length && !activeSeries.length" class="wealth-chart__empty">All scenarios are currently greyed out.</p>
+        <p v-else-if="!series.length" class="wealth-chart__empty">Simulation results will appear here once the calculator runs.</p>
       </div>
 
-      <p v-else-if="series.length && !activeSeries.length" class="wealth-chart__empty">All scenarios are currently greyed out.</p>
-      <p v-else-if="!series.length" class="wealth-chart__empty">Simulation results will appear here once the calculator runs.</p>
+      <aside v-if="activeSeries.length && displayYear !== null" class="wealth-chart__side card">
+        <div class="wealth-chart__side-header">
+          <p class="wealth-chart__kicker">Hovered values</p>
+          <h4>Year {{ displayYear }}</h4>
+        </div>
+        <div class="wealth-chart__side-list">
+          <div v-for="point in displayPoints" :key="point.id" class="wealth-chart__side-row">
+            <div class="wealth-chart__side-top">
+              <span class="wealth-chart__tooltip-label">
+                <i class="wealth-chart__tooltip-swatch" :style="{ background: point.color }"></i>
+                {{ point.label }}
+              </span>
+              <strong>{{ formatShortCurrency(point.mid) }}</strong>
+            </div>
+            <div class="wealth-chart__side-stats">
+              <span>P10 {{ formatShortCurrency(point.low) }}</span>
+              <span>P50 {{ formatShortCurrency(point.mid) }}</span>
+              <span>P90 {{ formatShortCurrency(point.high) }}</span>
+            </div>
+          </div>
+        </div>
+      </aside>
     </div>
   </section>
 </template>
@@ -164,10 +151,8 @@ const props = defineProps({
   }
 })
 
-defineEmits(['toggle-series'])
-
-const viewWidth = 920
-const viewHeight = 520
+const viewWidth = 1120
+const viewHeight = 760
 const padding = {
   top: 28,
   right: 36,
@@ -200,17 +185,22 @@ const valueDomain = computed(() => {
   const values = activeSeries.value.flatMap(item =>
     item.points.flatMap(point => [point.low, point.mid, point.high])
   )
-  const min = values.length ? Math.min(0, ...values) : 0
+  const min = values.length ? Math.min(...values) : 0
   const max = values.length ? Math.max(...values) : 1
   if (min === max) return { min: min - 1, max: max + 1 }
   return { min, max }
 })
 
-const hoveredPoints = computed(() => {
-  if (hoveredYear.value === null) return []
+const displayYear = computed(() => {
+  if (hoveredYear.value !== null) return hoveredYear.value
+  return allYears.value.length ? allYears.value[allYears.value.length - 1] : null
+})
+
+const displayPoints = computed(() => {
+  if (displayYear.value === null) return []
   return activeSeries.value
     .map(item => {
-      const point = item.points.find(candidate => candidate.year === hoveredYear.value)
+      const point = item.points.find(candidate => candidate.year === displayYear.value)
       return point
         ? {
             ...point,
@@ -221,16 +211,7 @@ const hoveredPoints = computed(() => {
         : null
     })
     .filter(Boolean)
-})
-
-const tooltipStyle = computed(() => {
-  if (hoveredYear.value === null) return {}
-  const xRatio = xPos(hoveredYear.value) / viewWidth
-  const left = clamp(xRatio * 100, 14, 80)
-  return {
-    left: `${left}%`,
-    top: '14px'
-  }
+    .sort((left, right) => right.mid - left.mid)
 })
 
 const crossesZero = computed(() =>
@@ -343,47 +324,17 @@ function onPointerMove(event) {
   font-size: 0.9rem;
 }
 
-.wealth-chart__legend {
-  display: flex;
-  gap: 0.65rem;
-  flex-wrap: wrap;
-}
-
-.wealth-chart__legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.45rem 0.7rem;
-  border-radius: 999px;
-  border: 1px solid rgba(154, 174, 204, 0.28);
-  background: rgba(255, 255, 255, 0.72);
-  color: #27415f;
-  cursor: pointer;
-  transition: transform 120ms ease, opacity 120ms ease, border-color 120ms ease;
-}
-
-.wealth-chart__legend-item.is-active {
-  border-color: rgba(62, 117, 187, 0.45);
-}
-
-.wealth-chart__legend-item.is-muted {
-  opacity: 0.45;
-}
-
-.wealth-chart__legend-item:hover {
-  transform: translateY(-1px);
-}
-
-.wealth-chart__dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 999px;
+.wealth-chart__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(260px, 0.7fr);
+  gap: 1rem;
+  align-items: stretch;
 }
 
 .wealth-chart__body {
   position: relative;
-  aspect-ratio: 16 / 8;
-  min-height: 320px;
+  aspect-ratio: 16 / 10;
+  min-height: 560px;
   padding: 0.2rem 0 0;
 }
 
@@ -446,35 +397,39 @@ function onPointerMove(event) {
   stroke-linejoin: round;
 }
 
-.wealth-chart__tooltip {
-  position: absolute;
-  z-index: 2;
-  min-width: 180px;
-  padding: 0.8rem 0.9rem;
-  border-radius: 16px;
+.wealth-chart__side {
+  display: grid;
+  align-content: start;
+  gap: 0.9rem;
+  padding: 1rem;
   border: 1px solid rgba(154, 174, 204, 0.28);
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 18px 40px rgba(73, 100, 138, 0.18);
-  transform: translateX(-50%);
+  background: rgba(247, 250, 255, 0.94);
 }
 
-.wealth-chart__tooltip-title {
-  margin-bottom: 0.45rem;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: #5a7497;
+.wealth-chart__side-header h4 {
+  margin: 0.2rem 0 0;
+  font-size: 1.05rem;
 }
 
-.wealth-chart__tooltip-row {
+.wealth-chart__side-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.wealth-chart__side-row {
   display: grid;
   gap: 0.35rem;
-  color: #173050;
-  font-size: 0.88rem;
+  padding: 0.8rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(154, 174, 204, 0.18);
 }
 
-.wealth-chart__tooltip-row + .wealth-chart__tooltip-row {
-  margin-top: 0.4rem;
+.wealth-chart__side-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
 }
 
 .wealth-chart__tooltip-label {
@@ -483,12 +438,10 @@ function onPointerMove(event) {
   gap: 0.45rem;
 }
 
-.wealth-chart__tooltip-column {
-  display: grid;
-  gap: 0.2rem;
-}
-
-.wealth-chart__tooltip-stat {
+.wealth-chart__side-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
   color: #526b8d;
   font-size: 0.8rem;
 }
@@ -500,17 +453,17 @@ function onPointerMove(event) {
 }
 
 @media (max-width: 720px) {
+  .wealth-chart__layout {
+    grid-template-columns: 1fr;
+  }
+
   .wealth-chart__body {
     aspect-ratio: 4 / 3;
-    min-height: 280px;
+    min-height: 420px;
   }
 
   .wealth-chart__svg {
     overflow: hidden;
-  }
-
-  .wealth-chart__tooltip {
-    min-width: 150px;
   }
 }
 </style>

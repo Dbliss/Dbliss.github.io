@@ -76,6 +76,7 @@ export function buildDashboardModel(result, requestedBaselineKey, inflationRate 
         inflationRate
       }
     })
+    .sort((left, right) => right.summary.finalMedianNetWorth - left.summary.finalMedianNetWorth)
 
   const housingStrategies = strategies.filter(strategy => strategy.group === 'housing')
 

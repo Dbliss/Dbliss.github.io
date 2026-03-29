@@ -28,7 +28,7 @@
         <template v-if="activeSheet === 'stock'">
           <div class="wealth-workbook__panel-head">
             <h3>Stock assumptions</h3>
-            <p>The portfolio baseline uses this live sleeve mix, while the single-asset stock scenarios still show the pure QQQ, ASX200, bond, cash, and bitcoin tracks.</p>
+            <p>Configure the Portfolio Mix sleeve allocation here. The single-asset stock scenarios still run as pure QQQ, ASX200, bonds, high-interest cash, and bitcoin tracks.</p>
           </div>
           <div class="wealth-workbook__allocation-grid">
             <label

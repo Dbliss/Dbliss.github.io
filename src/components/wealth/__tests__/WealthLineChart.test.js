@@ -25,20 +25,19 @@ const series = [
 ]
 
 describe('WealthLineChart', () => {
-  it('emits a toggle event when clicking a legend item', async () => {
+  it('shows an empty state when all scenarios are muted', () => {
     const wrapper = mount(WealthLineChart, {
       props: {
         title: 'Net worth',
-        series
+        series,
+        mutedSeriesIds: ['rentInvest', 'buyHouse']
       }
     })
 
-    await wrapper.find('button').trigger('click')
-
-    expect(wrapper.emitted('toggle-series')?.[0]).toEqual(['rentInvest'])
+    expect(wrapper.text()).toContain('All scenarios are currently greyed out.')
   })
 
-  it('shows a tooltip on hover with values for the nearest year', async () => {
+  it('shows the side panel values for the nearest hovered year', async () => {
     const wrapper = mount(WealthLineChart, {
       props: {
         title: 'Net worth',

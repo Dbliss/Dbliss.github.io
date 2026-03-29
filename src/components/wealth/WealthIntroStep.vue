@@ -2,12 +2,10 @@
   <section class="wealth-sheet card">
     <div class="wealth-sheet__header">
       <div>
-        <p class="wealth-sheet__kicker">Introduction</p>
-        <h2>Let's start with your current situation</h2>
+        <h2>Current situation</h2>
       </div>
       <p class="wealth-sheet__copy">
-        Later calculations will reuse these numbers across the calculations.
-        You can always come back and change them later.
+        Costs are all weekly. You can always come back to this page.
       </p>
     </div>
 
@@ -44,7 +42,7 @@
           </select>
         </label>
         <label>
-          <span>Weekly rent cost</span>
+          <span>Rent cost + Utilities</span>
           <input v-model.number="form.housingCosts.weeklyRent" type="number" min="0" step="10" />
         </label>
         <label v-if="form.housingCosts.liveAtHome">
@@ -52,7 +50,7 @@
           <input v-model.number="form.housingCosts.liveAtHomeYears" type="number" min="1" :max="Math.max(1, form.profile.horizonYears - 1)" step="1" />
         </label>
         <label v-if="form.housingCosts.liveAtHome">
-          <span>At-home weekly rent + bills cost</span>
+          <span>At-home rent + bills cost</span>
           <input v-model.number="form.housingCosts.weeklyBoardAtHome" type="number" min="0" step="10" />
         </label>
       </div>

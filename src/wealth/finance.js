@@ -60,6 +60,14 @@ export const DEFAULT_SERVICEABILITY_ANNUAL_LIVING_COST = 640 * 52
 export const NSW_TRANSFER_DUTY_PREMIUM_THRESHOLD = 3_721_000
 export const NSW_LAND_TAX_THRESHOLD = 1_075_000
 export const NSW_LAND_TAX_PREMIUM_THRESHOLD = 6_571_000
+export const HELP_INDEXATION_RATE = 0.03
+
+const helpRepaymentBands202526 = [
+  { minIncomeExclusive: 0, maxIncomeInclusive: 67_000, type: 'none' },
+  { minIncomeExclusive: 67_000, maxIncomeInclusive: 125_000, type: 'marginal', baseRepayment: 0, threshold: 67_000, rate: 0.15 },
+  { minIncomeExclusive: 125_000, maxIncomeInclusive: 179_285, type: 'marginal', baseRepayment: 8_700, threshold: 125_000, rate: 0.17 },
+  { minIncomeExclusive: 179_285, maxIncomeInclusive: Number.POSITIVE_INFINITY, type: 'flat', rate: 0.1 }
+]
 
 const propertyCostFormulae = {
   house: {
@@ -602,9 +610,46 @@ export function calculateAnnualServiceabilityLivingCosts(weeklyNonHousingLivingC
   return Math.max(annualLivingCosts, DEFAULT_SERVICEABILITY_ANNUAL_LIVING_COST)
 }
 
+export function calculateHelpCompulsoryRepayment(annualIncome = 0) {
+  const safeAnnualIncome = Math.max(0, Number(annualIncome) || 0)
+  const band = helpRepaymentBands202526.find(candidate =>
+    safeAnnualIncome > candidate.minIncomeExclusive && safeAnnualIncome <= candidate.maxIncomeInclusive
+  ) || helpRepaymentBands202526[helpRepaymentBands202526.length - 1]
+
+  if (band.type === 'none') return 0
+  if (band.type === 'flat') return safeAnnualIncome * band.rate
+  return band.baseRepayment + Math.max(0, safeAnnualIncome - band.threshold) * band.rate
+}
+
+export function rollForwardHelpDebt(openingBalance = 0, annualIncome = 0) {
+  const safeOpeningBalance = Math.max(0, Number(openingBalance) || 0)
+  if (safeOpeningBalance <= 0) {
+    return {
+      openingBalance: 0,
+      indexedBalance: 0,
+      scheduledRepayment: 0,
+      actualRepayment: 0,
+      closingBalance: 0
+    }
+  }
+
+  const indexedBalance = safeOpeningBalance * (1 + HELP_INDEXATION_RATE)
+  const scheduledRepayment = Math.max(0, calculateHelpCompulsoryRepayment(annualIncome))
+  const actualRepayment = Math.min(indexedBalance, scheduledRepayment)
+
+  return {
+    openingBalance: safeOpeningBalance,
+    indexedBalance,
+    scheduledRepayment,
+    actualRepayment,
+    closingBalance: Math.max(0, indexedBalance - actualRepayment)
+  }
+}
+
 export function assessPropertyPurchaseServiceability({
   taxYear = defaultTaxYear,
   annualIncome = 0,
+  helpDebtBalance = 0,
   weeklyNonHousingLivingCosts = 0,
   occupancyMode = 'owner',
   propertyConfig,
@@ -623,7 +668,8 @@ export function assessPropertyPurchaseServiceability({
     taxYear,
     salaryIncome: safeAnnualIncome
   })
-  const annualDisposableAfterLiving = safeAnnualIncome - salaryOnlyTax.totalTax - annualLivingCosts
+  const helpRepayment = rollForwardHelpDebt(helpDebtBalance, safeAnnualIncome).actualRepayment
+  const annualDisposableAfterLiving = safeAnnualIncome - salaryOnlyTax.totalTax - annualLivingCosts - helpRepayment
   const productRate = getPropertyInterestRate(propertyConfig, occupancyMode)
   const assessedRate = getServiceabilityAssessmentRate(productRate)
   const annualMortgagePayment = calculateAnnualMortgagePayment(safeOpeningLoanBalance, assessedRate, safeMortgageYears)
@@ -633,6 +679,7 @@ export function assessPropertyPurchaseServiceability({
     return {
       annualLivingCosts,
       annualDisposableAfterLiving,
+      helpRepayment,
       assessedRate,
       annualMortgagePayment,
       annualCarry,
@@ -664,6 +711,7 @@ export function assessPropertyPurchaseServiceability({
   return {
     annualLivingCosts,
     annualDisposableAfterLiving,
+    helpRepayment,
     assessedRate,
     annualMortgagePayment,
     annualCarry,

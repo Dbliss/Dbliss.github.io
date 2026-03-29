@@ -160,7 +160,7 @@ watch(
 watch(
   () => props.form.profile.incomeCurve,
   (value) => {
-    const safeIncomeCurve = ['logarithmic', 'sigmoid'].includes(value) ? value : 'exponential'
+    const safeIncomeCurve = ['logarithmic', 'sigmoid', 'exponential'].includes(value) ? value : 'sigmoid'
     if (safeIncomeCurve !== value) {
       props.form.profile.incomeCurve = safeIncomeCurve
       return

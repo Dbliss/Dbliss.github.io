@@ -4,6 +4,7 @@ import {
   assessPropertyPurchaseServiceability,
   calculateAnnualMortgagePayment,
   calculateAustralianAnnualTax,
+  calculateHelpCompulsoryRepayment,
   calculatePurchaseCosts,
   estimateGenericPurchaseCosts,
   estimateLmi,
@@ -13,6 +14,7 @@ import {
   getOwnerHoldingCosts,
   getServiceabilityAssessmentRate,
   normalisePortfolioWeights,
+  rollForwardHelpDebt,
   scalePurchaseCostsWithPrice
 } from '../finance.js'
 
@@ -144,6 +146,33 @@ describe('wealth finance helpers', () => {
     expect(withFrankingTax.deltaVsSalaryOnly).toBeLessThan(noFrankingTax.deltaVsSalaryOnly)
   })
 
+  it('returns no HELP repayment below the 2025-26 threshold and applies the first marginal band above it', () => {
+    expect(calculateHelpCompulsoryRepayment(67000)).toBe(0)
+    expect(calculateHelpCompulsoryRepayment(80000)).toBeCloseTo(1950)
+  })
+
+  it('applies the higher HELP bands for upper-middle and top incomes', () => {
+    expect(calculateHelpCompulsoryRepayment(150000)).toBeCloseTo(12950)
+    expect(calculateHelpCompulsoryRepayment(200000)).toBeCloseTo(20000)
+  })
+
+  it('indexes HELP debt by 3 percent and caps compulsory repayment at the remaining balance', () => {
+    const regularYear = rollForwardHelpDebt(25000, 100000)
+    const payoffYear = rollForwardHelpDebt(1500, 100000)
+    const clearedYear = rollForwardHelpDebt(0, 100000)
+
+    expect(regularYear.indexedBalance).toBeCloseTo(25750)
+    expect(regularYear.actualRepayment).toBeCloseTo(4950)
+    expect(regularYear.closingBalance).toBeCloseTo(20800)
+
+    expect(payoffYear.indexedBalance).toBeCloseTo(1545)
+    expect(payoffYear.actualRepayment).toBeCloseTo(1545)
+    expect(payoffYear.closingBalance).toBe(0)
+
+    expect(clearedYear.actualRepayment).toBe(0)
+    expect(clearedYear.closingBalance).toBe(0)
+  })
+
   it('uses an APRA-style assessment rate with a floor', () => {
     expect(getServiceabilityAssessmentRate(0.055)).toBeCloseTo(0.085)
     expect(getServiceabilityAssessmentRate(0.045)).toBeCloseTo(0.08)
@@ -167,6 +196,64 @@ describe('wealth finance helpers', () => {
     })
 
     expect(serviceability.rentCredit).toBeCloseTo(serviceability.rentalTaxPosition.rentReceived * 0.8)
+  })
+
+  it('reduces serviceability disposable income when compulsory HELP repayments apply', () => {
+    const request = cloneSimulationRequest()
+    const withoutHelp = assessPropertyPurchaseServiceability({
+      taxYear: request.profile.taxYear,
+      annualIncome: 120000,
+      helpDebtBalance: 0,
+      weeklyNonHousingLivingCosts: request.profile.weeklyNonHousingLivingCosts,
+      occupancyMode: 'owner',
+      propertyConfig: request.propertyConfig.apartment,
+      propertyValue: request.propertyConfig.apartment.purchasePrice,
+      mortgageYears: request.propertyConfig.apartment.mortgageYears,
+      openingLoanBalance: 440000
+    })
+    const withHelp = assessPropertyPurchaseServiceability({
+      taxYear: request.profile.taxYear,
+      annualIncome: 120000,
+      helpDebtBalance: 40000,
+      weeklyNonHousingLivingCosts: request.profile.weeklyNonHousingLivingCosts,
+      occupancyMode: 'owner',
+      propertyConfig: request.propertyConfig.apartment,
+      propertyValue: request.propertyConfig.apartment.purchasePrice,
+      mortgageYears: request.propertyConfig.apartment.mortgageYears,
+      openingLoanBalance: 440000
+    })
+
+    expect(withHelp.helpRepayment).toBeCloseTo(7950)
+    expect(withHelp.annualDisposableAfterLiving).toBeLessThan(withoutHelp.annualDisposableAfterLiving)
+  })
+
+  it('can fail serviceability once HELP repayments are included even when the same purchase passes without them', () => {
+    const request = cloneSimulationRequest()
+    const withoutHelp = assessPropertyPurchaseServiceability({
+      taxYear: request.profile.taxYear,
+      annualIncome: 120000,
+      helpDebtBalance: 0,
+      weeklyNonHousingLivingCosts: request.profile.weeklyNonHousingLivingCosts,
+      occupancyMode: 'owner',
+      propertyConfig: request.propertyConfig.apartment,
+      propertyValue: request.propertyConfig.apartment.purchasePrice,
+      mortgageYears: request.propertyConfig.apartment.mortgageYears,
+      openingLoanBalance: 440000
+    })
+    const withHelp = assessPropertyPurchaseServiceability({
+      taxYear: request.profile.taxYear,
+      annualIncome: 120000,
+      helpDebtBalance: 40000,
+      weeklyNonHousingLivingCosts: request.profile.weeklyNonHousingLivingCosts,
+      occupancyMode: 'owner',
+      propertyConfig: request.propertyConfig.apartment,
+      propertyValue: request.propertyConfig.apartment.purchasePrice,
+      mortgageYears: request.propertyConfig.apartment.mortgageYears,
+      openingLoanBalance: 440000
+    })
+
+    expect(withoutHelp.affordable).toBe(true)
+    expect(withHelp.affordable).toBe(false)
   })
 
   it('can fail serviceability even when the product-rate carry would fit because the assessment buffer applies', () => {
@@ -209,6 +296,7 @@ describe('wealth finance helpers', () => {
   it('refreshes defaults and keeps owner and investor rate inputs distinct without grant fields', () => {
     const request = cloneSimulationRequest()
 
+    expect(request.profile.helpDebtBalance).toBe(0)
     expect(request.profile.incomeGrowthRate).toBeCloseTo(0.034)
     expect(request.housingCosts.rentGrowthRate).toBeCloseTo(0.039)
     expect(request.housingCosts.boardGrowthRate).toBeCloseTo(0.034)

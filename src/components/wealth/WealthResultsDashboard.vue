@@ -165,7 +165,7 @@ const metricMeta = computed(() => {
   if (props.metric === 'annualSurplus') {
     return {
       title: 'Annual after-tax surplus or deficit',
-      subtitle: 'Positive values indicate cash left after tax, living costs, rent, and property cashflows.'
+      subtitle: 'Positive values indicate cash left after tax, living costs, rent, property cashflows, and compulsory HECS/HELP repayments.'
     }
   }
   if (props.metric === 'holdBalance') {

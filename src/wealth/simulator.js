@@ -4,6 +4,7 @@ import {
   calculateAnnualMortgagePayment,
   amortizeOneYear,
   calculateAustralianAnnualTax,
+  rollForwardHelpDebt,
   calculateInvestmentPropertyTaxPosition,
   calculatePurchaseCosts,
   clamp,
@@ -327,10 +328,11 @@ function getPurchasePlan(propertyKey, property, propertyValue, occupancyMode, fi
   }
 }
 
-function getPurchaseServiceability(request, market, occupancyMode, property, propertyValue, purchasePlan, atHomeHousingCosts) {
+function getPurchaseServiceability(request, market, occupancyMode, property, propertyValue, purchasePlan, atHomeHousingCosts, helpDebtBalance) {
   return assessPropertyPurchaseServiceability({
     taxYear: request.profile.taxYear,
     annualIncome: market.income,
+    helpDebtBalance,
     weeklyNonHousingLivingCosts: request.profile.weeklyNonHousingLivingCosts,
     occupancyMode,
     propertyConfig: property,
@@ -440,9 +442,18 @@ function applySurplusAllocation({
   }
 }
 
+function applyHelpDebtCashflow(helpDebtBalance, annualIncome, annualSurplus) {
+  const helpLedger = rollForwardHelpDebt(helpDebtBalance, annualIncome)
+  return {
+    helpLedger,
+    annualSurplusAfterHelp: annualSurplus - helpLedger.actualRepayment
+  }
+}
+
 function simulateRentInvestPath(request, marketPath) {
   const { profile, housingCosts, portfolioConfig } = request
   let liquidAssets = profile.startingSavings
+  let helpDebtBalance = Math.max(0, Number(profile.helpDebtBalance) || 0)
   let portfolioCostBasis = getInvestedBalance(liquidAssets)
   let rentLevel = housingCosts.weeklyRent * 52
   let boardLevel = housingCosts.weeklyBoardAtHome * 52
@@ -474,9 +485,11 @@ function simulateRentInvestPath(request, marketPath) {
       taxPosition.totalTax -
       market.nonHousingLivingCosts -
       housingCashCosts
+    const helpCashflow = applyHelpDebtCashflow(helpDebtBalance, market.income, annualSurplus)
+    helpDebtBalance = helpCashflow.helpLedger.closingBalance
 
     const preFlowInvestedBalance = getInvestedBalance(openingLiquidAssets) + portfolioLedger.portfolioReturn
-    liquidAssets += portfolioLedger.portfolioReturn + annualSurplus
+    liquidAssets += portfolioLedger.portfolioReturn + helpCashflow.annualSurplusAfterHelp
     portfolioCostBasis = updatePortfolioCostBasis(portfolioCostBasis, preFlowInvestedBalance, liquidAssets)
     const liquidation = estimateLiquidationPosition({
       taxYear: profile.taxYear,
@@ -488,7 +501,7 @@ function simulateRentInvestPath(request, marketPath) {
 
     points.push(createSnapshot({
       liquidAssets,
-      annualSurplus,
+      annualSurplus: helpCashflow.annualSurplusAfterHelp,
       totalTax: taxPosition.totalTax,
       taxDelta: taxPosition.deltaVsSalaryOnly,
       ...liquidation
@@ -509,6 +522,7 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
   let targetPropertyValue = property.purchasePrice
   let propertyValue = 0
   let mortgageBalance = 0
+  let helpDebtBalance = Math.max(0, Number(profile.helpDebtBalance) || 0)
   let portfolioCostBasis = getInvestedBalance(liquidAssets)
   let propertyCostBase = 0
   let purchased = false
@@ -527,7 +541,8 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
       property,
       targetPropertyValue,
       initialPlan,
-      atHomeHousingCosts
+      atHomeHousingCosts,
+      helpDebtBalance
     )
 
     if (openingServiceability.affordable) {
@@ -555,9 +570,10 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
         openingMarket.nonHousingLivingCosts -
         openingOwnedYear.housingCashCosts -
         initialPlan.upfrontCash
+      const openingHelpCashflow = applyHelpDebtCashflow(helpDebtBalance, openingMarket.income, openingAnnualSurplus)
       const openingAllocation = applySurplusAllocation({
         liquidAssets: liquidAssets + openingPortfolioLedger.portfolioReturn,
-        annualSurplus: openingAnnualSurplus,
+        annualSurplus: openingHelpCashflow.annualSurplusAfterHelp,
         mortgageBalance: openingOwnedYear.endMortgageBalance,
         allowMortgagePrepayment: propertyConfig.surplusAllocationMode === 'mortgagePrepayment'
       })
@@ -634,7 +650,8 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
           property,
           targetPropertyValue,
           purchasePlan,
-          atHomeHousingCosts
+          atHomeHousingCosts,
+          helpDebtBalance
         )
 
         if (purchaseServiceability.affordable) {
@@ -662,9 +679,10 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
             market.nonHousingLivingCosts -
             purchaseOwnedYear.housingCashCosts -
             purchasePlan.upfrontCash
+          const purchaseHelpCashflow = applyHelpDebtCashflow(helpDebtBalance, market.income, purchaseAnnualSurplus)
           const purchaseAllocation = applySurplusAllocation({
             liquidAssets: openingLiquidAssets + portfolioLedger.portfolioReturn,
-            annualSurplus: purchaseAnnualSurplus,
+            annualSurplus: purchaseHelpCashflow.annualSurplusAfterHelp,
             mortgageBalance: purchaseOwnedYear.endMortgageBalance,
             allowMortgagePrepayment: propertyConfig.surplusAllocationMode === 'mortgagePrepayment'
           })
@@ -681,8 +699,9 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
             taxRentalIncome = purchaseOwnedYear.taxRentalIncome
             totalTax = purchaseTaxPosition.totalTax
             taxDelta = purchaseTaxPosition.deltaVsSalaryOnly
-            annualSurplus = purchaseAnnualSurplus
+            annualSurplus = purchaseHelpCashflow.annualSurplusAfterHelp
             allocation = purchaseAllocation
+            helpDebtBalance = purchaseHelpCashflow.helpLedger.closingBalance
           } else {
             targetPropertyValue *= 1 + getPropertyGrowth(market, propertyKey)
           }
@@ -728,10 +747,17 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
         housingCashCosts
     }
 
+    const annualCashflow = allocation
+      ? { annualSurplusAfterHelp: annualSurplus }
+      : applyHelpDebtCashflow(helpDebtBalance, market.income, annualSurplus)
+    if (!allocation) {
+      helpDebtBalance = annualCashflow.helpLedger.closingBalance
+    }
+
     if (!allocation) {
       allocation = applySurplusAllocation({
         liquidAssets: openingLiquidAssets + portfolioLedger.portfolioReturn,
-        annualSurplus,
+        annualSurplus: annualCashflow.annualSurplusAfterHelp,
         mortgageBalance: endMortgageBalance,
         allowMortgagePrepayment: purchased && propertyConfig.surplusAllocationMode === 'mortgagePrepayment'
       })
@@ -763,7 +789,7 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
       liquidAssets,
       propertyValue,
       mortgageBalance,
-      annualSurplus,
+      annualSurplus: annualCashflow.annualSurplusAfterHelp,
       totalTax,
       taxDelta,
       ...liquidation
@@ -838,6 +864,7 @@ function normaliseRequest(request) {
     ...normaliseIncomeProfile(safe.profile)
   }
   safe.profile.taxYear = '2026-27'
+  safe.profile.helpDebtBalance = Math.max(0, Number(safe.profile.helpDebtBalance) || 0)
   safe.profile.weeklyNonHousingLivingCosts = Math.max(
     0,
     Number(safe.profile.weeklyNonHousingLivingCosts ?? safe.profile.weeklyHousingAndInvestingBudget ?? safe.profile.weeklyAvailableToSave) || 0

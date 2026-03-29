@@ -17,41 +17,46 @@
         <input v-model.number="form.profile.startingSavings" type="number" min="0" step="1000" />
       </label>
       <label>
+        <span>HECS/HELP debt</span>
+        <input v-model.number="form.profile.helpDebtBalance" type="number" min="0" step="1000" />
+      </label>
+      <label>
         <span>Time horizon of interest</span>
         <input v-model.number="form.profile.horizonYears" type="number" min="10" max="30" step="1" />
       </label>
       <label>
-        <span>Weekly non-housing living costs (food, bills, entertainment, etc.)</span>
+        <span>Living costs except rent (food, bills, etc.)</span>
         <input v-model.number="form.profile.weeklyNonHousingLivingCosts" type="number" min="0" step="25" />
       </label>
-      <label>
-        <span>Current housing status</span>
-        <select v-model="currentHousingStatus">
-          <option value="renting">Renting</option>
-          <option value="livingAtHome">Living at home</option>
-        </select>
-      </label>
-      <label>
-        <span>Weekly out-of-home rent cost</span>
-        <input v-model.number="form.housingCosts.weeklyRent" type="number" min="0" step="10" />
-      </label>
-      <label>
-        <span>Expected Rent growth %</span>
-        <input v-model.number="rentGrowthPct" type="number" min="0" max="10" step="0.1" />
-      </label>
-      <label v-if="form.housingCosts.liveAtHome">
-        <span>Years living at home</span>
-        <input v-model.number="form.housingCosts.liveAtHomeYears" type="number" min="1" :max="Math.max(1, form.profile.horizonYears - 1)" step="1" />
-      </label>
-      <label v-if="form.housingCosts.liveAtHome">
-        <span>Weekly rent + bills at home</span>
-        <input v-model.number="form.housingCosts.weeklyBoardAtHome" type="number" min="0" step="10" />
-      </label>
-      <label v-if="form.housingCosts.liveAtHome">
-        <span>Expected at home cost growth %</span>
-        <input v-model.number="boardGrowthPct" type="number" min="0" max="10" step="0.1" />
-      </label>
     </div>
+
+    <section class="wealth-sheet__subsection">
+      <div class="wealth-sheet__subsection-head">
+        <h3>Housing setup</h3>
+      </div>
+
+      <div class="wealth-sheet__subsection-grid wealth-sheet__subsection-grid--housing">
+        <label>
+          <span>Current housing status</span>
+          <select v-model="currentHousingStatus">
+            <option value="renting">Renting</option>
+            <option value="livingAtHome">Living at home</option>
+          </select>
+        </label>
+        <label>
+          <span>Weekly rent cost</span>
+          <input v-model.number="form.housingCosts.weeklyRent" type="number" min="0" step="10" />
+        </label>
+        <label v-if="form.housingCosts.liveAtHome">
+          <span>Years living at home</span>
+          <input v-model.number="form.housingCosts.liveAtHomeYears" type="number" min="1" :max="Math.max(1, form.profile.horizonYears - 1)" step="1" />
+        </label>
+        <label v-if="form.housingCosts.liveAtHome">
+          <span>At-home weekly rent + bills cost</span>
+          <input v-model.number="form.housingCosts.weeklyBoardAtHome" type="number" min="0" step="10" />
+        </label>
+      </div>
+    </section>
 
     <section class="wealth-sheet__subsection">
       <div class="wealth-sheet__subsection-head">
@@ -64,7 +69,7 @@
           <input v-model.number="form.profile.annualIncome" type="number" min="0" step="1000" />
         </label>
         <label>
-          <span>Expected income growth %</span>
+          <span>Average income growth %</span>
           <input v-model.number="incomeGrowthPct" type="number" min="0" max="12" step="0.1" />
         </label>
         <label>
@@ -72,7 +77,7 @@
           <select v-model="incomeCurve">
             <option value="exponential">Exponential</option>
             <option value="logarithmic">Logarithmic</option>
-            <option value="sigmoid">Sigmoid</option>
+            <option value="sigmoid">Sigmoid (recommended)</option>
           </select>
         </label>
       </div>
@@ -101,24 +106,10 @@ const incomeCurve = computed({
   get: () => {
     if (props.form.profile.incomeCurve === 'logarithmic') return 'logarithmic'
     if (props.form.profile.incomeCurve === 'sigmoid') return 'sigmoid'
-    return 'exponential'
+    return 'sigmoid'
   },
   set: (value) => {
-    props.form.profile.incomeCurve = ['logarithmic', 'sigmoid'].includes(value) ? value : 'exponential'
-  }
-})
-
-const rentGrowthPct = computed({
-  get: () => Number(((Number(props.form.housingCosts.rentGrowthRate) || 0) * 100).toFixed(1)),
-  set: (value) => {
-    props.form.housingCosts.rentGrowthRate = Math.max(0, Number(value) || 0) / 100
-  }
-})
-
-const boardGrowthPct = computed({
-  get: () => Number(((Number(props.form.housingCosts.boardGrowthRate) || 0) * 100).toFixed(1)),
-  set: (value) => {
-    props.form.housingCosts.boardGrowthRate = Math.max(0, Number(value) || 0) / 100
+    props.form.profile.incomeCurve = ['logarithmic', 'sigmoid', 'exponential'].includes(value) ? value : 'sigmoid'
   }
 })
 
@@ -172,7 +163,7 @@ const currentHousingStatus = computed({
 
 .wealth-sheet__grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.9rem;
 }
 
@@ -225,10 +216,21 @@ const currentHousingStatus = computed({
   color: #173050;
 }
 
+.wealth-sheet__subsection-copy {
+  margin: -0.2rem 0 0;
+  color: #5d7394;
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
 .wealth-sheet__subsection-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.9rem;
+}
+
+.wealth-sheet__subsection-grid--housing {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .wealth-sheet__subsection-grid label {

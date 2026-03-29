@@ -7,8 +7,8 @@ import { buildFlatIncomeSeries } from '../wealth/incomeSeries.js'
 export const wealthProjectSlug = 'wealth-pathways-au'
 
 export const wealthSimulationMetadata = {
-  lastUpdated: '2026-03-21',
-  version: 'v2.2',
+  lastUpdated: '2026-03-29',
+  version: 'v2.3',
   sources: [
     {
       label: 'ATO resident tax rates',
@@ -56,6 +56,16 @@ export const wealthSimulationMetadata = {
       url: 'https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/consumer-price-index-australia/dec-2025'
     },
     {
+      label: 'ATO HELP repayment thresholds',
+      detail: 'Compulsory HECS/HELP repayments use the federal ATO 2025-26 repayment thresholds and rates rather than NSW-specific policy.',
+      url: 'https://www.ato.gov.au/tax-rates-and-codes/study-and-training-support-loans-rates-and-repayment-thresholds'
+    },
+    {
+      label: 'ATO study-loan indexation',
+      detail: 'The live calculator simplifies HELP indexation to a fixed 3 percent annual rate, while the source note tracks the ATO indexation framework and published rates.',
+      url: 'https://www.ato.gov.au/tax-rates-and-codes/study-and-training-support-loans-indexation-rates'
+    },
+    {
       label: 'APRA serviceability buffer',
       detail: 'Borrowing-power checks apply a 3 percentage point assessment-rate buffer with an 8 percent floor and an 80 percent rent credit on investment-property income.',
       url: 'https://www.apra.gov.au/news-and-publications/apra-keeps-macroprudential-policy-settings-steady'
@@ -97,6 +107,7 @@ export const wealthAssumptionSections = [
     items: [
       'Single-person comparison across rent + invest, buy to live, and buy as an investment property while renting.',
       'NSW-focused first-home-buyer and transfer-duty assumptions for owner-occupier purchases.',
+      'Federal ATO-style compulsory HECS/HELP repayments, using salary-only income bands and a simplified fixed 3 percent annual indexation rate.',
       'An optional currently-living-at-home phase that lowers housing costs while saving, investing, or rentvesting before rent-based paths move out.',
       'A yearly after-tax cash ledger starting from gross salary, non-housing living costs, housing cashflows, and portfolio market returns.'
     ]
@@ -104,7 +115,7 @@ export const wealthAssumptionSections = [
   {
     title: 'What this does not model',
     items: [
-      'Couples, dependants, HELP balances, Medicare levy surcharge edge cases, or trust/company ownership structures.',
+      'Couples, dependants, Medicare levy surcharge edge cases, or trust/company ownership structures.',
       'Suburb-level property cycles, automated state land-tax tables, offset account optimization, redraw facilities, or superannuation strategy.',
       'Personal financial advice, product recommendations, or edge-case legal treatment.'
     ]
@@ -113,6 +124,7 @@ export const wealthAssumptionSections = [
     title: 'Interpretation notes',
     items: [
       'Portfolio tax is simplified to recurring distribution tax, franking-credit gross-up, and refundable franking offsets rather than realised capital-gains events.',
+      'HELP repayments follow the current federal ATO 2025-26 repayment table in this build, while the tax brackets elsewhere in the model remain locked to 2026-27.',
       'Investment-property tax compares salary-only tax with salary plus taxable portfolio income and net rental profit or loss, so negative gearing can lower modeled tax.',
       'Property pathways can route positive annual surplus either to the portfolio or to extra mortgage repayments.',
       'Headline results use an estimated sell-everything value at the horizon: liquid assets plus sale proceeds less debt and estimated CGT where applicable.',
@@ -280,8 +292,9 @@ export const defaultSimulationRequest = {
     startingSavings: 40000,
     annualIncome: 100000,
     taxYear: '2026-27',
+    helpDebtBalance: 0,
     incomeGrowthRate: 0.034,
-    incomeCurve: 'exponential',
+    incomeCurve: 'sigmoid',
     weeklyNonHousingLivingCosts: 400,
     horizonYears: 30,
     useCustomIncomeSeries: false,

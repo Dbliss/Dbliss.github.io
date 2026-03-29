@@ -7,14 +7,15 @@ function toIncome(value) {
 function clampIncomeCurve(value) {
   if (value === 'logarithmic') return 'logarithmic'
   if (value === 'sigmoid') return 'sigmoid'
-  return 'exponential'
+  if (value === 'exponential') return 'exponential'
+  return 'sigmoid'
 }
 
 export function clampIncomeGrowthRate(value) {
   return clamp(Number(value) || 0, 0, 0.1)
 }
 
-export function buildFlatIncomeSeries(annualIncome, incomeGrowthRate, horizonYears, incomeCurve = 'exponential') {
+export function buildFlatIncomeSeries(annualIncome, incomeGrowthRate, horizonYears, incomeCurve = 'sigmoid') {
   const safeAnnualIncome = toIncome(annualIncome)
   const safeGrowthRate = clampIncomeGrowthRate(incomeGrowthRate)
   const safeHorizonYears = Math.max(1, Math.round(Number(horizonYears) || 1))
@@ -52,7 +53,7 @@ export function buildFlatIncomeSeries(annualIncome, incomeGrowthRate, horizonYea
   )
 }
 
-export function resizeCustomIncomeSeries(series, annualIncome, horizonYears, incomeGrowthRate, incomeCurve = 'exponential') {
+export function resizeCustomIncomeSeries(series, annualIncome, horizonYears, incomeGrowthRate, incomeCurve = 'sigmoid') {
   const flatSeries = buildFlatIncomeSeries(annualIncome, incomeGrowthRate, horizonYears, incomeCurve)
   const safeSeries = Array.isArray(series) ? series : []
 
@@ -63,7 +64,7 @@ export function resizeCustomIncomeSeries(series, annualIncome, horizonYears, inc
   })
 }
 
-export function scaleCustomIncomeSeries(series, previousAnnualIncome, nextAnnualIncome, horizonYears, incomeGrowthRate, incomeCurve = 'exponential') {
+export function scaleCustomIncomeSeries(series, previousAnnualIncome, nextAnnualIncome, horizonYears, incomeGrowthRate, incomeCurve = 'sigmoid') {
   const resizedSeries = resizeCustomIncomeSeries(series, previousAnnualIncome, horizonYears, incomeGrowthRate, incomeCurve)
   const safePreviousAnnualIncome = toIncome(previousAnnualIncome)
   const safeNextAnnualIncome = toIncome(nextAnnualIncome)

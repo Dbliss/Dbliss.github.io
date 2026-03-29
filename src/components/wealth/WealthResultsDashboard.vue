@@ -1,0 +1,382 @@
+<template>
+  <section class="wealth-results">
+    <div class="wealth-results__toolbar">
+      <div class="wealth-results__meta">
+        <p class="wealth-results__kicker">Results</p>
+        <h2>Interactive outcome dashboard</h2>
+        <p v-if="lastRunAt" class="wealth-results__copy">Last calculated {{ lastRunAt }}</p>
+      </div>
+
+      <div class="wealth-results__controls">
+        <label class="wealth-results__select">
+          <span>Metric</span>
+          <select :value="metric" @change="$emit('update:metric', $event.target.value)">
+            <option v-for="option in metricOptions" :key="option.key" :value="option.key">{{ option.label }}</option>
+          </select>
+        </label>
+        <div class="wealth-results__filter-group">
+          <button
+            v-for="option in groupOptions"
+            :key="option.key"
+            type="button"
+            class="wealth-results__filter"
+            :class="{ 'is-active': groupFilter === option.key }"
+            @click="$emit('update:groupFilter', option.key)"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <section class="wealth-results__kpis">
+      <article class="wealth-results__kpi card">
+        <p class="wealth-results__kpi-kicker">Best median</p>
+        <h3>{{ dashboard.kpis.bestMedian?.label || 'No result' }}</h3>
+        <p>{{ dashboard.kpis.bestMedian ? `${dashboard.kpis.bestMedian.summary.finalMedianDisplay} median sell-down result.` : 'Run the model to populate this card.' }}</p>
+      </article>
+      <article class="wealth-results__kpi card">
+        <p class="wealth-results__kpi-kicker">Strongest downside</p>
+        <h3>{{ dashboard.kpis.downsideLeader?.label || 'No result' }}</h3>
+        <p>{{ dashboard.kpis.downsideLeader ? `${formatCurrency(dashboard.kpis.downsideLeader.summary.downsideRisk)} at the 10th percentile.` : 'Run the model to populate this card.' }}</p>
+      </article>
+      <article class="wealth-results__kpi card">
+        <p class="wealth-results__kpi-kicker">First to beat baseline</p>
+        <h3>{{ dashboard.kpis.firstHousingBeatBaseline?.label || 'No housing overtake' }}</h3>
+        <p>{{ dashboard.kpis.firstHousingBeatBaseline ? `Beats ${dashboard.baseline?.label} in year ${dashboard.kpis.firstHousingBeatBaseline.breakevenYearVsBaseline}.` : 'No housing path overtakes the selected portfolio baseline on the median track.' }}</p>
+      </article>
+      <article class="wealth-results__kpi card">
+        <p class="wealth-results__kpi-kicker">Widest variability</p>
+        <h3>{{ dashboard.kpis.variabilityLeader?.label || 'No result' }}</h3>
+        <p>{{ dashboard.kpis.variabilityLeader ? `${formatCurrency(dashboard.kpis.variabilityLeader.variabilitySpread)} spread between P10 and P90 at the horizon.` : 'Run the model to populate this card.' }}</p>
+      </article>
+    </section>
+
+    <div class="wealth-results__narratives card">
+      <p class="wealth-results__kpi-kicker">Synthesized takeaways</p>
+      <p v-for="line in dashboard.narratives" :key="line" class="wealth-results__copy">{{ line }}</p>
+      <p v-if="resultsStale" class="wealth-results__stale">Inputs changed since the last run. Recalculate to refresh the dashboard.</p>
+      <p v-else-if="loading" class="wealth-results__stale">Simulation is running.</p>
+    </div>
+
+    <div class="wealth-results__chips">
+      <button
+        v-for="strategy in filteredStrategies"
+        :key="strategy.key"
+        type="button"
+        class="wealth-results__chip"
+        :class="{ 'is-muted': mutedStrategyKeys.includes(strategy.key) }"
+        @click="$emit('toggle-series', strategy.key)"
+      >
+        <span class="wealth-results__chip-dot" :style="{ background: strategy.color }"></span>
+        {{ strategy.label }}
+      </button>
+    </div>
+
+    <div class="wealth-results__grid">
+      <WealthLineChart
+        class="wealth-results__chart"
+        :title="metricMeta.title"
+        :subtitle="metricMeta.subtitle"
+        kicker="Scenario comparison"
+        :series="series"
+        :muted-series-ids="mutedStrategyKeys"
+        @toggle-series="$emit('toggle-series', $event)"
+      />
+
+      <section class="wealth-results__readout card">
+        <p class="wealth-results__kpi-kicker">Scenario readout</p>
+        <div class="wealth-results__list">
+          <article v-for="strategy in filteredStrategies" :key="strategy.key" class="wealth-results__item">
+            <div class="wealth-results__item-top">
+              <div class="wealth-results__item-title">
+                <span class="wealth-results__chip-dot" :style="{ background: strategy.color }"></span>
+                <strong>{{ strategy.label }}</strong>
+              </div>
+              <span>{{ strategy.summary.finalMedianDisplay }}</span>
+            </div>
+            <p>{{ strategy.narrative }}</p>
+            <div class="wealth-results__item-meta">
+              <span>Downside {{ formatCurrency(strategy.summary.downsideRisk) }}</span>
+              <span v-if="strategy.group === 'housing'">Vs baseline {{ formatSignedCurrency(strategy.deltaVsBaseline) }}</span>
+              <span>Variability {{ formatCurrency(strategy.variabilitySpread) }}</span>
+              <span v-if="strategy.purchaseYear !== null">Purchase year {{ strategy.purchaseYear }}</span>
+              <span v-if="strategy.group === 'housing' && strategy.breakevenYearVsBaseline !== null">Beats baseline in year {{ strategy.breakevenYearVsBaseline }}</span>
+              <span>Max median cash deficit {{ formatCurrency(strategy.summary.maxMedianCashDeficit) }}</span>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
+
+    <WealthCompositionBars
+      v-if="visibleCompositionRows.length"
+      title="Housing balance composition"
+      subtitle="Final-year median liquid assets, home equity, and debt across the visible housing pathways."
+      :rows="visibleCompositionRows"
+    />
+  </section>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+import WealthLineChart from './WealthLineChart.vue'
+import WealthCompositionBars from './WealthCompositionBars.vue'
+import { buildDashboardSeries } from '../../wealth/dashboard.js'
+
+const props = defineProps({
+  dashboard: { type: Object, required: true },
+  groupFilter: { type: String, default: 'all' },
+  metric: { type: String, default: 'sellDown' },
+  mutedStrategyKeys: { type: Array, default: () => [] },
+  inflationRate: { type: Number, default: 0.03 },
+  lastRunAt: { type: String, default: '' },
+  resultsStale: { type: Boolean, default: false },
+  loading: { type: Boolean, default: false }
+})
+
+defineEmits(['update:groupFilter', 'update:metric', 'toggle-series'])
+
+const groupOptions = [
+  { key: 'all', label: 'All' },
+  { key: 'stock', label: 'Stocks' },
+  { key: 'housing', label: 'Housing' }
+]
+
+const metricOptions = [
+  { key: 'sellDown', label: 'Sell-down value' },
+  { key: 'inflationAdjusted', label: "Today's dollars" },
+  { key: 'annualSurplus', label: 'Annual surplus' },
+  { key: 'holdBalance', label: 'Hold balance' }
+]
+
+const filteredStrategies = computed(() => {
+  if (props.groupFilter === 'all') return props.dashboard.strategies
+  return props.dashboard.strategies.filter(strategy => strategy.group === props.groupFilter)
+})
+
+const metricMeta = computed(() => {
+  if (props.metric === 'inflationAdjusted') {
+    return {
+      title: "Sell-down value in today's dollars",
+      subtitle: 'Median, downside, and upside outcomes discounted back using the rent-growth assumption as the inflation proxy.'
+    }
+  }
+  if (props.metric === 'annualSurplus') {
+    return {
+      title: 'Annual after-tax surplus or deficit',
+      subtitle: 'Positive values indicate cash left after tax, living costs, rent, and property cashflows.'
+    }
+  }
+  if (props.metric === 'holdBalance') {
+    return {
+      title: 'Hold-only balance projection',
+      subtitle: 'Net worth before sale tax, keeping the assets in place at each year.'
+    }
+  }
+  return {
+    title: 'After-tax sell-down outcome bands',
+    subtitle: 'Each year assumes the remaining assets were sold in that year and estimated CGT was netted out where applicable.'
+  }
+})
+
+const series = computed(() =>
+  buildDashboardSeries(filteredStrategies.value, props.metric, props.inflationRate)
+)
+
+const visibleCompositionRows = computed(() => {
+  const visibleKeys = new Set(filteredStrategies.value.map(strategy => strategy.key))
+  return props.dashboard.compositionRows.filter(row => visibleKeys.has(row.key))
+})
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat('en-AU', {
+    style: 'currency',
+    currency: 'AUD',
+    maximumFractionDigits: 0
+  }).format(Number(value) || 0)
+}
+
+function formatSignedCurrency(value) {
+  const safeValue = Number(value) || 0
+  const formatted = formatCurrency(Math.abs(safeValue))
+  if (safeValue === 0) return formatted
+  return safeValue > 0 ? `+${formatted}` : `-${formatted}`
+}
+</script>
+
+<style scoped>
+.wealth-results {
+  display: grid;
+  gap: 1rem;
+}
+
+.wealth-results__toolbar,
+.wealth-results__controls,
+.wealth-results__chips,
+.wealth-results__item-top,
+.wealth-results__item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.wealth-results__toolbar {
+  justify-content: space-between;
+  align-items: end;
+}
+
+.wealth-results__meta h2 {
+  margin: 0.15rem 0 0;
+  font-size: clamp(1.5rem, 1.2rem + 0.95vw, 2.2rem);
+}
+
+.wealth-results__kicker,
+.wealth-results__kpi-kicker {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.74rem;
+  color: #5d7ba3;
+}
+
+.wealth-results__copy {
+  margin: 0.35rem 0 0;
+  color: #5d7394;
+}
+
+.wealth-results__select {
+  display: grid;
+  gap: 0.35rem;
+  color: #5b7192;
+  font-size: 0.82rem;
+}
+
+.wealth-results__select select {
+  min-width: 12rem;
+  min-height: 3rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 16px;
+  border: 1px solid rgba(154, 174, 204, 0.22);
+  background: rgba(255, 255, 255, 0.96);
+  color: #173050;
+  font: inherit;
+}
+
+.wealth-results__filter-group {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: end;
+}
+
+.wealth-results__filter,
+.wealth-results__chip {
+  padding: 0.6rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(154, 174, 204, 0.22);
+  background: rgba(248, 251, 255, 0.96);
+  color: #385879;
+  font: inherit;
+  cursor: pointer;
+}
+
+.wealth-results__filter.is-active {
+  background: rgba(216, 234, 255, 0.98);
+  border-color: rgba(45, 118, 212, 0.3);
+}
+
+.wealth-results__kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.wealth-results__kpi {
+  padding: 1rem;
+}
+
+.wealth-results__kpi h3 {
+  margin: 0.25rem 0 0.35rem;
+  font-size: 1.05rem;
+}
+
+.wealth-results__kpi p:last-child {
+  margin: 0;
+  color: #5d7394;
+}
+
+.wealth-results__narratives {
+  display: grid;
+  gap: 0.4rem;
+  padding: 1rem;
+}
+
+.wealth-results__stale {
+  margin: 0.35rem 0 0;
+  color: #b45309;
+}
+
+.wealth-results__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.wealth-results__chip.is-muted {
+  opacity: 0.45;
+}
+
+.wealth-results__chip-dot {
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.wealth-results__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.wealth-results__readout {
+  padding: 1rem;
+}
+
+.wealth-results__list {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 0.8rem;
+}
+
+.wealth-results__item {
+  padding: 0.9rem;
+  border-radius: 18px;
+  background: rgba(243, 247, 255, 0.92);
+  border: 1px solid rgba(154, 174, 204, 0.16);
+}
+
+.wealth-results__item-title {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.wealth-results__item p {
+  margin: 0.5rem 0;
+  color: #5d7394;
+}
+
+.wealth-results__item-meta {
+  color: #5d7394;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 1080px) {
+  .wealth-results__kpis,
+  .wealth-results__grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

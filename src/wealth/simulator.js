@@ -12,6 +12,7 @@ import {
   estimateLmi,
   estimatePortfolioTaxableIncome,
   formatShortCurrency,
+  buildPortfolioYearFromSleeves,
   getEffectiveInvestmentDepositPct,
   getEffectiveOwnerDepositPct,
   getOwnerHoldingCosts,
@@ -21,11 +22,18 @@ import {
   normalisePortfolioWeights,
   percentileSummary,
   roundCurrency,
+  samplePortfolioSleeveReturns,
   scalePurchaseCostsWithPrice,
-  sampleNormal,
-  simulatePortfolioYear
+  sampleNormal
 } from './finance.js'
-import { getWealthStrategyMeta, wealthStrategyOrder, wealthVacancyRate, wealthVacancyRateVolatility } from '../data/wealthDefaults.js'
+import { sampleBootstrapAssetYear } from './assetBootstrap.js'
+import {
+  getWealthStrategyMeta,
+  resolveScenarioSelection,
+  wealthStrategyOrder,
+  wealthVacancyRate,
+  wealthVacancyRateVolatility
+} from '../data/wealthDefaults.js'
 
 function createStrategyBuckets(horizonYears) {
   return Array.from({ length: horizonYears + 1 }, () => ({
@@ -43,15 +51,16 @@ function createStrategyBuckets(horizonYears) {
 }
 
 function sampleMarketPath(request, random) {
-  const { profile, portfolioConfig, propertyConfig, housingCosts } = request
+  const { profile, propertyConfig, housingCosts } = request
+  const vacancyRate = clamp(Number(propertyConfig.vacancyRate) || wealthVacancyRate, 0, 0.12)
   return Array.from({ length: profile.horizonYears }, (_, yearIndex) => ({
     income: getAnnualSalary(profile, yearIndex),
     nonHousingLivingCosts: getAnnualNonHousingLivingCosts(profile, yearIndex),
-    portfolioYear: simulatePortfolioYear(portfolioConfig, random),
+    sleeveReturns: samplePortfolioSleeveReturns(random, sampleBootstrapAssetYear),
     houseGrowth: clamp(sampleNormal(random, propertyConfig.house.growthMean, propertyConfig.house.growthVolatility), -0.25, 0.25),
     apartmentGrowth: clamp(sampleNormal(random, propertyConfig.apartment.growthMean, propertyConfig.apartment.growthVolatility), -0.18, 0.18),
     mortgageRateJitter: sampleNormal(random, 0, 0.0045),
-    vacancyRate: clamp(sampleNormal(random, wealthVacancyRate, wealthVacancyRateVolatility), 0, 0.12),
+    vacancyRate: clamp(sampleNormal(random, vacancyRate, wealthVacancyRateVolatility), 0, 0.12),
     rentInflation: clamp(sampleNormal(random, housingCosts.rentGrowthRate, 0.01), 0, 0.08),
     boardInflation: clamp(sampleNormal(random, housingCosts.boardGrowthRate, 0.008), 0, 0.06)
   }))
@@ -325,16 +334,18 @@ function getPurchaseServiceability(request, market, occupancyMode, property, pro
     mortgageYears: property.mortgageYears,
     openingLoanBalance: purchasePlan.openingMortgageBalance,
     personalHousingCostAnnual: occupancyMode === 'investment' ? atHomeHousingCosts : 0,
-    vacancyRate: wealthVacancyRate
+    vacancyRate: clamp(Number(request.propertyConfig.vacancyRate) || wealthVacancyRate, 0, 0.12)
   })
 }
 
 function getPortfolioLedger(portfolioConfig, openingLiquidAssets, market) {
   const investedBalance = getInvestedBalance(openingLiquidAssets)
-  const portfolioReturn = investedBalance * market.portfolioYear.totalReturn
+  const portfolioYear = buildPortfolioYearFromSleeves(portfolioConfig, market.sleeveReturns)
+  const portfolioReturn = investedBalance * portfolioYear.totalReturn
   const taxableIncome = estimatePortfolioTaxableIncome(portfolioConfig, investedBalance)
 
   return {
+    portfolioYear,
     portfolioReturn,
     taxablePortfolioIncome: taxableIncome.taxableIncome,
     frankingCredits: taxableIncome.frankingCredits
@@ -843,32 +854,65 @@ function normaliseRequest(request) {
       : 'portfolio'
   safe.propertyConfig.investWhileSavingForDeposit = safe.propertyConfig.investWhileSavingForDeposit !== false
   safe.propertyConfig.firstHomeBuyerEligible = Boolean(safe.propertyConfig.firstHomeBuyerEligible)
-  safe.propertyConfig.vacancyRate = wealthVacancyRate
+  safe.propertyConfig.vacancyRate = clamp(Number(safe.propertyConfig.vacancyRate) || wealthVacancyRate, 0, 0.12)
   safe.propertyConfig.house = normaliseProperty(safe.propertyConfig.house, safe.propertyConfig)
   safe.propertyConfig.apartment = normaliseProperty(safe.propertyConfig.apartment, safe.propertyConfig)
+  safe.scenarioSelection = resolveScenarioSelection(safe.scenarioSelection)
   return safe
+}
+
+function createSingleAssetPortfolioConfig(portfolioConfig, assetKey) {
+  return {
+    ...portfolioConfig,
+    asxWeight: assetKey === 'asx' ? 1 : 0,
+    qqqWeight: assetKey === 'qqq' ? 1 : 0,
+    bondWeight: assetKey === 'bond' ? 1 : 0,
+    cashWeight: assetKey === 'cash' ? 1 : 0,
+    bitcoinWeight: assetKey === 'bitcoin' ? 1 : 0
+  }
 }
 
 export function simulateWealthPathways(rawRequest) {
   const request = normaliseRequest(rawRequest)
   const horizonYears = request.profile.horizonYears
   const strategyMeta = getWealthStrategyMeta()
+  const selectedScenarioKeys = request.scenarioSelection.selectedScenarioKeys.filter(key => strategyMeta[key])
   const bucketsByStrategy = Object.fromEntries(
-    wealthStrategyOrder.map(strategyKey => [strategyKey, createStrategyBuckets(horizonYears)])
+    selectedScenarioKeys.map(strategyKey => [strategyKey, createStrategyBuckets(horizonYears)])
   )
 
   for (let iteration = 0; iteration < request.simulationSettings.iterations; iteration += 1) {
     const random = createMulberry32(request.simulationSettings.seed + iteration * 7919)
     const marketPath = sampleMarketPath(request, random)
     const strategySnapshots = {
-      rentInvest: simulateRentInvestPath(request, marketPath),
+      stockPortfolio: simulateRentInvestPath(request, marketPath),
+      stockQqq: simulateRentInvestPath({
+        ...request,
+        portfolioConfig: createSingleAssetPortfolioConfig(request.portfolioConfig, 'qqq')
+      }, marketPath),
+      stockAsx200: simulateRentInvestPath({
+        ...request,
+        portfolioConfig: createSingleAssetPortfolioConfig(request.portfolioConfig, 'asx')
+      }, marketPath),
+      stockBonds: simulateRentInvestPath({
+        ...request,
+        portfolioConfig: createSingleAssetPortfolioConfig(request.portfolioConfig, 'bond')
+      }, marketPath),
+      stockCash: simulateRentInvestPath({
+        ...request,
+        portfolioConfig: createSingleAssetPortfolioConfig(request.portfolioConfig, 'cash')
+      }, marketPath),
+      stockBitcoin: simulateRentInvestPath({
+        ...request,
+        portfolioConfig: createSingleAssetPortfolioConfig(request.portfolioConfig, 'bitcoin')
+      }, marketPath),
       buyHouseHome: simulatePropertyPath(request, marketPath, 'owner', 'house'),
       buyApartmentHome: simulatePropertyPath(request, marketPath, 'owner', 'apartment'),
       buyHouseInvestmentProperty: simulatePropertyPath(request, marketPath, 'investment', 'house'),
       buyApartmentInvestmentProperty: simulatePropertyPath(request, marketPath, 'investment', 'apartment')
     }
 
-    wealthStrategyOrder.forEach((strategyKey) => {
+    selectedScenarioKeys.forEach((strategyKey) => {
       strategySnapshots[strategyKey].forEach((snapshot, yearIndex) => {
         addMetrics(bucketsByStrategy[strategyKey][yearIndex], snapshot)
       })
@@ -876,7 +920,7 @@ export function simulateWealthPathways(rawRequest) {
   }
 
   const strategies = Object.fromEntries(
-    wealthStrategyOrder.map(strategyKey => [strategyKey, aggregateStrategy(strategyKey, bucketsByStrategy[strategyKey], strategyMeta)])
+    selectedScenarioKeys.map(strategyKey => [strategyKey, aggregateStrategy(strategyKey, bucketsByStrategy[strategyKey], strategyMeta)])
   )
 
   return {
@@ -884,6 +928,7 @@ export function simulateWealthPathways(rawRequest) {
     years: Array.from({ length: horizonYears + 1 }, (_, index) => index),
     iterations: request.simulationSettings.iterations,
     request,
-    strategies
+    strategies,
+    strategyOrder: wealthStrategyOrder.filter(key => selectedScenarioKeys.includes(key))
   }
 }

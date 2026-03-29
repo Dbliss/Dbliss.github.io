@@ -211,16 +211,18 @@ export function normalisePortfolioWeights(portfolioConfig) {
     asxWeight: Math.max(0, Number(portfolioConfig.asxWeight) || 0),
     qqqWeight: Math.max(0, Number(portfolioConfig.qqqWeight) || 0),
     bondWeight: Math.max(0, Number(portfolioConfig.bondWeight) || 0),
-    cashWeight: Math.max(0, Number(portfolioConfig.cashWeight) || 0)
+    cashWeight: Math.max(0, Number(portfolioConfig.cashWeight) || 0),
+    bitcoinWeight: Math.max(0, Number(portfolioConfig.bitcoinWeight) || 0)
   }
-  const totalWeight = rawWeights.asxWeight + rawWeights.qqqWeight + rawWeights.bondWeight + rawWeights.cashWeight
+  const totalWeight = rawWeights.asxWeight + rawWeights.qqqWeight + rawWeights.bondWeight + rawWeights.cashWeight + rawWeights.bitcoinWeight
 
   if (totalWeight <= 0) {
     return {
       asxWeight: 0.2,
       qqqWeight: 0.7,
       bondWeight: 0.1,
-      cashWeight: 0
+      cashWeight: 0,
+      bitcoinWeight: 0
     }
   }
 
@@ -228,22 +230,42 @@ export function normalisePortfolioWeights(portfolioConfig) {
     asxWeight: rawWeights.asxWeight / totalWeight,
     qqqWeight: rawWeights.qqqWeight / totalWeight,
     bondWeight: rawWeights.bondWeight / totalWeight,
-    cashWeight: rawWeights.cashWeight / totalWeight
+    cashWeight: rawWeights.cashWeight / totalWeight,
+    bitcoinWeight: rawWeights.bitcoinWeight / totalWeight
   }
 }
 
-export function simulatePortfolioYear(portfolioConfig, random) {
+export function samplePortfolioSleeveReturns(random, sampleAssetYear) {
+  const sampler = typeof sampleAssetYear === 'function' ? sampleAssetYear : (() => 0)
+  const asxReturn = clamp(sampler('asx200', random), -0.75, 0.75)
+  const qqqReturn = clamp(sampler('qqq', random), -0.85, 0.95)
+  const bondReturn = clamp(sampler('bonds', random), -0.25, 0.25)
+  const cashReturn = clamp(sampler('cash', random), -0.02, 0.12)
+  const bitcoinReturn = clamp(sampler('bitcoin', random), -0.95, 2.5)
+
+  return {
+    asxReturn,
+    qqqReturn,
+    bondReturn,
+    cashReturn,
+    bitcoinReturn
+  }
+}
+
+export function buildPortfolioYearFromSleeves(portfolioConfig, sleeveReturns) {
   const weights = normalisePortfolioWeights(portfolioConfig)
-  const asxReturn = clamp(sampleNormal(random, portfolioConfig.asxReturnMean, portfolioConfig.asxVolatility), -0.75, 0.75)
-  const qqqReturn = clamp(sampleNormal(random, portfolioConfig.qqqReturnMean, portfolioConfig.qqqVolatility), -0.85, 0.95)
-  const bondReturn = clamp(sampleNormal(random, portfolioConfig.bondReturnMean, portfolioConfig.bondVolatility), -0.25, 0.25)
-  const cashReturn = clamp(sampleNormal(random, portfolioConfig.cashReturnMean, portfolioConfig.cashVolatility), -0.02, 0.12)
+  const asxReturn = clamp(Number(sleeveReturns?.asxReturn) || 0, -0.75, 0.75)
+  const qqqReturn = clamp(Number(sleeveReturns?.qqqReturn) || 0, -0.85, 0.95)
+  const bondReturn = clamp(Number(sleeveReturns?.bondReturn) || 0, -0.25, 0.25)
+  const cashReturn = clamp(Number(sleeveReturns?.cashReturn) || 0, -0.02, 0.12)
+  const bitcoinReturn = clamp(Number(sleeveReturns?.bitcoinReturn) || 0, -0.95, 2.5)
 
   const totalReturn =
     weights.asxWeight * asxReturn +
     weights.qqqWeight * qqqReturn +
     weights.bondWeight * bondReturn +
-    weights.cashWeight * cashReturn
+    weights.cashWeight * cashReturn +
+    weights.bitcoinWeight * bitcoinReturn
 
   const asxDividendIncome = weights.asxWeight * (portfolioConfig.asxDividendYield || 0)
   const qqqDividendIncome = weights.qqqWeight * (portfolioConfig.qqqDividendYield || 0)
@@ -256,6 +278,13 @@ export function simulatePortfolioYear(portfolioConfig, random) {
     totalReturn,
     distributionYield
   }
+}
+
+export function simulatePortfolioYear(portfolioConfig, random, sampleAssetYear) {
+  return buildPortfolioYearFromSleeves(
+    portfolioConfig,
+    samplePortfolioSleeveReturns(random, sampleAssetYear)
+  )
 }
 
 export function estimatePortfolioTaxableIncome(portfolioConfig, portfolioBalance) {

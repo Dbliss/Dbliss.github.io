@@ -1,0 +1,3214 @@
+{
+  "generatedAt": "2026-03-27T00:02:24Z",
+  "monthsPerSimulationYear": 12,
+  "assets": {
+    "qqq": {
+      "key": "qqq",
+      "label": "QQQ",
+      "ticker": "QQQ",
+      "currency": "USD",
+      "lookbackYears": 10,
+      "source": "Yahoo Finance chart API",
+      "sourceUrl": "https://finance.yahoo.com/quote/QQQ/history/",
+      "startMonth": "2016-04",
+      "endMonth": "2026-02",
+      "months": 119,
+      "monthlyReturns": [
+        {
+          "month": "2016-04",
+          "monthEnd": "2016-04-29",
+          "previousMonth": "2016-03",
+          "totalReturn": -0.03186843
+        },
+        {
+          "month": "2016-05",
+          "monthEnd": "2016-05-31",
+          "previousMonth": "2016-04",
+          "totalReturn": 0.04370061
+        },
+        {
+          "month": "2016-06",
+          "monthEnd": "2016-06-30",
+          "previousMonth": "2016-05",
+          "totalReturn": -0.02278035
+        },
+        {
+          "month": "2016-07",
+          "monthEnd": "2016-07-29",
+          "previousMonth": "2016-06",
+          "totalReturn": 0.07150822
+        },
+        {
+          "month": "2016-08",
+          "monthEnd": "2016-08-31",
+          "previousMonth": "2016-07",
+          "totalReturn": 0.01050071
+        },
+        {
+          "month": "2016-09",
+          "monthEnd": "2016-09-30",
+          "previousMonth": "2016-08",
+          "totalReturn": 0.02213562
+        },
+        {
+          "month": "2016-10",
+          "monthEnd": "2016-10-31",
+          "previousMonth": "2016-09",
+          "totalReturn": -0.01457243
+        },
+        {
+          "month": "2016-11",
+          "monthEnd": "2016-11-30",
+          "previousMonth": "2016-10",
+          "totalReturn": 0.00435941
+        },
+        {
+          "month": "2016-12",
+          "monthEnd": "2016-12-30",
+          "previousMonth": "2016-11",
+          "totalReturn": 0.01132258
+        },
+        {
+          "month": "2017-01",
+          "monthEnd": "2017-01-31",
+          "previousMonth": "2016-12",
+          "totalReturn": 0.05140082
+        },
+        {
+          "month": "2017-02",
+          "monthEnd": "2017-02-28",
+          "previousMonth": "2017-01",
+          "totalReturn": 0.04375091
+        },
+        {
+          "month": "2017-03",
+          "monthEnd": "2017-03-31",
+          "previousMonth": "2017-02",
+          "totalReturn": 0.02026824
+        },
+        {
+          "month": "2017-04",
+          "monthEnd": "2017-04-28",
+          "previousMonth": "2017-03",
+          "totalReturn": 0.02727025
+        },
+        {
+          "month": "2017-05",
+          "monthEnd": "2017-05-31",
+          "previousMonth": "2017-04",
+          "totalReturn": 0.03897362
+        },
+        {
+          "month": "2017-06",
+          "monthEnd": "2017-06-30",
+          "previousMonth": "2017-05",
+          "totalReturn": -0.02317966
+        },
+        {
+          "month": "2017-07",
+          "monthEnd": "2017-07-31",
+          "previousMonth": "2017-06",
+          "totalReturn": 0.04061298
+        },
+        {
+          "month": "2017-08",
+          "monthEnd": "2017-08-31",
+          "previousMonth": "2017-07",
+          "totalReturn": 0.02073622
+        },
+        {
+          "month": "2017-09",
+          "monthEnd": "2017-09-29",
+          "previousMonth": "2017-08",
+          "totalReturn": -0.00295252
+        },
+        {
+          "month": "2017-10",
+          "monthEnd": "2017-10-31",
+          "previousMonth": "2017-09",
+          "totalReturn": 0.04606396
+        },
+        {
+          "month": "2017-11",
+          "monthEnd": "2017-11-30",
+          "previousMonth": "2017-10",
+          "totalReturn": 0.01971751
+        },
+        {
+          "month": "2017-12",
+          "monthEnd": "2017-12-29",
+          "previousMonth": "2017-11",
+          "totalReturn": 0.00603106
+        },
+        {
+          "month": "2018-01",
+          "monthEnd": "2018-01-31",
+          "previousMonth": "2017-12",
+          "totalReturn": 0.08757042
+        },
+        {
+          "month": "2018-02",
+          "monthEnd": "2018-02-28",
+          "previousMonth": "2018-01",
+          "totalReturn": -0.01292801
+        },
+        {
+          "month": "2018-03",
+          "monthEnd": "2018-03-29",
+          "previousMonth": "2018-02",
+          "totalReturn": -0.04078796
+        },
+        {
+          "month": "2018-04",
+          "monthEnd": "2018-04-30",
+          "previousMonth": "2018-03",
+          "totalReturn": 0.00505803
+        },
+        {
+          "month": "2018-05",
+          "monthEnd": "2018-05-31",
+          "previousMonth": "2018-04",
+          "totalReturn": 0.05672949
+        },
+        {
+          "month": "2018-06",
+          "monthEnd": "2018-06-29",
+          "previousMonth": "2018-05",
+          "totalReturn": 0.01145017
+        },
+        {
+          "month": "2018-07",
+          "monthEnd": "2018-07-31",
+          "previousMonth": "2018-06",
+          "totalReturn": 0.02796411
+        },
+        {
+          "month": "2018-08",
+          "monthEnd": "2018-08-31",
+          "previousMonth": "2018-07",
+          "totalReturn": 0.05780694
+        },
+        {
+          "month": "2018-09",
+          "monthEnd": "2018-09-28",
+          "previousMonth": "2018-08",
+          "totalReturn": -0.0028165
+        },
+        {
+          "month": "2018-10",
+          "monthEnd": "2018-10-31",
+          "previousMonth": "2018-09",
+          "totalReturn": -0.08595709
+        },
+        {
+          "month": "2018-11",
+          "monthEnd": "2018-11-30",
+          "previousMonth": "2018-10",
+          "totalReturn": -0.0026501
+        },
+        {
+          "month": "2018-12",
+          "monthEnd": "2018-12-31",
+          "previousMonth": "2018-11",
+          "totalReturn": -0.08660692
+        },
+        {
+          "month": "2019-01",
+          "monthEnd": "2019-01-31",
+          "previousMonth": "2018-12",
+          "totalReturn": 0.09010729
+        },
+        {
+          "month": "2019-02",
+          "monthEnd": "2019-02-28",
+          "previousMonth": "2019-01",
+          "totalReturn": 0.02991155
+        },
+        {
+          "month": "2019-03",
+          "monthEnd": "2019-03-29",
+          "previousMonth": "2019-02",
+          "totalReturn": 0.03924601
+        },
+        {
+          "month": "2019-04",
+          "monthEnd": "2019-04-30",
+          "previousMonth": "2019-03",
+          "totalReturn": 0.05499295
+        },
+        {
+          "month": "2019-05",
+          "monthEnd": "2019-05-31",
+          "previousMonth": "2019-04",
+          "totalReturn": -0.08225166
+        },
+        {
+          "month": "2019-06",
+          "monthEnd": "2019-06-28",
+          "previousMonth": "2019-05",
+          "totalReturn": 0.07590061
+        },
+        {
+          "month": "2019-07",
+          "monthEnd": "2019-07-31",
+          "previousMonth": "2019-06",
+          "totalReturn": 0.02334792
+        },
+        {
+          "month": "2019-08",
+          "monthEnd": "2019-08-30",
+          "previousMonth": "2019-07",
+          "totalReturn": -0.01899552
+        },
+        {
+          "month": "2019-09",
+          "monthEnd": "2019-09-30",
+          "previousMonth": "2019-08",
+          "totalReturn": 0.00917886
+        },
+        {
+          "month": "2019-10",
+          "monthEnd": "2019-10-31",
+          "previousMonth": "2019-09",
+          "totalReturn": 0.04380055
+        },
+        {
+          "month": "2019-11",
+          "monthEnd": "2019-11-29",
+          "previousMonth": "2019-10",
+          "totalReturn": 0.04069432
+        },
+        {
+          "month": "2019-12",
+          "monthEnd": "2019-12-31",
+          "previousMonth": "2019-11",
+          "totalReturn": 0.03886368
+        },
+        {
+          "month": "2020-01",
+          "monthEnd": "2020-01-31",
+          "previousMonth": "2019-12",
+          "totalReturn": 0.0303843
+        },
+        {
+          "month": "2020-02",
+          "monthEnd": "2020-02-28",
+          "previousMonth": "2020-01",
+          "totalReturn": -0.06057419
+        },
+        {
+          "month": "2020-03",
+          "monthEnd": "2020-03-31",
+          "previousMonth": "2020-02",
+          "totalReturn": -0.07285847
+        },
+        {
+          "month": "2020-04",
+          "monthEnd": "2020-04-30",
+          "previousMonth": "2020-03",
+          "totalReturn": 0.14973769
+        },
+        {
+          "month": "2020-05",
+          "monthEnd": "2020-05-29",
+          "previousMonth": "2020-04",
+          "totalReturn": 0.06600861
+        },
+        {
+          "month": "2020-06",
+          "monthEnd": "2020-06-30",
+          "previousMonth": "2020-05",
+          "totalReturn": 0.06286683
+        },
+        {
+          "month": "2020-07",
+          "monthEnd": "2020-07-31",
+          "previousMonth": "2020-06",
+          "totalReturn": 0.07346508
+        },
+        {
+          "month": "2020-08",
+          "monthEnd": "2020-08-31",
+          "previousMonth": "2020-07",
+          "totalReturn": 0.10944743
+        },
+        {
+          "month": "2020-09",
+          "monthEnd": "2020-09-30",
+          "previousMonth": "2020-08",
+          "totalReturn": -0.0577863
+        },
+        {
+          "month": "2020-10",
+          "monthEnd": "2020-10-30",
+          "previousMonth": "2020-09",
+          "totalReturn": -0.03044923
+        },
+        {
+          "month": "2020-11",
+          "monthEnd": "2020-11-30",
+          "previousMonth": "2020-10",
+          "totalReturn": 0.11225781
+        },
+        {
+          "month": "2020-12",
+          "monthEnd": "2020-12-31",
+          "previousMonth": "2020-11",
+          "totalReturn": 0.04902438
+        },
+        {
+          "month": "2021-01",
+          "monthEnd": "2021-01-29",
+          "previousMonth": "2020-12",
+          "totalReturn": 0.0026138
+        },
+        {
+          "month": "2021-02",
+          "monthEnd": "2021-02-26",
+          "previousMonth": "2021-01",
+          "totalReturn": -0.00133532
+        },
+        {
+          "month": "2021-03",
+          "monthEnd": "2021-03-31",
+          "previousMonth": "2021-02",
+          "totalReturn": 0.01716781
+        },
+        {
+          "month": "2021-04",
+          "monthEnd": "2021-04-30",
+          "previousMonth": "2021-03",
+          "totalReturn": 0.05909805
+        },
+        {
+          "month": "2021-05",
+          "monthEnd": "2021-05-28",
+          "previousMonth": "2021-04",
+          "totalReturn": -0.01201227
+        },
+        {
+          "month": "2021-06",
+          "monthEnd": "2021-06-30",
+          "previousMonth": "2021-05",
+          "totalReturn": 0.06262129
+        },
+        {
+          "month": "2021-07",
+          "monthEnd": "2021-07-30",
+          "previousMonth": "2021-06",
+          "totalReturn": 0.02860946
+        },
+        {
+          "month": "2021-08",
+          "monthEnd": "2021-08-31",
+          "previousMonth": "2021-07",
+          "totalReturn": 0.04218645
+        },
+        {
+          "month": "2021-09",
+          "monthEnd": "2021-09-30",
+          "previousMonth": "2021-08",
+          "totalReturn": -0.0568313
+        },
+        {
+          "month": "2021-10",
+          "monthEnd": "2021-10-29",
+          "previousMonth": "2021-09",
+          "totalReturn": 0.07864004
+        },
+        {
+          "month": "2021-11",
+          "monthEnd": "2021-11-30",
+          "previousMonth": "2021-10",
+          "totalReturn": 0.01996847
+        },
+        {
+          "month": "2021-12",
+          "monthEnd": "2021-12-31",
+          "previousMonth": "2021-11",
+          "totalReturn": 0.01152345
+        },
+        {
+          "month": "2022-01",
+          "monthEnd": "2022-01-31",
+          "previousMonth": "2021-12",
+          "totalReturn": -0.08747025
+        },
+        {
+          "month": "2022-02",
+          "monthEnd": "2022-02-28",
+          "previousMonth": "2022-01",
+          "totalReturn": -0.04475975
+        },
+        {
+          "month": "2022-03",
+          "monthEnd": "2022-03-31",
+          "previousMonth": "2022-02",
+          "totalReturn": 0.04667888
+        },
+        {
+          "month": "2022-04",
+          "monthEnd": "2022-04-29",
+          "previousMonth": "2022-03",
+          "totalReturn": -0.1359573
+        },
+        {
+          "month": "2022-05",
+          "monthEnd": "2022-05-31",
+          "previousMonth": "2022-04",
+          "totalReturn": -0.01586608
+        },
+        {
+          "month": "2022-06",
+          "monthEnd": "2022-06-30",
+          "previousMonth": "2022-05",
+          "totalReturn": -0.089079
+        },
+        {
+          "month": "2022-07",
+          "monthEnd": "2022-07-29",
+          "previousMonth": "2022-06",
+          "totalReturn": 0.12551772
+        },
+        {
+          "month": "2022-08",
+          "monthEnd": "2022-08-31",
+          "previousMonth": "2022-07",
+          "totalReturn": -0.05132192
+        },
+        {
+          "month": "2022-09",
+          "monthEnd": "2022-09-30",
+          "previousMonth": "2022-08",
+          "totalReturn": -0.10535541
+        },
+        {
+          "month": "2022-10",
+          "monthEnd": "2022-10-31",
+          "previousMonth": "2022-09",
+          "totalReturn": 0.03999862
+        },
+        {
+          "month": "2022-11",
+          "monthEnd": "2022-11-30",
+          "previousMonth": "2022-10",
+          "totalReturn": 0.05544139
+        },
+        {
+          "month": "2022-12",
+          "monthEnd": "2022-12-30",
+          "previousMonth": "2022-11",
+          "totalReturn": -0.09013669
+        },
+        {
+          "month": "2023-01",
+          "monthEnd": "2023-01-31",
+          "previousMonth": "2022-12",
+          "totalReturn": 0.10642915
+        },
+        {
+          "month": "2023-02",
+          "monthEnd": "2023-02-28",
+          "previousMonth": "2023-01",
+          "totalReturn": -0.00359776
+        },
+        {
+          "month": "2023-03",
+          "monthEnd": "2023-03-31",
+          "previousMonth": "2023-02",
+          "totalReturn": 0.09492748
+        },
+        {
+          "month": "2023-04",
+          "monthEnd": "2023-04-28",
+          "previousMonth": "2023-03",
+          "totalReturn": 0.0050787
+        },
+        {
+          "month": "2023-05",
+          "monthEnd": "2023-05-31",
+          "previousMonth": "2023-04",
+          "totalReturn": 0.07883816
+        },
+        {
+          "month": "2023-06",
+          "monthEnd": "2023-06-30",
+          "previousMonth": "2023-05",
+          "totalReturn": 0.06303844
+        },
+        {
+          "month": "2023-07",
+          "monthEnd": "2023-07-31",
+          "previousMonth": "2023-06",
+          "totalReturn": 0.03860101
+        },
+        {
+          "month": "2023-08",
+          "monthEnd": "2023-08-31",
+          "previousMonth": "2023-07",
+          "totalReturn": -0.01483002
+        },
+        {
+          "month": "2023-09",
+          "monthEnd": "2023-09-29",
+          "previousMonth": "2023-08",
+          "totalReturn": -0.05079875
+        },
+        {
+          "month": "2023-10",
+          "monthEnd": "2023-10-31",
+          "previousMonth": "2023-09",
+          "totalReturn": -0.02065471
+        },
+        {
+          "month": "2023-11",
+          "monthEnd": "2023-11-30",
+          "previousMonth": "2023-10",
+          "totalReturn": 0.10818821
+        },
+        {
+          "month": "2023-12",
+          "monthEnd": "2023-12-29",
+          "previousMonth": "2023-11",
+          "totalReturn": 0.05586973
+        },
+        {
+          "month": "2024-01",
+          "monthEnd": "2024-01-31",
+          "previousMonth": "2023-12",
+          "totalReturn": 0.01819197
+        },
+        {
+          "month": "2024-02",
+          "monthEnd": "2024-02-29",
+          "previousMonth": "2024-01",
+          "totalReturn": 0.05283359
+        },
+        {
+          "month": "2024-03",
+          "monthEnd": "2024-03-28",
+          "previousMonth": "2024-02",
+          "totalReturn": 0.01274974
+        },
+        {
+          "month": "2024-04",
+          "monthEnd": "2024-04-30",
+          "previousMonth": "2024-03",
+          "totalReturn": -0.04373797
+        },
+        {
+          "month": "2024-05",
+          "monthEnd": "2024-05-31",
+          "previousMonth": "2024-04",
+          "totalReturn": 0.06151844
+        },
+        {
+          "month": "2024-06",
+          "monthEnd": "2024-06-28",
+          "previousMonth": "2024-05",
+          "totalReturn": 0.06470113
+        },
+        {
+          "month": "2024-07",
+          "monthEnd": "2024-07-31",
+          "previousMonth": "2024-06",
+          "totalReturn": -0.01678105
+        },
+        {
+          "month": "2024-08",
+          "monthEnd": "2024-08-30",
+          "previousMonth": "2024-07",
+          "totalReturn": 0.0110386
+        },
+        {
+          "month": "2024-09",
+          "monthEnd": "2024-09-30",
+          "previousMonth": "2024-08",
+          "totalReturn": 0.02621603
+        },
+        {
+          "month": "2024-10",
+          "monthEnd": "2024-10-31",
+          "previousMonth": "2024-09",
+          "totalReturn": -0.00864638
+        },
+        {
+          "month": "2024-11",
+          "monthEnd": "2024-11-29",
+          "previousMonth": "2024-10",
+          "totalReturn": 0.05350829
+        },
+        {
+          "month": "2024-12",
+          "monthEnd": "2024-12-31",
+          "previousMonth": "2024-11",
+          "totalReturn": 0.0045404
+        },
+        {
+          "month": "2025-01",
+          "monthEnd": "2025-01-31",
+          "previousMonth": "2024-12",
+          "totalReturn": 0.02163396
+        },
+        {
+          "month": "2025-02",
+          "monthEnd": "2025-02-28",
+          "previousMonth": "2025-01",
+          "totalReturn": -0.02703463
+        },
+        {
+          "month": "2025-03",
+          "monthEnd": "2025-03-31",
+          "previousMonth": "2025-02",
+          "totalReturn": -0.07586192
+        },
+        {
+          "month": "2025-04",
+          "monthEnd": "2025-04-30",
+          "previousMonth": "2025-03",
+          "totalReturn": 0.01396823
+        },
+        {
+          "month": "2025-05",
+          "monthEnd": "2025-05-30",
+          "previousMonth": "2025-04",
+          "totalReturn": 0.09178287
+        },
+        {
+          "month": "2025-06",
+          "monthEnd": "2025-06-30",
+          "previousMonth": "2025-05",
+          "totalReturn": 0.06385844
+        },
+        {
+          "month": "2025-07",
+          "monthEnd": "2025-07-31",
+          "previousMonth": "2025-06",
+          "totalReturn": 0.02423674
+        },
+        {
+          "month": "2025-08",
+          "monthEnd": "2025-08-29",
+          "previousMonth": "2025-07",
+          "totalReturn": 0.00953976
+        },
+        {
+          "month": "2025-09",
+          "monthEnd": "2025-09-30",
+          "previousMonth": "2025-08",
+          "totalReturn": 0.05376227
+        },
+        {
+          "month": "2025-10",
+          "monthEnd": "2025-10-31",
+          "previousMonth": "2025-09",
+          "totalReturn": 0.04780382
+        },
+        {
+          "month": "2025-11",
+          "monthEnd": "2025-11-28",
+          "previousMonth": "2025-10",
+          "totalReturn": -0.0156103
+        },
+        {
+          "month": "2025-12",
+          "monthEnd": "2025-12-31",
+          "previousMonth": "2025-11",
+          "totalReturn": -0.00669932
+        },
+        {
+          "month": "2026-01",
+          "monthEnd": "2026-01-30",
+          "previousMonth": "2025-12",
+          "totalReturn": 0.01230648
+        },
+        {
+          "month": "2026-02",
+          "monthEnd": "2026-02-27",
+          "previousMonth": "2026-01",
+          "totalReturn": -0.02344543
+        }
+      ]
+    },
+    "asx200": {
+      "key": "asx200",
+      "label": "ASX200",
+      "ticker": "STW.AX",
+      "currency": "AUD",
+      "lookbackYears": 10,
+      "source": "Yahoo Finance chart API",
+      "sourceUrl": "https://finance.yahoo.com/quote/STW.AX/history/",
+      "startMonth": "2016-04",
+      "endMonth": "2026-02",
+      "months": 119,
+      "monthlyReturns": [
+        {
+          "month": "2016-04",
+          "monthEnd": "2016-04-29",
+          "previousMonth": "2016-03",
+          "totalReturn": 0.05078348
+        },
+        {
+          "month": "2016-05",
+          "monthEnd": "2016-05-31",
+          "previousMonth": "2016-04",
+          "totalReturn": 0.03000384
+        },
+        {
+          "month": "2016-06",
+          "monthEnd": "2016-06-30",
+          "previousMonth": "2016-05",
+          "totalReturn": -0.02790793
+        },
+        {
+          "month": "2016-07",
+          "monthEnd": "2016-07-29",
+          "previousMonth": "2016-06",
+          "totalReturn": 0.066926
+        },
+        {
+          "month": "2016-08",
+          "monthEnd": "2016-08-31",
+          "previousMonth": "2016-07",
+          "totalReturn": -0.01649723
+        },
+        {
+          "month": "2016-09",
+          "monthEnd": "2016-09-30",
+          "previousMonth": "2016-08",
+          "totalReturn": 0.00548807
+        },
+        {
+          "month": "2016-10",
+          "monthEnd": "2016-10-31",
+          "previousMonth": "2016-09",
+          "totalReturn": -0.02753203
+        },
+        {
+          "month": "2016-11",
+          "monthEnd": "2016-11-30",
+          "previousMonth": "2016-10",
+          "totalReturn": 0.04752259
+        },
+        {
+          "month": "2016-12",
+          "monthEnd": "2016-12-29",
+          "previousMonth": "2016-11",
+          "totalReturn": 0.03167763
+        },
+        {
+          "month": "2017-01",
+          "monthEnd": "2017-01-31",
+          "previousMonth": "2016-12",
+          "totalReturn": -0.00264493
+        },
+        {
+          "month": "2017-02",
+          "monthEnd": "2017-02-28",
+          "previousMonth": "2017-01",
+          "totalReturn": 0.01705146
+        },
+        {
+          "month": "2017-03",
+          "monthEnd": "2017-03-30",
+          "previousMonth": "2017-02",
+          "totalReturn": 0.03283186
+        },
+        {
+          "month": "2017-04",
+          "monthEnd": "2017-04-28",
+          "previousMonth": "2017-03",
+          "totalReturn": 0.01035604
+        },
+        {
+          "month": "2017-05",
+          "monthEnd": "2017-05-31",
+          "previousMonth": "2017-04",
+          "totalReturn": -0.02751299
+        },
+        {
+          "month": "2017-06",
+          "monthEnd": "2017-06-30",
+          "previousMonth": "2017-05",
+          "totalReturn": 0.00089403
+        },
+        {
+          "month": "2017-07",
+          "monthEnd": "2017-07-31",
+          "previousMonth": "2017-06",
+          "totalReturn": 0.00037314
+        },
+        {
+          "month": "2017-08",
+          "monthEnd": "2017-08-31",
+          "previousMonth": "2017-07",
+          "totalReturn": 0.00653227
+        },
+        {
+          "month": "2017-09",
+          "monthEnd": "2017-09-29",
+          "previousMonth": "2017-08",
+          "totalReturn": -0.00037222
+        },
+        {
+          "month": "2017-10",
+          "monthEnd": "2017-10-31",
+          "previousMonth": "2017-09",
+          "totalReturn": 0.04523161
+        },
+        {
+          "month": "2017-11",
+          "monthEnd": "2017-11-30",
+          "previousMonth": "2017-10",
+          "totalReturn": 0.01532651
+        },
+        {
+          "month": "2017-12",
+          "monthEnd": "2017-12-28",
+          "previousMonth": "2017-11",
+          "totalReturn": 0.01351396
+        },
+        {
+          "month": "2018-01",
+          "monthEnd": "2018-01-31",
+          "previousMonth": "2017-12",
+          "totalReturn": 0.00424221
+        },
+        {
+          "month": "2018-02",
+          "monthEnd": "2018-02-28",
+          "previousMonth": "2018-01",
+          "totalReturn": -0.01056124
+        },
+        {
+          "month": "2018-03",
+          "monthEnd": "2018-03-28",
+          "previousMonth": "2018-02",
+          "totalReturn": -0.03303651
+        },
+        {
+          "month": "2018-04",
+          "monthEnd": "2018-04-30",
+          "previousMonth": "2018-03",
+          "totalReturn": 0.03994055
+        },
+        {
+          "month": "2018-05",
+          "monthEnd": "2018-05-31",
+          "previousMonth": "2018-04",
+          "totalReturn": 0.01018224
+        },
+        {
+          "month": "2018-06",
+          "monthEnd": "2018-06-29",
+          "previousMonth": "2018-05",
+          "totalReturn": 0.03227302
+        },
+        {
+          "month": "2018-07",
+          "monthEnd": "2018-07-31",
+          "previousMonth": "2018-06",
+          "totalReturn": 0.01414021
+        },
+        {
+          "month": "2018-08",
+          "monthEnd": "2018-08-31",
+          "previousMonth": "2018-07",
+          "totalReturn": 0.01496341
+        },
+        {
+          "month": "2018-09",
+          "monthEnd": "2018-09-28",
+          "previousMonth": "2018-08",
+          "totalReturn": -0.01429112
+        },
+        {
+          "month": "2018-10",
+          "monthEnd": "2018-10-31",
+          "previousMonth": "2018-09",
+          "totalReturn": -0.05924038
+        },
+        {
+          "month": "2018-11",
+          "monthEnd": "2018-11-29",
+          "previousMonth": "2018-10",
+          "totalReturn": -0.02276451
+        },
+        {
+          "month": "2018-12",
+          "monthEnd": "2018-12-30",
+          "previousMonth": "2018-11",
+          "totalReturn": -0.00110897
+        },
+        {
+          "month": "2019-01",
+          "monthEnd": "2019-01-31",
+          "previousMonth": "2018-12",
+          "totalReturn": 0.03781824
+        },
+        {
+          "month": "2019-02",
+          "monthEnd": "2019-02-28",
+          "previousMonth": "2019-01",
+          "totalReturn": 0.06445722
+        },
+        {
+          "month": "2019-03",
+          "monthEnd": "2019-03-31",
+          "previousMonth": "2019-02",
+          "totalReturn": 0.01006174
+        },
+        {
+          "month": "2019-04",
+          "monthEnd": "2019-04-30",
+          "previousMonth": "2019-03",
+          "totalReturn": 0.0170691
+        },
+        {
+          "month": "2019-05",
+          "monthEnd": "2019-05-31",
+          "previousMonth": "2019-04",
+          "totalReturn": 0.01525676
+        },
+        {
+          "month": "2019-06",
+          "monthEnd": "2019-06-28",
+          "previousMonth": "2019-05",
+          "totalReturn": 0.03785959
+        },
+        {
+          "month": "2019-07",
+          "monthEnd": "2019-07-31",
+          "previousMonth": "2019-06",
+          "totalReturn": 0.02866923
+        },
+        {
+          "month": "2019-08",
+          "monthEnd": "2019-08-30",
+          "previousMonth": "2019-07",
+          "totalReturn": -0.02406975
+        },
+        {
+          "month": "2019-09",
+          "monthEnd": "2019-09-30",
+          "previousMonth": "2019-08",
+          "totalReturn": 0.02179174
+        },
+        {
+          "month": "2019-10",
+          "monthEnd": "2019-10-31",
+          "previousMonth": "2019-09",
+          "totalReturn": -0.00563182
+        },
+        {
+          "month": "2019-11",
+          "monthEnd": "2019-11-28",
+          "previousMonth": "2019-10",
+          "totalReturn": 0.03187729
+        },
+        {
+          "month": "2019-12",
+          "monthEnd": "2019-12-30",
+          "previousMonth": "2019-11",
+          "totalReturn": -0.02131905
+        },
+        {
+          "month": "2020-01",
+          "monthEnd": "2020-01-30",
+          "previousMonth": "2019-12",
+          "totalReturn": 0.04949872
+        },
+        {
+          "month": "2020-02",
+          "monthEnd": "2020-02-27",
+          "previousMonth": "2020-01",
+          "totalReturn": -0.0784527
+        },
+        {
+          "month": "2020-03",
+          "monthEnd": "2020-03-31",
+          "previousMonth": "2020-02",
+          "totalReturn": -0.18119793
+        },
+        {
+          "month": "2020-04",
+          "monthEnd": "2020-04-30",
+          "previousMonth": "2020-03",
+          "totalReturn": 0.05490201
+        },
+        {
+          "month": "2020-05",
+          "monthEnd": "2020-05-29",
+          "previousMonth": "2020-04",
+          "totalReturn": 0.05341406
+        },
+        {
+          "month": "2020-06",
+          "monthEnd": "2020-06-30",
+          "previousMonth": "2020-05",
+          "totalReturn": 0.01763898
+        },
+        {
+          "month": "2020-07",
+          "monthEnd": "2020-07-31",
+          "previousMonth": "2020-06",
+          "totalReturn": 0.00987555
+        },
+        {
+          "month": "2020-08",
+          "monthEnd": "2020-08-31",
+          "previousMonth": "2020-07",
+          "totalReturn": 0.02480969
+        },
+        {
+          "month": "2020-09",
+          "monthEnd": "2020-09-30",
+          "previousMonth": "2020-08",
+          "totalReturn": -0.03675181
+        },
+        {
+          "month": "2020-10",
+          "monthEnd": "2020-10-29",
+          "previousMonth": "2020-09",
+          "totalReturn": 0.01774806
+        },
+        {
+          "month": "2020-11",
+          "monthEnd": "2020-11-30",
+          "previousMonth": "2020-10",
+          "totalReturn": 0.11498649
+        },
+        {
+          "month": "2020-12",
+          "monthEnd": "2020-12-30",
+          "previousMonth": "2020-11",
+          "totalReturn": 0.0056632
+        },
+        {
+          "month": "2021-01",
+          "monthEnd": "2021-01-31",
+          "previousMonth": "2020-12",
+          "totalReturn": 0.00651997
+        },
+        {
+          "month": "2021-02",
+          "monthEnd": "2021-02-28",
+          "previousMonth": "2021-01",
+          "totalReturn": 0.02510104
+        },
+        {
+          "month": "2021-03",
+          "monthEnd": "2021-03-31",
+          "previousMonth": "2021-02",
+          "totalReturn": 0.01185016
+        },
+        {
+          "month": "2021-04",
+          "monthEnd": "2021-04-30",
+          "previousMonth": "2021-03",
+          "totalReturn": 0.02597197
+        },
+        {
+          "month": "2021-05",
+          "monthEnd": "2021-05-31",
+          "previousMonth": "2021-04",
+          "totalReturn": 0.02562142
+        },
+        {
+          "month": "2021-06",
+          "monthEnd": "2021-06-30",
+          "previousMonth": "2021-05",
+          "totalReturn": 0.0221986
+        },
+        {
+          "month": "2021-07",
+          "monthEnd": "2021-07-30",
+          "previousMonth": "2021-06",
+          "totalReturn": 0.01165381
+        },
+        {
+          "month": "2021-08",
+          "monthEnd": "2021-08-31",
+          "previousMonth": "2021-07",
+          "totalReturn": 0.02449689
+        },
+        {
+          "month": "2021-09",
+          "monthEnd": "2021-09-30",
+          "previousMonth": "2021-08",
+          "totalReturn": -0.02319955
+        },
+        {
+          "month": "2021-10",
+          "monthEnd": "2021-10-31",
+          "previousMonth": "2021-09",
+          "totalReturn": 0.00991559
+        },
+        {
+          "month": "2021-11",
+          "monthEnd": "2021-11-30",
+          "previousMonth": "2021-10",
+          "totalReturn": -0.01318863
+        },
+        {
+          "month": "2021-12",
+          "monthEnd": "2021-12-30",
+          "previousMonth": "2021-11",
+          "totalReturn": 0.0300345
+        },
+        {
+          "month": "2022-01",
+          "monthEnd": "2022-01-31",
+          "previousMonth": "2021-12",
+          "totalReturn": -0.05471708
+        },
+        {
+          "month": "2022-02",
+          "monthEnd": "2022-02-28",
+          "previousMonth": "2022-01",
+          "totalReturn": 0.01750344
+        },
+        {
+          "month": "2022-03",
+          "monthEnd": "2022-03-31",
+          "previousMonth": "2022-02",
+          "totalReturn": 0.0609944
+        },
+        {
+          "month": "2022-04",
+          "monthEnd": "2022-04-29",
+          "previousMonth": "2022-03",
+          "totalReturn": -0.00790358
+        },
+        {
+          "month": "2022-05",
+          "monthEnd": "2022-05-31",
+          "previousMonth": "2022-04",
+          "totalReturn": -0.02621639
+        },
+        {
+          "month": "2022-06",
+          "monthEnd": "2022-06-30",
+          "previousMonth": "2022-05",
+          "totalReturn": -0.08750817
+        },
+        {
+          "month": "2022-07",
+          "monthEnd": "2022-07-29",
+          "previousMonth": "2022-06",
+          "totalReturn": 0.05751765
+        },
+        {
+          "month": "2022-08",
+          "monthEnd": "2022-08-31",
+          "previousMonth": "2022-07",
+          "totalReturn": 0.01097328
+        },
+        {
+          "month": "2022-09",
+          "monthEnd": "2022-09-30",
+          "previousMonth": "2022-08",
+          "totalReturn": -0.06023072
+        },
+        {
+          "month": "2022-10",
+          "monthEnd": "2022-10-31",
+          "previousMonth": "2022-09",
+          "totalReturn": 0.07739529
+        },
+        {
+          "month": "2022-11",
+          "monthEnd": "2022-11-30",
+          "previousMonth": "2022-10",
+          "totalReturn": 0.05759471
+        },
+        {
+          "month": "2022-12",
+          "monthEnd": "2022-12-29",
+          "previousMonth": "2022-11",
+          "totalReturn": -0.04122682
+        },
+        {
+          "month": "2023-01",
+          "monthEnd": "2023-01-31",
+          "previousMonth": "2022-12",
+          "totalReturn": 0.06581651
+        },
+        {
+          "month": "2023-02",
+          "monthEnd": "2023-02-28",
+          "previousMonth": "2023-01",
+          "totalReturn": -0.02747826
+        },
+        {
+          "month": "2023-03",
+          "monthEnd": "2023-03-30",
+          "previousMonth": "2023-02",
+          "totalReturn": -0.00277361
+        },
+        {
+          "month": "2023-04",
+          "monthEnd": "2023-04-28",
+          "previousMonth": "2023-03",
+          "totalReturn": 0.01893771
+        },
+        {
+          "month": "2023-05",
+          "monthEnd": "2023-05-31",
+          "previousMonth": "2023-04",
+          "totalReturn": -0.02583868
+        },
+        {
+          "month": "2023-06",
+          "monthEnd": "2023-06-30",
+          "previousMonth": "2023-05",
+          "totalReturn": 0.01702753
+        },
+        {
+          "month": "2023-07",
+          "monthEnd": "2023-07-31",
+          "previousMonth": "2023-06",
+          "totalReturn": 0.02928024
+        },
+        {
+          "month": "2023-08",
+          "monthEnd": "2023-08-31",
+          "previousMonth": "2023-07",
+          "totalReturn": -0.00703692
+        },
+        {
+          "month": "2023-09",
+          "monthEnd": "2023-09-29",
+          "previousMonth": "2023-08",
+          "totalReturn": -0.02911693
+        },
+        {
+          "month": "2023-10",
+          "monthEnd": "2023-10-31",
+          "previousMonth": "2023-09",
+          "totalReturn": -0.02964344
+        },
+        {
+          "month": "2023-11",
+          "monthEnd": "2023-11-30",
+          "previousMonth": "2023-10",
+          "totalReturn": 0.03964893
+        },
+        {
+          "month": "2023-12",
+          "monthEnd": "2023-12-28",
+          "previousMonth": "2023-11",
+          "totalReturn": 0.07393916
+        },
+        {
+          "month": "2024-01",
+          "monthEnd": "2024-01-31",
+          "previousMonth": "2023-12",
+          "totalReturn": 0.00014637
+        },
+        {
+          "month": "2024-02",
+          "monthEnd": "2024-02-29",
+          "previousMonth": "2024-01",
+          "totalReturn": 0.02655162
+        },
+        {
+          "month": "2024-03",
+          "monthEnd": "2024-03-27",
+          "previousMonth": "2024-02",
+          "totalReturn": 0.02613137
+        },
+        {
+          "month": "2024-04",
+          "monthEnd": "2024-04-30",
+          "previousMonth": "2024-03",
+          "totalReturn": -0.02910974
+        },
+        {
+          "month": "2024-05",
+          "monthEnd": "2024-05-31",
+          "previousMonth": "2024-04",
+          "totalReturn": 0.0095596
+        },
+        {
+          "month": "2024-06",
+          "monthEnd": "2024-06-28",
+          "previousMonth": "2024-05",
+          "totalReturn": 0.00977622
+        },
+        {
+          "month": "2024-07",
+          "monthEnd": "2024-07-31",
+          "previousMonth": "2024-06",
+          "totalReturn": 0.04192929
+        },
+        {
+          "month": "2024-08",
+          "monthEnd": "2024-08-30",
+          "previousMonth": "2024-07",
+          "totalReturn": 0.00398297
+        },
+        {
+          "month": "2024-09",
+          "monthEnd": "2024-09-30",
+          "previousMonth": "2024-08",
+          "totalReturn": 0.03906347
+        },
+        {
+          "month": "2024-10",
+          "monthEnd": "2024-10-31",
+          "previousMonth": "2024-09",
+          "totalReturn": -0.01758153
+        },
+        {
+          "month": "2024-11",
+          "monthEnd": "2024-11-28",
+          "previousMonth": "2024-10",
+          "totalReturn": 0.04316949
+        },
+        {
+          "month": "2024-12",
+          "monthEnd": "2024-12-30",
+          "previousMonth": "2024-11",
+          "totalReturn": -0.03074773
+        },
+        {
+          "month": "2025-01",
+          "monthEnd": "2025-01-30",
+          "previousMonth": "2024-12",
+          "totalReturn": 0.04655289
+        },
+        {
+          "month": "2025-02",
+          "monthEnd": "2025-02-27",
+          "previousMonth": "2025-01",
+          "totalReturn": -0.0360031
+        },
+        {
+          "month": "2025-03",
+          "monthEnd": "2025-03-31",
+          "previousMonth": "2025-02",
+          "totalReturn": -0.0267305
+        },
+        {
+          "month": "2025-04",
+          "monthEnd": "2025-04-30",
+          "previousMonth": "2025-03",
+          "totalReturn": 0.02506641
+        },
+        {
+          "month": "2025-05",
+          "monthEnd": "2025-05-30",
+          "previousMonth": "2025-04",
+          "totalReturn": 0.0423497
+        },
+        {
+          "month": "2025-06",
+          "monthEnd": "2025-06-30",
+          "previousMonth": "2025-05",
+          "totalReturn": 0.01450882
+        },
+        {
+          "month": "2025-07",
+          "monthEnd": "2025-07-31",
+          "previousMonth": "2025-06",
+          "totalReturn": 0.02332564
+        },
+        {
+          "month": "2025-08",
+          "monthEnd": "2025-08-29",
+          "previousMonth": "2025-07",
+          "totalReturn": 0.0311982
+        },
+        {
+          "month": "2025-09",
+          "monthEnd": "2025-09-30",
+          "previousMonth": "2025-08",
+          "totalReturn": -0.00940141
+        },
+        {
+          "month": "2025-10",
+          "monthEnd": "2025-10-30",
+          "previousMonth": "2025-09",
+          "totalReturn": 0.00541697
+        },
+        {
+          "month": "2025-11",
+          "monthEnd": "2025-11-30",
+          "previousMonth": "2025-10",
+          "totalReturn": -0.03257739
+        },
+        {
+          "month": "2025-12",
+          "monthEnd": "2025-12-30",
+          "previousMonth": "2025-11",
+          "totalReturn": 0.01839299
+        },
+        {
+          "month": "2026-01",
+          "monthEnd": "2026-01-29",
+          "previousMonth": "2025-12",
+          "totalReturn": 0.01963299
+        },
+        {
+          "month": "2026-02",
+          "monthEnd": "2026-02-26",
+          "previousMonth": "2026-01",
+          "totalReturn": 0.03989426
+        }
+      ]
+    },
+    "bonds": {
+      "key": "bonds",
+      "label": "Bonds",
+      "ticker": "VAF.AX",
+      "currency": "AUD",
+      "lookbackYears": 10,
+      "source": "Yahoo Finance chart API",
+      "sourceUrl": "https://finance.yahoo.com/quote/VAF.AX/history/",
+      "startMonth": "2016-04",
+      "endMonth": "2026-02",
+      "months": 119,
+      "monthlyReturns": [
+        {
+          "month": "2016-04",
+          "monthEnd": "2016-04-29",
+          "previousMonth": "2016-03",
+          "totalReturn": 0.00201365
+        },
+        {
+          "month": "2016-05",
+          "monthEnd": "2016-05-31",
+          "previousMonth": "2016-04",
+          "totalReturn": 0.0134589
+        },
+        {
+          "month": "2016-06",
+          "monthEnd": "2016-06-30",
+          "previousMonth": "2016-05",
+          "totalReturn": 0.0107039
+        },
+        {
+          "month": "2016-07",
+          "monthEnd": "2016-07-29",
+          "previousMonth": "2016-06",
+          "totalReturn": 0.00710847
+        },
+        {
+          "month": "2016-08",
+          "monthEnd": "2016-08-31",
+          "previousMonth": "2016-07",
+          "totalReturn": 0.00575405
+        },
+        {
+          "month": "2016-09",
+          "monthEnd": "2016-09-30",
+          "previousMonth": "2016-08",
+          "totalReturn": -0.00217011
+        },
+        {
+          "month": "2016-10",
+          "monthEnd": "2016-10-31",
+          "previousMonth": "2016-09",
+          "totalReturn": -0.01511545
+        },
+        {
+          "month": "2016-11",
+          "monthEnd": "2016-11-30",
+          "previousMonth": "2016-10",
+          "totalReturn": -0.0153844
+        },
+        {
+          "month": "2016-12",
+          "monthEnd": "2016-12-29",
+          "previousMonth": "2016-11",
+          "totalReturn": -0.00061701
+        },
+        {
+          "month": "2017-01",
+          "monthEnd": "2017-01-31",
+          "previousMonth": "2016-12",
+          "totalReturn": 0.00570197
+        },
+        {
+          "month": "2017-02",
+          "monthEnd": "2017-02-28",
+          "previousMonth": "2017-01",
+          "totalReturn": 0.00020613
+        },
+        {
+          "month": "2017-03",
+          "monthEnd": "2017-03-30",
+          "previousMonth": "2017-02",
+          "totalReturn": 0.00639038
+        },
+        {
+          "month": "2017-04",
+          "monthEnd": "2017-04-28",
+          "previousMonth": "2017-03",
+          "totalReturn": 0.00681918
+        },
+        {
+          "month": "2017-05",
+          "monthEnd": "2017-05-31",
+          "previousMonth": "2017-04",
+          "totalReturn": 0.01188051
+        },
+        {
+          "month": "2017-06",
+          "monthEnd": "2017-06-30",
+          "previousMonth": "2017-05",
+          "totalReturn": -0.00809689
+        },
+        {
+          "month": "2017-07",
+          "monthEnd": "2017-07-31",
+          "previousMonth": "2017-06",
+          "totalReturn": 0.00162803
+        },
+        {
+          "month": "2017-08",
+          "monthEnd": "2017-08-31",
+          "previousMonth": "2017-07",
+          "totalReturn": 0.00123124
+        },
+        {
+          "month": "2017-09",
+          "monthEnd": "2017-09-29",
+          "previousMonth": "2017-08",
+          "totalReturn": -0.00409984
+        },
+        {
+          "month": "2017-10",
+          "monthEnd": "2017-10-31",
+          "previousMonth": "2017-09",
+          "totalReturn": 0.00848634
+        },
+        {
+          "month": "2017-11",
+          "monthEnd": "2017-11-30",
+          "previousMonth": "2017-10",
+          "totalReturn": 0.0094453
+        },
+        {
+          "month": "2017-12",
+          "monthEnd": "2017-12-28",
+          "previousMonth": "2017-11",
+          "totalReturn": -0.00671259
+        },
+        {
+          "month": "2018-01",
+          "monthEnd": "2018-01-31",
+          "previousMonth": "2017-12",
+          "totalReturn": 0.00052303
+        },
+        {
+          "month": "2018-02",
+          "monthEnd": "2018-02-28",
+          "previousMonth": "2018-01",
+          "totalReturn": 0.00330341
+        },
+        {
+          "month": "2018-03",
+          "monthEnd": "2018-03-28",
+          "previousMonth": "2018-02",
+          "totalReturn": 0.00740898
+        },
+        {
+          "month": "2018-04",
+          "monthEnd": "2018-04-30",
+          "previousMonth": "2018-03",
+          "totalReturn": -0.00511492
+        },
+        {
+          "month": "2018-05",
+          "monthEnd": "2018-05-31",
+          "previousMonth": "2018-04",
+          "totalReturn": 0.00806435
+        },
+        {
+          "month": "2018-06",
+          "monthEnd": "2018-06-29",
+          "previousMonth": "2018-05",
+          "totalReturn": 0.00307699
+        },
+        {
+          "month": "2018-07",
+          "monthEnd": "2018-07-31",
+          "previousMonth": "2018-06",
+          "totalReturn": 0.00174186
+        },
+        {
+          "month": "2018-08",
+          "monthEnd": "2018-08-31",
+          "previousMonth": "2018-07",
+          "totalReturn": 0.00781577
+        },
+        {
+          "month": "2018-09",
+          "monthEnd": "2018-09-28",
+          "previousMonth": "2018-08",
+          "totalReturn": -0.0046941
+        },
+        {
+          "month": "2018-10",
+          "monthEnd": "2018-10-31",
+          "previousMonth": "2018-09",
+          "totalReturn": 0.00565596
+        },
+        {
+          "month": "2018-11",
+          "monthEnd": "2018-11-29",
+          "previousMonth": "2018-10",
+          "totalReturn": 0.0022546
+        },
+        {
+          "month": "2018-12",
+          "monthEnd": "2018-12-30",
+          "previousMonth": "2018-11",
+          "totalReturn": 0.01534071
+        },
+        {
+          "month": "2019-01",
+          "monthEnd": "2019-01-31",
+          "previousMonth": "2018-12",
+          "totalReturn": 0.00728437
+        },
+        {
+          "month": "2019-02",
+          "monthEnd": "2019-02-28",
+          "previousMonth": "2019-01",
+          "totalReturn": 0.00664793
+        },
+        {
+          "month": "2019-03",
+          "monthEnd": "2019-03-31",
+          "previousMonth": "2019-02",
+          "totalReturn": 0.01785989
+        },
+        {
+          "month": "2019-04",
+          "monthEnd": "2019-04-30",
+          "previousMonth": "2019-03",
+          "totalReturn": 0.00336798
+        },
+        {
+          "month": "2019-05",
+          "monthEnd": "2019-05-31",
+          "previousMonth": "2019-04",
+          "totalReturn": 0.01638687
+        },
+        {
+          "month": "2019-06",
+          "monthEnd": "2019-06-28",
+          "previousMonth": "2019-05",
+          "totalReturn": 0.0116551
+        },
+        {
+          "month": "2019-07",
+          "monthEnd": "2019-07-31",
+          "previousMonth": "2019-06",
+          "totalReturn": 0.00868874
+        },
+        {
+          "month": "2019-08",
+          "monthEnd": "2019-08-30",
+          "previousMonth": "2019-07",
+          "totalReturn": 0.01570305
+        },
+        {
+          "month": "2019-09",
+          "monthEnd": "2019-09-30",
+          "previousMonth": "2019-08",
+          "totalReturn": -0.00320518
+        },
+        {
+          "month": "2019-10",
+          "monthEnd": "2019-10-31",
+          "previousMonth": "2019-09",
+          "totalReturn": -0.00501425
+        },
+        {
+          "month": "2019-11",
+          "monthEnd": "2019-11-28",
+          "previousMonth": "2019-10",
+          "totalReturn": 0.0055377
+        },
+        {
+          "month": "2019-12",
+          "monthEnd": "2019-12-30",
+          "previousMonth": "2019-11",
+          "totalReturn": -0.01671098
+        },
+        {
+          "month": "2020-01",
+          "monthEnd": "2020-01-30",
+          "previousMonth": "2019-12",
+          "totalReturn": 0.02307413
+        },
+        {
+          "month": "2020-02",
+          "monthEnd": "2020-02-27",
+          "previousMonth": "2020-01",
+          "totalReturn": 0.00779026
+        },
+        {
+          "month": "2020-03",
+          "monthEnd": "2020-03-31",
+          "previousMonth": "2020-02",
+          "totalReturn": -0.00026391
+        },
+        {
+          "month": "2020-04",
+          "monthEnd": "2020-04-30",
+          "previousMonth": "2020-03",
+          "totalReturn": -0.00170906
+        },
+        {
+          "month": "2020-05",
+          "monthEnd": "2020-05-29",
+          "previousMonth": "2020-04",
+          "totalReturn": 0.00190247
+        },
+        {
+          "month": "2020-06",
+          "monthEnd": "2020-06-30",
+          "previousMonth": "2020-05",
+          "totalReturn": 0.0030382
+        },
+        {
+          "month": "2020-07",
+          "monthEnd": "2020-07-31",
+          "previousMonth": "2020-06",
+          "totalReturn": 0.00431106
+        },
+        {
+          "month": "2020-08",
+          "monthEnd": "2020-08-31",
+          "previousMonth": "2020-07",
+          "totalReturn": -0.00343527
+        },
+        {
+          "month": "2020-09",
+          "monthEnd": "2020-09-30",
+          "previousMonth": "2020-08",
+          "totalReturn": 0.00957498
+        },
+        {
+          "month": "2020-10",
+          "monthEnd": "2020-10-29",
+          "previousMonth": "2020-09",
+          "totalReturn": 0.00304226
+        },
+        {
+          "month": "2020-11",
+          "monthEnd": "2020-11-30",
+          "previousMonth": "2020-10",
+          "totalReturn": -0.00361624
+        },
+        {
+          "month": "2020-12",
+          "monthEnd": "2020-12-30",
+          "previousMonth": "2020-11",
+          "totalReturn": -0.00114605
+        },
+        {
+          "month": "2021-01",
+          "monthEnd": "2021-01-31",
+          "previousMonth": "2020-12",
+          "totalReturn": -0.00528919
+        },
+        {
+          "month": "2021-02",
+          "monthEnd": "2021-02-28",
+          "previousMonth": "2021-01",
+          "totalReturn": -0.02306182
+        },
+        {
+          "month": "2021-03",
+          "monthEnd": "2021-03-31",
+          "previousMonth": "2021-02",
+          "totalReturn": -0.0040447
+        },
+        {
+          "month": "2021-04",
+          "monthEnd": "2021-04-30",
+          "previousMonth": "2021-03",
+          "totalReturn": 0.00460195
+        },
+        {
+          "month": "2021-05",
+          "monthEnd": "2021-05-31",
+          "previousMonth": "2021-04",
+          "totalReturn": 0.00179267
+        },
+        {
+          "month": "2021-06",
+          "monthEnd": "2021-06-30",
+          "previousMonth": "2021-05",
+          "totalReturn": 0.0053678
+        },
+        {
+          "month": "2021-07",
+          "monthEnd": "2021-07-30",
+          "previousMonth": "2021-06",
+          "totalReturn": 0.01947209
+        },
+        {
+          "month": "2021-08",
+          "monthEnd": "2021-08-31",
+          "previousMonth": "2021-07",
+          "totalReturn": -0.00039104
+        },
+        {
+          "month": "2021-09",
+          "monthEnd": "2021-09-30",
+          "previousMonth": "2021-08",
+          "totalReturn": -0.01408173
+        },
+        {
+          "month": "2021-10",
+          "monthEnd": "2021-10-31",
+          "previousMonth": "2021-09",
+          "totalReturn": -0.02657269
+        },
+        {
+          "month": "2021-11",
+          "monthEnd": "2021-11-30",
+          "previousMonth": "2021-10",
+          "totalReturn": 0.00776781
+        },
+        {
+          "month": "2021-12",
+          "monthEnd": "2021-12-30",
+          "previousMonth": "2021-11",
+          "totalReturn": 0.00466511
+        },
+        {
+          "month": "2022-01",
+          "monthEnd": "2022-01-31",
+          "previousMonth": "2021-12",
+          "totalReturn": -0.01161413
+        },
+        {
+          "month": "2022-02",
+          "monthEnd": "2022-02-28",
+          "previousMonth": "2022-01",
+          "totalReturn": -0.01215238
+        },
+        {
+          "month": "2022-03",
+          "monthEnd": "2022-03-31",
+          "previousMonth": "2022-02",
+          "totalReturn": -0.03672305
+        },
+        {
+          "month": "2022-04",
+          "monthEnd": "2022-04-29",
+          "previousMonth": "2022-03",
+          "totalReturn": -0.01955682
+        },
+        {
+          "month": "2022-05",
+          "monthEnd": "2022-05-31",
+          "previousMonth": "2022-04",
+          "totalReturn": -0.00332462
+        },
+        {
+          "month": "2022-06",
+          "monthEnd": "2022-06-30",
+          "previousMonth": "2022-05",
+          "totalReturn": -0.01756714
+        },
+        {
+          "month": "2022-07",
+          "monthEnd": "2022-07-29",
+          "previousMonth": "2022-06",
+          "totalReturn": 0.03666809
+        },
+        {
+          "month": "2022-08",
+          "monthEnd": "2022-08-31",
+          "previousMonth": "2022-07",
+          "totalReturn": -0.02620093
+        },
+        {
+          "month": "2022-09",
+          "monthEnd": "2022-09-30",
+          "previousMonth": "2022-08",
+          "totalReturn": -0.01524654
+        },
+        {
+          "month": "2022-10",
+          "monthEnd": "2022-10-31",
+          "previousMonth": "2022-09",
+          "totalReturn": 0.00969377
+        },
+        {
+          "month": "2022-11",
+          "monthEnd": "2022-11-30",
+          "previousMonth": "2022-10",
+          "totalReturn": 0.01943932
+        },
+        {
+          "month": "2022-12",
+          "monthEnd": "2022-12-29",
+          "previousMonth": "2022-11",
+          "totalReturn": -0.02261618
+        },
+        {
+          "month": "2023-01",
+          "monthEnd": "2023-01-31",
+          "previousMonth": "2022-12",
+          "totalReturn": 0.02418309
+        },
+        {
+          "month": "2023-02",
+          "monthEnd": "2023-02-28",
+          "previousMonth": "2023-01",
+          "totalReturn": -0.00754211
+        },
+        {
+          "month": "2023-03",
+          "monthEnd": "2023-03-30",
+          "previousMonth": "2023-02",
+          "totalReturn": 0.02637455
+        },
+        {
+          "month": "2023-04",
+          "monthEnd": "2023-04-28",
+          "previousMonth": "2023-03",
+          "totalReturn": 0.00123922
+        },
+        {
+          "month": "2023-05",
+          "monthEnd": "2023-05-31",
+          "previousMonth": "2023-04",
+          "totalReturn": -0.00872224
+        },
+        {
+          "month": "2023-06",
+          "monthEnd": "2023-06-30",
+          "previousMonth": "2023-05",
+          "totalReturn": -0.02023762
+        },
+        {
+          "month": "2023-07",
+          "monthEnd": "2023-07-31",
+          "previousMonth": "2023-06",
+          "totalReturn": 0.00419479
+        },
+        {
+          "month": "2023-08",
+          "monthEnd": "2023-08-31",
+          "previousMonth": "2023-07",
+          "totalReturn": 0.00605378
+        },
+        {
+          "month": "2023-09",
+          "monthEnd": "2023-09-29",
+          "previousMonth": "2023-08",
+          "totalReturn": -0.01404044
+        },
+        {
+          "month": "2023-10",
+          "monthEnd": "2023-10-31",
+          "previousMonth": "2023-09",
+          "totalReturn": -0.01967158
+        },
+        {
+          "month": "2023-11",
+          "monthEnd": "2023-11-30",
+          "previousMonth": "2023-10",
+          "totalReturn": 0.02686432
+        },
+        {
+          "month": "2023-12",
+          "monthEnd": "2023-12-28",
+          "previousMonth": "2023-11",
+          "totalReturn": 0.03044651
+        },
+        {
+          "month": "2024-01",
+          "monthEnd": "2024-01-31",
+          "previousMonth": "2023-12",
+          "totalReturn": 0.00124974
+        },
+        {
+          "month": "2024-02",
+          "monthEnd": "2024-02-29",
+          "previousMonth": "2024-01",
+          "totalReturn": -0.00198206
+        },
+        {
+          "month": "2024-03",
+          "monthEnd": "2024-03-27",
+          "previousMonth": "2024-02",
+          "totalReturn": 0.01081209
+        },
+        {
+          "month": "2024-04",
+          "monthEnd": "2024-04-30",
+          "previousMonth": "2024-03",
+          "totalReturn": -0.01977785
+        },
+        {
+          "month": "2024-05",
+          "monthEnd": "2024-05-31",
+          "previousMonth": "2024-04",
+          "totalReturn": 0.00313194
+        },
+        {
+          "month": "2024-06",
+          "monthEnd": "2024-06-28",
+          "previousMonth": "2024-05",
+          "totalReturn": 0.00735956
+        },
+        {
+          "month": "2024-07",
+          "monthEnd": "2024-07-31",
+          "previousMonth": "2024-06",
+          "totalReturn": 0.01649175
+        },
+        {
+          "month": "2024-08",
+          "monthEnd": "2024-08-30",
+          "previousMonth": "2024-07",
+          "totalReturn": 0.01098881
+        },
+        {
+          "month": "2024-09",
+          "monthEnd": "2024-09-30",
+          "previousMonth": "2024-08",
+          "totalReturn": 0.00456535
+        },
+        {
+          "month": "2024-10",
+          "monthEnd": "2024-10-31",
+          "previousMonth": "2024-09",
+          "totalReturn": -0.02228986
+        },
+        {
+          "month": "2024-11",
+          "monthEnd": "2024-11-28",
+          "previousMonth": "2024-10",
+          "totalReturn": 0.01177779
+        },
+        {
+          "month": "2024-12",
+          "monthEnd": "2024-12-30",
+          "previousMonth": "2024-11",
+          "totalReturn": 0.00549088
+        },
+        {
+          "month": "2025-01",
+          "monthEnd": "2025-01-30",
+          "previousMonth": "2024-12",
+          "totalReturn": 0.00288324
+        },
+        {
+          "month": "2025-02",
+          "monthEnd": "2025-02-27",
+          "previousMonth": "2025-01",
+          "totalReturn": 0.00923057
+        },
+        {
+          "month": "2025-03",
+          "monthEnd": "2025-03-31",
+          "previousMonth": "2025-02",
+          "totalReturn": 0.00241008
+        },
+        {
+          "month": "2025-04",
+          "monthEnd": "2025-04-30",
+          "previousMonth": "2025-03",
+          "totalReturn": 0.01572753
+        },
+        {
+          "month": "2025-05",
+          "monthEnd": "2025-05-30",
+          "previousMonth": "2025-04",
+          "totalReturn": 0.000215
+        },
+        {
+          "month": "2025-06",
+          "monthEnd": "2025-06-30",
+          "previousMonth": "2025-05",
+          "totalReturn": 0.01010541
+        },
+        {
+          "month": "2025-07",
+          "monthEnd": "2025-07-31",
+          "previousMonth": "2025-06",
+          "totalReturn": -0.00180334
+        },
+        {
+          "month": "2025-08",
+          "monthEnd": "2025-08-29",
+          "previousMonth": "2025-07",
+          "totalReturn": 0.00345124
+        },
+        {
+          "month": "2025-09",
+          "monthEnd": "2025-09-30",
+          "previousMonth": "2025-08",
+          "totalReturn": 0.00085986
+        },
+        {
+          "month": "2025-10",
+          "monthEnd": "2025-10-30",
+          "previousMonth": "2025-09",
+          "totalReturn": 0.00420797
+        },
+        {
+          "month": "2025-11",
+          "monthEnd": "2025-11-30",
+          "previousMonth": "2025-10",
+          "totalReturn": -0.00988399
+        },
+        {
+          "month": "2025-12",
+          "monthEnd": "2025-12-30",
+          "previousMonth": "2025-11",
+          "totalReturn": -0.0043403
+        },
+        {
+          "month": "2026-01",
+          "monthEnd": "2026-01-29",
+          "previousMonth": "2025-12",
+          "totalReturn": 0.00075756
+        },
+        {
+          "month": "2026-02",
+          "monthEnd": "2026-02-26",
+          "previousMonth": "2026-01",
+          "totalReturn": 0.00879309
+        }
+      ]
+    },
+    "cash": {
+      "key": "cash",
+      "label": "High Interest Cash",
+      "ticker": "AAA.AX",
+      "currency": "AUD",
+      "lookbackYears": 10,
+      "source": "Yahoo Finance chart API",
+      "sourceUrl": "https://finance.yahoo.com/quote/AAA.AX/history/",
+      "startMonth": "2016-04",
+      "endMonth": "2026-02",
+      "months": 119,
+      "monthlyReturns": [
+        {
+          "month": "2016-04",
+          "monthEnd": "2016-04-29",
+          "previousMonth": "2016-03",
+          "totalReturn": 0.0015967
+        },
+        {
+          "month": "2016-05",
+          "monthEnd": "2016-05-31",
+          "previousMonth": "2016-04",
+          "totalReturn": 0.00199052
+        },
+        {
+          "month": "2016-06",
+          "monthEnd": "2016-06-30",
+          "previousMonth": "2016-05",
+          "totalReturn": 0.00180527
+        },
+        {
+          "month": "2016-07",
+          "monthEnd": "2016-07-29",
+          "previousMonth": "2016-06",
+          "totalReturn": 0.00166814
+        },
+        {
+          "month": "2016-08",
+          "monthEnd": "2016-08-31",
+          "previousMonth": "2016-07",
+          "totalReturn": 0.00177793
+        },
+        {
+          "month": "2016-09",
+          "monthEnd": "2016-09-30",
+          "previousMonth": "2016-08",
+          "totalReturn": 0.00186106
+        },
+        {
+          "month": "2016-10",
+          "monthEnd": "2016-10-31",
+          "previousMonth": "2016-09",
+          "totalReturn": 0.00163131
+        },
+        {
+          "month": "2016-11",
+          "monthEnd": "2016-11-30",
+          "previousMonth": "2016-10",
+          "totalReturn": 0.00162506
+        },
+        {
+          "month": "2016-12",
+          "monthEnd": "2016-12-29",
+          "previousMonth": "2016-11",
+          "totalReturn": 0.00159837
+        },
+        {
+          "month": "2017-01",
+          "monthEnd": "2017-01-31",
+          "previousMonth": "2016-12",
+          "totalReturn": 0.00186095
+        },
+        {
+          "month": "2017-02",
+          "monthEnd": "2017-02-28",
+          "previousMonth": "2017-01",
+          "totalReturn": 0.00154772
+        },
+        {
+          "month": "2017-03",
+          "monthEnd": "2017-03-30",
+          "previousMonth": "2017-02",
+          "totalReturn": 0.00199758
+        },
+        {
+          "month": "2017-04",
+          "monthEnd": "2017-04-28",
+          "previousMonth": "2017-03",
+          "totalReturn": 0.0015237
+        },
+        {
+          "month": "2017-05",
+          "monthEnd": "2017-05-31",
+          "previousMonth": "2017-04",
+          "totalReturn": 0.00154159
+        },
+        {
+          "month": "2017-06",
+          "monthEnd": "2017-06-30",
+          "previousMonth": "2017-05",
+          "totalReturn": 0.00202542
+        },
+        {
+          "month": "2017-07",
+          "monthEnd": "2017-07-31",
+          "previousMonth": "2017-06",
+          "totalReturn": 0.00145437
+        },
+        {
+          "month": "2017-08",
+          "monthEnd": "2017-08-31",
+          "previousMonth": "2017-07",
+          "totalReturn": 0.00191025
+        },
+        {
+          "month": "2017-09",
+          "monthEnd": "2017-09-29",
+          "previousMonth": "2017-08",
+          "totalReturn": 0.00150661
+        },
+        {
+          "month": "2017-10",
+          "monthEnd": "2017-10-31",
+          "previousMonth": "2017-09",
+          "totalReturn": 0.00175209
+        },
+        {
+          "month": "2017-11",
+          "monthEnd": "2017-11-30",
+          "previousMonth": "2017-10",
+          "totalReturn": 0.00165264
+        },
+        {
+          "month": "2017-12",
+          "monthEnd": "2017-12-28",
+          "previousMonth": "2017-11",
+          "totalReturn": 0.00159787
+        },
+        {
+          "month": "2018-01",
+          "monthEnd": "2018-01-31",
+          "previousMonth": "2017-12",
+          "totalReturn": 0.00182909
+        },
+        {
+          "month": "2018-02",
+          "monthEnd": "2018-02-28",
+          "previousMonth": "2018-01",
+          "totalReturn": 0.0013504
+        },
+        {
+          "month": "2018-03",
+          "monthEnd": "2018-03-28",
+          "previousMonth": "2018-02",
+          "totalReturn": 0.00159817
+        },
+        {
+          "month": "2018-04",
+          "monthEnd": "2018-04-30",
+          "previousMonth": "2018-03",
+          "totalReturn": 0.00179925
+        },
+        {
+          "month": "2018-05",
+          "monthEnd": "2018-05-31",
+          "previousMonth": "2018-04",
+          "totalReturn": 0.00182802
+        },
+        {
+          "month": "2018-06",
+          "monthEnd": "2018-06-29",
+          "previousMonth": "2018-05",
+          "totalReturn": 0.00150831
+        },
+        {
+          "month": "2018-07",
+          "monthEnd": "2018-07-31",
+          "previousMonth": "2018-06",
+          "totalReturn": 0.00166065
+        },
+        {
+          "month": "2018-08",
+          "monthEnd": "2018-08-31",
+          "previousMonth": "2018-07",
+          "totalReturn": 0.00197491
+        },
+        {
+          "month": "2018-09",
+          "monthEnd": "2018-09-28",
+          "previousMonth": "2018-08",
+          "totalReturn": 0.00152434
+        },
+        {
+          "month": "2018-10",
+          "monthEnd": "2018-10-31",
+          "previousMonth": "2018-09",
+          "totalReturn": 0.00197748
+        },
+        {
+          "month": "2018-11",
+          "monthEnd": "2018-11-29",
+          "previousMonth": "2018-10",
+          "totalReturn": 0.0015984
+        },
+        {
+          "month": "2018-12",
+          "monthEnd": "2018-12-30",
+          "previousMonth": "2018-11",
+          "totalReturn": 0.00146106
+        },
+        {
+          "month": "2019-01",
+          "monthEnd": "2019-01-31",
+          "previousMonth": "2018-12",
+          "totalReturn": 0.00202092
+        },
+        {
+          "month": "2019-02",
+          "monthEnd": "2019-02-28",
+          "previousMonth": "2019-01",
+          "totalReturn": 0.00134396
+        },
+        {
+          "month": "2019-03",
+          "monthEnd": "2019-03-31",
+          "previousMonth": "2019-02",
+          "totalReturn": 0.00180607
+        },
+        {
+          "month": "2019-04",
+          "monthEnd": "2019-04-30",
+          "previousMonth": "2019-03",
+          "totalReturn": 0.00139769
+        },
+        {
+          "month": "2019-05",
+          "monthEnd": "2019-05-31",
+          "previousMonth": "2019-04",
+          "totalReturn": 0.0017613
+        },
+        {
+          "month": "2019-06",
+          "monthEnd": "2019-06-28",
+          "previousMonth": "2019-05",
+          "totalReturn": 0.00149447
+        },
+        {
+          "month": "2019-07",
+          "monthEnd": "2019-07-31",
+          "previousMonth": "2019-06",
+          "totalReturn": 0.00149054
+        },
+        {
+          "month": "2019-08",
+          "monthEnd": "2019-08-30",
+          "previousMonth": "2019-07",
+          "totalReturn": 0.00106877
+        },
+        {
+          "month": "2019-09",
+          "monthEnd": "2019-09-30",
+          "previousMonth": "2019-08",
+          "totalReturn": 0.00143813
+        },
+        {
+          "month": "2019-10",
+          "monthEnd": "2019-10-31",
+          "previousMonth": "2019-09",
+          "totalReturn": 0.0009627
+        },
+        {
+          "month": "2019-11",
+          "monthEnd": "2019-11-28",
+          "previousMonth": "2019-10",
+          "totalReturn": 0.00079876
+        },
+        {
+          "month": "2019-12",
+          "monthEnd": "2019-12-30",
+          "previousMonth": "2019-11",
+          "totalReturn": 0.00119968
+        },
+        {
+          "month": "2020-01",
+          "monthEnd": "2020-01-30",
+          "previousMonth": "2019-12",
+          "totalReturn": 0.00107193
+        },
+        {
+          "month": "2020-02",
+          "monthEnd": "2020-02-27",
+          "previousMonth": "2020-01",
+          "totalReturn": 0.00082777
+        },
+        {
+          "month": "2020-03",
+          "monthEnd": "2020-03-31",
+          "previousMonth": "2020-02",
+          "totalReturn": 0.00094125
+        },
+        {
+          "month": "2020-04",
+          "monthEnd": "2020-04-30",
+          "previousMonth": "2020-03",
+          "totalReturn": 0.0007989
+        },
+        {
+          "month": "2020-05",
+          "monthEnd": "2020-05-29",
+          "previousMonth": "2020-04",
+          "totalReturn": 0.00020278
+        },
+        {
+          "month": "2020-06",
+          "monthEnd": "2020-06-30",
+          "previousMonth": "2020-05",
+          "totalReturn": 0.00075902
+        },
+        {
+          "month": "2020-07",
+          "monthEnd": "2020-07-31",
+          "previousMonth": "2020-06",
+          "totalReturn": 0.00058836
+        },
+        {
+          "month": "2020-08",
+          "monthEnd": "2020-08-31",
+          "previousMonth": "2020-07",
+          "totalReturn": 0.00056376
+        },
+        {
+          "month": "2020-09",
+          "monthEnd": "2020-09-30",
+          "previousMonth": "2020-08",
+          "totalReturn": 0.00034332
+        },
+        {
+          "month": "2020-10",
+          "monthEnd": "2020-10-29",
+          "previousMonth": "2020-09",
+          "totalReturn": 0.00052391
+        },
+        {
+          "month": "2020-11",
+          "monthEnd": "2020-11-30",
+          "previousMonth": "2020-10",
+          "totalReturn": 0.00035168
+        },
+        {
+          "month": "2020-12",
+          "monthEnd": "2020-12-30",
+          "previousMonth": "2020-11",
+          "totalReturn": 0.00039952
+        },
+        {
+          "month": "2021-01",
+          "monthEnd": "2021-01-31",
+          "previousMonth": "2020-12",
+          "totalReturn": 0.00049614
+        },
+        {
+          "month": "2021-02",
+          "monthEnd": "2021-02-28",
+          "previousMonth": "2021-01",
+          "totalReturn": 0.00031568
+        },
+        {
+          "month": "2021-03",
+          "monthEnd": "2021-03-31",
+          "previousMonth": "2021-02",
+          "totalReturn": 0.00037716
+        },
+        {
+          "month": "2021-04",
+          "monthEnd": "2021-04-30",
+          "previousMonth": "2021-03",
+          "totalReturn": 0.00039915
+        },
+        {
+          "month": "2021-05",
+          "monthEnd": "2021-05-31",
+          "previousMonth": "2021-04",
+          "totalReturn": 0.00030476
+        },
+        {
+          "month": "2021-06",
+          "monthEnd": "2021-06-30",
+          "previousMonth": "2021-05",
+          "totalReturn": 0.00031198
+        },
+        {
+          "month": "2021-07",
+          "monthEnd": "2021-07-30",
+          "previousMonth": "2021-06",
+          "totalReturn": 0.00029091
+        },
+        {
+          "month": "2021-08",
+          "monthEnd": "2021-08-31",
+          "previousMonth": "2021-07",
+          "totalReturn": 5.443e-05
+        },
+        {
+          "month": "2021-09",
+          "monthEnd": "2021-09-30",
+          "previousMonth": "2021-08",
+          "totalReturn": 0.00025664
+        },
+        {
+          "month": "2021-10",
+          "monthEnd": "2021-10-31",
+          "previousMonth": "2021-09",
+          "totalReturn": 5.204e-05
+        },
+        {
+          "month": "2021-11",
+          "monthEnd": "2021-11-30",
+          "previousMonth": "2021-10",
+          "totalReturn": 0.00022883
+        },
+        {
+          "month": "2021-12",
+          "monthEnd": "2021-12-30",
+          "previousMonth": "2021-11",
+          "totalReturn": 0.00039945
+        },
+        {
+          "month": "2022-01",
+          "monthEnd": "2022-01-31",
+          "previousMonth": "2021-12",
+          "totalReturn": 0.0001963
+        },
+        {
+          "month": "2022-02",
+          "monthEnd": "2022-02-28",
+          "previousMonth": "2022-01",
+          "totalReturn": -5.234e-05
+        },
+        {
+          "month": "2022-03",
+          "monthEnd": "2022-03-31",
+          "previousMonth": "2022-02",
+          "totalReturn": 0.00038358
+        },
+        {
+          "month": "2022-04",
+          "monthEnd": "2022-04-29",
+          "previousMonth": "2022-03",
+          "totalReturn": 0.0
+        },
+        {
+          "month": "2022-05",
+          "monthEnd": "2022-05-31",
+          "previousMonth": "2022-04",
+          "totalReturn": 0.00038237
+        },
+        {
+          "month": "2022-06",
+          "monthEnd": "2022-06-30",
+          "previousMonth": "2022-05",
+          "totalReturn": 0.00098695
+        },
+        {
+          "month": "2022-07",
+          "monthEnd": "2022-07-29",
+          "previousMonth": "2022-06",
+          "totalReturn": 0.00113739
+        },
+        {
+          "month": "2022-08",
+          "monthEnd": "2022-08-31",
+          "previousMonth": "2022-07",
+          "totalReturn": 0.00170796
+        },
+        {
+          "month": "2022-09",
+          "monthEnd": "2022-09-30",
+          "previousMonth": "2022-08",
+          "totalReturn": 0.00194762
+        },
+        {
+          "month": "2022-10",
+          "monthEnd": "2022-10-31",
+          "previousMonth": "2022-09",
+          "totalReturn": 0.00245313
+        },
+        {
+          "month": "2022-11",
+          "monthEnd": "2022-11-30",
+          "previousMonth": "2022-10",
+          "totalReturn": 0.00233832
+        },
+        {
+          "month": "2022-12",
+          "monthEnd": "2022-12-29",
+          "previousMonth": "2022-11",
+          "totalReturn": 0.00249631
+        },
+        {
+          "month": "2023-01",
+          "monthEnd": "2023-01-31",
+          "previousMonth": "2022-12",
+          "totalReturn": 0.00298259
+        },
+        {
+          "month": "2023-02",
+          "monthEnd": "2023-02-28",
+          "previousMonth": "2023-01",
+          "totalReturn": 0.00259411
+        },
+        {
+          "month": "2023-03",
+          "monthEnd": "2023-03-30",
+          "previousMonth": "2023-02",
+          "totalReturn": 0.00279579
+        },
+        {
+          "month": "2023-04",
+          "monthEnd": "2023-04-28",
+          "previousMonth": "2023-03",
+          "totalReturn": 0.00288247
+        },
+        {
+          "month": "2023-05",
+          "monthEnd": "2023-05-31",
+          "previousMonth": "2023-04",
+          "totalReturn": 0.00361575
+        },
+        {
+          "month": "2023-06",
+          "monthEnd": "2023-06-30",
+          "previousMonth": "2023-05",
+          "totalReturn": 0.00309175
+        },
+        {
+          "month": "2023-07",
+          "monthEnd": "2023-07-31",
+          "previousMonth": "2023-06",
+          "totalReturn": 0.00375968
+        },
+        {
+          "month": "2023-08",
+          "monthEnd": "2023-08-31",
+          "previousMonth": "2023-07",
+          "totalReturn": 0.00336963
+        },
+        {
+          "month": "2023-09",
+          "monthEnd": "2023-09-29",
+          "previousMonth": "2023-08",
+          "totalReturn": 0.00354855
+        },
+        {
+          "month": "2023-10",
+          "monthEnd": "2023-10-31",
+          "previousMonth": "2023-09",
+          "totalReturn": 0.00379951
+        },
+        {
+          "month": "2023-11",
+          "monthEnd": "2023-11-30",
+          "previousMonth": "2023-10",
+          "totalReturn": 0.00366282
+        },
+        {
+          "month": "2023-12",
+          "monthEnd": "2023-12-28",
+          "previousMonth": "2023-11",
+          "totalReturn": 0.00339384
+        },
+        {
+          "month": "2024-01",
+          "monthEnd": "2024-01-31",
+          "previousMonth": "2023-12",
+          "totalReturn": 0.00409255
+        },
+        {
+          "month": "2024-02",
+          "monthEnd": "2024-02-29",
+          "previousMonth": "2024-01",
+          "totalReturn": 0.00354427
+        },
+        {
+          "month": "2024-03",
+          "monthEnd": "2024-03-27",
+          "previousMonth": "2024-02",
+          "totalReturn": 0.00339368
+        },
+        {
+          "month": "2024-04",
+          "monthEnd": "2024-04-30",
+          "previousMonth": "2024-03",
+          "totalReturn": 0.00361394
+        },
+        {
+          "month": "2024-05",
+          "monthEnd": "2024-05-31",
+          "previousMonth": "2024-04",
+          "totalReturn": 0.00377972
+        },
+        {
+          "month": "2024-06",
+          "monthEnd": "2024-06-28",
+          "previousMonth": "2024-05",
+          "totalReturn": 0.00416333
+        },
+        {
+          "month": "2024-07",
+          "monthEnd": "2024-07-31",
+          "previousMonth": "2024-06",
+          "totalReturn": 0.00340189
+        },
+        {
+          "month": "2024-08",
+          "monthEnd": "2024-08-30",
+          "previousMonth": "2024-07",
+          "totalReturn": 0.0042276
+        },
+        {
+          "month": "2024-09",
+          "monthEnd": "2024-09-30",
+          "previousMonth": "2024-08",
+          "totalReturn": 0.00326633
+        },
+        {
+          "month": "2024-10",
+          "monthEnd": "2024-10-31",
+          "previousMonth": "2024-09",
+          "totalReturn": 0.00437478
+        },
+        {
+          "month": "2024-11",
+          "monthEnd": "2024-11-28",
+          "previousMonth": "2024-10",
+          "totalReturn": 0.00339244
+        },
+        {
+          "month": "2024-12",
+          "monthEnd": "2024-12-30",
+          "previousMonth": "2024-11",
+          "totalReturn": 0.00373743
+        },
+        {
+          "month": "2025-01",
+          "monthEnd": "2025-01-30",
+          "previousMonth": "2024-12",
+          "totalReturn": 0.00390742
+        },
+        {
+          "month": "2025-02",
+          "monthEnd": "2025-02-27",
+          "previousMonth": "2025-01",
+          "totalReturn": 0.00319003
+        },
+        {
+          "month": "2025-03",
+          "monthEnd": "2025-03-31",
+          "previousMonth": "2025-02",
+          "totalReturn": 0.00369849
+        },
+        {
+          "month": "2025-04",
+          "monthEnd": "2025-04-30",
+          "previousMonth": "2025-03",
+          "totalReturn": 0.00299405
+        },
+        {
+          "month": "2025-05",
+          "monthEnd": "2025-05-30",
+          "previousMonth": "2025-04",
+          "totalReturn": 0.00363988
+        },
+        {
+          "month": "2025-06",
+          "monthEnd": "2025-06-30",
+          "previousMonth": "2025-05",
+          "totalReturn": 0.00328786
+        },
+        {
+          "month": "2025-07",
+          "monthEnd": "2025-07-31",
+          "previousMonth": "2025-06",
+          "totalReturn": 0.00354543
+        },
+        {
+          "month": "2025-08",
+          "monthEnd": "2025-08-29",
+          "previousMonth": "2025-07",
+          "totalReturn": 0.0029413
+        },
+        {
+          "month": "2025-09",
+          "monthEnd": "2025-09-30",
+          "previousMonth": "2025-08",
+          "totalReturn": 0.00302495
+        },
+        {
+          "month": "2025-10",
+          "monthEnd": "2025-10-30",
+          "previousMonth": "2025-09",
+          "totalReturn": 0.00344413
+        },
+        {
+          "month": "2025-11",
+          "monthEnd": "2025-11-30",
+          "previousMonth": "2025-10",
+          "totalReturn": 0.0029916
+        },
+        {
+          "month": "2025-12",
+          "monthEnd": "2025-12-30",
+          "previousMonth": "2025-11",
+          "totalReturn": 0.00339455
+        },
+        {
+          "month": "2026-01",
+          "monthEnd": "2026-01-29",
+          "previousMonth": "2025-12",
+          "totalReturn": 0.00268723
+        },
+        {
+          "month": "2026-02",
+          "monthEnd": "2026-02-26",
+          "previousMonth": "2026-01",
+          "totalReturn": 0.00294353
+        }
+      ]
+    },
+    "bitcoin": {
+      "key": "bitcoin",
+      "label": "Bitcoin",
+      "ticker": "BTC-USD",
+      "currency": "USD",
+      "lookbackYears": 4,
+      "source": "Yahoo Finance chart API",
+      "sourceUrl": "https://finance.yahoo.com/quote/BTC-USD/history/",
+      "startMonth": "2022-04",
+      "endMonth": "2026-02",
+      "months": 47,
+      "monthlyReturns": [
+        {
+          "month": "2022-04",
+          "monthEnd": "2022-04-30",
+          "previousMonth": "2022-03",
+          "totalReturn": -0.17180563
+        },
+        {
+          "month": "2022-05",
+          "monthEnd": "2022-05-31",
+          "previousMonth": "2022-04",
+          "totalReturn": -0.15703524
+        },
+        {
+          "month": "2022-06",
+          "monthEnd": "2022-06-30",
+          "previousMonth": "2022-05",
+          "totalReturn": -0.37768831
+        },
+        {
+          "month": "2022-07",
+          "monthEnd": "2022-07-31",
+          "previousMonth": "2022-06",
+          "totalReturn": 0.17954102
+        },
+        {
+          "month": "2022-08",
+          "monthEnd": "2022-08-31",
+          "previousMonth": "2022-07",
+          "totalReturn": -0.14085561
+        },
+        {
+          "month": "2022-09",
+          "monthEnd": "2022-09-30",
+          "previousMonth": "2022-08",
+          "totalReturn": -0.03082204
+        },
+        {
+          "month": "2022-10",
+          "monthEnd": "2022-10-31",
+          "previousMonth": "2022-09",
+          "totalReturn": 0.05475483
+        },
+        {
+          "month": "2022-11",
+          "monthEnd": "2022-11-30",
+          "previousMonth": "2022-10",
+          "totalReturn": -0.16233625
+        },
+        {
+          "month": "2022-12",
+          "monthEnd": "2022-12-31",
+          "previousMonth": "2022-11",
+          "totalReturn": -0.03617485
+        },
+        {
+          "month": "2023-01",
+          "monthEnd": "2023-01-31",
+          "previousMonth": "2022-12",
+          "totalReturn": 0.39835556
+        },
+        {
+          "month": "2023-02",
+          "monthEnd": "2023-02-28",
+          "previousMonth": "2023-01",
+          "totalReturn": 0.00034877
+        },
+        {
+          "month": "2023-03",
+          "monthEnd": "2023-03-31",
+          "previousMonth": "2023-02",
+          "totalReturn": 0.23031276
+        },
+        {
+          "month": "2023-04",
+          "monthEnd": "2023-04-30",
+          "previousMonth": "2023-03",
+          "totalReturn": 0.02775156
+        },
+        {
+          "month": "2023-05",
+          "monthEnd": "2023-05-31",
+          "previousMonth": "2023-04",
+          "totalReturn": -0.07001134
+        },
+        {
+          "month": "2023-06",
+          "monthEnd": "2023-06-30",
+          "previousMonth": "2023-05",
+          "totalReturn": 0.11967798
+        },
+        {
+          "month": "2023-07",
+          "monthEnd": "2023-07-31",
+          "previousMonth": "2023-06",
+          "totalReturn": -0.04092038
+        },
+        {
+          "month": "2023-08",
+          "monthEnd": "2023-08-31",
+          "previousMonth": "2023-07",
+          "totalReturn": -0.11285071
+        },
+        {
+          "month": "2023-09",
+          "monthEnd": "2023-09-30",
+          "previousMonth": "2023-08",
+          "totalReturn": 0.03996855
+        },
+        {
+          "month": "2023-10",
+          "monthEnd": "2023-10-31",
+          "previousMonth": "2023-09",
+          "totalReturn": 0.28551948
+        },
+        {
+          "month": "2023-11",
+          "monthEnd": "2023-11-30",
+          "previousMonth": "2023-10",
+          "totalReturn": 0.0878327
+        },
+        {
+          "month": "2023-12",
+          "monthEnd": "2023-12-31",
+          "previousMonth": "2023-11",
+          "totalReturn": 0.1207136
+        },
+        {
+          "month": "2024-01",
+          "monthEnd": "2024-01-31",
+          "previousMonth": "2023-12",
+          "totalReturn": 0.00751015
+        },
+        {
+          "month": "2024-02",
+          "monthEnd": "2024-02-29",
+          "previousMonth": "2024-01",
+          "totalReturn": 0.43716858
+        },
+        {
+          "month": "2024-03",
+          "monthEnd": "2024-03-31",
+          "previousMonth": "2024-02",
+          "totalReturn": 0.16561329
+        },
+        {
+          "month": "2024-04",
+          "monthEnd": "2024-04-30",
+          "previousMonth": "2024-03",
+          "totalReturn": -0.14995438
+        },
+        {
+          "month": "2024-05",
+          "monthEnd": "2024-05-31",
+          "previousMonth": "2024-04",
+          "totalReturn": 0.11304278
+        },
+        {
+          "month": "2024-06",
+          "monthEnd": "2024-06-30",
+          "previousMonth": "2024-05",
+          "totalReturn": -0.07131457
+        },
+        {
+          "month": "2024-07",
+          "monthEnd": "2024-07-31",
+          "previousMonth": "2024-06",
+          "totalReturn": 0.03096697
+        },
+        {
+          "month": "2024-08",
+          "monthEnd": "2024-08-31",
+          "previousMonth": "2024-07",
+          "totalReturn": -0.08742521
+        },
+        {
+          "month": "2024-09",
+          "monthEnd": "2024-09-30",
+          "previousMonth": "2024-08",
+          "totalReturn": 0.07392927
+        },
+        {
+          "month": "2024-10",
+          "monthEnd": "2024-10-31",
+          "previousMonth": "2024-09",
+          "totalReturn": 0.10872796
+        },
+        {
+          "month": "2024-11",
+          "monthEnd": "2024-11-30",
+          "previousMonth": "2024-10",
+          "totalReturn": 0.37362098
+        },
+        {
+          "month": "2024-12",
+          "monthEnd": "2024-12-31",
+          "previousMonth": "2024-11",
+          "totalReturn": -0.03131033
+        },
+        {
+          "month": "2025-01",
+          "monthEnd": "2025-01-31",
+          "previousMonth": "2024-12",
+          "totalReturn": 0.09607082
+        },
+        {
+          "month": "2025-02",
+          "monthEnd": "2025-02-28",
+          "previousMonth": "2025-01",
+          "totalReturn": -0.17608526
+        },
+        {
+          "month": "2025-03",
+          "monthEnd": "2025-03-31",
+          "previousMonth": "2025-02",
+          "totalReturn": -0.0216194
+        },
+        {
+          "month": "2025-04",
+          "monthEnd": "2025-04-30",
+          "previousMonth": "2025-03",
+          "totalReturn": 0.14123019
+        },
+        {
+          "month": "2025-05",
+          "monthEnd": "2025-05-31",
+          "previousMonth": "2025-04",
+          "totalReturn": 0.11072157
+        },
+        {
+          "month": "2025-06",
+          "monthEnd": "2025-06-30",
+          "previousMonth": "2025-05",
+          "totalReturn": 0.02386552
+        },
+        {
+          "month": "2025-07",
+          "monthEnd": "2025-07-31",
+          "previousMonth": "2025-06",
+          "totalReturn": 0.08048574
+        },
+        {
+          "month": "2025-08",
+          "monthEnd": "2025-08-31",
+          "previousMonth": "2025-07",
+          "totalReturn": -0.06497589
+        },
+        {
+          "month": "2025-09",
+          "monthEnd": "2025-09-30",
+          "previousMonth": "2025-08",
+          "totalReturn": 0.05376526
+        },
+        {
+          "month": "2025-10",
+          "monthEnd": "2025-10-31",
+          "previousMonth": "2025-09",
+          "totalReturn": -0.03945359
+        },
+        {
+          "month": "2025-11",
+          "monthEnd": "2025-11-30",
+          "previousMonth": "2025-10",
+          "totalReturn": -0.17490437
+        },
+        {
+          "month": "2025-12",
+          "monthEnd": "2025-12-31",
+          "previousMonth": "2025-11",
+          "totalReturn": -0.03192108
+        },
+        {
+          "month": "2026-01",
+          "monthEnd": "2026-01-31",
+          "previousMonth": "2025-12",
+          "totalReturn": -0.10156359
+        },
+        {
+          "month": "2026-02",
+          "monthEnd": "2026-02-28",
+          "previousMonth": "2026-01",
+          "totalReturn": -0.14786432
+        }
+      ]
+    }
+  }
+}

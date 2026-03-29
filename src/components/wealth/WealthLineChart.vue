@@ -128,11 +128,15 @@
       >
         <div class="wealth-chart__tooltip-title">Year {{ hoveredYear }}</div>
         <div v-for="point in hoveredPoints" :key="point.id" class="wealth-chart__tooltip-row">
-          <span class="wealth-chart__tooltip-label">
-            <i class="wealth-chart__tooltip-swatch" :style="{ background: point.color }"></i>
-            {{ point.label }}
-          </span>
-          <span>{{ formatShortCurrency(point.mid) }}</span>
+          <div class="wealth-chart__tooltip-column">
+            <span class="wealth-chart__tooltip-label">
+              <i class="wealth-chart__tooltip-swatch" :style="{ background: point.color }"></i>
+              {{ point.label }}
+            </span>
+            <span class="wealth-chart__tooltip-stat">P10 {{ formatShortCurrency(point.low) }}</span>
+            <span class="wealth-chart__tooltip-stat">P50 {{ formatShortCurrency(point.mid) }}</span>
+            <span class="wealth-chart__tooltip-stat">P90 {{ formatShortCurrency(point.high) }}</span>
+          </div>
         </div>
       </div>
 
@@ -463,9 +467,8 @@ function onPointerMove(event) {
 }
 
 .wealth-chart__tooltip-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.7rem;
+  display: grid;
+  gap: 0.35rem;
   color: #173050;
   font-size: 0.88rem;
 }
@@ -478,6 +481,16 @@ function onPointerMove(event) {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+}
+
+.wealth-chart__tooltip-column {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.wealth-chart__tooltip-stat {
+  color: #526b8d;
+  font-size: 0.8rem;
 }
 
 .wealth-chart__tooltip-swatch {

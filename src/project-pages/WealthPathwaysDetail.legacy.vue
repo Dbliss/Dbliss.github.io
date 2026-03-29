@@ -1,38 +1,17 @@
 <template>
   <article class="wealth-page">
-    <section ref="heroRef" class="wealth-hero" :class="{ 'is-entered': hasEnteredWorkspace }">
-      <h1 ref="heroTitleRef" class="wealth-hero__title">{{ project.title }}</h1>
+    <div class="wealth-back-row">
+      <RouterLink to="/projects" class="wealth-back">&larr; Back to projects</RouterLink>
+    </div>
+
+    <section ref="heroRef" class="wealth-hero">
+      <h1 ref="heroTitleRef">{{ project.title }}</h1>
       <p class="wealth-tagline">{{ project.tagline }}</p>
-      <p class="wealth-copy wealth-copy--hero">
-        {{ project.excerpt || project.description?.trim() }}
-      </p>
-      <p v-if="!hasEnteredWorkspace" class="wealth-scroll-cue">Scroll to continue</p>
     </section>
 
-    <div class="wealth-workspace" :class="{ 'is-entered': hasEnteredWorkspace }">
-      <section class="wealth-tabs" aria-label="Wealth pathways sections">
-        <button
-          type="button"
-          class="wealth-stage-tab"
-          :class="{ 'is-active': currentStage === 1 }"
-          @click="goToInputs"
-        >
-          Assumptions
-        </button>
-        <button
-          type="button"
-          class="wealth-stage-tab"
-          :class="{ 'is-active': currentStage === 2 }"
-          :disabled="!result"
-          @click="goToResults"
-        >
-          Results
-        </button>
-      </section>
+    <div v-if="errorMessage" class="wealth-error">{{ errorMessage }}</div>
 
-      <div v-if="errorMessage" class="wealth-error">{{ errorMessage }}</div>
-
-      <section v-if="currentStage === 1" class="wealth-stage wealth-stage--inputs">
+    <section v-if="currentStage === 1" class="wealth-stage wealth-stage--inputs">
       <div class="wealth-form-stack">
         <div class="wealth-panel-grid wealth-panel-grid--primary">
           <details class="wealth-panel" open>
@@ -161,7 +140,41 @@
             <summary>Portfolio</summary>
             <div class="wealth-panel__body">
               <div class="wealth-allocation-editor">
-                <p class="wealth-field-note">Use the sliders to set the stock baseline used in the housing comparisons.</p>
+                <div
+                  ref="allocationBarRef"
+                  class="wealth-allocation-bar"
+                  :class="{ 'is-dragging': activeAllocationHandleIndex !== null }"
+                  aria-label="Portfolio allocation by sleeve"
+                >
+                  <div
+                    v-for="allocation in portfolioAllocationFields"
+                    :key="allocation.key"
+                    class="wealth-allocation-bar__segment"
+                    :style="{
+                      width: `${getPortfolioAllocationWidth(allocation.key)}%`,
+                      background: allocation.color
+                    }"
+                    :title="`${allocation.label}: ${getPortfolioAllocationPct(allocation.key)}%`"
+                  >
+                    <span v-if="getPortfolioAllocationPct(allocation.key) >= 14">
+                      {{ allocation.shortLabel }} {{ getPortfolioAllocationPct(allocation.key) }}%
+                    </span>
+                  </div>
+
+                  <button
+                    v-for="boundary in portfolioAllocationBoundaries"
+                    :key="boundary.key"
+                    type="button"
+                    class="wealth-allocation-bar__handle"
+                    :class="{ 'is-active': activeAllocationHandleIndex === boundary.index }"
+                    :style="{ left: `${boundary.position}%` }"
+                    :aria-label="`Adjust ${boundary.leftLabel} and ${boundary.rightLabel}`"
+                    :title="`Drag to adjust ${boundary.leftLabel} and ${boundary.rightLabel}`"
+                    @pointerdown.prevent="startPortfolioHandleDrag(boundary.index, $event)"
+                  ></button>
+                </div>
+
+                <p class="wealth-field-note">Drag the dividers on the bar or type the percentages directly.</p>
 
                 <div class="wealth-allocation-grid">
                   <label
@@ -173,26 +186,15 @@
                       <i class="wealth-allocation-input__swatch" :style="{ background: allocation.color }"></i>
                       <span v-bind="labelAttrs(allocation.key)">{{ allocation.label }}</span>
                     </span>
-                    <div class="wealth-allocation-input__controls">
-                      <input
-                        :data-testid="allocation.testId"
-                        :value="getPortfolioAllocationPct(allocation.key)"
-                        class="wealth-allocation-input__range"
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="1"
-                        @input="setPortfolioAllocation(allocation.key, $event.target.value)"
-                      />
-                      <input
-                        :value="getPortfolioAllocationPct(allocation.key)"
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="1"
-                        @input="setPortfolioAllocation(allocation.key, $event.target.value)"
-                      />
-                    </div>
+                    <input
+                      :data-testid="allocation.testId"
+                      :value="getPortfolioAllocationPct(allocation.key)"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      @input="setPortfolioAllocation(allocation.key, $event.target.value)"
+                    />
                   </label>
                 </div>
               </div>
@@ -630,9 +632,9 @@
           </button>
         </section>
       </div>
-      </section>
+    </section>
 
-      <section v-else class="wealth-stage wealth-stage--results">
+    <section v-else class="wealth-stage wealth-stage--results">
       <div class="wealth-results-toolbar">
         <button type="button" class="wealth-secondary-btn" data-testid="edit-inputs" @click="goToInputs">Edit assumptions</button>
         <button type="button" class="wealth-primary-btn" data-testid="rerun-results" @click="rerunResults">
@@ -832,13 +834,13 @@
           </div>
         </details>
       </section>
-      </section>
-    </div>
+    </section>
   </article>
 </template>
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import WealthLineChart from '../components/wealth/WealthLineChart.vue'
 import WealthCompositionBars from '../components/wealth/WealthCompositionBars.vue'
 import SuburbSearchSelector from '../components/wealth/SuburbSearchSelector.vue'
@@ -992,7 +994,6 @@ const result = ref(null)
 const loading = ref(false)
 const errorMessage = ref('')
 const lastRunAt = ref('')
-const hasEnteredWorkspace = ref(false)
 const currentStage = ref(1)
 const resultsStale = ref(true)
 const mutedStrategyKeys = ref([])
@@ -1001,6 +1002,8 @@ const mortgageYearOptions = [20, 25, 30]
 const ownerOccupierFirstHomeBuyerSupport = true
 const heroRef = ref(null)
 const heroTitleRef = ref(null)
+const allocationBarRef = ref(null)
+const activeAllocationHandleIndex = ref(null)
 const selectedSuburbSelection = ref(null)
 let runToken = 0
 let heroResizeFrame = 0
@@ -1102,7 +1105,6 @@ async function runSimulation() {
 }
 
 async function enterResultsStage() {
-  hasEnteredWorkspace.value = true
   currentStage.value = 2
   await nextTick()
   if (typeof window !== 'undefined') {
@@ -1198,22 +1200,12 @@ watch(
   }
 )
 
-function updateWorkspaceState() {
-  if (typeof window === 'undefined') return
-  const heroHeight = heroRef.value?.offsetHeight || window.innerHeight || 1
-  if (window.scrollY > heroHeight * 0.32) {
-    hasEnteredWorkspace.value = true
-  }
-}
-
 onMounted(() => {
   scheduleHeroTitleResize()
-  updateWorkspaceState()
 
   if (typeof ResizeObserver === 'function') {
     heroResizeObserver = new ResizeObserver(() => {
       scheduleHeroTitleResize()
-      updateWorkspaceState()
     })
 
     if (heroRef.value) {
@@ -1222,11 +1214,10 @@ onMounted(() => {
   } else {
     window.addEventListener('resize', scheduleHeroTitleResize)
   }
-
-  window.addEventListener('scroll', updateWorkspaceState, { passive: true })
 })
 
 onBeforeUnmount(() => {
+  stopPortfolioHandleDrag()
   client.destroy()
 
   if (heroResizeFrame) {
@@ -1237,10 +1228,6 @@ onBeforeUnmount(() => {
     heroResizeObserver.disconnect()
   } else {
     window.removeEventListener('resize', scheduleHeroTitleResize)
-  }
-
-  if (typeof window !== 'undefined') {
-    window.removeEventListener('scroll', updateWorkspaceState)
   }
 })
 
@@ -1475,6 +1462,25 @@ function getPortfolioAllocationPct(key) {
   return Math.round((Math.max(0, Number(form.portfolioConfig[key]) || 0) * 100))
 }
 
+function getPortfolioAllocationWidth(key) {
+  return Math.max(0, Number(form.portfolioConfig[key]) || 0) * 100
+}
+
+const portfolioAllocationBoundaries = computed(() => {
+  let cumulativeWeight = 0
+
+  return portfolioAllocationFields.slice(0, -1).map((field, index) => {
+    cumulativeWeight += Math.max(0, Number(form.portfolioConfig[field.key]) || 0)
+    return {
+      key: `${field.key}-${portfolioAllocationFields[index + 1].key}`,
+      index,
+      leftLabel: field.label,
+      rightLabel: portfolioAllocationFields[index + 1].label,
+      position: cumulativeWeight * 100
+    }
+  })
+})
+
 function setPortfolioAllocation(targetKey, value) {
   const keys = portfolioAllocationFields.map(field => field.key)
   const nextWeight = clamp(Number(value) || 0, 0, 100) / 100
@@ -1506,6 +1512,70 @@ function setPortfolioAllocation(targetKey, value) {
     form.portfolioConfig[key] = nextShare
     assignedWeight += nextShare
   })
+}
+
+function setPortfolioBoundary(index, clientX) {
+  const bar = allocationBarRef.value
+  if (!bar) return
+
+  const rect = bar.getBoundingClientRect()
+  if (rect.width <= 0) return
+
+  const leftField = portfolioAllocationFields[index]
+  const rightField = portfolioAllocationFields[index + 1]
+  if (!leftField || !rightField) return
+
+  const leadingWeight = portfolioAllocationFields
+    .slice(0, index)
+    .reduce((sum, field) => sum + Math.max(0, Number(form.portfolioConfig[field.key]) || 0), 0)
+  const pairWeight =
+    Math.max(0, Number(form.portfolioConfig[leftField.key]) || 0) +
+    Math.max(0, Number(form.portfolioConfig[rightField.key]) || 0)
+
+  const pairStart = rect.left + leadingWeight * rect.width
+  const pairEnd = pairStart + pairWeight * rect.width
+  const clampedX = clamp(clientX, pairStart, pairEnd)
+  const nextLeftWeight = rect.width > 0
+    ? clamp((clampedX - pairStart) / rect.width, 0, pairWeight)
+    : 0
+
+  form.portfolioConfig[leftField.key] = nextLeftWeight
+  form.portfolioConfig[rightField.key] = Math.max(0, pairWeight - nextLeftWeight)
+}
+
+function handlePortfolioPointerMove(event) {
+  if (activeAllocationHandleIndex.value === null) return
+  setPortfolioBoundary(activeAllocationHandleIndex.value, event.clientX)
+}
+
+function stopPortfolioHandleDrag() {
+  activeAllocationHandleIndex.value = null
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('pointermove', handlePortfolioPointerMove)
+    window.removeEventListener('pointerup', stopPortfolioHandleDrag)
+    window.removeEventListener('pointercancel', stopPortfolioHandleDrag)
+  }
+
+  if (typeof document !== 'undefined') {
+    document.body.style.removeProperty('cursor')
+    document.body.style.removeProperty('user-select')
+  }
+}
+
+function startPortfolioHandleDrag(index, event) {
+  activeAllocationHandleIndex.value = index
+  event.currentTarget?.setPointerCapture?.(event.pointerId)
+  setPortfolioBoundary(index, event.clientX)
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pointermove', handlePortfolioPointerMove)
+    window.addEventListener('pointerup', stopPortfolioHandleDrag)
+    window.addEventListener('pointercancel', stopPortfolioHandleDrag)
+  }
+
+  if (typeof document !== 'undefined') {
+    document.body.style.cursor = 'ew-resize'
+    document.body.style.userSelect = 'none'
+  }
 }
 
 const strategyCards = computed(() => {
@@ -1984,14 +2054,17 @@ function formatPercent(value) {
     linear-gradient(180deg, #f8fbff 0%, #eef5ff 42%, #f5f8fd 100%);
 }
 
+.wealth-back-row,
 .wealth-hero,
-.wealth-workspace,
-.wealth-tabs,
 .wealth-banner,
 .wealth-error,
 .wealth-stage {
   width: min(100%, var(--wealth-content-max));
   margin-inline: auto;
+}
+
+.wealth-back-row {
+  margin-bottom: 1rem;
 }
 
 .wealth-stage--results {
@@ -2061,6 +2134,7 @@ function formatPercent(value) {
   }
 }
 
+.wealth-back,
 .wealth-banner,
 .wealth-panel,
 .wealth-card {
@@ -2069,21 +2143,17 @@ function formatPercent(value) {
   box-shadow: 0 18px 38px rgba(95, 122, 160, 0.12);
 }
 
-.wealth-hero {
-  max-width: 960px;
-  min-height: calc(100vh - 2.8rem);
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: 0.9rem;
-  padding: clamp(2.6rem, 7vw, 5rem) clamp(1.4rem, 4vw, 3.6rem);
-  text-align: center;
-  transition: min-height 260ms ease, padding 260ms ease;
+.wealth-back {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
 }
 
-.wealth-hero.is-entered {
-  min-height: auto;
-  padding-bottom: 1.1rem;
+.wealth-hero {
+  max-width: 960px;
+  padding: clamp(2.1rem, 5vw, 4rem) clamp(1.4rem, 4vw, 3.6rem);
+  text-align: center;
 }
 
 .wealth-kicker {
@@ -2094,21 +2164,12 @@ function formatPercent(value) {
   color: #5c7ca1;
 }
 
-.wealth-hero__title {
+.wealth-hero h1 {
   margin: 0;
   font-size: 72px;
   line-height: 0.94;
   letter-spacing: -0.05em;
   white-space: nowrap;
-  overflow: hidden;
-  transition: opacity 220ms ease, max-height 220ms ease, transform 220ms ease, margin 220ms ease;
-}
-
-.wealth-hero.is-entered .wealth-hero__title {
-  opacity: 0;
-  max-height: 0;
-  margin: 0;
-  transform: translateY(-18px);
 }
 
 .wealth-card h3 {
@@ -2138,39 +2199,6 @@ function formatPercent(value) {
 .wealth-copy {
   margin: 0;
   color: #5d7394;
-}
-
-.wealth-copy--hero {
-  max-width: 720px;
-  margin: 1.1rem auto 0;
-  font-size: 1rem;
-  line-height: 1.65;
-}
-
-.wealth-scroll-cue {
-  margin: 0.5rem 0 0;
-  color: #5c7ca1;
-  font-size: 0.8rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.wealth-workspace {
-  opacity: 0.9;
-  transform: translateY(28px);
-  transition: opacity 260ms ease, transform 260ms ease;
-}
-
-.wealth-workspace.is-entered {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.wealth-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.7rem;
-  margin-top: 1rem;
 }
 
 .wealth-mini-grid,
@@ -2336,9 +2364,73 @@ function formatPercent(value) {
   gap: 0.9rem;
 }
 
+.wealth-allocation-bar {
+  position: relative;
+  display: flex;
+  min-height: 58px;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(154, 174, 204, 0.24);
+  background: rgba(231, 238, 247, 0.72);
+}
+
+.wealth-allocation-bar__segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0.7rem 0.35rem;
+  color: #f8fbff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: center;
+  transition: width 120ms ease;
+}
+
+.wealth-allocation-bar__segment span {
+  white-space: nowrap;
+}
+
+.wealth-allocation-bar.is-dragging .wealth-allocation-bar__segment,
+.wealth-allocation-bar.is-dragging .wealth-allocation-bar__handle {
+  transition: none;
+}
+
+.wealth-allocation-bar__handle {
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  width: 18px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(248, 251, 255, 0.96);
+  box-shadow: 0 0 0 1px rgba(23, 48, 80, 0.08), 0 10px 24px rgba(23, 48, 80, 0.12);
+  transform: translateX(-50%);
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.wealth-allocation-bar__handle::before {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 4px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(93, 115, 148, 0.72);
+  transform: translate(-50%, -50%);
+  box-shadow: -4px 0 0 rgba(93, 115, 148, 0.28), 4px 0 0 rgba(93, 115, 148, 0.28);
+}
+
+.wealth-allocation-bar__handle.is-active {
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2), 0 12px 30px rgba(37, 99, 235, 0.22);
+}
+
 .wealth-allocation-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.8rem;
 }
 
@@ -2365,17 +2457,6 @@ function formatPercent(value) {
   height: 0.72rem;
   border-radius: 999px;
   flex: 0 0 auto;
-}
-
-.wealth-allocation-input__controls {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 88px;
-  gap: 0.7rem;
-  align-items: center;
-}
-
-.wealth-allocation-input__range {
-  padding-inline: 0;
 }
 
 .wealth-grid label:not(.wealth-toggle),
@@ -2632,10 +2713,6 @@ function formatPercent(value) {
   .wealth-slider-grid,
   .wealth-allocation-grid,
   .wealth-mini-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .wealth-allocation-input__controls {
     grid-template-columns: 1fr;
   }
 

@@ -24,7 +24,7 @@ import ChessEngineDetail from '../project-pages/ChessEngineDetail.vue'
 import SportsBookingDetail from '../project-pages/SportsBookingDetail.vue'
 import AssetDataIntegrationDetail from '../project-pages/AssetDataIntegrationDetail.vue'
 import DroneDetail from '../project-pages/DroneDetail.vue'
-import WealthPathwaysDetail from '../project-pages/WealthPathwaysDetail.vue'
+import WealthPathwaysWorkbookDetail from '../project-pages/WealthPathwaysWorkbookDetail.vue'
 
 // 1) get slug from route
 const route = useRoute()
@@ -42,7 +42,7 @@ const componentMap = {
   'sports-booking': SportsBookingDetail,
   'asset-data-integration': AssetDataIntegrationDetail,
   drone: DroneDetail,
-  'wealth-pathways-au': WealthPathwaysDetail
+  'wealth-pathways-au': WealthPathwaysWorkbookDetail
 }
 
 // 4) choose component; default if no custom one defined

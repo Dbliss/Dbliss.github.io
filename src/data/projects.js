@@ -149,7 +149,7 @@ an optional live-at-home runway, buying a home to live in, and buying a property
 The page is designed as a live calculator rather than a static case study. Users can edit assumptions for:
 - income growth and savings rate
 - move-out rent, live-at-home duration, and at-home living costs
-- ASX200, QQQ, and bond allocations
+ - ASX200, QQQ, bond, cash, and bitcoin allocations
 - mortgage rates, deposits, and property growth
 - first-home-buyer settings, selected property intention, and rentvesting assumptions
 

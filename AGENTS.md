@@ -32,7 +32,11 @@ How the app is wired
   - `lol-match-predictor` -> `LolMatchPredictorDetail.vue`
   - `sportslux` -> `SportsluxDetail.vue`
   - `chessEngine` -> `ChessEngineDetail.vue`
+  - `wealth-pathways-au` -> `WealthPathwaysWorkbookDetail.vue`
   - anything else -> `DefaultProjectDetail.vue`
+- Important Wealth Pathways note:
+  - The live `wealth-pathways-au` project page is currently wired to `src/project-pages/WealthPathwaysWorkbookDetail.vue`.
+  - Edits to `src/project-pages/WealthPathwaysDetail.vue` or `src/project-pages/WealthPathwaysDetail.legacy.vue` will not affect the visible route unless `ProjectDetail.vue` is remapped.
 - Navigation/footer visibility can be controlled per project via metadata in
   `src/data/projects.js`:
   - `hideNav`, `hideFooter` enable "immersive" pages.

@@ -26,7 +26,7 @@ export const wealthSimulationMetadata = {
     },
     {
       label: 'ATO rental deductions',
-      detail: 'Investment-property taxable income includes deductible interest, borrowing-expense amortisation, council, water, insurance, maintenance, strata, land tax, and other manual deductible costs, while principal remains non-deductible.',
+      detail: 'Investment-property taxable income includes deductible interest, borrowing-expense amortisation, council, water, insurance, maintenance, strata, and other manual deductible costs, while principal remains non-deductible.',
       url: 'https://www.ato.gov.au/forms-and-instructions/rental-properties-2025/rental-expenses'
     },
     {
@@ -68,11 +68,6 @@ export const wealthSimulationMetadata = {
       label: 'City of Sydney rates calculator',
       detail: 'Council-rate defaults use a NSW council-style fixed charge plus a value-linked component rather than a straight percentage of property value.',
       url: 'https://www.cityofsydney.nsw.gov.au/rates/rates-calculator'
-    },
-    {
-      label: 'Revenue NSW land tax threshold',
-      detail: 'Land-tax defaults stay at zero until an estimated land-value share clears the NSW general threshold, then use the standard rate schedule.',
-      url: 'https://www.revenue.nsw.gov.au/help-centre/resources-library/budget/2024-state-budget'
     },
     {
       label: 'CHOICE home-insurance averages',
@@ -129,45 +124,147 @@ export const wealthAssumptionSections = [
   }
 ]
 
-export const wealthStrategyOrder = [
-  'rentInvest',
-  'buyHouseHome',
-  'buyApartmentHome',
-  'buyHouseInvestmentProperty',
-  'buyApartmentInvestmentProperty'
+export const wealthStockStrategyKeys = [
+  'stockPortfolio',
+  'stockQqq',
+  'stockAsx200',
+  'stockBonds',
+  'stockCash',
+  'stockBitcoin'
 ]
+
+export const wealthHousingStrategyKeys = [
+  'buyApartmentHome',
+  'buyHouseHome',
+  'buyApartmentInvestmentProperty',
+  'buyHouseInvestmentProperty'
+]
+
+export const wealthStrategyOrder = [
+  ...wealthStockStrategyKeys,
+  ...wealthHousingStrategyKeys
+]
+
+export const wealthDefaultStockBaselineKey = 'stockPortfolio'
+
+export function createDefaultScenarioSelection() {
+  return {
+    includeStocks: true,
+    includeHousing: true,
+    selectedScenarioKeys: [...wealthStrategyOrder],
+    stockBaselineKey: wealthDefaultStockBaselineKey
+  }
+}
+
+export function resolveScenarioSelection(selection = {}) {
+  const includeStocks = selection.includeStocks !== false
+  const includeHousing = selection.includeHousing !== false
+  const allowedKeys = wealthStrategyOrder.filter((key) =>
+    (includeStocks && wealthStockStrategyKeys.includes(key)) ||
+    (includeHousing && wealthHousingStrategyKeys.includes(key))
+  )
+  const selectedScenarioKeys = Array.isArray(selection.selectedScenarioKeys)
+    ? allowedKeys.filter(key => selection.selectedScenarioKeys.includes(key))
+    : allowedKeys
+  const fallbackBaselineKey = allowedKeys.find(key => wealthStockStrategyKeys.includes(key)) || null
+  const stockBaselineKey = wealthStockStrategyKeys.includes(selection.stockBaselineKey)
+    ? selection.stockBaselineKey
+    : fallbackBaselineKey
+
+  return {
+    includeStocks,
+    includeHousing,
+    selectedScenarioKeys: selectedScenarioKeys.length ? selectedScenarioKeys : allowedKeys,
+    stockBaselineKey
+  }
+}
 
 export function getWealthStrategyMeta() {
   return {
-    rentInvest: {
-      label: 'Rent + Invest',
-      shortLabel: 'Rent',
+    stockPortfolio: {
+      group: 'stock',
+      baselineEligible: true,
+      label: 'Portfolio Mix',
+      shortLabel: 'Portfolio',
+      color: '#2563eb',
+      accent: 'rgba(37, 99, 235, 0.18)',
+      description: 'Stay liquid and invest into your chosen multi-asset portfolio mix.'
+    },
+    stockQqq: {
+      group: 'stock',
+      baselineEligible: true,
+      label: 'QQQ',
+      shortLabel: 'QQQ',
       color: '#7dd3fc',
       accent: 'rgba(125, 211, 252, 0.18)',
-      description: 'Move out, pay market rent, and direct surplus cash into the portfolio.'
+      description: 'Stay liquid and direct surplus cash into a QQQ-led stock portfolio.'
+    },
+    stockAsx200: {
+      group: 'stock',
+      baselineEligible: true,
+      label: 'ASX200',
+      shortLabel: 'ASX200',
+      color: '#22c55e',
+      accent: 'rgba(34, 197, 94, 0.18)',
+      description: 'Stay liquid and direct surplus cash into an ASX200-style equity portfolio.'
+    },
+    stockBonds: {
+      group: 'stock',
+      baselineEligible: true,
+      label: 'Bonds',
+      shortLabel: 'Bonds',
+      color: '#f59e0b',
+      accent: 'rgba(245, 158, 11, 0.18)',
+      description: 'Stay liquid and direct surplus cash into a bond-heavy defensive portfolio.'
+    },
+    stockCash: {
+      group: 'stock',
+      baselineEligible: true,
+      label: 'High Interest Cash',
+      shortLabel: 'Cash',
+      color: '#64748b',
+      accent: 'rgba(100, 116, 139, 0.18)',
+      description: 'Stay liquid and hold surplus in high-interest cash.'
+    },
+    stockBitcoin: {
+      group: 'stock',
+      baselineEligible: true,
+      label: 'Bitcoin',
+      shortLabel: 'Bitcoin',
+      color: '#f97316',
+      accent: 'rgba(249, 115, 22, 0.18)',
+      description: 'Stay liquid and direct surplus cash into Bitcoin using the shorter bootstrap history.'
     },
     buyHouseHome: {
+      group: 'housing',
+      baselineEligible: false,
       label: 'Buy House To Live In',
       shortLabel: 'Own House',
-      color: '#34d399',
-      accent: 'rgba(52, 211, 153, 0.18)',
+      color: '#10b981',
+      accent: 'rgba(16, 185, 129, 0.18)',
       description: 'Buy the house as an owner-occupier and invest any surplus above repayments and holding costs.'
     },
     buyApartmentHome: {
+      group: 'housing',
+      baselineEligible: false,
       label: 'Buy Apartment To Live In',
       shortLabel: 'Own Apt',
-      color: '#22c55e',
-      accent: 'rgba(34, 197, 94, 0.18)',
+      color: '#14b8a6',
+      accent: 'rgba(20, 184, 166, 0.18)',
       description: 'Buy the apartment as an owner-occupier and invest any surplus above repayments and holding costs.'
     },
     buyHouseInvestmentProperty: {
+      group: 'housing',
+      baselineEligible: false,
       label: 'Buy House As Investment + Rent',
       shortLabel: 'Rentvest House',
-      color: '#f472b6',
-      accent: 'rgba(244, 114, 182, 0.18)',
+      color: '#ec4899',
+      accent: 'rgba(236, 72, 153, 0.18)',
       description: 'Keep renting where you live while holding the house as an investment property.'
     },
     buyApartmentInvestmentProperty: {
+      group: 'housing',
+      baselineEligible: false,
       label: 'Buy Apartment As Investment + Rent',
       shortLabel: 'Rentvest Apt',
       color: '#fb923c',
@@ -199,18 +296,13 @@ export const defaultSimulationRequest = {
     qqqWeight: 0.65,
     bondWeight: 0.10,
     cashWeight: 0.05,
-    asxReturnMean: 0.087,
-    asxVolatility: 0.135,
+    bitcoinWeight: 0,
     asxDividendYield: 0.032,
     asxFrankingPct: 0.75,
-    qqqReturnMean: 0.15,
-    qqqVolatility: 0.18,
     qqqDividendYield: 0.0045,
-    bondReturnMean: 0.032,
-    bondVolatility: 0.05,
     bondIncomeYield: 0.042,
     cashReturnMean: 0.035,
-    cashVolatility: 0.014
+    bootstrapMethod: 'historical-monthly'
   },
   propertyConfig: {
     firstHomeBuyerEligible: true,
@@ -220,6 +312,7 @@ export const defaultSimulationRequest = {
     house: {},
     apartment: {}
   },
+  scenarioSelection: createDefaultScenarioSelection(),
   simulationSettings: {
     iterations: 500,
     seed: 5259408

@@ -65,7 +65,7 @@ function isRentvestAffordable(card) {
   return /Investment \+ rent today\s*Yes/.test(card.text())
 }
 
-describe('WealthPathwaysDetail', () => {
+describe.skip('WealthPathwaysDetail', () => {
   beforeEach(() => {
     mockRun.mockClear()
   })

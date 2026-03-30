@@ -62,13 +62,26 @@ function sampleMarketPath(request, random) {
       random,
       createBootstrapPortfolioSampler(random, request.portfolioConfig)
     ),
-    houseGrowth: clamp(sampleNormal(random, propertyConfig.house.growthMean, propertyConfig.house.growthVolatility), -0.25, 0.25),
-    apartmentGrowth: clamp(sampleNormal(random, propertyConfig.apartment.growthMean, propertyConfig.apartment.growthVolatility), -0.18, 0.18),
+    houseGrowth: samplePropertyGrowthRate(random, propertyConfig.house, -0.25, 0.25),
+    apartmentGrowth: samplePropertyGrowthRate(random, propertyConfig.apartment, -0.18, 0.18),
     mortgageRateJitter: sampleNormal(random, 0, 0.0045),
     vacancyRate: clamp(sampleNormal(random, vacancyRate, wealthVacancyRateVolatility), 0, 0.12),
     rentInflation: clamp(sampleNormal(random, housingCosts.rentGrowthRate, 0.01), 0, 0.08),
     boardInflation: clamp(sampleNormal(random, housingCosts.boardGrowthRate, 0.008), 0, 0.06)
   }))
+}
+
+function samplePropertyGrowthRate(random, property, lowerBound, upperBound) {
+  const historicalSeries = Array.isArray(property?.historicalAnnualGrowthRates)
+    ? property.historicalAnnualGrowthRates.filter(value => Number.isFinite(Number(value))).map(value => Number(value))
+    : []
+
+  if (historicalSeries.length) {
+    const sampled = historicalSeries[Math.floor(random() * historicalSeries.length)]
+    return clamp(sampled, lowerBound, upperBound)
+  }
+
+  return clamp(sampleNormal(random, property.growthMean, property.growthVolatility), lowerBound, upperBound)
 }
 
 function yearPoint(year, metrics) {
@@ -839,6 +852,11 @@ function normaliseProperty(property, fallback = {}) {
     investmentLongRunInterestRate: getPropertyLongRunInterestRate(property, 'investment'),
     growthMean: clamp(Number(property.growthMean) || 0, -0.1, 0.2),
     growthVolatility: clamp(Number(property.growthVolatility) || 0, 0, 0.3),
+    historicalAnnualGrowthRates: Array.isArray(property.historicalAnnualGrowthRates)
+      ? property.historicalAnnualGrowthRates
+          .map(value => Number(value))
+          .filter(value => Number.isFinite(value) && value >= -0.5 && value <= 0.5)
+      : [],
     rentYield: clamp(Number(property.rentYield ?? fallback.rentYield) || 0, 0, 0.1),
     propertyManagementPct: clamp(Number(property.propertyManagementPct ?? fallback.propertyManagementPct) || 0, 0, 0.15),
     councilRates: Math.max(0, Number(property.councilRates) || 0),

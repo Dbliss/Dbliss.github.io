@@ -2,3 +2,13 @@ node_modules
 .vite
 .DS_Store
 dist/
+temp_data_unzipped/
+temp_data_aggregated/district_region_mapping.csv
+temp_data_aggregated/district_code_councils.csv
+temp_data_aggregated/psi_metrics_dashboard.html
+temp_data_aggregated/regions_and_subregions.txt
+scripts/rebuild_psi_metrics_with_region_mapping.py
+scripts/print_regions_and_subregions.py
+scripts/build_wealth_psi_area_defaults.py
+scripts/apply_district_region_mapping.py
+public/data/generated/wealthPsiAreaDefaults.json

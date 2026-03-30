@@ -107,7 +107,6 @@ import WealthIntroStep from '../components/wealth/WealthIntroStep.vue'
 import WealthInterestStep from '../components/wealth/WealthInterestStep.vue'
 import WealthInputWorkbook from '../components/wealth/WealthInputWorkbook.vue'
 import WealthResultsDashboard from '../components/wealth/WealthResultsDashboard.vue'
-import wealthPropertyMarketData from '../data/generated/wealthPropertyMarket.json'
 import {
   cloneSimulationRequest,
   getWealthStrategyMeta,
@@ -121,7 +120,7 @@ import {
 import { estimatePropertyCostFromPrice, scalePurchaseCostsWithPrice, clamp } from '../wealth/finance.js'
 import { WealthSimulationClient } from '../wealth/client.js'
 import { buildDashboardModel } from '../wealth/dashboard.js'
-import { applySuburbMarketToFormBySlug, buildSuburbSearchContext, createPropertyConfigPatchFromSuburb } from '../wealth/suburbMarket.js'
+import { applyAreaMarketToForm, buildAreaSearchContext, createPropertyConfigPatchFromArea } from '../wealth/areaMarket.js'
 
 const props = defineProps({
   project: { type: Object, required: true }
@@ -162,19 +161,21 @@ const mutedStrategyKeys = ref([])
 const groupFilter = ref('all')
 const resultMetric = ref('sellDown')
 const selectedSuburbSelection = ref(null)
+const areaMarketPayload = ref(null)
 const heroRef = ref(null)
 const workspaceRef = ref(null)
 let runToken = 0
 
-const suburbSearchContext = computed(() => buildSuburbSearchContext(wealthPropertyMarketData))
+const suburbSearchContext = computed(() => buildAreaSearchContext(areaMarketPayload.value))
 const selectedSuburbRecord = computed(() => {
-  const slug = selectedSuburbSelection.value?.slug
-  return slug ? suburbSearchContext.value.suburbsBySlug[slug] || null : null
+  const key = selectedSuburbSelection.value?.key
+  return key ? suburbSearchContext.value.areasByKey[key] || null : null
 })
-const selectedSuburbPreview = computed(() => createPropertyConfigPatchFromSuburb(selectedSuburbRecord.value) || {
+const selectedSuburbPreview = computed(() => createPropertyConfigPatchFromArea(selectedSuburbRecord.value) || {
   house: null,
   apartment: null,
-  vacancyRate: null
+  houseGrowthYears: 0,
+  apartmentGrowthYears: 0
 })
 
 const availableInputSheetKeys = computed(() => {
@@ -332,7 +333,8 @@ function handleStageSelect(stageKey) {
 
 function handleSuburbSelect(selection) {
   selectedSuburbSelection.value = selection
-  applySuburbMarketToFormBySlug(form, suburbSearchContext.value.suburbsBySlug, selection?.slug)
+  const area = selection?.key ? suburbSearchContext.value.areasByKey[selection.key] : null
+  applyAreaMarketToForm(form, area)
 }
 
 function cloneRequest() {
@@ -479,6 +481,7 @@ function updateWorkspaceState() {
 }
 
 onMounted(() => {
+  void loadAreaMarketDefaults()
   updateWorkspaceState()
   window.addEventListener('scroll', updateWorkspaceState, { passive: true })
 })
@@ -489,6 +492,17 @@ onBeforeUnmount(() => {
   }
   client.destroy()
 })
+
+async function loadAreaMarketDefaults() {
+  try {
+    const response = await fetch(`${import.meta.env.BASE_URL}data/generated/wealthPsiAreaDefaults.json`, { cache: 'no-store' })
+    if (!response.ok) throw new Error(`Failed to load area defaults (${response.status})`)
+    areaMarketPayload.value = await response.json()
+  } catch (error) {
+    console.error(error)
+    errorMessage.value = error instanceof Error ? error.message : 'Failed to load area defaults.'
+  }
+}
 </script>
 
 <style scoped>

@@ -2,10 +2,10 @@
   <section class="suburb-search card">
     <div class="suburb-search__header">
       <div>
-        <p class="suburb-search__kicker">Suburb Defaults</p>
-        <h3>Search a suburb</h3>
+        <p class="suburb-search__kicker">Area Defaults</p>
+        <h3>Search a region, subregion, or suburb</h3>
         <p class="suburb-search__copy">
-          Optional. Search to prefill market defaults, or leave this blank and set the numbers manually.
+          Optional. Type to search an area and prefill housing defaults from the PSI data, or leave this blank and set the numbers manually.
         </p>
       </div>
       <span class="suburb-search__status">{{ currentSelection?.label ? 'Applied' : 'Optional' }}</span>
@@ -13,11 +13,11 @@
 
     <div class="suburb-search__controls">
       <label class="suburb-search__input">
-        <span>Search suburb</span>
+        <span>Search area</span>
         <input
           v-model.trim="query"
           type="search"
-          placeholder="Suburb, state, or postcode"
+          placeholder="Region, postcode, or suburb"
         />
       </label>
       <button
@@ -30,26 +30,26 @@
       </button>
     </div>
 
-    <div v-if="filteredSuburbs.length" class="suburb-search__dropdown" role="listbox" aria-label="Matching suburbs">
+    <div v-if="filteredAreas.length" class="suburb-search__dropdown" role="listbox" aria-label="Matching areas">
       <button
-        v-for="suburb in filteredSuburbs"
-        :key="suburb.slug"
+        v-for="area in filteredAreas"
+        :key="area.key"
         type="button"
         class="suburb-search__option"
-        :class="{ 'is-active': currentSelection?.slug === suburb.slug }"
-        @click="selectSuburb(suburb)"
+        :class="{ 'is-active': currentSelection?.key === area.key }"
+        @click="selectSuburb(area)"
       >
         <div>
-          <strong>{{ suburb.suburb }}</strong>
-          <span>{{ suburb.state }}<template v-if="suburb.postcode"> {{ suburb.postcode }}</template></span>
+          <strong>{{ area.label }}</strong>
+          <span>{{ area.typeLabel }}<template v-if="area.regionLabel && area.type !== 'region'"> · {{ area.regionLabel }}</template></span>
         </div>
         <span class="suburb-search__option-action">
-          {{ currentSelection?.slug === suburb.slug ? 'Applied' : 'Apply' }}
+          {{ currentSelection?.key === area.key ? 'Applied' : 'Apply' }}
         </span>
       </button>
     </div>
-    <p v-else-if="query" class="suburb-search__empty">No suburbs match that search.</p>
-    <p v-else class="suburb-search__empty">No suburb selected.</p>
+    <p v-else-if="query" class="suburb-search__empty">No areas match that search.</p>
+    <p v-else class="suburb-search__empty">No area selected.</p>
   </section>
 </template>
 
@@ -64,12 +64,12 @@ const props = defineProps({
 const emit = defineEmits(['select-suburb'])
 const query = ref('')
 
-const filteredSuburbs = computed(() => {
+const filteredAreas = computed(() => {
   const search = query.value.toLowerCase()
   if (!search) return []
   return props.suburbOptions
     .filter((option) =>
-      [option.label, option.suburb, option.state, option.postcode]
+      [option.label, option.suburb, option.regionLabel, option.postcode, option.typeLabel, option.searchText]
         .filter(Boolean)
         .some(value => String(value).toLowerCase().includes(search))
     )

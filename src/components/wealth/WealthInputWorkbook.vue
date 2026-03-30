@@ -126,7 +126,7 @@
         <template v-else-if="activeSheet === 'suburb'">
           <div class="wealth-workbook__panel-head">
             <h3>Suburb defaults</h3>
-            <p>Use a suburb search to prefill price, growth, yield, and vacancy assumptions before adjusting them manually.</p>
+            <p>Search a region, subregion, or suburb to prefill current PSI-based housing defaults before adjusting them manually.</p>
           </div>
           <SuburbSearchSelector
             :current-selection="selectedSuburbSelection"
@@ -135,20 +135,20 @@
           />
           <div v-if="selectedSuburbRecord" class="wealth-workbook__summary-grid">
             <div>
-              <span>Applied suburb</span>
+              <span>Applied area</span>
               <strong>{{ selectedSuburbRecord.label }}</strong>
             </div>
             <div v-if="selectedSuburbPreview.house">
-              <span>House median</span>
+              <span>Current house estimate</span>
               <strong>{{ formatCurrency(selectedSuburbPreview.house.purchasePrice) }}</strong>
             </div>
             <div v-if="selectedSuburbPreview.apartment">
-              <span>Apartment median</span>
+              <span>Current apartment estimate</span>
               <strong>{{ formatCurrency(selectedSuburbPreview.apartment.purchasePrice) }}</strong>
             </div>
-            <div v-if="selectedSuburbPreview.vacancyRate !== null">
-              <span>Vacancy baseline</span>
-              <strong>{{ formatPercent(selectedSuburbPreview.vacancyRate) }}</strong>
+            <div v-if="selectedSuburbPreview.houseGrowthYears || selectedSuburbPreview.apartmentGrowthYears">
+              <span>Historical housing years</span>
+              <strong>{{ Math.max(selectedSuburbPreview.houseGrowthYears || 0, selectedSuburbPreview.apartmentGrowthYears || 0) }}</strong>
             </div>
           </div>
         </template>
@@ -368,7 +368,7 @@ const props = defineProps({
   selectedSuburbRecord: { type: Object, default: null },
   selectedSuburbPreview: {
     type: Object,
-    default: () => ({ house: null, apartment: null, vacancyRate: null })
+    default: () => ({ house: null, apartment: null, houseGrowthYears: 0, apartmentGrowthYears: 0 })
   }
 })
 

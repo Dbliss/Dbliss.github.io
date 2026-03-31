@@ -16,6 +16,29 @@
         <span class="wealth-progress__label">{{ stage.label }}</span>
       </button>
     </div>
+    <div v-if="activeSubsteps.length && substepHostIndex >= 0" class="wealth-progress__substeps-row">
+      <div
+        v-for="stage in stages"
+        :key="`substeps-${stage.key}`"
+        class="wealth-progress__substeps-slot"
+      >
+        <div
+          v-if="stage.key === substepHostKey"
+          class="wealth-progress__substeps"
+        >
+          <button
+            v-for="substep in activeSubsteps"
+            :key="substep.key"
+            type="button"
+            class="wealth-progress__substep"
+            :class="{ 'is-active': substep.key === currentSubstep }"
+            @click="$emit('select-substep', substep.key)"
+          >
+            {{ substep.label }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -24,29 +47,60 @@ import { computed } from 'vue'
 
 const props = defineProps({
   stages: { type: Array, default: () => [] },
-  currentStage: { type: String, required: true }
+  currentStage: { type: String, required: true },
+  currentSubstep: { type: String, default: '' },
+  substeps: { type: Array, default: () => [] },
+  substepHostKey: { type: String, default: '' }
 })
 
-defineEmits(['select-stage'])
+defineEmits(['select-stage', 'select-substep'])
 
 const currentIndex = computed(() =>
   props.stages.findIndex(stage => stage.key === props.currentStage)
+)
+
+const activeSubsteps = computed(() =>
+  props.currentStage === props.substepHostKey ? props.substeps : []
+)
+
+const substepHostIndex = computed(() =>
+  props.stages.findIndex(stage => stage.key === props.substepHostKey)
 )
 </script>
 
 <style scoped>
 .wealth-progress {
-  position: sticky;
-  top: 0.85rem;
-  z-index: 8;
   padding: 0.8rem;
-  backdrop-filter: blur(14px);
 }
 
 .wealth-progress__row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.65rem;
+}
+
+.wealth-progress__substeps-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.65rem;
+}
+
+.wealth-progress__substeps-slot {
+  position: relative;
+  min-width: 0;
+  overflow: visible;
+}
+
+.wealth-progress__substeps {
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  width: max-content;
+  min-width: calc(100% + 5rem);
 }
 
 .wealth-progress__step {
@@ -98,13 +152,46 @@ const currentIndex = computed(() =>
   font-weight: 600;
 }
 
+.wealth-progress__substep {
+  flex: 0 0 auto;
+  min-height: 2.2rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(154, 174, 204, 0.2);
+  background: rgba(244, 248, 255, 0.92);
+  color: #466486;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.wealth-progress__substep.is-active {
+  border-color: rgba(45, 118, 212, 0.3);
+  background: rgba(216, 234, 255, 0.98);
+  color: #153355;
+}
+
 @media (max-width: 780px) {
   .wealth-progress__row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .wealth-progress__substeps-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .wealth-progress__step {
     justify-content: flex-start;
+  }
+
+  .wealth-progress__substeps {
+    left: 0;
+    transform: none;
+    flex-wrap: nowrap;
+    width: 100%;
+    min-width: 0;
   }
 }
 </style>

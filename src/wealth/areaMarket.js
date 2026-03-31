@@ -1,8 +1,13 @@
 export function normaliseAreaMarketPayload(rawPayload) {
   const payload = rawPayload && typeof rawPayload === 'object' ? rawPayload : {}
+  const areas = Array.isArray(payload.areas)
+    ? payload.areas
+    : payload.suburbs && typeof payload.suburbs === 'object'
+      ? Object.values(payload.suburbs).map(normaliseSuburbAreaRecord).filter(Boolean)
+      : []
   return {
     metadata: payload.metadata && typeof payload.metadata === 'object' ? payload.metadata : {},
-    areas: Array.isArray(payload.areas) ? payload.areas : []
+    areas
   }
 }
 
@@ -51,6 +56,15 @@ export function createPropertyConfigPatchFromArea(area) {
     key: area.key || null,
     label: area.label || '',
     type: area.type || null,
+    historicalAnnualGrowthBlocks: Array.isArray(area.historicalAnnualGrowthBlocks)
+      ? area.historicalAnnualGrowthBlocks
+          .map((block) => ({
+            year: Number(block?.year),
+            houseGrowth: toNumber(block?.houseGrowth),
+            apartmentGrowth: toNumber(block?.apartmentGrowth)
+          }))
+          .filter((block) => Number.isFinite(block.year) && (block.houseGrowth !== null || block.apartmentGrowth !== null))
+      : [],
     house: buildPropertyPatch(area.house),
     apartment: buildPropertyPatch(area.apartment),
     houseGrowthYears: Array.isArray(area.house?.historicalAnnualGrowthRates) ? area.house.historicalAnnualGrowthRates.length : 0,
@@ -61,6 +75,9 @@ export function createPropertyConfigPatchFromArea(area) {
 export function applyAreaMarketToForm(form, area) {
   const patch = createPropertyConfigPatchFromArea(area)
   if (!patch || !form?.propertyConfig) return null
+  form.propertyConfig.historicalAnnualGrowthBlocks = Array.isArray(patch.historicalAnnualGrowthBlocks)
+    ? patch.historicalAnnualGrowthBlocks.map((block) => ({ ...block }))
+    : []
   applyPropertyPatch(form.propertyConfig.house, patch.house)
   applyPropertyPatch(form.propertyConfig.apartment, patch.apartment)
   return patch
@@ -94,4 +111,35 @@ function applyPropertyPatch(target, patch) {
 function toNumber(value) {
   const safe = Number(value)
   return Number.isFinite(safe) ? safe : null
+}
+
+function normaliseSuburbAreaRecord(area) {
+  if (!area || typeof area !== 'object') return null
+
+  const suburbLabel = area.label || [area.suburb, area.state].filter(Boolean).join(', ')
+  if (!suburbLabel) return null
+
+  return {
+    key: area.slug || suburbLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+    label: suburbLabel,
+    type: 'suburb',
+    suburb: area.suburb || suburbLabel,
+    postcode: area.postcode || null,
+    regionLabel: area.region || null,
+    searchText: [suburbLabel, area.suburb, area.state, area.postcode, area.region].filter(Boolean).join(' '),
+    house: normalisePropertyTypeRecord(area.propertyTypes?.house),
+    apartment: normalisePropertyTypeRecord(area.propertyTypes?.apartment)
+  }
+}
+
+function normalisePropertyTypeRecord(property) {
+  if (!property || typeof property !== 'object') return null
+
+  return {
+    currentPriceEstimate: toNumber(property.medianPrice),
+    latestActualPrice: toNumber(property.medianPrice),
+    annualGrowthMean: toNumber(property.annualGrowthRate),
+    annualGrowthVolatility: null,
+    historicalAnnualGrowthRates: []
+  }
 }

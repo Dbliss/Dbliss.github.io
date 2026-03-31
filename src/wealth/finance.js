@@ -650,6 +650,8 @@ export function assessPropertyPurchaseServiceability({
   taxYear = defaultTaxYear,
   annualIncome = 0,
   helpDebtBalance = 0,
+  annualIncomeByBorrower = [],
+  helpDebtBalances = [],
   weeklyNonHousingLivingCosts = 0,
   occupancyMode = 'owner',
   propertyConfig,
@@ -660,16 +662,24 @@ export function assessPropertyPurchaseServiceability({
   vacancyRate = 0
 } = {}) {
   const safeAnnualIncome = Math.max(0, Number(annualIncome) || 0)
+  const borrowerIncomes = Array.isArray(annualIncomeByBorrower) && annualIncomeByBorrower.length
+    ? annualIncomeByBorrower.map(value => Math.max(0, Number(value) || 0))
+    : [safeAnnualIncome]
+  const borrowerHelpBalances = Array.isArray(helpDebtBalances) && helpDebtBalances.length
+    ? helpDebtBalances.map(value => Math.max(0, Number(value) || 0))
+    : [Math.max(0, Number(helpDebtBalance) || 0)]
   const safePropertyValue = Math.max(0, Number(propertyValue) || 0)
   const safeMortgageYears = Math.max(1, Number(mortgageYears) || Number(propertyConfig?.mortgageYears) || 1)
   const safeOpeningLoanBalance = Math.max(0, Number(openingLoanBalance) || 0)
   const annualLivingCosts = calculateAnnualServiceabilityLivingCosts(weeklyNonHousingLivingCosts)
-  const salaryOnlyTax = calculateAustralianAnnualTax({
+  const salaryOnlyTax = borrowerIncomes.reduce((sum, borrowerIncome) => sum + calculateAustralianAnnualTax({
     taxYear,
-    salaryIncome: safeAnnualIncome
-  })
-  const helpRepayment = rollForwardHelpDebt(helpDebtBalance, safeAnnualIncome).actualRepayment
-  const annualDisposableAfterLiving = safeAnnualIncome - salaryOnlyTax.totalTax - annualLivingCosts - helpRepayment
+    salaryIncome: borrowerIncome
+  }).totalTax, 0)
+  const helpRepayment = borrowerIncomes.reduce((sum, borrowerIncome, index) =>
+    sum + rollForwardHelpDebt(borrowerHelpBalances[index] || 0, borrowerIncome).actualRepayment
+  , 0)
+  const annualDisposableAfterLiving = safeAnnualIncome - salaryOnlyTax - annualLivingCosts - helpRepayment
   const productRate = getPropertyInterestRate(propertyConfig, occupancyMode)
   const assessedRate = getServiceabilityAssessmentRate(productRate)
   const annualMortgagePayment = calculateAnnualMortgagePayment(safeOpeningLoanBalance, assessedRate, safeMortgageYears)
@@ -720,6 +730,115 @@ export function assessPropertyPurchaseServiceability({
     rentalTaxPosition,
     affordable: annualDisposableAfterLiving >= annualCarry
   }
+}
+
+export function estimatePropertyBorrowingPower({
+  taxYear = defaultTaxYear,
+  annualIncome = 0,
+  helpDebtBalance = 0,
+  annualIncomeByBorrower = [],
+  helpDebtBalances = [],
+  weeklyNonHousingLivingCosts = 0,
+  occupancyMode = 'owner',
+  propertyConfig,
+  propertyValue,
+  mortgageYears,
+  personalHousingCostAnnual = 0,
+  vacancyRate = 0
+} = {}) {
+  const safeAnnualIncome = Math.max(0, Number(annualIncome) || 0)
+  const borrowerIncomes = Array.isArray(annualIncomeByBorrower) && annualIncomeByBorrower.length
+    ? annualIncomeByBorrower.map(value => Math.max(0, Number(value) || 0))
+    : [safeAnnualIncome]
+  const borrowerHelpBalances = Array.isArray(helpDebtBalances) && helpDebtBalances.length
+    ? helpDebtBalances.map(value => Math.max(0, Number(value) || 0))
+    : [Math.max(0, Number(helpDebtBalance) || 0)]
+  const safePropertyValue = Math.max(0, Number(propertyValue) || 0)
+  const safeMortgageYears = Math.max(1, Number(mortgageYears) || Number(propertyConfig?.mortgageYears) || 1)
+  const annualLivingCosts = calculateAnnualServiceabilityLivingCosts(weeklyNonHousingLivingCosts)
+  const salaryOnlyTax = borrowerIncomes.reduce((sum, borrowerIncome) => sum + calculateAustralianAnnualTax({
+    taxYear,
+    salaryIncome: borrowerIncome
+  }).totalTax, 0)
+  const helpRepayment = borrowerIncomes.reduce((sum, borrowerIncome, index) =>
+    sum + rollForwardHelpDebt(borrowerHelpBalances[index] || 0, borrowerIncome).actualRepayment
+  , 0)
+  const netIncomeAfterBaseExpenses = safeAnnualIncome - salaryOnlyTax - annualLivingCosts - helpRepayment
+  const productRate = getPropertyInterestRate(propertyConfig, occupancyMode)
+  const assessedRate = getServiceabilityAssessmentRate(productRate)
+
+  if (occupancyMode === 'owner') {
+    const ownerHoldingCosts = getOwnerHoldingCosts(propertyConfig)
+    const annualRepaymentRoom = Math.max(0, netIncomeAfterBaseExpenses - ownerHoldingCosts)
+    const maxLoanSize = annualRepaymentRoom <= 0
+      ? 0
+      : solvePrincipalFromAnnualPayment(annualRepaymentRoom, assessedRate, safeMortgageYears)
+
+    return {
+      assessableIncome: safeAnnualIncome,
+      annualLivingCosts,
+      existingDebtCommitments: helpRepayment,
+      helpRepayment,
+      assessedRate,
+      annualRepaymentRoom,
+      maxLoanSize,
+      ownerHoldingCosts,
+      rentalIncomeCredit: 0,
+      propertyOperatingCosts: ownerHoldingCosts,
+      taxDelta: 0
+    }
+  }
+
+  const rentalTaxPosition = calculateInvestmentPropertyTaxPosition({
+    propertyConfig,
+    propertyValue: safePropertyValue,
+    vacancyRate,
+    interestPaid: 0,
+    yearsOwned: 0
+  })
+  const rentCredit = rentalTaxPosition.rentReceived * SERVICEABILITY_RENT_CREDIT_PCT
+  const taxPosition = calculateAustralianAnnualTax({
+    taxYear,
+    salaryIncome: safeAnnualIncome,
+    taxableRentalIncome: rentalTaxPosition.taxableRentalIncome
+  })
+  const existingDebtCommitments = helpRepayment + Math.max(0, Number(personalHousingCostAnnual) || 0)
+  const annualRepaymentRoom = Math.max(
+    0,
+    netIncomeAfterBaseExpenses -
+      Math.max(0, Number(personalHousingCostAnnual) || 0) -
+      rentalTaxPosition.cashOperatingExpenses +
+      rentCredit -
+      taxPosition.deltaVsSalaryOnly
+  )
+  const maxLoanSize = annualRepaymentRoom <= 0
+    ? 0
+    : solvePrincipalFromAnnualPayment(annualRepaymentRoom, assessedRate, safeMortgageYears)
+
+  return {
+    assessableIncome: safeAnnualIncome + rentCredit,
+    annualLivingCosts,
+    existingDebtCommitments,
+    helpRepayment,
+    assessedRate,
+    annualRepaymentRoom,
+    maxLoanSize,
+    ownerHoldingCosts: 0,
+    rentalIncomeCredit: rentCredit,
+    propertyOperatingCosts: rentalTaxPosition.cashOperatingExpenses,
+    taxDelta: taxPosition.deltaVsSalaryOnly,
+    rentalTaxPosition
+  }
+}
+
+function solvePrincipalFromAnnualPayment(payment, annualRate, yearsRemaining) {
+  const safePayment = Math.max(0, Number(payment) || 0)
+  const safeRate = Math.max(0, Number(annualRate) || 0)
+  const safeYears = Math.max(1, Number(yearsRemaining) || 1)
+  if (safePayment <= 0) return 0
+  if (safeRate <= 0) return safePayment * safeYears
+  const pow = Math.pow(1 + safeRate, safeYears)
+  return safePayment * ((pow - 1) / (safeRate * pow))
 }
 
 export function interpolateRate(startRate, endRate, yearIndex, blendYears = 5) {

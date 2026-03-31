@@ -3,7 +3,7 @@
     <div class="income-editor__header">
       <div class="income-editor__actions">
         <button
-          v-if="form.profile.useCustomIncomeSeries"
+          v-if="profile.useCustomIncomeSeries"
           type="button"
           class="income-editor__reset"
           @click="resetToFlatGrowth"
@@ -23,7 +23,7 @@
         class="income-editor__chart"
         viewBox="0 0 760 196"
         role="img"
-        aria-label="Projected annual income over the selected time horizon"
+        :aria-label="`Projected annual income for ${profileLabel} over the selected time horizon`"
         @pointermove="handlePointerMove"
         @pointerup="endDrag"
         @pointerleave="handlePointerLeave"
@@ -77,7 +77,7 @@
 
       <div class="income-editor__axis">
         <span>Year 1</span>
-        <span>Year {{ form.profile.horizonYears }}</span>
+        <span>Year {{ profile.horizonYears }}</span>
       </div>
     </div>
   </section>
@@ -92,7 +92,8 @@ import {
 } from '../../wealth/incomeSeries.js'
 
 const props = defineProps({
-  form: { type: Object, required: true }
+  profile: { type: Object, required: true },
+  profileLabel: { type: String, default: 'this person' }
 })
 
 const CHART_WIDTH = 760
@@ -112,11 +113,11 @@ const dragStartY = ref(0)
 const dragStartIncome = ref(0)
 
 watch(
-  () => props.form.profile.horizonYears,
+  () => props.profile.horizonYears,
   (value) => {
     const safeHorizonYears = Math.max(10, Math.min(30, Math.round(Number(value) || 30)))
     if (safeHorizonYears !== value) {
-      props.form.profile.horizonYears = safeHorizonYears
+      props.profile.horizonYears = safeHorizonYears
       return
     }
 
@@ -130,11 +131,11 @@ watch(
 )
 
 watch(
-  () => props.form.profile.annualIncome,
+  () => props.profile.annualIncome,
   (value) => {
     const safeAnnualIncome = Math.max(0, Number(value) || 0)
     if (safeAnnualIncome !== value) {
-      props.form.profile.annualIncome = safeAnnualIncome
+      props.profile.annualIncome = safeAnnualIncome
       return
     }
 
@@ -144,11 +145,11 @@ watch(
 )
 
 watch(
-  () => props.form.profile.incomeGrowthRate,
+  () => props.profile.incomeGrowthRate,
   (value) => {
     const safeGrowthRate = Math.max(0, Math.min(0.1, Number(value) || 0))
     if (safeGrowthRate !== value) {
-      props.form.profile.incomeGrowthRate = safeGrowthRate
+      props.profile.incomeGrowthRate = safeGrowthRate
       return
     }
 
@@ -158,11 +159,11 @@ watch(
 )
 
 watch(
-  () => props.form.profile.incomeCurve,
+  () => props.profile.incomeCurve,
   (value) => {
     const safeIncomeCurve = ['logarithmic', 'sigmoid', 'exponential'].includes(value) ? value : 'sigmoid'
     if (safeIncomeCurve !== value) {
-      props.form.profile.incomeCurve = safeIncomeCurve
+      props.profile.incomeCurve = safeIncomeCurve
       return
     }
 
@@ -172,14 +173,14 @@ watch(
 )
 
 watch(
-  () => props.form.profile.useCustomIncomeSeries,
+  () => props.profile.useCustomIncomeSeries,
   () => {
     syncIncomeSeries('mode')
   },
   { immediate: true }
 )
 
-const incomeSeries = computed(() => normaliseIncomeProfile(props.form.profile).annualIncomeSeries)
+const incomeSeries = computed(() => normaliseIncomeProfile(props.profile).annualIncomeSeries)
 
 const chartMetrics = computed(() => {
   const series = incomeSeries.value
@@ -252,10 +253,10 @@ const tooltipTransform = computed(() => {
 })
 
 function syncIncomeSeries() {
-  const profile = normaliseIncomeProfile(props.form.profile)
+  const profile = normaliseIncomeProfile(props.profile)
 
   if (!profile.useCustomIncomeSeries) {
-    props.form.profile.annualIncomeSeries = buildFlatIncomeSeries(
+    props.profile.annualIncomeSeries = buildFlatIncomeSeries(
       profile.annualIncome,
       profile.incomeGrowthRate,
       profile.horizonYears,
@@ -264,8 +265,8 @@ function syncIncomeSeries() {
     return
   }
 
-  props.form.profile.annualIncomeSeries = resizeCustomIncomeSeries(
-    props.form.profile.annualIncomeSeries,
+  props.profile.annualIncomeSeries = resizeCustomIncomeSeries(
+    props.profile.annualIncomeSeries,
     profile.annualIncome,
     profile.horizonYears,
     profile.incomeGrowthRate,
@@ -274,12 +275,12 @@ function syncIncomeSeries() {
 }
 
 function resetToFlatGrowth() {
-  props.form.profile.useCustomIncomeSeries = false
-  props.form.profile.annualIncomeSeries = buildFlatIncomeSeries(
-    props.form.profile.annualIncome,
-    props.form.profile.incomeGrowthRate,
-    props.form.profile.horizonYears,
-    props.form.profile.incomeCurve
+  props.profile.useCustomIncomeSeries = false
+  props.profile.annualIncomeSeries = buildFlatIncomeSeries(
+    props.profile.annualIncome,
+    props.profile.incomeGrowthRate,
+    props.profile.horizonYears,
+    props.profile.incomeCurve
   )
 }
 
@@ -303,13 +304,13 @@ function updateIncomeAtIndex(index, value) {
     }
   }
 
-  props.form.profile.useCustomIncomeSeries = true
-  props.form.profile.annualIncomeSeries = resizeCustomIncomeSeries(
+  props.profile.useCustomIncomeSeries = true
+  props.profile.annualIncomeSeries = resizeCustomIncomeSeries(
     nextSeries,
-    props.form.profile.annualIncome,
-    props.form.profile.horizonYears,
-    props.form.profile.incomeGrowthRate,
-    props.form.profile.incomeCurve
+    props.profile.annualIncome,
+    props.profile.horizonYears,
+    props.profile.incomeGrowthRate,
+    props.profile.incomeCurve
   )
 }
 

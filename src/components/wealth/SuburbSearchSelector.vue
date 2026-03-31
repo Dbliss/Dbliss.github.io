@@ -1,33 +1,19 @@
 <template>
-  <section class="suburb-search card">
+  <section class="suburb-search">
     <div class="suburb-search__header">
       <div>
-        <p class="suburb-search__kicker">Area Defaults</p>
         <h3>Search a region, subregion, or suburb</h3>
-        <p class="suburb-search__copy">
-          Optional. Type to search an area and prefill housing defaults from the PSI data, or leave this blank and set the numbers manually.
-        </p>
       </div>
-      <span class="suburb-search__status">{{ currentSelection?.label ? 'Applied' : 'Optional' }}</span>
     </div>
 
     <div class="suburb-search__controls">
       <label class="suburb-search__input">
-        <span>Search area</span>
         <input
           v-model.trim="query"
           type="search"
           placeholder="Region, postcode, or suburb"
         />
       </label>
-      <button
-        v-if="currentSelection?.label"
-        type="button"
-        class="suburb-search__clear"
-        @click="clearSelection"
-      >
-        Clear
-      </button>
     </div>
 
     <div v-if="filteredAreas.length" class="suburb-search__dropdown" role="listbox" aria-label="Matching areas">
@@ -43,13 +29,8 @@
           <strong>{{ area.label }}</strong>
           <span>{{ area.typeLabel }}<template v-if="area.regionLabel && area.type !== 'region'"> · {{ area.regionLabel }}</template></span>
         </div>
-        <span class="suburb-search__option-action">
-          {{ currentSelection?.key === area.key ? 'Applied' : 'Apply' }}
-        </span>
       </button>
     </div>
-    <p v-else-if="query" class="suburb-search__empty">No areas match that search.</p>
-    <p v-else class="suburb-search__empty">No area selected.</p>
   </section>
 </template>
 
@@ -65,24 +46,95 @@ const emit = defineEmits(['select-suburb'])
 const query = ref('')
 
 const filteredAreas = computed(() => {
-  const search = query.value.toLowerCase()
+  const search = normaliseSearch(query.value)
   if (!search) return []
   return props.suburbOptions
-    .filter((option) =>
-      [option.label, option.suburb, option.regionLabel, option.postcode, option.typeLabel, option.searchText]
-        .filter(Boolean)
-        .some(value => String(value).toLowerCase().includes(search))
-    )
-    .slice(0, 20)
+    .map((option) => ({
+      ...option,
+      score: scoreAreaMatch(option, search)
+    }))
+    .filter((option) => option.score > 0)
+    .sort((left, right) => right.score - left.score || left.label.localeCompare(right.label, 'en-AU'))
+    .slice(0, 10)
 })
 
 function selectSuburb(suburb) {
-  query.value = suburb?.label || suburb?.suburb || ''
   emit('select-suburb', suburb)
+  query.value = ''
 }
 
-function clearSelection() {
-  emit('select-suburb', null)
+function scoreAreaMatch(option, search) {
+  const haystacks = [
+    String(option.label || ''),
+    String(option.suburb || ''),
+    String(option.regionLabel || ''),
+    String(option.postcode || ''),
+    String(option.typeLabel || ''),
+    String(option.searchText || '')
+  ].map(normaliseSearch)
+
+  const regionLabel = normaliseSearch(option.regionLabel)
+  const optionLabel = normaliseSearch(option.label)
+
+  let regionBoost = 0
+  if (option.type === 'region') {
+    if (optionLabel === search || regionLabel === search) regionBoost = 80
+    else if (optionLabel.startsWith(search) || regionLabel.startsWith(search)) regionBoost = 45
+    else if (optionLabel.includes(search) || regionLabel.includes(search)) regionBoost = 25
+  }
+
+  if (haystacks.some((value) => value === search)) return 200 + regionBoost
+  if (haystacks.some((value) => value.startsWith(search))) return 150 + regionBoost
+  if (haystacks.some((value) => value.includes(search))) return 120 + regionBoost
+
+  const searchTokens = search.split(/\s+/).filter(Boolean)
+  let tokenScore = 0
+
+  searchTokens.forEach((token) => {
+    if (haystacks.some((value) => value.startsWith(token))) tokenScore += 30
+    else if (haystacks.some((value) => value.includes(token))) tokenScore += 18
+  })
+
+  const compactSearch = search.replace(/\s+/g, '')
+  const distanceScore = haystacks.reduce((best, value) => {
+    const compactValue = value.replace(/\s+/g, '')
+    if (!compactValue) return best
+    const candidate = compactValue.slice(0, Math.max(compactSearch.length, compactValue.length))
+    const distance = levenshteinDistance(compactSearch, candidate)
+    return Math.max(best, Math.max(0, 40 - (distance * 8)))
+  }, 0)
+
+  return tokenScore + distanceScore + regionBoost
+}
+
+function normaliseSearch(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function levenshteinDistance(left, right) {
+  if (!left) return right.length
+  if (!right) return left.length
+
+  const matrix = Array.from({ length: left.length + 1 }, () => new Array(right.length + 1).fill(0))
+  for (let row = 0; row <= left.length; row += 1) matrix[row][0] = row
+  for (let column = 0; column <= right.length; column += 1) matrix[0][column] = column
+
+  for (let row = 1; row <= left.length; row += 1) {
+    for (let column = 1; column <= right.length; column += 1) {
+      const cost = left[row - 1] === right[column - 1] ? 0 : 1
+      matrix[row][column] = Math.min(
+        matrix[row - 1][column] + 1,
+        matrix[row][column - 1] + 1,
+        matrix[row - 1][column - 1] + cost
+      )
+    }
+  }
+
+  return matrix[left.length][right.length]
 }
 </script>
 
@@ -91,10 +143,11 @@ function clearSelection() {
   width: 100%;
   max-width: none;
   justify-self: stretch;
-  padding: 1.15rem 1.25rem;
-  margin-bottom: 1rem;
+  padding: 0;
+  margin-top: 1.1rem;
+  margin-bottom: 0;
   background: transparent;
-  border: 1px solid rgba(154, 174, 204, 0.16);
+  border: 0;
   box-shadow: none;
 }
 
@@ -124,9 +177,7 @@ function clearSelection() {
   max-width: none;
 }
 
-.suburb-search__status,
-.suburb-search__clear,
-.suburb-search__option-action {
+.suburb-search__status {
   border: 1px solid rgba(154, 174, 204, 0.22);
   border-radius: 999px;
   background: rgba(244, 249, 255, 0.9);
@@ -146,7 +197,7 @@ function clearSelection() {
   display: flex;
   gap: 0.75rem;
   align-items: end;
-  margin-top: 1rem;
+  margin-top: 0.45rem;
 }
 
 .suburb-search__input {
@@ -171,18 +222,6 @@ function clearSelection() {
   color: #173050;
   font: inherit;
   font-size: 1rem;
-}
-
-.suburb-search__clear,
-.suburb-search__option-action {
-  padding: 0.9rem 1.1rem;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-
-.suburb-search__clear:hover:not(:disabled),
-.suburb-search__option:hover .suburb-search__option-action {
-  border-color: rgba(78, 117, 171, 0.34);
-  background: rgba(233, 242, 255, 0.96);
 }
 
 .suburb-search__dropdown {
@@ -211,14 +250,6 @@ function clearSelection() {
 .suburb-search__option > div {
   display: grid;
   gap: 0.15rem;
-}
-
-.suburb-search__option-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.55rem 0.9rem;
-  white-space: nowrap;
 }
 
 .suburb-search__option:hover {

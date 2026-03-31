@@ -35,7 +35,7 @@ import {
   wealthVacancyRate,
   wealthVacancyRateVolatility
 } from '../data/wealthDefaults.js'
-import { getIncomeForYear, getIncomeScaleForYear, normaliseIncomeProfile } from './incomeSeries.js'
+import { getIncomeForYear, getIncomeScaleForYear, normaliseHouseholdEarners, normaliseIncomeProfile } from './incomeSeries.js'
 
 function createStrategyBuckets(horizonYears) {
   return Array.from({ length: horizonYears + 1 }, () => ({
@@ -55,23 +55,58 @@ function createStrategyBuckets(horizonYears) {
 function sampleMarketPath(request, random) {
   const { profile, propertyConfig, housingCosts } = request
   const vacancyRate = clamp(Number(propertyConfig.vacancyRate) || wealthVacancyRate, 0, 0.12)
-  return Array.from({ length: profile.horizonYears }, (_, yearIndex) => ({
-    income: getAnnualSalary(profile, yearIndex),
-    nonHousingLivingCosts: getAnnualNonHousingLivingCosts(profile, yearIndex),
-    sleeveReturns: samplePortfolioSleeveReturns(
-      random,
-      createBootstrapPortfolioSampler(random, request.portfolioConfig)
-    ),
-    houseGrowth: samplePropertyGrowthRate(random, propertyConfig.house, -0.25, 0.25),
-    apartmentGrowth: samplePropertyGrowthRate(random, propertyConfig.apartment, -0.18, 0.18),
-    mortgageRateJitter: sampleNormal(random, 0, 0.0045),
-    vacancyRate: clamp(sampleNormal(random, vacancyRate, wealthVacancyRateVolatility), 0, 0.12),
-    rentInflation: clamp(sampleNormal(random, housingCosts.rentGrowthRate, 0.01), 0, 0.08),
-    boardInflation: clamp(sampleNormal(random, housingCosts.boardGrowthRate, 0.008), 0, 0.06)
-  }))
+  const propertyGrowthBlockSampler = createPropertyGrowthBlockSampler(random, propertyConfig)
+  return Array.from({ length: profile.horizonYears }, (_, yearIndex) => {
+    const sampledPropertyGrowthBlock = propertyGrowthBlockSampler ? propertyGrowthBlockSampler() : null
+
+    return {
+      yearIndex,
+      income: getAnnualSalary(profile, yearIndex),
+      nonHousingLivingCosts: getAnnualNonHousingLivingCosts(profile, yearIndex),
+      sleeveReturns: samplePortfolioSleeveReturns(
+        random,
+        createBootstrapPortfolioSampler(random, request.portfolioConfig)
+      ),
+      houseGrowth: samplePropertyGrowthRate(random, propertyConfig.house, -0.25, 0.25, sampledPropertyGrowthBlock?.houseGrowth),
+      apartmentGrowth: samplePropertyGrowthRate(random, propertyConfig.apartment, -0.18, 0.18, sampledPropertyGrowthBlock?.apartmentGrowth),
+      mortgageRateJitter: sampleNormal(random, 0, 0.0045),
+      vacancyRate: clamp(sampleNormal(random, vacancyRate, wealthVacancyRateVolatility), 0, 0.12),
+      rentInflation: clamp(sampleNormal(random, housingCosts.rentGrowthRate, 0.01), 0, 0.08),
+      boardInflation: clamp(sampleNormal(random, housingCosts.boardGrowthRate, 0.008), 0, 0.06)
+    }
+  })
 }
 
-function samplePropertyGrowthRate(random, property, lowerBound, upperBound) {
+function createPropertyGrowthBlockSampler(random, propertyConfig) {
+  const historicalBlocks = Array.isArray(propertyConfig?.historicalAnnualGrowthBlocks)
+    ? propertyConfig.historicalAnnualGrowthBlocks
+        .map((block) => ({
+          year: Math.round(Number(block?.year) || 0),
+          houseGrowth: Number.isFinite(Number(block?.houseGrowth)) ? Number(block.houseGrowth) : null,
+          apartmentGrowth: Number.isFinite(Number(block?.apartmentGrowth)) ? Number(block.apartmentGrowth) : null
+        }))
+        .filter((block) =>
+          Number.isFinite(block.year) &&
+          (Number.isFinite(block.houseGrowth) || Number.isFinite(block.apartmentGrowth))
+        )
+    : []
+
+  if (!historicalBlocks.length) return null
+
+  return () => {
+    const block = historicalBlocks[Math.floor(random() * historicalBlocks.length)]
+    return {
+      houseGrowth: Number.isFinite(block.houseGrowth) ? clamp(block.houseGrowth, -0.25, 0.25) : null,
+      apartmentGrowth: Number.isFinite(block.apartmentGrowth) ? clamp(block.apartmentGrowth, -0.18, 0.18) : null
+    }
+  }
+}
+
+function samplePropertyGrowthRate(random, property, lowerBound, upperBound, sampledBlockValue = null) {
+  if (Number.isFinite(sampledBlockValue)) {
+    return clamp(Number(sampledBlockValue), lowerBound, upperBound)
+  }
+
   const historicalSeries = Array.isArray(property?.historicalAnnualGrowthRates)
     ? property.historicalAnnualGrowthRates.filter(value => Number.isFinite(Number(value))).map(value => Number(value))
     : []
@@ -187,6 +222,61 @@ function shouldApplyFirstHomeBuyerSupport(request, occupancyMode) {
 
 function getAnnualSalary(profile, yearIndex) {
   return getIncomeForYear(profile, yearIndex)
+}
+
+function getEarnersForYear(profile, yearIndex, helpDebtBalances = []) {
+  const earners = normaliseHouseholdEarners(profile)
+  return earners.map((earner, index) => ({
+    ...earner,
+    annualIncome: Number(earner.annualIncomeSeries?.[yearIndex]) || 0,
+    helpDebtBalance: Math.max(0, Number(helpDebtBalances[index] ?? earner.helpDebtBalance) || 0)
+  }))
+}
+
+function allocateSupplementaryIncome(earners, amount) {
+  const safeAmount = Number(amount) || 0
+  if (!earners.length || safeAmount === 0) return earners.map(() => 0)
+
+  const totalSalary = earners.reduce((sum, earner) => sum + Math.max(0, Number(earner.annualIncome) || 0), 0)
+  const baseWeights = totalSalary > 0
+    ? earners.map((earner) => (Math.max(0, Number(earner.annualIncome) || 0) / totalSalary))
+    : earners.map(() => 1 / earners.length)
+
+  return baseWeights.map((weight, index) => {
+    if (index === baseWeights.length - 1) {
+      const allocatedSoFar = baseWeights
+        .slice(0, -1)
+        .reduce((sum, partialWeight) => sum + safeAmount * partialWeight, 0)
+      return safeAmount - allocatedSoFar
+    }
+    return safeAmount * weight
+  })
+}
+
+function calculateHouseholdTaxPosition({
+  taxYear,
+  earners,
+  taxablePortfolioIncome = 0,
+  taxableRentalIncome = 0,
+  frankingCredits = 0
+}) {
+  const portfolioAllocations = allocateSupplementaryIncome(earners, taxablePortfolioIncome)
+  const rentalAllocations = allocateSupplementaryIncome(earners, taxableRentalIncome)
+  const frankingAllocations = allocateSupplementaryIncome(earners, frankingCredits)
+
+  const breakdown = earners.map((earner, index) => calculateAustralianAnnualTax({
+    taxYear,
+    salaryIncome: earner.annualIncome,
+    taxablePortfolioIncome: portfolioAllocations[index],
+    taxableRentalIncome: rentalAllocations[index],
+    frankingCredits: Math.max(0, frankingAllocations[index])
+  }))
+
+  return {
+    totalTax: breakdown.reduce((sum, item) => sum + item.totalTax, 0),
+    deltaVsSalaryOnly: breakdown.reduce((sum, item) => sum + item.deltaVsSalaryOnly, 0),
+    breakdown
+  }
 }
 
 function getAnnualNonHousingLivingCosts(profile, yearIndex) {
@@ -312,7 +402,13 @@ function getPurchaseCostsInput(property, occupancyMode) {
   return occupancyMode === 'owner' ? property.ownerPurchaseCosts : property.investmentPurchaseCosts
 }
 
-function getPurchasePlan(propertyKey, property, propertyValue, occupancyMode, firstHomeBuyerEligible) {
+function getMinimumDepositPct(property, occupancyMode) {
+  return occupancyMode === 'owner'
+    ? getEffectiveOwnerDepositPct(property)
+    : getEffectiveInvestmentDepositPct(property)
+}
+
+function getPurchasePlanAtDepositPct(propertyKey, property, propertyValue, occupancyMode, firstHomeBuyerEligible, depositPct) {
   const scaledValue = Math.max(0, Number(propertyValue) || 0)
   const purchaseCostsInput = scalePurchaseCostsWithPrice(
     getPurchaseCostsInput(property, occupancyMode),
@@ -320,9 +416,7 @@ function getPurchasePlan(propertyKey, property, propertyValue, occupancyMode, fi
     scaledValue,
     propertyKey
   )
-  const effectiveDepositPct = occupancyMode === 'owner'
-    ? getEffectiveOwnerDepositPct(property)
-    : getEffectiveInvestmentDepositPct(property)
+  const effectiveDepositPct = clamp(Number(depositPct) || 0, 0.05, 0.95)
   const deposit = scaledValue * effectiveDepositPct
   const lmi = estimateLmi(scaledValue, effectiveDepositPct, firstHomeBuyerEligible)
   const purchaseCosts = calculatePurchaseCosts(purchaseCostsInput, firstHomeBuyerEligible, scaledValue)
@@ -341,11 +435,26 @@ function getPurchasePlan(propertyKey, property, propertyValue, occupancyMode, fi
   }
 }
 
+function getPurchasePlan(propertyKey, property, propertyValue, occupancyMode, firstHomeBuyerEligible) {
+  return getPurchasePlanAtDepositPct(
+    propertyKey,
+    property,
+    propertyValue,
+    occupancyMode,
+    firstHomeBuyerEligible,
+    getMinimumDepositPct(property, occupancyMode)
+  )
+}
+
 function getPurchaseServiceability(request, market, occupancyMode, property, propertyValue, purchasePlan, atHomeHousingCosts, helpDebtBalance) {
+  const annualIncomeByBorrower = getEarnersForYear(request.profile, market.yearIndex, helpDebtBalance)
+    .map((earner) => earner.annualIncome)
   return assessPropertyPurchaseServiceability({
     taxYear: request.profile.taxYear,
     annualIncome: market.income,
     helpDebtBalance,
+    annualIncomeByBorrower,
+    helpDebtBalances: helpDebtBalance,
     weeklyNonHousingLivingCosts: request.profile.weeklyNonHousingLivingCosts,
     occupancyMode,
     propertyConfig: property,
@@ -355,6 +464,147 @@ function getPurchaseServiceability(request, market, occupancyMode, property, pro
     personalHousingCostAnnual: occupancyMode === 'investment' ? atHomeHousingCosts : 0,
     vacancyRate: clamp(Number(request.propertyConfig.vacancyRate) || wealthVacancyRate, 0, 0.12)
   })
+}
+
+function solvePurchasePlanForAvailableCash({
+  request,
+  market,
+  propertyKey,
+  property,
+  propertyValue,
+  occupancyMode,
+  firstHomeBuyerEligible,
+  atHomeHousingCosts,
+  helpDebtBalance,
+  availableCash
+}) {
+  const minimumDepositPct = getMinimumDepositPct(property, occupancyMode)
+  const minimumPlan = getPurchasePlanAtDepositPct(
+    propertyKey,
+    property,
+    propertyValue,
+    occupancyMode,
+    firstHomeBuyerEligible,
+    minimumDepositPct
+  )
+
+  if (!minimumPlan || availableCash < minimumPlan.upfrontCash) return null
+
+  const minimumServiceability = getPurchaseServiceability(
+    request,
+    market,
+    occupancyMode,
+    property,
+    propertyValue,
+    minimumPlan,
+    atHomeHousingCosts,
+    helpDebtBalance
+  )
+
+  if (minimumServiceability.affordable) {
+    return {
+      purchasePlan: minimumPlan,
+      serviceability: minimumServiceability
+    }
+  }
+
+  let low = minimumDepositPct
+  let high = 0.95
+  let feasiblePlan = null
+  let feasibleServiceability = null
+
+  const highestPlan = getPurchasePlanAtDepositPct(
+    propertyKey,
+    property,
+    propertyValue,
+    occupancyMode,
+    firstHomeBuyerEligible,
+    high
+  )
+
+  if (!highestPlan || availableCash < highestPlan.upfrontCash) {
+    while (high - low > 0.0005) {
+      const midpoint = (low + high) / 2
+      const midpointPlan = getPurchasePlanAtDepositPct(
+        propertyKey,
+        property,
+        propertyValue,
+        occupancyMode,
+        firstHomeBuyerEligible,
+        midpoint
+      )
+      if (midpointPlan && midpointPlan.upfrontCash <= availableCash) {
+        low = midpoint
+        feasiblePlan = midpointPlan
+      } else {
+        high = midpoint
+      }
+    }
+  } else {
+    feasiblePlan = highestPlan
+  }
+
+  if (!feasiblePlan) return null
+
+  const feasibleCheck = getPurchaseServiceability(
+    request,
+    market,
+    occupancyMode,
+    property,
+    propertyValue,
+    feasiblePlan,
+    atHomeHousingCosts,
+    helpDebtBalance
+  )
+
+  if (!feasibleCheck.affordable) return null
+  feasibleServiceability = feasibleCheck
+
+  low = minimumDepositPct
+  high = feasiblePlan.effectiveDepositPct
+  let bestPlan = feasiblePlan
+  let bestServiceability = feasibleServiceability
+
+  for (let step = 0; step < 28; step += 1) {
+    const midpoint = (low + high) / 2
+    const midpointPlan = getPurchasePlanAtDepositPct(
+      propertyKey,
+      property,
+      propertyValue,
+      occupancyMode,
+      firstHomeBuyerEligible,
+      midpoint
+    )
+
+    if (!midpointPlan || midpointPlan.upfrontCash > availableCash) {
+      low = midpoint
+      continue
+    }
+
+    const midpointServiceability = getPurchaseServiceability(
+      request,
+      market,
+      occupancyMode,
+      property,
+      propertyValue,
+      midpointPlan,
+      atHomeHousingCosts,
+      helpDebtBalance
+    )
+
+    if (midpointServiceability.affordable) {
+      bestPlan = midpointPlan
+      bestServiceability = midpointServiceability
+      high = midpoint
+    } else {
+      low = midpoint
+    }
+  }
+
+  return {
+    purchasePlan: bestPlan,
+    serviceability: bestServiceability
+  }
 }
 
 function getPortfolioLedger(portfolioConfig, openingLiquidAssets, market) {
@@ -455,18 +705,50 @@ function applySurplusAllocation({
   }
 }
 
-function applyHelpDebtCashflow(helpDebtBalance, annualIncome, annualSurplus) {
-  const helpLedger = rollForwardHelpDebt(helpDebtBalance, annualIncome)
+function applyHelpDebtCashflow(earners, annualSurplus) {
+  const ledgers = earners.map((earner) => rollForwardHelpDebt(earner.helpDebtBalance, earner.annualIncome))
+  const totalRepayment = ledgers.reduce((sum, ledger) => sum + ledger.actualRepayment, 0)
   return {
-    helpLedger,
-    annualSurplusAfterHelp: annualSurplus - helpLedger.actualRepayment
+    ledgers,
+    closingBalances: ledgers.map((ledger) => ledger.closingBalance),
+    annualSurplusAfterHelp: annualSurplus - totalRepayment
+  }
+}
+
+function getAvailablePurchaseLiquidity({
+  taxYear,
+  salaryIncome,
+  grossLiquidAssets,
+  portfolioCostBasis = 0,
+  portfolioYearsHeld = 0,
+  investWhileSavingForDeposit = false
+}) {
+  const safeGrossLiquidAssets = Math.max(0, Number(grossLiquidAssets) || 0)
+  if (!investWhileSavingForDeposit) {
+    return {
+      availableCash: safeGrossLiquidAssets,
+      saleTax: 0
+    }
+  }
+
+  const liquidation = estimateLiquidationPosition({
+    taxYear,
+    salaryIncome,
+    liquidAssets: safeGrossLiquidAssets,
+    portfolioCostBasis,
+    portfolioYearsHeld
+  })
+
+  return {
+    availableCash: Math.max(0, liquidation.liquidationNetWorth),
+    saleTax: liquidation.estimatedSaleTax
   }
 }
 
 function simulateRentInvestPath(request, marketPath) {
   const { profile, housingCosts, portfolioConfig } = request
   let liquidAssets = profile.startingSavings
-  let helpDebtBalance = Math.max(0, Number(profile.helpDebtBalance) || 0)
+  let helpDebtBalances = normaliseHouseholdEarners(profile).map((earner) => earner.helpDebtBalance)
   let portfolioCostBasis = getInvestedBalance(liquidAssets)
   let rentLevel = housingCosts.weeklyRent * 52
   let boardLevel = housingCosts.weeklyBoardAtHome * 52
@@ -486,10 +768,11 @@ function simulateRentInvestPath(request, marketPath) {
 
     const housingCashCosts = isLiveAtHomeYear(request, yearIndex) ? boardLevel : rentLevel
     const openingLiquidAssets = liquidAssets
+    const earners = getEarnersForYear(profile, yearIndex, helpDebtBalances)
     const portfolioLedger = getPortfolioLedger(portfolioConfig, openingLiquidAssets, market)
-    const taxPosition = calculateAustralianAnnualTax({
+    const taxPosition = calculateHouseholdTaxPosition({
       taxYear: profile.taxYear,
-      salaryIncome: market.income,
+      earners,
       taxablePortfolioIncome: portfolioLedger.taxablePortfolioIncome,
       frankingCredits: portfolioLedger.frankingCredits
     })
@@ -498,8 +781,8 @@ function simulateRentInvestPath(request, marketPath) {
       taxPosition.totalTax -
       market.nonHousingLivingCosts -
       housingCashCosts
-    const helpCashflow = applyHelpDebtCashflow(helpDebtBalance, market.income, annualSurplus)
-    helpDebtBalance = helpCashflow.helpLedger.closingBalance
+    const helpCashflow = applyHelpDebtCashflow(earners, annualSurplus)
+    helpDebtBalances = helpCashflow.closingBalances
 
     const preFlowInvestedBalance = getInvestedBalance(openingLiquidAssets) + portfolioLedger.portfolioReturn
     liquidAssets += portfolioLedger.portfolioReturn + helpCashflow.annualSurplusAfterHelp
@@ -529,13 +812,11 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
   const property = propertyConfig[propertyKey]
   const firstHomeBuyerEligible = shouldApplyFirstHomeBuyerSupport(request, occupancyMode)
   const investWhileSavingForDeposit = Boolean(propertyConfig.investWhileSavingForDeposit)
-  const initialPlan = getPurchasePlan(propertyKey, property, property.purchasePrice, occupancyMode, firstHomeBuyerEligible)
-
   let liquidAssets = profile.startingSavings
   let targetPropertyValue = property.purchasePrice
   let propertyValue = 0
   let mortgageBalance = 0
-  let helpDebtBalance = Math.max(0, Number(profile.helpDebtBalance) || 0)
+  let helpDebtBalances = normaliseHouseholdEarners(profile).map((earner) => earner.helpDebtBalance)
   let portfolioCostBasis = getInvestedBalance(liquidAssets)
   let propertyCostBase = 0
   let purchased = false
@@ -543,35 +824,47 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
   let rentLevel = housingCosts.weeklyRent * 52
   let boardLevel = housingCosts.weeklyBoardAtHome * 52
 
-  if (marketPath[0] && liquidAssets >= initialPlan.upfrontCash) {
+  if (marketPath[0]) {
     const openingMarket = marketPath[0]
     const atHomeHousingCosts = isLiveAtHomeYear(request, 0) ? boardLevel : rentLevel
+    const openingEarners = getEarnersForYear(profile, 0, helpDebtBalances)
     const openingPortfolioLedger = getPortfolioLedger(portfolioConfig, liquidAssets, openingMarket)
-    const openingServiceability = getPurchaseServiceability(
+    const openingGrossLiquidAssets = liquidAssets + openingPortfolioLedger.portfolioReturn
+    const openingPurchaseLiquidity = getAvailablePurchaseLiquidity({
+      taxYear: profile.taxYear,
+      salaryIncome: openingMarket.income,
+      grossLiquidAssets: openingGrossLiquidAssets,
+      portfolioCostBasis,
+      investWhileSavingForDeposit
+    })
+    const openingPurchaseAttempt = solvePurchasePlanForAvailableCash({
       request,
-      openingMarket,
-      occupancyMode,
+      market: openingMarket,
+      propertyKey,
       property,
-      targetPropertyValue,
-      initialPlan,
+      propertyValue: targetPropertyValue,
+      occupancyMode,
+      firstHomeBuyerEligible,
       atHomeHousingCosts,
-      helpDebtBalance
-    )
+      helpDebtBalance: helpDebtBalances,
+      availableCash: openingPurchaseLiquidity.availableCash
+    })
 
-    if (openingServiceability.affordable) {
+    if (openingPurchaseAttempt) {
+      const { purchasePlan: openingPlan } = openingPurchaseAttempt
       const openingOwnedYear = simulateOwnedPropertyYear({
         request,
         market: openingMarket,
         occupancyMode,
         propertyKey,
         propertyValue: targetPropertyValue,
-        mortgageBalance: initialPlan.openingMortgageBalance,
+        mortgageBalance: openingPlan.openingMortgageBalance,
         yearsOwned: 0,
         atHomeHousingCosts
       })
-      const openingTaxPosition = calculateAustralianAnnualTax({
+      const openingTaxPosition = calculateHouseholdTaxPosition({
         taxYear: profile.taxYear,
-        salaryIncome: openingMarket.income,
+        earners: openingEarners,
         taxablePortfolioIncome: openingPortfolioLedger.taxablePortfolioIncome,
         taxableRentalIncome: openingOwnedYear.taxRentalIncome,
         frankingCredits: openingPortfolioLedger.frankingCredits
@@ -582,21 +875,21 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
         openingTaxPosition.totalTax -
         openingMarket.nonHousingLivingCosts -
         openingOwnedYear.housingCashCosts -
-        initialPlan.upfrontCash
-      const openingHelpCashflow = applyHelpDebtCashflow(helpDebtBalance, openingMarket.income, openingAnnualSurplus)
+        openingPlan.upfrontCash
+      const openingHelpCashflow = applyHelpDebtCashflow(openingEarners, openingAnnualSurplus)
       const openingAllocation = applySurplusAllocation({
-        liquidAssets: liquidAssets + openingPortfolioLedger.portfolioReturn,
+        liquidAssets: openingPurchaseLiquidity.availableCash,
         annualSurplus: openingHelpCashflow.annualSurplusAfterHelp,
         mortgageBalance: openingOwnedYear.endMortgageBalance,
         allowMortgagePrepayment: propertyConfig.surplusAllocationMode === 'mortgagePrepayment'
       })
 
       if (openingAllocation.endingLiquidAssets >= 0) {
-        liquidAssets -= initialPlan.upfrontCash
-        portfolioCostBasis = updatePortfolioCostBasis(portfolioCostBasis, profile.startingSavings, liquidAssets)
+        liquidAssets = Math.max(0, openingPurchaseLiquidity.availableCash - openingPlan.upfrontCash)
+        portfolioCostBasis = Math.max(0, liquidAssets)
         propertyValue = targetPropertyValue
-        mortgageBalance = initialPlan.openingMortgageBalance
-        propertyCostBase = getPropertyCostBaseAtPurchase(targetPropertyValue, initialPlan.purchaseCosts)
+        mortgageBalance = openingPlan.openingMortgageBalance
+        propertyCostBase = getPropertyCostBaseAtPurchase(targetPropertyValue, openingPlan.purchaseCosts)
         purchased = true
       }
     }
@@ -623,6 +916,7 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
 
     const purchasedAtStart = purchased
     const openingLiquidAssets = liquidAssets
+    const earners = getEarnersForYear(profile, yearIndex, helpDebtBalances)
     const portfolioLedger = purchasedAtStart || investWhileSavingForDeposit
       ? getPortfolioLedger(portfolioConfig, openingLiquidAssets, market)
       : getCashSavingsLedger()
@@ -640,9 +934,9 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
 
     if (!purchased) {
       housingCashCosts = atHomeHousingCosts
-      const waitTaxPosition = calculateAustralianAnnualTax({
+      const waitTaxPosition = calculateHouseholdTaxPosition({
         taxYear: profile.taxYear,
-        salaryIncome: market.income,
+        earners,
         taxablePortfolioIncome: portfolioLedger.taxablePortfolioIncome,
         frankingCredits: portfolioLedger.frankingCredits
       })
@@ -654,70 +948,78 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
         market.nonHousingLivingCosts -
         housingCashCosts
 
-      const purchasePlan = getPurchasePlan(propertyKey, property, targetPropertyValue, occupancyMode, firstHomeBuyerEligible)
-      if (openingLiquidAssets >= purchasePlan.upfrontCash) {
-        const purchaseServiceability = getPurchaseServiceability(
+      const prePurchaseGrossLiquidAssets = openingLiquidAssets + portfolioLedger.portfolioReturn
+      const purchaseLiquidity = getAvailablePurchaseLiquidity({
+        taxYear: profile.taxYear,
+        salaryIncome: market.income,
+        grossLiquidAssets: prePurchaseGrossLiquidAssets,
+        portfolioCostBasis,
+        portfolioYearsHeld: yearIndex + 1,
+        investWhileSavingForDeposit
+      })
+
+      const purchaseAttempt = solvePurchasePlanForAvailableCash({
+        request,
+        market,
+        propertyKey,
+        property,
+        propertyValue: targetPropertyValue,
+        occupancyMode,
+        firstHomeBuyerEligible,
+        atHomeHousingCosts,
+        helpDebtBalance: helpDebtBalances,
+        availableCash: purchaseLiquidity.availableCash
+      })
+
+      if (purchaseAttempt) {
+        const { purchasePlan } = purchaseAttempt
+        const purchaseOwnedYear = simulateOwnedPropertyYear({
           request,
           market,
           occupancyMode,
-          property,
-          targetPropertyValue,
-          purchasePlan,
-          atHomeHousingCosts,
-          helpDebtBalance
-        )
+          propertyKey,
+          propertyValue: targetPropertyValue,
+          mortgageBalance: purchasePlan.openingMortgageBalance,
+          yearsOwned: 0,
+          atHomeHousingCosts
+        })
+        const purchaseTaxPosition = calculateHouseholdTaxPosition({
+          taxYear: profile.taxYear,
+          earners,
+          taxablePortfolioIncome: portfolioLedger.taxablePortfolioIncome,
+          taxableRentalIncome: purchaseOwnedYear.taxRentalIncome,
+          frankingCredits: portfolioLedger.frankingCredits
+        })
+        const purchaseAnnualSurplus =
+          market.income +
+          purchaseOwnedYear.rentalReceipts -
+          purchaseTaxPosition.totalTax -
+          market.nonHousingLivingCosts -
+          purchaseOwnedYear.housingCashCosts -
+          purchasePlan.upfrontCash
+        const purchaseHelpCashflow = applyHelpDebtCashflow(earners, purchaseAnnualSurplus)
+        const purchaseAllocation = applySurplusAllocation({
+          liquidAssets: purchaseLiquidity.availableCash,
+          annualSurplus: purchaseHelpCashflow.annualSurplusAfterHelp,
+          mortgageBalance: purchaseOwnedYear.endMortgageBalance,
+          allowMortgagePrepayment: propertyConfig.surplusAllocationMode === 'mortgagePrepayment'
+        })
 
-        if (purchaseServiceability.affordable) {
-          const purchaseOwnedYear = simulateOwnedPropertyYear({
-            request,
-            market,
-            occupancyMode,
-            propertyKey,
-            propertyValue: targetPropertyValue,
-            mortgageBalance: purchasePlan.openingMortgageBalance,
-            yearsOwned: 0,
-            atHomeHousingCosts
-          })
-          const purchaseTaxPosition = calculateAustralianAnnualTax({
-            taxYear: profile.taxYear,
-            salaryIncome: market.income,
-            taxablePortfolioIncome: portfolioLedger.taxablePortfolioIncome,
-            taxableRentalIncome: purchaseOwnedYear.taxRentalIncome,
-            frankingCredits: portfolioLedger.frankingCredits
-          })
-          const purchaseAnnualSurplus =
-            market.income +
-            purchaseOwnedYear.rentalReceipts -
-            purchaseTaxPosition.totalTax -
-            market.nonHousingLivingCosts -
-            purchaseOwnedYear.housingCashCosts -
-            purchasePlan.upfrontCash
-          const purchaseHelpCashflow = applyHelpDebtCashflow(helpDebtBalance, market.income, purchaseAnnualSurplus)
-          const purchaseAllocation = applySurplusAllocation({
-            liquidAssets: openingLiquidAssets + portfolioLedger.portfolioReturn,
-            annualSurplus: purchaseHelpCashflow.annualSurplusAfterHelp,
-            mortgageBalance: purchaseOwnedYear.endMortgageBalance,
-            allowMortgagePrepayment: propertyConfig.surplusAllocationMode === 'mortgagePrepayment'
-          })
-
-          if (purchaseAllocation.endingLiquidAssets >= 0) {
-            purchased = true
-            propertyValue = targetPropertyValue
-            endPropertyValue = purchaseOwnedYear.endPropertyValue
-            endMortgageBalance = purchaseAllocation.endingMortgageBalance
-            propertyCostBase = getPropertyCostBaseAtPurchase(targetPropertyValue, purchasePlan.purchaseCosts)
-            yearsOwned = 1
-            housingCashCosts = purchaseOwnedYear.housingCashCosts
-            rentalReceipts = purchaseOwnedYear.rentalReceipts
-            taxRentalIncome = purchaseOwnedYear.taxRentalIncome
-            totalTax = purchaseTaxPosition.totalTax
-            taxDelta = purchaseTaxPosition.deltaVsSalaryOnly
-            annualSurplus = purchaseHelpCashflow.annualSurplusAfterHelp
-            allocation = purchaseAllocation
-            helpDebtBalance = purchaseHelpCashflow.helpLedger.closingBalance
-          } else {
-            targetPropertyValue *= 1 + getPropertyGrowth(market, propertyKey)
-          }
+        if (purchaseAllocation.endingLiquidAssets >= 0) {
+          purchased = true
+          propertyValue = targetPropertyValue
+          endPropertyValue = purchaseOwnedYear.endPropertyValue
+          endMortgageBalance = purchaseAllocation.endingMortgageBalance
+          propertyCostBase = getPropertyCostBaseAtPurchase(targetPropertyValue, purchasePlan.purchaseCosts)
+          yearsOwned = 1
+          housingCashCosts = purchaseOwnedYear.housingCashCosts
+          rentalReceipts = purchaseOwnedYear.rentalReceipts
+          taxRentalIncome = purchaseOwnedYear.taxRentalIncome
+          totalTax = purchaseTaxPosition.totalTax
+          taxDelta = purchaseTaxPosition.deltaVsSalaryOnly
+          annualSurplus = purchaseHelpCashflow.annualSurplusAfterHelp
+          allocation = purchaseAllocation
+          helpDebtBalances = purchaseHelpCashflow.closingBalances
         } else {
           targetPropertyValue *= 1 + getPropertyGrowth(market, propertyKey)
         }
@@ -742,9 +1044,9 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
       taxRentalIncome = ownedYear.taxRentalIncome
       yearsOwned += 1
 
-      const taxPosition = calculateAustralianAnnualTax({
+      const taxPosition = calculateHouseholdTaxPosition({
         taxYear: profile.taxYear,
-        salaryIncome: market.income,
+        earners,
         taxablePortfolioIncome: portfolioLedger.taxablePortfolioIncome,
         taxableRentalIncome: taxRentalIncome,
         frankingCredits: portfolioLedger.frankingCredits
@@ -762,9 +1064,9 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
 
     const annualCashflow = allocation
       ? { annualSurplusAfterHelp: annualSurplus }
-      : applyHelpDebtCashflow(helpDebtBalance, market.income, annualSurplus)
+      : applyHelpDebtCashflow(earners, annualSurplus)
     if (!allocation) {
-      helpDebtBalance = annualCashflow.helpLedger.closingBalance
+      helpDebtBalances = annualCashflow.closingBalances
     }
 
     if (!allocation) {
@@ -780,9 +1082,11 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
       ? getInvestedBalance(openingLiquidAssets) + portfolioLedger.portfolioReturn
       : 0
     liquidAssets = allocation.endingLiquidAssets
-    portfolioCostBasis = !purchasedAtStart && !investWhileSavingForDeposit
+    portfolioCostBasis = !purchasedAtStart && purchased
       ? Math.max(0, liquidAssets)
-      : updatePortfolioCostBasis(portfolioCostBasis, preFlowInvestedBalance, liquidAssets)
+      : !purchasedAtStart && !investWhileSavingForDeposit
+        ? Math.max(0, liquidAssets)
+        : updatePortfolioCostBasis(portfolioCostBasis, preFlowInvestedBalance, liquidAssets)
     mortgageBalance = purchased ? allocation.endingMortgageBalance : 0
     propertyValue = purchased ? endPropertyValue : 0
     const liquidation = estimateLiquidationPosition({
@@ -882,7 +1186,11 @@ function normaliseRequest(request) {
     ...normaliseIncomeProfile(safe.profile)
   }
   safe.profile.taxYear = '2026-27'
-  safe.profile.helpDebtBalance = Math.max(0, Number(safe.profile.helpDebtBalance) || 0)
+  const normalisedEarners = normaliseHouseholdEarners(safe.profile)
+  safe.profile.startingSavings = normalisedEarners
+    .reduce((sum, earner) => sum + Math.max(0, Number(earner.startingSavings) || 0), 0)
+  safe.profile.helpDebtBalance = normalisedEarners
+    .reduce((sum, earner) => sum + earner.helpDebtBalance, 0)
   safe.profile.weeklyNonHousingLivingCosts = Math.max(
     0,
     Number(safe.profile.weeklyNonHousingLivingCosts ?? safe.profile.weeklyHousingAndInvestingBudget ?? safe.profile.weeklyAvailableToSave) || 0
@@ -915,6 +1223,15 @@ function normaliseRequest(request) {
   safe.propertyConfig.investWhileSavingForDeposit = safe.propertyConfig.investWhileSavingForDeposit !== false
   safe.propertyConfig.firstHomeBuyerEligible = Boolean(safe.propertyConfig.firstHomeBuyerEligible)
   safe.propertyConfig.vacancyRate = clamp(Number(safe.propertyConfig.vacancyRate) || wealthVacancyRate, 0, 0.12)
+  safe.propertyConfig.historicalAnnualGrowthBlocks = Array.isArray(safe.propertyConfig.historicalAnnualGrowthBlocks)
+    ? safe.propertyConfig.historicalAnnualGrowthBlocks
+        .map((block) => ({
+          year: Math.round(Number(block?.year) || 0),
+          houseGrowth: Number.isFinite(Number(block?.houseGrowth)) ? clamp(Number(block.houseGrowth), -0.5, 0.5) : null,
+          apartmentGrowth: Number.isFinite(Number(block?.apartmentGrowth)) ? clamp(Number(block.apartmentGrowth), -0.5, 0.5) : null
+        }))
+        .filter((block) => Number.isFinite(block.year) && (block.houseGrowth !== null || block.apartmentGrowth !== null))
+    : []
   safe.propertyConfig.house = normaliseProperty(safe.propertyConfig.house, safe.propertyConfig)
   safe.propertyConfig.apartment = normaliseProperty(safe.propertyConfig.apartment, safe.propertyConfig)
   safe.scenarioSelection = resolveScenarioSelection(safe.scenarioSelection)

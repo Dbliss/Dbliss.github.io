@@ -1,28 +1,5 @@
 <template>
-  <section class="wealth-workbook card">
-    <div class="wealth-workbook__header">
-      <div>
-        <p class="wealth-workbook__kicker">Inputs</p>
-        <h2>Move through the workbook sheets</h2>
-      </div>
-      <p class="wealth-workbook__copy">
-        Each sheet controls a different part of the model. Irrelevant sheets stay hidden so the flow stays focused.
-      </p>
-    </div>
-
-    <div class="wealth-workbook__tabs">
-      <button
-        v-for="sheet in availableSheets"
-        :key="sheet.key"
-        type="button"
-        class="wealth-workbook__tab"
-        :class="{ 'is-active': activeSheet === sheet.key }"
-        @click="$emit('update:activeSheet', sheet.key)"
-      >
-        {{ sheet.label }}
-      </button>
-    </div>
-
+  <section class="wealth-workbook">
     <Transition name="wealth-sheet-slide" mode="out-in">
       <section :key="activeSheet" class="wealth-workbook__panel">
         <template v-if="activeSheet === 'stock'">
@@ -95,158 +72,231 @@
           </p>
         </template>
 
-        <template v-else-if="activeSheet === 'housingSetup'">
-          <div class="wealth-workbook__panel-head">
-            <h3>Housing setup</h3>
-            <p>These settings shape how the housing pathways behave on top of the baseline housing costs set in the introduction.</p>
-          </div>
-          <div class="wealth-workbook__grid">
-            <label>
-              <span>Vacancy baseline %</span>
-              <input v-model.number="vacancyRatePct" type="number" min="0" max="12" step="0.1" />
-            </label>
-            <label class="wealth-workbook__toggle">
-              <input v-model="form.propertyConfig.firstHomeBuyerEligible" type="checkbox" />
-              <span>Apply first-home-buyer support to owner paths</span>
-            </label>
-            <label class="wealth-workbook__toggle">
-              <input v-model="form.propertyConfig.investWhileSavingForDeposit" type="checkbox" />
-              <span>Invest while saving for deposit</span>
-            </label>
-            <label>
-              <span>Property surplus routing</span>
-              <select v-model="form.propertyConfig.surplusAllocationMode">
-                <option value="portfolio">Invest surplus</option>
-                <option value="mortgagePrepayment">Prepay mortgage</option>
-              </select>
-            </label>
-          </div>
-        </template>
-
-        <template v-else-if="activeSheet === 'suburb'">
-          <div class="wealth-workbook__panel-head">
-            <h3>Suburb defaults</h3>
-            <p>Search a region, subregion, or suburb to prefill current PSI-based housing defaults before adjusting them manually.</p>
-          </div>
-          <SuburbSearchSelector
-            :current-selection="selectedSuburbSelection"
-            :suburb-options="suburbSearchContext.suburbOptions"
-            @select-suburb="$emit('select-suburb', $event)"
-          />
-          <div v-if="selectedSuburbRecord" class="wealth-workbook__summary-grid">
-            <div>
-              <span>Applied area</span>
-              <strong>{{ selectedSuburbRecord.label }}</strong>
-            </div>
-            <div v-if="selectedSuburbPreview.house">
-              <span>Current house estimate</span>
-              <strong>{{ formatCurrency(selectedSuburbPreview.house.purchasePrice) }}</strong>
-            </div>
-            <div v-if="selectedSuburbPreview.apartment">
-              <span>Current apartment estimate</span>
-              <strong>{{ formatCurrency(selectedSuburbPreview.apartment.purchasePrice) }}</strong>
-            </div>
-            <div v-if="selectedSuburbPreview.houseGrowthYears || selectedSuburbPreview.apartmentGrowthYears">
-              <span>Historical housing years</span>
-              <strong>{{ Math.max(selectedSuburbPreview.houseGrowthYears || 0, selectedSuburbPreview.apartmentGrowthYears || 0) }}</strong>
-            </div>
-          </div>
-        </template>
-
         <template v-else-if="activeSheet === 'apartment'">
           <div class="wealth-workbook__panel-head">
             <h3>Apartment assumptions</h3>
             <p>Owner and rentvest apartment paths both draw from this sheet.</p>
           </div>
-          <div class="wealth-workbook__grid wealth-workbook__grid--triple">
-            <label>
-              <span>Target price</span>
-              <input v-model.number="form.propertyConfig.apartment.purchasePrice" type="number" min="0" step="1000" />
-            </label>
-            <label>
-              <span>Owner deposit %</span>
-              <input v-model.number="apartmentOwnerDepositPct" type="number" min="5" max="80" step="1" />
-            </label>
-            <label>
-              <span>Investment deposit %</span>
-              <input v-model.number="apartmentDepositPct" type="number" min="5" max="80" step="1" />
-            </label>
-            <label>
-              <span>Mortgage years</span>
-              <select v-model.number="form.propertyConfig.apartment.mortgageYears">
-                <option :value="20">20 years</option>
-                <option :value="25">25 years</option>
-                <option :value="30">30 years</option>
-              </select>
-            </label>
-            <label>
-              <span>Owner rate %</span>
-              <input v-model.number="apartmentOwnerRatePct" type="number" min="1" max="12" step="0.1" />
-            </label>
-            <label>
-              <span>Owner long-run rate %</span>
-              <input v-model.number="apartmentOwnerLongRunRatePct" type="number" min="1" max="12" step="0.1" />
-            </label>
-            <label>
-              <span>Investment rate %</span>
-              <input v-model.number="apartmentInvestmentRatePct" type="number" min="1" max="12" step="0.1" />
-            </label>
-            <label>
-              <span>Investment long-run rate %</span>
-              <input v-model.number="apartmentInvestmentLongRunRatePct" type="number" min="1" max="12" step="0.1" />
-            </label>
-            <label>
-              <span>Growth %</span>
-              <input v-model.number="apartmentGrowthPct" type="number" min="0" max="12" step="0.1" />
-            </label>
-            <label>
-              <span>Rent yield %</span>
-              <input v-model.number="apartmentRentYieldPct" type="number" min="0" max="10" step="0.1" />
-            </label>
-            <label>
-              <span>Management fee %</span>
-              <input v-model.number="apartmentManagementPct" type="number" min="0" max="15" step="0.1" />
-            </label>
-            <label>
-              <span>Stamp duty</span>
-              <input v-model.number="apartmentStampDuty" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Legal fees</span>
-              <input v-model.number="apartmentLegalFees" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Buyer costs</span>
-              <input v-model.number="apartmentBuyersCosts" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Council rates</span>
-              <input v-model.number="form.propertyConfig.apartment.councilRates" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Water rates</span>
-              <input v-model.number="form.propertyConfig.apartment.waterRates" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Insurance</span>
-              <input v-model.number="form.propertyConfig.apartment.insurance" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Maintenance</span>
-              <input v-model.number="form.propertyConfig.apartment.maintenance" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Strata</span>
-              <input v-model.number="form.propertyConfig.apartment.strata" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Borrowing expenses</span>
-              <input v-model.number="form.propertyConfig.apartment.borrowingExpensesTotal" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Other deductible expenses</span>
-              <input v-model.number="form.propertyConfig.apartment.otherDeductibleExpensesAnnual" type="number" min="0" step="100" />
-            </label>
+          <div class="wealth-market">
+            <div class="wealth-market__controls-row wealth-market__controls-row--apartment">
+              <section class="wealth-market__controls card">
+                <label class="wealth-workbook__toggle">
+                  <input v-model="form.propertyConfig.firstHomeBuyerEligible" type="checkbox" />
+                  <span>Apply first-home-buyer support to owner paths</span>
+                </label>
+                <label class="wealth-workbook__toggle">
+                  <input v-model="form.propertyConfig.investWhileSavingForDeposit" type="checkbox" />
+                  <span>Invest while saving for deposit</span>
+                </label>
+                <label>
+                  <span>Property surplus routing</span>
+                  <select v-model="form.propertyConfig.surplusAllocationMode">
+                    <option value="portfolio">Invest surplus</option>
+                    <option value="mortgagePrepayment">Prepay mortgage</option>
+                  </select>
+                </label>
+              </section>
+              <section v-if="activePropertyPurchasingPower" class="wealth-market__power card">
+                <div class="wealth-property-section__head">
+                  <h4>Estimated purchasing power</h4>
+                  <p>Based on current household income, savings, HELP debt, and the strongest deposit the current cash position can support.</p>
+                </div>
+                <div class="wealth-market__power-grid">
+                  <article class="wealth-market__power-card">
+                    <span>Live-in</span>
+                    <strong>{{ formatCurrency(activePropertyPurchasingPower.owner.affordablePrice) }}</strong>
+                    <small>Cash needed {{ formatCurrency(activePropertyPurchasingPower.owner.requiredCash) }}</small>
+                  </article>
+                  <article class="wealth-market__power-card">
+                    <span>Investment</span>
+                    <strong>{{ formatCurrency(activePropertyPurchasingPower.investment.affordablePrice) }}</strong>
+                    <small>Cash needed {{ formatCurrency(activePropertyPurchasingPower.investment.requiredCash) }}</small>
+                  </article>
+                </div>
+              </section>
+            </div>
+
+            <SuburbSearchSelector
+              :current-selection="selectedApartmentAreaSelection"
+              :suburb-options="suburbSearchContext.suburbOptions"
+              @select-suburb="emit('select-property-area', { propertyType: 'apartment', selection: $event })"
+            />
+
+            <p
+              v-if="selectedApartmentAreaRecord && !hasEnoughPropertyData(selectedApartmentAreaRecord, selectedApartmentAreaPreview, 'apartment')"
+              class="wealth-market__warning"
+            >
+              Not enough data for your result.
+            </p>
+
+            <div
+              v-if="selectedApartmentAreaRecord && hasEnoughPropertyData(selectedApartmentAreaRecord, selectedApartmentAreaPreview, 'apartment')"
+              class="wealth-market__summary-card"
+            >
+              <h3 class="wealth-market__selected-area">
+                {{ selectedApartmentAreaRecord.label }}
+              </h3>
+              <div class="wealth-workbook__summary-grid wealth-workbook__summary-grid--market wealth-workbook__summary-grid--flat">
+                <div v-if="selectedApartmentAreaPreview.apartment">
+                  <span>{{ getEstimatedLabel(selectedApartmentAreaRecord, 'apartment', 'Estimated apartment price') }}</span>
+                  <strong>{{ formatCurrency(selectedApartmentAreaPreview.apartment.purchasePrice) }}</strong>
+                </div>
+                <div v-if="selectedApartmentAreaRecord.marketHistory?.apartment?.actualPoints?.length">
+                  <span>Apartment avg annual increase</span>
+                  <strong>{{ formatPercent(selectedApartmentAreaRecord.marketHistory?.apartment?.averageAnnualIncrease) }}</strong>
+                </div>
+                <div v-if="selectedApartmentAreaRecord.marketHistory?.apartment?.actualPoints?.length">
+                  <span>Apartment sales</span>
+                  <strong>{{ formatListingsSummary(selectedApartmentAreaRecord.marketHistory?.salesSummary?.apartmentTotal, selectedApartmentAreaRecord.marketHistory?.salesSummary?.apartmentAverage) }}</strong>
+                </div>
+                <div>
+                  <span>History window</span>
+                  <strong>{{ getHistoryWindow(selectedApartmentAreaRecord, 'apartment') }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div
+              v-if="selectedApartmentAreaRecord && hasEnoughPropertyData(selectedApartmentAreaRecord, selectedApartmentAreaPreview, 'apartment')"
+              class="wealth-market__charts wealth-market__charts--single"
+            >
+              <WealthPropertyTrendChart
+                title="Median apartment price"
+                color="#0f9d7a"
+                :actual-points="selectedApartmentAreaRecord.marketHistory?.apartment?.actualPoints || []"
+                :trend-points="selectedApartmentAreaRecord.marketHistory?.apartment?.trendPoints || []"
+                :estimate-point="selectedApartmentAreaRecord.marketHistory?.apartment?.estimatePoint || null"
+              />
+            </div>
+          </div>
+          <div
+            v-if="selectedApartmentAreaRecord && hasEnoughPropertyData(selectedApartmentAreaRecord, selectedApartmentAreaPreview, 'apartment')"
+            class="wealth-property-sections"
+          >
+            <section class="wealth-property-section wealth-property-section--plain">
+              <div class="wealth-property-section__head">
+                <h4>Shared property settings</h4>
+                <p>These apply to the property regardless of whether the path ends up owner-occupied or investment-led.</p>
+              </div>
+              <div class="wealth-workbook__grid wealth-workbook__grid--triple">
+                <label>
+                  <span>Target price</span>
+                  <input v-model.number="apartmentPurchasePrice" type="number" min="0" step="1000" />
+                </label>
+                <label>
+                  <span>Mortgage years</span>
+                  <select v-model.number="form.propertyConfig.apartment.mortgageYears">
+                    <option :value="20">20 years</option>
+                    <option :value="25">25 years</option>
+                    <option :value="30">30 years</option>
+                  </select>
+                </label>
+              </div>
+            </section>
+
+            <section class="wealth-property-section wealth-property-section--plain">
+              <div class="wealth-property-section__head">
+                <h4>Financing paths</h4>
+                <p>These change depending on whether the property is purchased to live in or held as an investment.</p>
+              </div>
+              <div class="wealth-property-paths">
+                <div class="wealth-property-path-card">
+                  <h5>Owner path</h5>
+                  <div class="wealth-workbook__grid">
+                    <label>
+                      <span>Owner deposit %</span>
+                      <input v-model.number="apartmentOwnerDepositPct" type="number" min="5" max="80" step="1" />
+                    </label>
+                    <label>
+                      <span>Owner rate %</span>
+                      <input v-model.number="apartmentOwnerRatePct" type="number" min="1" max="12" step="0.1" />
+                    </label>
+                    <label>
+                      <span>Owner long-run rate %</span>
+                      <input v-model.number="apartmentOwnerLongRunRatePct" type="number" min="1" max="12" step="0.1" />
+                    </label>
+                  </div>
+                </div>
+                <div class="wealth-property-path-card">
+                  <h5>Investment path</h5>
+                  <div class="wealth-workbook__grid">
+                    <label>
+                      <span>Investment deposit %</span>
+                      <input v-model.number="apartmentDepositPct" type="number" min="5" max="80" step="1" />
+                    </label>
+                    <label>
+                      <span>Property vacancy %</span>
+                      <input v-model.number="vacancyRatePct" type="number" min="0" max="12" step="0.1" />
+                    </label>
+                    <label>
+                      <span>Rent yield %</span>
+                      <input v-model.number="apartmentRentYieldPct" type="number" min="0" max="10" step="0.1" />
+                    </label>
+                    <label>
+                      <span>Management fee %</span>
+                      <input v-model.number="apartmentManagementPct" type="number" min="0" max="15" step="0.1" />
+                    </label>
+                    <label>
+                      <span>Investment rate %</span>
+                      <input v-model.number="apartmentInvestmentRatePct" type="number" min="1" max="12" step="0.1" />
+                    </label>
+                    <label>
+                      <span>Investment long-run rate %</span>
+                      <input v-model.number="apartmentInvestmentLongRunRatePct" type="number" min="1" max="12" step="0.1" />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="wealth-property-section wealth-property-section--plain">
+              <div class="wealth-property-section__head">
+                <h4>Auto-filled property costs</h4>
+                <p>These fields are prefilled from the selected property value and can still be adjusted if needed.</p>
+              </div>
+              <div class="wealth-workbook__grid wealth-workbook__grid--triple">
+                <label>
+                  <span>Stamp duty</span>
+                  <input v-model.number="apartmentStampDuty" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Legal fees</span>
+                  <input v-model.number="apartmentLegalFees" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Buyer costs</span>
+                  <input v-model.number="apartmentBuyersCosts" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Council rates</span>
+                  <input v-model.number="form.propertyConfig.apartment.councilRates" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Water rates</span>
+                  <input v-model.number="form.propertyConfig.apartment.waterRates" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Insurance</span>
+                  <input v-model.number="form.propertyConfig.apartment.insurance" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Maintenance</span>
+                  <input v-model.number="form.propertyConfig.apartment.maintenance" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Strata</span>
+                  <input v-model.number="form.propertyConfig.apartment.strata" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Borrowing expenses</span>
+                  <input v-model.number="form.propertyConfig.apartment.borrowingExpensesTotal" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Other deductible expenses</span>
+                  <input v-model.number="form.propertyConfig.apartment.otherDeductibleExpensesAnnual" type="number" min="0" step="100" />
+                </label>
+              </div>
+            </section>
           </div>
         </template>
 
@@ -255,91 +305,222 @@
             <h3>House assumptions</h3>
             <p>Owner and rentvest house paths both draw from this sheet.</p>
           </div>
-          <div class="wealth-workbook__grid wealth-workbook__grid--triple">
-            <label>
-              <span>Target price</span>
-              <input v-model.number="form.propertyConfig.house.purchasePrice" type="number" min="0" step="1000" />
-            </label>
-            <label>
-              <span>Owner deposit %</span>
-              <input v-model.number="houseOwnerDepositPct" type="number" min="5" max="80" step="1" />
-            </label>
-            <label>
-              <span>Investment deposit %</span>
-              <input v-model.number="houseDepositPct" type="number" min="5" max="80" step="1" />
-            </label>
-            <label>
-              <span>Mortgage years</span>
-              <select v-model.number="form.propertyConfig.house.mortgageYears">
-                <option :value="20">20 years</option>
-                <option :value="25">25 years</option>
-                <option :value="30">30 years</option>
-              </select>
-            </label>
-            <label>
-              <span>Owner rate %</span>
-              <input v-model.number="houseOwnerRatePct" type="number" min="1" max="12" step="0.1" />
-            </label>
-            <label>
-              <span>Owner long-run rate %</span>
-              <input v-model.number="houseOwnerLongRunRatePct" type="number" min="1" max="12" step="0.1" />
-            </label>
-            <label>
-              <span>Investment rate %</span>
-              <input v-model.number="houseInvestmentRatePct" type="number" min="1" max="12" step="0.1" />
-            </label>
-            <label>
-              <span>Investment long-run rate %</span>
-              <input v-model.number="houseInvestmentLongRunRatePct" type="number" min="1" max="12" step="0.1" />
-            </label>
-            <label>
-              <span>Growth %</span>
-              <input v-model.number="houseGrowthPct" type="number" min="0" max="12" step="0.1" />
-            </label>
-            <label>
-              <span>Rent yield %</span>
-              <input v-model.number="houseRentYieldPct" type="number" min="0" max="10" step="0.1" />
-            </label>
-            <label>
-              <span>Management fee %</span>
-              <input v-model.number="houseManagementPct" type="number" min="0" max="15" step="0.1" />
-            </label>
-            <label>
-              <span>Stamp duty</span>
-              <input v-model.number="houseStampDuty" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Legal fees</span>
-              <input v-model.number="houseLegalFees" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Buyer costs</span>
-              <input v-model.number="houseBuyersCosts" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Council rates</span>
-              <input v-model.number="form.propertyConfig.house.councilRates" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Water rates</span>
-              <input v-model.number="form.propertyConfig.house.waterRates" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Insurance</span>
-              <input v-model.number="form.propertyConfig.house.insurance" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Maintenance</span>
-              <input v-model.number="form.propertyConfig.house.maintenance" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Borrowing expenses</span>
-              <input v-model.number="form.propertyConfig.house.borrowingExpensesTotal" type="number" min="0" step="100" />
-            </label>
-            <label>
-              <span>Other deductible expenses</span>
-              <input v-model.number="form.propertyConfig.house.otherDeductibleExpensesAnnual" type="number" min="0" step="100" />
-            </label>
+          <div class="wealth-market">
+            <div class="wealth-market__controls-row">
+              <section class="wealth-market__controls card">
+                <label class="wealth-workbook__toggle">
+                  <input v-model="form.propertyConfig.firstHomeBuyerEligible" type="checkbox" />
+                  <span>Apply first-home-buyer support to owner paths</span>
+                </label>
+                <label class="wealth-workbook__toggle">
+                  <input v-model="form.propertyConfig.investWhileSavingForDeposit" type="checkbox" />
+                  <span>Invest while saving for deposit</span>
+                </label>
+                <label>
+                  <span>Property surplus routing</span>
+                  <select v-model="form.propertyConfig.surplusAllocationMode">
+                    <option value="portfolio">Invest surplus</option>
+                    <option value="mortgagePrepayment">Prepay mortgage</option>
+                  </select>
+                </label>
+              </section>
+              <section v-if="activePropertyPurchasingPower" class="wealth-market__power card">
+                <div class="wealth-property-section__head">
+                  <h4>Estimated purchasing power</h4>
+                  <p>Based on current household income, savings, HELP debt, and the strongest deposit the current cash position can support.</p>
+                </div>
+                <div class="wealth-market__power-grid">
+                  <article class="wealth-market__power-card">
+                    <span>Live-in</span>
+                    <strong>{{ formatCurrency(activePropertyPurchasingPower.owner.affordablePrice) }}</strong>
+                    <small>Cash needed {{ formatCurrency(activePropertyPurchasingPower.owner.requiredCash) }}</small>
+                  </article>
+                  <article class="wealth-market__power-card">
+                    <span>Investment</span>
+                    <strong>{{ formatCurrency(activePropertyPurchasingPower.investment.affordablePrice) }}</strong>
+                    <small>Cash needed {{ formatCurrency(activePropertyPurchasingPower.investment.requiredCash) }}</small>
+                  </article>
+                </div>
+              </section>
+            </div>
+
+            <SuburbSearchSelector
+              :current-selection="selectedHouseAreaSelection"
+              :suburb-options="suburbSearchContext.suburbOptions"
+              @select-suburb="emit('select-property-area', { propertyType: 'house', selection: $event })"
+            />
+
+            <p
+              v-if="selectedHouseAreaRecord && !hasEnoughPropertyData(selectedHouseAreaRecord, selectedHouseAreaPreview, 'house')"
+              class="wealth-market__warning"
+            >
+              Not enough data for your result.
+            </p>
+
+            <div
+              v-if="selectedHouseAreaRecord && hasEnoughPropertyData(selectedHouseAreaRecord, selectedHouseAreaPreview, 'house')"
+              class="wealth-market__summary-card"
+            >
+              <h3 class="wealth-market__selected-area">
+                {{ selectedHouseAreaRecord.label }}
+              </h3>
+              <div class="wealth-workbook__summary-grid wealth-workbook__summary-grid--market wealth-workbook__summary-grid--flat">
+                <div v-if="selectedHouseAreaPreview.house">
+                  <span>{{ getEstimatedLabel(selectedHouseAreaRecord, 'house', 'Estimated house price') }}</span>
+                  <strong>{{ formatCurrency(selectedHouseAreaPreview.house.purchasePrice) }}</strong>
+                </div>
+                <div v-if="selectedHouseAreaRecord.marketHistory?.house?.actualPoints?.length">
+                  <span>House avg annual increase</span>
+                  <strong>{{ formatPercent(selectedHouseAreaRecord.marketHistory?.house?.averageAnnualIncrease) }}</strong>
+                </div>
+                <div v-if="selectedHouseAreaRecord.marketHistory?.house?.actualPoints?.length">
+                  <span>House sales</span>
+                  <strong>{{ formatListingsSummary(selectedHouseAreaRecord.marketHistory?.salesSummary?.houseTotal, selectedHouseAreaRecord.marketHistory?.salesSummary?.houseAverage) }}</strong>
+                </div>
+                <div>
+                  <span>History window</span>
+                  <strong>{{ getHistoryWindow(selectedHouseAreaRecord, 'house') }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div
+              v-if="selectedHouseAreaRecord && hasEnoughPropertyData(selectedHouseAreaRecord, selectedHouseAreaPreview, 'house')"
+              class="wealth-market__charts wealth-market__charts--single"
+            >
+              <WealthPropertyTrendChart
+                title="Median house price"
+                color="#2563eb"
+                :actual-points="selectedHouseAreaRecord.marketHistory?.house?.actualPoints || []"
+                :trend-points="selectedHouseAreaRecord.marketHistory?.house?.trendPoints || []"
+                :estimate-point="selectedHouseAreaRecord.marketHistory?.house?.estimatePoint || null"
+              />
+            </div>
+          </div>
+          <div
+            v-if="selectedHouseAreaRecord && hasEnoughPropertyData(selectedHouseAreaRecord, selectedHouseAreaPreview, 'house')"
+            class="wealth-property-sections"
+          >
+            <section class="wealth-property-section wealth-property-section--plain">
+              <div class="wealth-property-section__head">
+                <h4>Shared property settings</h4>
+                <p>These apply to the property regardless of whether the path ends up owner-occupied or investment-led.</p>
+              </div>
+              <div class="wealth-workbook__grid wealth-workbook__grid--triple">
+                <label>
+                  <span>Target price</span>
+                  <input v-model.number="housePurchasePrice" type="number" min="0" step="1000" />
+                </label>
+                <label>
+                  <span>Mortgage years</span>
+                  <select v-model.number="form.propertyConfig.house.mortgageYears">
+                    <option :value="20">20 years</option>
+                    <option :value="25">25 years</option>
+                    <option :value="30">30 years</option>
+                  </select>
+                </label>
+              </div>
+            </section>
+
+            <section class="wealth-property-section wealth-property-section--plain">
+              <div class="wealth-property-section__head">
+                <h4>Financing paths</h4>
+                <p>These change depending on whether the property is purchased to live in or held as an investment.</p>
+              </div>
+              <div class="wealth-property-paths">
+                <div class="wealth-property-path-card">
+                  <h5>Owner path</h5>
+                  <div class="wealth-workbook__grid">
+                    <label>
+                      <span>Owner deposit %</span>
+                      <input v-model.number="houseOwnerDepositPct" type="number" min="5" max="80" step="1" />
+                    </label>
+                    <label>
+                      <span>Owner rate %</span>
+                      <input v-model.number="houseOwnerRatePct" type="number" min="1" max="12" step="0.1" />
+                    </label>
+                    <label>
+                      <span>Owner long-run rate %</span>
+                      <input v-model.number="houseOwnerLongRunRatePct" type="number" min="1" max="12" step="0.1" />
+                    </label>
+                  </div>
+                </div>
+                <div class="wealth-property-path-card">
+                  <h5>Investment path</h5>
+                  <div class="wealth-workbook__grid">
+                    <label>
+                      <span>Investment deposit %</span>
+                      <input v-model.number="houseDepositPct" type="number" min="5" max="80" step="1" />
+                    </label>
+                    <label>
+                      <span>Property vacancy %</span>
+                      <input v-model.number="vacancyRatePct" type="number" min="0" max="12" step="0.1" />
+                    </label>
+                    <label>
+                      <span>Rent yield %</span>
+                      <input v-model.number="houseRentYieldPct" type="number" min="0" max="10" step="0.1" />
+                    </label>
+                    <label>
+                      <span>Management fee %</span>
+                      <input v-model.number="houseManagementPct" type="number" min="0" max="15" step="0.1" />
+                    </label>
+                    <label>
+                      <span>Investment rate %</span>
+                      <input v-model.number="houseInvestmentRatePct" type="number" min="1" max="12" step="0.1" />
+                    </label>
+                    <label>
+                      <span>Investment long-run rate %</span>
+                      <input v-model.number="houseInvestmentLongRunRatePct" type="number" min="1" max="12" step="0.1" />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="wealth-property-section wealth-property-section--plain">
+              <div class="wealth-property-section__head">
+                <h4>Auto-filled property costs</h4>
+                <p>These fields are prefilled from the selected property value and can still be adjusted if needed.</p>
+              </div>
+              <div class="wealth-workbook__grid wealth-workbook__grid--triple">
+                <label>
+                  <span>Stamp duty</span>
+                  <input v-model.number="houseStampDuty" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Legal fees</span>
+                  <input v-model.number="houseLegalFees" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Buyer costs</span>
+                  <input v-model.number="houseBuyersCosts" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Council rates</span>
+                  <input v-model.number="form.propertyConfig.house.councilRates" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Water rates</span>
+                  <input v-model.number="form.propertyConfig.house.waterRates" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Insurance</span>
+                  <input v-model.number="form.propertyConfig.house.insurance" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Maintenance</span>
+                  <input v-model.number="form.propertyConfig.house.maintenance" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Borrowing expenses</span>
+                  <input v-model.number="form.propertyConfig.house.borrowingExpensesTotal" type="number" min="0" step="100" />
+                </label>
+                <label>
+                  <span>Other deductible expenses</span>
+                  <input v-model.number="form.propertyConfig.house.otherDeductibleExpensesAnnual" type="number" min="0" step="100" />
+                </label>
+              </div>
+            </section>
           </div>
         </template>
       </section>
@@ -350,7 +531,17 @@
 <script setup>
 import { computed } from 'vue'
 import SuburbSearchSelector from './SuburbSearchSelector.vue'
+import WealthPropertyTrendChart from './WealthPropertyTrendChart.vue'
 import { getWealthBootstrapAssets } from '../../wealth/assetBootstrap.js'
+import {
+  calculatePurchaseCosts,
+  estimatePropertyBorrowingPower,
+  estimateLmi,
+  getEffectiveInvestmentDepositPct,
+  getEffectiveOwnerDepositPct,
+  scalePurchaseCostsWithPrice
+} from '../../wealth/finance.js'
+import { normaliseHouseholdEarners, normaliseIncomeProfile } from '../../wealth/incomeSeries.js'
 import {
   getLockedWeightKeys,
   isPortfolioWeightLocked,
@@ -364,32 +555,24 @@ const props = defineProps({
   activeSheet: { type: String, required: true },
   scenarioSelection: { type: Object, required: true },
   suburbSearchContext: { type: Object, required: true },
-  selectedSuburbSelection: { type: Object, default: null },
-  selectedSuburbRecord: { type: Object, default: null },
-  selectedSuburbPreview: {
+  selectedApartmentAreaSelection: { type: Object, default: null },
+  selectedApartmentAreaRecord: { type: Object, default: null },
+  selectedApartmentAreaPreview: {
+    type: Object,
+    default: () => ({ house: null, apartment: null, houseGrowthYears: 0, apartmentGrowthYears: 0 })
+  },
+  selectedHouseAreaSelection: { type: Object, default: null },
+  selectedHouseAreaRecord: { type: Object, default: null },
+  selectedHouseAreaPreview: {
     type: Object,
     default: () => ({ house: null, apartment: null, houseGrowthYears: 0, apartmentGrowthYears: 0 })
   }
 })
 
-defineEmits(['update:activeSheet', 'select-suburb'])
-
-const availableSheets = computed(() => {
-  const sheets = [
-    ...(props.scenarioSelection.includeStocks ? [{ key: 'stock', label: 'Stock assumptions' }] : []),
-    ...(props.scenarioSelection.includeHousing ? [{ key: 'housingSetup', label: 'Housing setup' }] : []),
-    ...(props.scenarioSelection.includeHousing
-      ? [
-          { key: 'suburb', label: 'Suburb defaults' },
-          { key: 'apartment', label: 'Apartment assumptions' },
-          { key: 'house', label: 'House assumptions' }
-        ]
-      : [])
-  ]
-  return sheets
-})
+const emit = defineEmits(['select-property-area'])
 
 const bootstrapAssets = getWealthBootstrapAssets()
+
 const bootstrapSamplingNote = computed(() => {
   const method = props.form.portfolioConfig.bootstrapMethod === 'historical-monthly'
     ? 'historical-monthly'
@@ -440,6 +623,14 @@ function hasUnlockedPeers(key) {
 }
 
 const vacancyRatePct = percentProxy(() => props.form.propertyConfig.vacancyRate, value => { props.form.propertyConfig.vacancyRate = value })
+const housePurchasePrice = computed({
+  get: () => roundToNearestThousand(props.form.propertyConfig.house.purchasePrice),
+  set: (value) => { props.form.propertyConfig.house.purchasePrice = roundToNearestThousand(value) }
+})
+const apartmentPurchasePrice = computed({
+  get: () => roundToNearestThousand(props.form.propertyConfig.apartment.purchasePrice),
+  set: (value) => { props.form.propertyConfig.apartment.purchasePrice = roundToNearestThousand(value) }
+})
 const houseOwnerDepositPct = percentProxy(() => props.form.propertyConfig.house.ownerDepositPct, value => { props.form.propertyConfig.house.ownerDepositPct = value })
 const houseDepositPct = percentProxy(() => props.form.propertyConfig.house.depositPct, value => { props.form.propertyConfig.house.depositPct = value })
 const houseOwnerRatePct = percentProxy(() => props.form.propertyConfig.house.ownerInterestRate, value => { props.form.propertyConfig.house.ownerInterestRate = value })
@@ -477,16 +668,195 @@ const houseStampDuty = createSharedPurchaseCostProxy('house', 'stampDuty')
 const houseLegalFees = createSharedPurchaseCostProxy('house', 'legalFees')
 const houseBuyersCosts = createSharedPurchaseCostProxy('house', 'buyersCosts')
 
+const householdProfile = computed(() => normaliseIncomeProfile(props.form.profile))
+const currentEarners = computed(() => normaliseHouseholdEarners(props.form.profile))
+const currentHouseholdIncome = computed(() => householdProfile.value.annualIncomeSeries?.[0] || householdProfile.value.annualIncome || 0)
+const currentStartingSavings = computed(() => householdProfile.value.startingSavings || 0)
+const currentHousingCostAnnual = computed(() => {
+  const housingCosts = props.form.housingCosts || {}
+  const livesAtHomeNow = Boolean(housingCosts.liveAtHome) && Number(housingCosts.liveAtHomeYears || 0) > 0
+  return livesAtHomeNow
+    ? Math.max(0, Number(housingCosts.weeklyBoardAtHome) || 0) * 52
+    : Math.max(0, Number(housingCosts.weeklyRent) || 0) * 52
+})
+const activePropertyKey = computed(() =>
+  props.activeSheet === 'house' || props.activeSheet === 'apartment'
+    ? props.activeSheet
+    : null
+)
+const activePropertyPurchasingPower = computed(() => {
+  if (!activePropertyKey.value) return null
+  return {
+    owner: estimatePurchasingPower(activePropertyKey.value, 'owner'),
+    investment: estimatePurchasingPower(activePropertyKey.value, 'investment')
+  }
+})
+
 function formatCurrency(value) {
   return new Intl.NumberFormat('en-AU', {
     style: 'currency',
     currency: 'AUD',
     maximumFractionDigits: 0
-  }).format(Number(value) || 0)
+  }).format(roundToNearestThousand(value))
+}
+
+function formatListingsSummary(total, average) {
+  const safeTotal = Number.isFinite(Number(total)) ? Math.round(Number(total)) : 0
+  const averageText = Number.isFinite(Number(average)) ? `${Math.round(Number(average))}/yr avg` : 'n/a avg'
+  return `${safeTotal} total | ${averageText}`
 }
 
 function formatPercent(value) {
-  return `${Math.round((Number(value) || 0) * 100)}%`
+  if (!Number.isFinite(Number(value))) return 'n/a'
+  return `${(Number(value) * 100).toFixed(1)}%`
+}
+
+function getHistoryWindow(areaRecord, propertyType) {
+  const years = (areaRecord?.marketHistory?.[propertyType]?.actualPoints || []).map((point) => point.year)
+  if (!years.length) return 'No history loaded'
+  return `${Math.min(...years)}-${Math.max(...years)}`
+}
+
+function getEstimatedLabel(areaRecord, propertyType, fallbackLabel) {
+  const estimateYear = areaRecord?.marketHistory?.[propertyType]?.estimatePoint?.year
+  return estimateYear ? `${fallbackLabel} (${estimateYear})` : fallbackLabel
+}
+
+function hasEnoughPropertyData(areaRecord, preview, propertyType) {
+  const purchasePrice = Number(preview?.[propertyType]?.purchasePrice) || 0
+  const actualPoints = areaRecord?.marketHistory?.[propertyType]?.actualPoints || []
+  return purchasePrice > 0 && actualPoints.length > 0
+}
+
+function roundToNearestThousand(value) {
+  return Math.round((Math.max(0, Number(value) || 0)) / 1000) * 1000
+}
+
+function clampPct(value) {
+  return Math.min(0.95, Math.max(0.05, Number(value) || 0))
+}
+
+function getMinimumDepositPct(propertyKey, occupancyMode) {
+  const propertyConfig = props.form.propertyConfig?.[propertyKey]
+  if (!propertyConfig) return 0.05
+  return occupancyMode === 'owner'
+    ? getEffectiveOwnerDepositPct(propertyConfig)
+    : getEffectiveInvestmentDepositPct(propertyConfig)
+}
+
+function buildPurchasePlan(propertyKey, occupancyMode, propertyValue, depositPct = getMinimumDepositPct(propertyKey, occupancyMode)) {
+  const propertyConfig = props.form.propertyConfig?.[propertyKey]
+  if (!propertyConfig) return null
+  const scaledPrice = Math.max(0, Number(propertyValue) || 0)
+  const scaledPurchaseCosts = scalePurchaseCostsWithPrice(
+    occupancyMode === 'owner' ? propertyConfig.ownerPurchaseCosts : propertyConfig.investmentPurchaseCosts,
+    propertyConfig.purchasePrice,
+    scaledPrice,
+    propertyKey
+  )
+  const firstHomeBuyerEligible = occupancyMode === 'owner' && Boolean(props.form.propertyConfig.firstHomeBuyerEligible)
+  const safeDepositPct = clampPct(depositPct)
+  const deposit = scaledPrice * safeDepositPct
+  const lmi = estimateLmi(scaledPrice, safeDepositPct, firstHomeBuyerEligible)
+  const purchaseCosts = calculatePurchaseCosts(scaledPurchaseCosts, firstHomeBuyerEligible, scaledPrice)
+  const borrowingExpensesUpfront = occupancyMode === 'investment'
+    ? Math.max(0, Number(propertyConfig.borrowingExpensesTotal) || 0)
+    : 0
+
+  return {
+    depositPct: safeDepositPct,
+    requiredCash: deposit + purchaseCosts.total + borrowingExpensesUpfront,
+    openingLoanBalance: Math.max(0, scaledPrice - deposit + lmi)
+  }
+}
+
+function solveBestPurchasePlan(propertyKey, occupancyMode, propertyValue) {
+  const propertyConfig = props.form.propertyConfig?.[propertyKey]
+  if (!propertyConfig) return null
+
+  const minDepositPct = getMinimumDepositPct(propertyKey, occupancyMode)
+  const minimumPlan = buildPurchasePlan(propertyKey, occupancyMode, propertyValue, minDepositPct)
+  if (!minimumPlan || minimumPlan.requiredCash > currentStartingSavings.value) return null
+
+  let low = minDepositPct
+  let high = 0.95
+  let bestPlan = minimumPlan
+
+  const highPlan = buildPurchasePlan(propertyKey, occupancyMode, propertyValue, high)
+  if (highPlan && highPlan.requiredCash <= currentStartingSavings.value) {
+    return highPlan
+  }
+
+  for (let step = 0; step < 28; step += 1) {
+    const midpoint = (low + high) / 2
+    const plan = buildPurchasePlan(propertyKey, occupancyMode, propertyValue, midpoint)
+    if (!plan) break
+    if (plan.requiredCash <= currentStartingSavings.value) {
+      low = midpoint
+      bestPlan = plan
+    } else {
+      high = midpoint
+    }
+  }
+
+  return bestPlan
+}
+
+function canAffordProperty(propertyKey, occupancyMode, propertyValue) {
+  const propertyConfig = props.form.propertyConfig?.[propertyKey]
+  const plan = solveBestPurchasePlan(propertyKey, occupancyMode, propertyValue)
+  if (!propertyConfig || !plan) return false
+
+  const borrowerIncomes = currentEarners.value.map((earner) => earner.annualIncomeSeries?.[0] || earner.annualIncome || 0)
+  const helpDebtBalances = currentEarners.value.map((earner) => earner.helpDebtBalance || 0)
+  const borrowingPower = estimatePropertyBorrowingPower({
+    taxYear: props.form.profile.taxYear,
+    annualIncome: currentHouseholdIncome.value,
+    annualIncomeByBorrower: borrowerIncomes,
+    helpDebtBalances,
+    weeklyNonHousingLivingCosts: props.form.profile.weeklyNonHousingLivingCosts,
+    occupancyMode,
+    propertyConfig,
+    propertyValue,
+    mortgageYears: propertyConfig.mortgageYears,
+    personalHousingCostAnnual: occupancyMode === 'investment' ? currentHousingCostAnnual.value : 0,
+    vacancyRate: props.form.propertyConfig.vacancyRate
+  })
+
+  return plan.openingLoanBalance <= borrowingPower.maxLoanSize
+}
+
+function estimatePurchasingPower(propertyKey, occupancyMode) {
+  const propertyConfig = props.form.propertyConfig?.[propertyKey]
+  if (!propertyConfig) return null
+
+  const targetPrice = Math.max(0, Number(propertyConfig.purchasePrice) || 0)
+  let low = 0
+  let high = Math.max(200000, targetPrice)
+
+  while (canAffordProperty(propertyKey, occupancyMode, high) && high < 10000000) {
+    low = high
+    high *= 1.25
+  }
+
+  for (let step = 0; step < 28; step += 1) {
+    const midpoint = roundToNearestThousand((low + high) / 2)
+    if (canAffordProperty(propertyKey, occupancyMode, midpoint)) {
+      low = midpoint
+    } else {
+      high = midpoint
+    }
+  }
+
+  const affordablePrice = roundToNearestThousand(low)
+  const purchasePlan = solveBestPurchasePlan(propertyKey, occupancyMode, affordablePrice)
+
+  return {
+    affordablePrice,
+    requiredCash: purchasePlan?.requiredCash || 0,
+    depositPct: purchasePlan?.depositPct || getMinimumDepositPct(propertyKey, occupancyMode),
+    remainingCash: Math.max(0, currentStartingSavings.value - (purchasePlan?.requiredCash || 0))
+  }
 }
 </script>
 
@@ -494,83 +864,219 @@ function formatPercent(value) {
 .wealth-workbook {
   display: grid;
   gap: 1rem;
-  padding: 1.25rem;
-}
-
-.wealth-workbook__header {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.wealth-workbook__header h2 {
-  margin: 0.15rem 0 0;
-  font-size: clamp(1.5rem, 1.2rem + 0.9vw, 2.15rem);
-}
-
-.wealth-workbook__kicker {
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: 0.74rem;
-  color: #5d7ba3;
-}
-
-.wealth-workbook__copy {
-  margin: 0;
-  max-width: 30rem;
-  color: #587090;
-  line-height: 1.5;
-}
-
-.wealth-workbook__tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-}
-
-.wealth-workbook__tab {
-  padding: 0.65rem 0.95rem;
-  border-radius: 999px;
-  border: 1px solid rgba(154, 174, 204, 0.22);
-  background: rgba(244, 248, 255, 0.96);
-  color: #385879;
-  font: inherit;
-  cursor: pointer;
-}
-
-.wealth-workbook__tab.is-active {
-  background: rgba(216, 234, 255, 0.98);
-  border-color: rgba(45, 118, 212, 0.3);
-  color: #133657;
 }
 
 .wealth-workbook__panel {
   display: grid;
-  gap: 1rem;
+  gap: 0.9rem;
   min-height: 28rem;
-  padding: 1rem;
+  padding: 1.25rem;
   border-radius: 24px;
-  background:
-    radial-gradient(circle at right top, rgba(125, 211, 252, 0.14), transparent 28%),
-    linear-gradient(180deg, rgba(248, 251, 255, 0.94), rgba(241, 247, 255, 0.92));
-  border: 1px solid rgba(154, 174, 204, 0.16);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(154, 174, 204, 0.22);
+  box-shadow: 0 18px 38px rgba(95, 122, 160, 0.12);
 }
 
 .wealth-workbook__panel-head h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: clamp(1.65rem, 1.3rem + 1vw, 2.3rem);
+  line-height: 1;
 }
 
 .wealth-workbook__panel-head p {
-  margin: 0.35rem 0 0;
+  margin: 0.2rem 0 0;
   color: #5d7394;
+}
+
+.wealth-market {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.wealth-market__controls-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
+  gap: 0.9rem;
+  align-items: stretch;
+}
+
+.wealth-market__controls-row--apartment {
+  margin-top: -0.35rem;
+}
+
+.wealth-market__controls,
+.wealth-market__power {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(154, 174, 204, 0.16);
+  background: rgba(247, 250, 255, 0.82);
+}
+
+.wealth-market__controls {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wealth-market__controls > :last-child {
+  grid-column: 1 / -1;
+}
+
+.wealth-market__power-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.wealth-market__power-card {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.9rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(154, 174, 204, 0.14);
+}
+
+.wealth-market__power-card span,
+.wealth-market__power-card small {
+  color: #5d7394;
+}
+
+.wealth-market__power-card span {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.wealth-market__power-card strong {
+  color: #173050;
+  font-size: 1.2rem;
+}
+
+.wealth-market__charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.wealth-market__charts--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.wealth-market__empty {
+  margin: 0;
+  padding: 1rem 1.05rem;
+  border-radius: 18px;
+  border: 1px dashed rgba(154, 174, 204, 0.26);
+  background: rgba(255, 255, 255, 0.64);
+  color: #5d7394;
+  line-height: 1.5;
+}
+
+.wealth-market__warning {
+  margin: -0.35rem 0 0;
+  color: #b42318;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.wealth-market__summary-card {
+  padding: 0.95rem 1.1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(154, 174, 204, 0.16);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.wealth-market__selected-area {
+  margin: 0 0 0.8rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #173050;
+  text-align: center;
+}
+
+.wealth-property-sections {
+  display: grid;
+  gap: 1rem;
+}
+
+.wealth-property-section {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(154, 174, 204, 0.16);
+  background: rgba(247, 250, 255, 0.72);
+}
+
+.wealth-property-section--plain {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.wealth-property-section__head {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.wealth-property-section__head h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: #173050;
+}
+
+.wealth-property-section__head p {
+  margin: 0;
+  color: #5d7394;
+  line-height: 1.45;
+}
+
+.wealth-property-paths {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.wealth-property-path-card {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.95rem;
+  border-radius: 18px;
+  border: 1px solid rgba(154, 174, 204, 0.16);
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.wealth-property-path-card h5 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #173050;
+}
+
+.wealth-workbook__summary-grid--flat {
+  gap: 0.9rem 1.1rem;
+}
+
+.wealth-workbook__summary-grid--flat div {
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .wealth-workbook__bootstrap-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.8rem;
+}
+
+@media (max-width: 900px) {
+  .wealth-market__controls-row,
+  .wealth-market__controls,
+  .wealth-market__power-grid,
+  .wealth-property-paths {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .wealth-workbook__bootstrap-card {
@@ -740,6 +1246,10 @@ function formatPercent(value) {
   gap: 0.8rem;
 }
 
+.wealth-workbook__summary-grid--market {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .wealth-workbook__summary-grid div {
   padding: 0.9rem;
   border-radius: 18px;
@@ -768,7 +1278,9 @@ function formatPercent(value) {
 }
 
 @media (max-width: 1100px) {
+  .wealth-market__charts,
   .wealth-workbook__bootstrap-grid,
+  .wealth-property-paths,
   .wealth-workbook__grid--quad,
   .wealth-workbook__grid--triple {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -776,11 +1288,13 @@ function formatPercent(value) {
 }
 
 @media (max-width: 820px) {
-  .wealth-workbook__header,
+  .wealth-market__charts,
   .wealth-workbook__bootstrap-grid,
   .wealth-workbook__allocation-grid,
+  .wealth-property-paths,
   .wealth-workbook__grid,
   .wealth-workbook__summary-grid,
+  .wealth-workbook__summary-grid--market,
   .wealth-workbook__grid--quad,
   .wealth-workbook__grid--triple {
     display: grid;

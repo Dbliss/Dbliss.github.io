@@ -105,17 +105,17 @@ export const wealthAssumptionSections = [
   {
     title: 'What this models',
     items: [
-      'Single-person comparison across rent + invest, buy to live, and buy as an investment property while renting.',
+      'A household comparison across rent + invest, buy to live, and buy as an investment property while renting.',
       'NSW-focused first-home-buyer and transfer-duty assumptions for owner-occupier purchases.',
-      'Federal ATO-style compulsory HECS/HELP repayments, using salary-only income bands and a simplified fixed 3 percent annual indexation rate.',
+      'Federal ATO-style compulsory HECS/HELP repayments, using per-earner salary bands and a simplified fixed 3 percent annual indexation rate.',
       'An optional currently-living-at-home phase that lowers housing costs while saving, investing, or rentvesting before rent-based paths move out.',
-      'A yearly after-tax cash ledger starting from gross salary, non-housing living costs, housing cashflows, and portfolio market returns.'
+      'A yearly after-tax cash ledger starting from household wages, non-housing living costs, housing cashflows, and portfolio market returns.'
     ]
   },
   {
     title: 'What this does not model',
     items: [
-      'Couples, dependants, Medicare levy surcharge edge cases, or trust/company ownership structures.',
+      'Dependants, Medicare levy surcharge edge cases, or trust/company ownership structures.',
       'Suburb-level property cycles, automated state land-tax tables, offset account optimization, redraw facilities, or superannuation strategy.',
       'Personal financial advice, product recommendations, or edge-case legal treatment.'
     ]
@@ -292,13 +292,26 @@ export const defaultSimulationRequest = {
     startingSavings: 40000,
     annualIncome: 100000,
     taxYear: '2026-27',
-    helpDebtBalance: 0,
-    incomeGrowthRate: 0.034,
+    helpDebtBalance: 15000,
+    incomeGrowthRate: 0.036,
     incomeCurve: 'sigmoid',
     weeklyNonHousingLivingCosts: 400,
     horizonYears: 30,
     useCustomIncomeSeries: false,
-    annualIncomeSeries: []
+    annualIncomeSeries: [],
+    earners: [
+      {
+        id: 'person-1',
+        label: 'Person 1',
+        startingSavings: 40000,
+        annualIncome: 100000,
+        helpDebtBalance: 15000,
+        incomeGrowthRate: 0.036,
+        incomeCurve: 'sigmoid',
+        useCustomIncomeSeries: false,
+        annualIncomeSeries: []
+      }
+    ]
   },
   housingCosts: {
     liveAtHome: false,
@@ -348,10 +361,10 @@ defaultSimulationRequest.propertyConfig.house = {
   ownerDepositPct: 0.05,
   depositPct: 0.2,
   mortgageYears: 30,
-  ownerInterestRate: 0.055,
-  ownerLongRunInterestRate: 0.0525,
-  investmentInterestRate: 0.0574,
-  investmentLongRunInterestRate: 0.055,
+  ownerInterestRate: 0.061,
+  ownerLongRunInterestRate: 0.056,
+  investmentInterestRate: 0.066,
+  investmentLongRunInterestRate: 0.061,
   growthMean: 0.058,
   growthVolatility: 0.09,
   rentYield: 0.037,
@@ -377,10 +390,10 @@ defaultSimulationRequest.propertyConfig.apartment = {
   ownerDepositPct: 0.05,
   depositPct: 0.18,
   mortgageYears: 30,
-  ownerInterestRate: 0.055,
-  ownerLongRunInterestRate: 0.0525,
-  investmentInterestRate: 0.0574,
-  investmentLongRunInterestRate: 0.055,
+  ownerInterestRate: 0.061,
+  ownerLongRunInterestRate: 0.056,
+  investmentInterestRate: 0.066,
+  investmentLongRunInterestRate: 0.061,
   growthMean: 0.041,
   growthVolatility: 0.065,
   rentYield: 0.046,
@@ -400,6 +413,15 @@ defaultSimulationRequest.propertyConfig.apartment = {
     ...apartmentPurchaseCosts
   }
 }
+
+defaultSimulationRequest.profile.earners.forEach((earner) => {
+  earner.annualIncomeSeries = buildFlatIncomeSeries(
+    earner.annualIncome,
+    earner.incomeGrowthRate,
+    defaultSimulationRequest.profile.horizonYears,
+    earner.incomeCurve
+  )
+})
 
 defaultSimulationRequest.profile.annualIncomeSeries = buildFlatIncomeSeries(
   defaultSimulationRequest.profile.annualIncome,

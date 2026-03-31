@@ -14,7 +14,11 @@
       <WealthStageProgress
         :stages="stageDefinitions"
         :current-stage="currentStage"
+        :current-substep="activeSheet"
+        :substeps="inputStageSubsteps"
+        substep-host-key="inputs"
         @select-stage="handleStageSelect"
+        @select-substep="activeSheet = $event"
       />
 
       <div v-if="errorMessage" class="wealth-error">{{ errorMessage }}</div>
@@ -41,27 +45,18 @@
         </template>
 
         <template v-else-if="currentStage === 'inputs'">
-          <div class="wealth-banner card">
-            <div>
-              <p class="wealth-banner__kicker">Workbook</p>
-              <h2>Parameters by section</h2>
-            </div>
-            <div class="wealth-banner__chips">
-              <span v-if="form.scenarioSelection.includeStocks" class="wealth-pill">Stocks</span>
-              <span v-if="form.scenarioSelection.includeHousing" class="wealth-pill wealth-pill--housing">Housing</span>
-            </div>
-          </div>
-
           <WealthInputWorkbook
             :form="form"
             :active-sheet="activeSheet"
             :scenario-selection="form.scenarioSelection"
             :suburb-search-context="suburbSearchContext"
-            :selected-suburb-selection="selectedSuburbSelection"
-            :selected-suburb-record="selectedSuburbRecord"
-            :selected-suburb-preview="selectedSuburbPreview"
-            @update:activeSheet="activeSheet = $event"
-            @select-suburb="handleSuburbSelect"
+            :selected-apartment-area-selection="selectedApartmentAreaSelection"
+            :selected-apartment-area-record="selectedApartmentAreaRecord"
+            :selected-apartment-area-preview="selectedApartmentAreaPreview"
+            :selected-house-area-selection="selectedHouseAreaSelection"
+            :selected-house-area-record="selectedHouseAreaRecord"
+            :selected-house-area-preview="selectedHouseAreaPreview"
+            @select-property-area="handlePropertyAreaSelect"
           />
 
           <div class="wealth-stage-footer">
@@ -117,10 +112,11 @@ import {
   wealthStrategyOrder,
   wealthVacancyRate
 } from '../data/wealthDefaults.js'
-import { estimatePropertyCostFromPrice, scalePurchaseCostsWithPrice, clamp } from '../wealth/finance.js'
+import { estimateGenericPurchaseCosts, estimatePropertyCostFromPrice, clamp } from '../wealth/finance.js'
 import { WealthSimulationClient } from '../wealth/client.js'
 import { buildDashboardModel } from '../wealth/dashboard.js'
-import { applyAreaMarketToForm, buildAreaSearchContext, createPropertyConfigPatchFromArea } from '../wealth/areaMarket.js'
+import { buildAreaSearchContext, createPropertyConfigPatchFromArea } from '../wealth/areaMarket.js'
+import { wealthPsiRegionMarketPayload } from '../wealth/psiRegionMarket.js'
 
 const props = defineProps({
   project: { type: Object, required: true }
@@ -160,18 +156,29 @@ const resultsStale = ref(true)
 const mutedStrategyKeys = ref([])
 const groupFilter = ref('all')
 const resultMetric = ref('sellDown')
-const selectedSuburbSelection = ref(null)
-const areaMarketPayload = ref(null)
+const selectedApartmentAreaSelection = ref(null)
+const selectedHouseAreaSelection = ref(null)
+const areaMarketPayload = ref(wealthPsiRegionMarketPayload)
 const heroRef = ref(null)
 const workspaceRef = ref(null)
 let runToken = 0
 
 const suburbSearchContext = computed(() => buildAreaSearchContext(areaMarketPayload.value))
-const selectedSuburbRecord = computed(() => {
-  const key = selectedSuburbSelection.value?.key
+const selectedApartmentAreaRecord = computed(() => {
+  const key = selectedApartmentAreaSelection.value?.key
   return key ? suburbSearchContext.value.areasByKey[key] || null : null
 })
-const selectedSuburbPreview = computed(() => createPropertyConfigPatchFromArea(selectedSuburbRecord.value) || {
+const selectedHouseAreaRecord = computed(() => {
+  const key = selectedHouseAreaSelection.value?.key
+  return key ? suburbSearchContext.value.areasByKey[key] || null : null
+})
+const selectedApartmentAreaPreview = computed(() => createPropertyConfigPatchFromArea(selectedApartmentAreaRecord.value) || {
+  house: null,
+  apartment: null,
+  houseGrowthYears: 0,
+  apartmentGrowthYears: 0
+})
+const selectedHouseAreaPreview = computed(() => createPropertyConfigPatchFromArea(selectedHouseAreaRecord.value) || {
   house: null,
   apartment: null,
   houseGrowthYears: 0,
@@ -181,7 +188,7 @@ const selectedSuburbPreview = computed(() => createPropertyConfigPatchFromArea(s
 const availableInputSheetKeys = computed(() => {
   const keys = []
   if (form.scenarioSelection.includeStocks) keys.push('stock')
-  if (form.scenarioSelection.includeHousing) keys.push('housingSetup', 'suburb', 'apartment', 'house')
+  if (form.scenarioSelection.includeHousing) keys.push('apartment', 'house')
   return keys
 })
 
@@ -205,6 +212,20 @@ const dashboard = computed(() =>
     : emptyDashboard
 )
 
+const inputStageSubsteps = computed(() =>
+  availableInputSheetKeys.value.map((sheetKey) => ({
+    key: sheetKey,
+    label:
+      sheetKey === 'stock'
+        ? 'Stock assumptions'
+        : sheetKey === 'apartment'
+          ? 'Apartment assumptions'
+          : sheetKey === 'house'
+            ? 'House assumptions'
+            : sheetKey
+  }))
+)
+
 function scaleValueFromBaseline(currentValue, previousBaseline, nextBaseline) {
   const safeCurrentValue = Math.max(0, Number(currentValue) || 0)
   const safePreviousBaseline = Math.max(0, Number(previousBaseline) || 0)
@@ -222,30 +243,21 @@ function getSharedPurchaseCost(property, key) {
 }
 
 function setSharedPurchaseCost(property, key, value) {
-  const safeValue = Math.max(0, Number(value) || 0)
+  const safeValue = Math.round(Math.max(0, Number(value) || 0))
   property.ownerPurchaseCosts[key] = safeValue
   property.investmentPurchaseCosts[key] = safeValue
 }
 
 function syncSharedPurchaseCosts(propertyType, property, previousPrice, nextPrice) {
-  const scaledCosts = scalePurchaseCostsWithPrice(
-    {
-      stampDuty: getSharedPurchaseCost(property, 'stampDuty'),
-      legalFees: getSharedPurchaseCost(property, 'legalFees'),
-      buyersCosts: getSharedPurchaseCost(property, 'buyersCosts')
-    },
-    previousPrice,
-    nextPrice,
-    propertyType
-  )
+  const safeNextPrice = Math.max(0, Number(nextPrice) || 0)
+  const estimatedCosts = estimateGenericPurchaseCosts(safeNextPrice, propertyType)
 
-  setSharedPurchaseCost(property, 'stampDuty', scaledCosts.stampDuty)
-  setSharedPurchaseCost(property, 'legalFees', scaledCosts.legalFees)
-  setSharedPurchaseCost(property, 'buyersCosts', scaledCosts.buyersCosts)
+  setSharedPurchaseCost(property, 'stampDuty', Math.round(estimatedCosts.stampDuty))
+  setSharedPurchaseCost(property, 'legalFees', Math.round(estimatedCosts.legalFees))
+  setSharedPurchaseCost(property, 'buyersCosts', Math.round(estimatedCosts.buyersCosts))
 }
 
 function syncPropertyCostsWithPrice(propertyType, property, keys, previousPrice, nextPrice) {
-  const safePreviousPrice = Math.max(0, Number(previousPrice) || 0)
   const safeNextPrice = Math.max(0, Number(nextPrice) || 0)
   if (safeNextPrice <= 0) {
     keys.forEach((key) => {
@@ -255,10 +267,7 @@ function syncPropertyCostsWithPrice(propertyType, property, keys, previousPrice,
   }
 
   keys.forEach((key) => {
-    const currentValue = Math.max(0, Number(property[key]) || 0)
-    const previousBaseline = safePreviousPrice > 0 ? estimatePropertyCostFromPrice(propertyType, key, safePreviousPrice) : 0
-    const nextBaseline = estimatePropertyCostFromPrice(propertyType, key, safeNextPrice)
-    property[key] = scaleValueFromBaseline(currentValue, previousBaseline, nextBaseline)
+    property[key] = Math.round(estimatePropertyCostFromPrice(propertyType, key, safeNextPrice))
   })
 }
 
@@ -331,10 +340,58 @@ function handleStageSelect(stageKey) {
   currentStage.value = stageKey
 }
 
-function handleSuburbSelect(selection) {
-  selectedSuburbSelection.value = selection
+function applyAreaPatchToProperty(propertyType, selection) {
   const area = selection?.key ? suburbSearchContext.value.areasByKey[selection.key] : null
-  applyAreaMarketToForm(form, area)
+  const patch = createPropertyConfigPatchFromArea(area)
+  if (!patch?.[propertyType]) return
+
+  Object.entries(patch[propertyType]).forEach(([key, value]) => {
+    if (key === 'historicalAnnualGrowthRates') {
+      form.propertyConfig[propertyType][key] = Array.isArray(value) ? [...value] : []
+      return
+    }
+    if (Number.isFinite(Number(value))) {
+      form.propertyConfig[propertyType][key] = value
+    }
+  })
+
+  const property = form.propertyConfig[propertyType]
+  syncSharedPurchaseCosts(propertyType, property, property.purchasePrice, property.purchasePrice)
+  syncPropertyCostsWithPrice(
+    propertyType,
+    property,
+    propertyType === 'house' ? housePropertyCostKeys : apartmentPropertyCostKeys,
+    property.purchasePrice,
+    property.purchasePrice
+  )
+}
+
+function syncJointGrowthBlocks() {
+  const apartmentKey = selectedApartmentAreaSelection.value?.key || null
+  const houseKey = selectedHouseAreaSelection.value?.key || null
+
+  if (!apartmentKey || apartmentKey !== houseKey) {
+    form.propertyConfig.historicalAnnualGrowthBlocks = []
+    return
+  }
+
+  const patch = createPropertyConfigPatchFromArea(selectedApartmentAreaRecord.value)
+  form.propertyConfig.historicalAnnualGrowthBlocks = Array.isArray(patch?.historicalAnnualGrowthBlocks)
+    ? patch.historicalAnnualGrowthBlocks.map((block) => ({ ...block }))
+    : []
+}
+
+function handlePropertyAreaSelect({ propertyType, selection }) {
+  if (propertyType === 'apartment') {
+    selectedApartmentAreaSelection.value = selection || null
+  } else if (propertyType === 'house') {
+    selectedHouseAreaSelection.value = selection || null
+  } else {
+    return
+  }
+
+  applyAreaPatchToProperty(propertyType, selection)
+  syncJointGrowthBlocks()
 }
 
 function cloneRequest() {
@@ -481,7 +538,6 @@ function updateWorkspaceState() {
 }
 
 onMounted(() => {
-  void loadAreaMarketDefaults()
   updateWorkspaceState()
   window.addEventListener('scroll', updateWorkspaceState, { passive: true })
 })
@@ -492,17 +548,6 @@ onBeforeUnmount(() => {
   }
   client.destroy()
 })
-
-async function loadAreaMarketDefaults() {
-  try {
-    const response = await fetch(`${import.meta.env.BASE_URL}data/generated/wealthPsiAreaDefaults.json`, { cache: 'no-store' })
-    if (!response.ok) throw new Error(`Failed to load area defaults (${response.status})`)
-    areaMarketPayload.value = await response.json()
-  } catch (error) {
-    console.error(error)
-    errorMessage.value = error instanceof Error ? error.message : 'Failed to load area defaults.'
-  }
-}
 </script>
 
 <style scoped>
@@ -654,7 +699,6 @@ async function loadAreaMarketDefaults() {
 
 .wealth-stage-footer,
 .wealth-results-toolbar,
-.wealth-banner,
 .wealth-banner__chips {
   display: flex;
   flex-wrap: wrap;
@@ -668,20 +712,11 @@ async function loadAreaMarketDefaults() {
   align-items: center;
 }
 
-.wealth-banner,
 .wealth-page :deep(.card) {
   border: 1px solid rgba(154, 174, 204, 0.22);
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 18px 38px rgba(95, 122, 160, 0.12);
   border-radius: 24px;
-}
-
-.wealth-banner {
-  padding: 1rem 1.1rem;
-}
-
-.wealth-banner h2 {
-  margin: 0.2rem 0 0;
 }
 
 .wealth-pill {

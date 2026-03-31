@@ -111,6 +111,16 @@
       </div>
     </section>
 
+    <section v-if="dashboard.affordabilityCharts?.length" class="wealth-results__hurdles">
+      <WealthAffordabilityHurdleChart
+        v-for="chart in dashboard.affordabilityCharts"
+        :key="chart.key"
+        :title="chart.title"
+        :purchase-year="chart.purchaseYear"
+        :points="chart.points"
+      />
+    </section>
+
     <WealthCompositionBars
       v-if="visibleCompositionRows.length"
       title="Housing balance composition"
@@ -123,6 +133,7 @@
 <script setup>
 import { computed } from 'vue'
 import WealthLineChart from './WealthLineChart.vue'
+import WealthAffordabilityHurdleChart from './WealthAffordabilityHurdleChart.vue'
 import WealthCompositionBars from './WealthCompositionBars.vue'
 import { buildDashboardSeries } from '../../wealth/dashboard.js'
 
@@ -395,6 +406,12 @@ function formatSignedCurrency(value) {
   padding: 1rem;
 }
 
+.wealth-results__hurdles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
 .wealth-results__list {
   display: grid;
   gap: 0.8rem;
@@ -426,7 +443,8 @@ function formatSignedCurrency(value) {
 
 @media (max-width: 1080px) {
   .wealth-results__kpis,
-  .wealth-results__chart-block {
+  .wealth-results__chart-block,
+  .wealth-results__hurdles {
     grid-template-columns: 1fr;
   }
 }

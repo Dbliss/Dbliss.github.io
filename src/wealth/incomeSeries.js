@@ -15,10 +15,87 @@ export function clampIncomeGrowthRate(value) {
   return clamp(Number(value) || 0, 0, 0.1)
 }
 
+function getSafeHorizonYears(value) {
+  return Math.max(1, Math.round(Number(value) || 1))
+}
+
+function normaliseSingleIncomeProfile(profile = {}) {
+  const safeAnnualIncome = toIncome(profile.annualIncome)
+  const safeHorizonYears = getSafeHorizonYears(profile.horizonYears)
+  const safeGrowthRate = clampIncomeGrowthRate(profile.incomeGrowthRate)
+  const incomeCurve = clampIncomeCurve(profile.incomeCurve)
+  const useCustomIncomeSeries = Boolean(profile.useCustomIncomeSeries)
+  const annualIncomeSeries = useCustomIncomeSeries
+    ? resizeCustomIncomeSeries(profile.annualIncomeSeries, safeAnnualIncome, safeHorizonYears, safeGrowthRate, incomeCurve)
+    : buildFlatIncomeSeries(safeAnnualIncome, safeGrowthRate, safeHorizonYears, incomeCurve)
+
+  return {
+    annualIncome: safeAnnualIncome,
+    horizonYears: safeHorizonYears,
+    incomeGrowthRate: safeGrowthRate,
+    incomeCurve,
+    useCustomIncomeSeries,
+    annualIncomeSeries
+  }
+}
+
+function getIncomeShareWeights(earners) {
+  const householdIncome = earners.reduce((sum, earner) => sum + earner.annualIncome, 0)
+  if (householdIncome > 0) {
+    return earners.map((earner) => earner.annualIncome / householdIncome)
+  }
+  return earners.map(() => 1 / Math.max(earners.length, 1))
+}
+
+export function normaliseHouseholdEarners(profile = {}) {
+  const safeHorizonYears = getSafeHorizonYears(profile.horizonYears)
+  const earners = Array.isArray(profile.earners) && profile.earners.length
+    ? profile.earners
+    : [{
+        annualIncome: profile.annualIncome,
+        incomeGrowthRate: profile.incomeGrowthRate,
+        incomeCurve: profile.incomeCurve,
+        useCustomIncomeSeries: profile.useCustomIncomeSeries,
+        annualIncomeSeries: profile.annualIncomeSeries,
+        helpDebtBalance: profile.helpDebtBalance,
+        label: 'Borrower 1'
+      }]
+
+  const normalisedEarners = earners.slice(0, 2).map((earner, index) => {
+    const normalisedIncome = normaliseSingleIncomeProfile({
+      ...earner,
+      horizonYears: safeHorizonYears
+    })
+
+    return {
+      id: earner?.id || `earner-${index + 1}`,
+      label: String(earner?.label || `Borrower ${index + 1}`),
+      startingSavings: Math.max(0, Number(earner?.startingSavings) || 0),
+      helpDebtBalance: Math.max(0, Number(earner?.helpDebtBalance) || 0),
+      ...normalisedIncome
+    }
+  })
+
+  return normalisedEarners.length ? normalisedEarners : [{
+    id: 'earner-1',
+    label: 'Borrower 1',
+    startingSavings: 0,
+    helpDebtBalance: 0,
+    ...normaliseSingleIncomeProfile({ annualIncome: 0, horizonYears: safeHorizonYears })
+  }]
+}
+
+export function combineIncomeSeries(earners = [], horizonYears = 1) {
+  const safeHorizonYears = getSafeHorizonYears(horizonYears)
+  return Array.from({ length: safeHorizonYears }, (_, yearIndex) =>
+    Math.round(earners.reduce((sum, earner) => sum + (Number(earner?.annualIncomeSeries?.[yearIndex]) || 0), 0))
+  )
+}
+
 export function buildFlatIncomeSeries(annualIncome, incomeGrowthRate, horizonYears, incomeCurve = 'sigmoid') {
   const safeAnnualIncome = toIncome(annualIncome)
   const safeGrowthRate = clampIncomeGrowthRate(incomeGrowthRate)
-  const safeHorizonYears = Math.max(1, Math.round(Number(horizonYears) || 1))
+  const safeHorizonYears = getSafeHorizonYears(horizonYears)
   const safeIncomeCurve = clampIncomeCurve(incomeCurve)
 
   if (safeIncomeCurve === 'logarithmic') {
@@ -80,22 +157,37 @@ export function scaleCustomIncomeSeries(series, previousAnnualIncome, nextAnnual
 }
 
 export function normaliseIncomeProfile(profile = {}) {
-  const safeAnnualIncome = toIncome(profile.annualIncome)
-  const safeHorizonYears = Math.max(1, Math.round(Number(profile.horizonYears) || 1))
-  const safeGrowthRate = clampIncomeGrowthRate(profile.incomeGrowthRate)
-  const incomeCurve = clampIncomeCurve(profile.incomeCurve)
-  const useCustomIncomeSeries = Boolean(profile.useCustomIncomeSeries)
-  const annualIncomeSeries = useCustomIncomeSeries
-    ? resizeCustomIncomeSeries(profile.annualIncomeSeries, safeAnnualIncome, safeHorizonYears, safeGrowthRate, incomeCurve)
-    : buildFlatIncomeSeries(safeAnnualIncome, safeGrowthRate, safeHorizonYears, incomeCurve)
+  const safeHorizonYears = getSafeHorizonYears(profile.horizonYears)
+  const normalisedEarners = normaliseHouseholdEarners({
+    ...profile,
+    horizonYears: safeHorizonYears
+  })
+  const annualIncomeSeries = combineIncomeSeries(normalisedEarners, safeHorizonYears)
+  const annualIncome = annualIncomeSeries[0] || 0
+  const incomeShareWeights = getIncomeShareWeights(normalisedEarners)
+  const blendedGrowthRate = normalisedEarners.reduce(
+    (sum, earner, index) => sum + earner.incomeGrowthRate * (incomeShareWeights[index] || 0),
+    0
+  )
+  const householdUsesCustomSeries = normalisedEarners.some((earner) => earner.useCustomIncomeSeries)
+  const blendedCurve = householdUsesCustomSeries
+    ? 'sigmoid'
+    : normalisedEarners.every((earner) => earner.incomeCurve === 'exponential')
+      ? 'exponential'
+      : normalisedEarners.every((earner) => earner.incomeCurve === 'logarithmic')
+        ? 'logarithmic'
+        : 'sigmoid'
 
   return {
-    annualIncome: safeAnnualIncome,
+    annualIncome,
     horizonYears: safeHorizonYears,
-    incomeGrowthRate: safeGrowthRate,
-    incomeCurve,
-    useCustomIncomeSeries,
-    annualIncomeSeries
+    incomeGrowthRate: blendedGrowthRate,
+    incomeCurve: blendedCurve,
+    useCustomIncomeSeries: householdUsesCustomSeries,
+    annualIncomeSeries,
+    earners: normalisedEarners,
+    startingSavings: normalisedEarners.reduce((sum, earner) => sum + earner.startingSavings, 0),
+    helpDebtBalance: normalisedEarners.reduce((sum, earner) => sum + earner.helpDebtBalance, 0)
   }
 }
 

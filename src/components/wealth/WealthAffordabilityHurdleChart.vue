@@ -1,5 +1,5 @@
 <template>
-  <article class="wealth-hurdle">
+  <article class="wealth-hurdle" @pointerleave="hoveredYear = null">
     <div class="wealth-hurdle__header">
       <div>
         <h3>{{ title }}</h3>
@@ -8,7 +8,7 @@
         </p>
       </div>
       <p class="wealth-hurdle__status">
-        {{ purchaseYear === null ? 'Not reached in horizon' : `Median purchase year ${purchaseYear}` }}
+        {{ purchaseYear === null ? 'Never could afford property' : `Median purchase year ${purchaseYear}` }}
       </p>
     </div>
 
@@ -23,26 +23,46 @@
           <h4>Deposit required vs liquidity available</h4>
           <div class="wealth-hurdle__legend">
             <span><i class="wealth-hurdle__swatch" style="background:#2563eb"></i>Liquidity Available</span>
-            <span><i class="wealth-hurdle__swatch wealth-hurdle__swatch--dashed" style="border-color:#7c3aed"></i>Deposit required</span>
+            <span><i class="wealth-hurdle__swatch wealth-hurdle__swatch--dotted" style="border-color:#7c3aed"></i>Deposit required</span>
             <span v-if="purchaseYear !== null"><i class="wealth-hurdle__swatch wealth-hurdle__swatch--marker"></i>Purchase year</span>
           </div>
         </div>
-        <svg class="wealth-hurdle__svg" viewBox="0 0 520 220" preserveAspectRatio="xMidYMid meet" role="img" :aria-label="`${title} savings hurdle`">
-          <rect x="48" y="16" width="452" height="164" rx="18" ry="18" class="wealth-hurdle__plot-bg" />
+        <svg
+          class="wealth-hurdle__svg"
+          :viewBox="`0 0 ${viewWidth} ${viewHeight}`"
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          :aria-label="`${title} savings hurdle`"
+          @pointermove="onPointerMove"
+        >
+          <rect
+            :x="padding.left"
+            :y="padding.top"
+            :width="plotWidth"
+            :height="plotHeight"
+            rx="22"
+            ry="22"
+            class="wealth-hurdle__plot-bg"
+          />
           <g v-for="tick in savingsTicks" :key="`s-${tick.value}`">
-            <line x1="48" x2="500" :y1="yPos(savingsDomain, tick.value)" :y2="yPos(savingsDomain, tick.value)" class="wealth-hurdle__grid" />
-            <text x="40" :y="yPos(savingsDomain, tick.value) + 4" class="wealth-hurdle__axis wealth-hurdle__axis--y">{{ formatShortCurrency(tick.value) }}</text>
+            <line :x1="padding.left" :x2="viewWidth - padding.right" :y1="yPos(savingsDomain, tick.value)" :y2="yPos(savingsDomain, tick.value)" class="wealth-hurdle__grid" />
+            <text :x="padding.left - 12" :y="yPos(savingsDomain, tick.value) + 5" class="wealth-hurdle__axis wealth-hurdle__axis--y">{{ formatShortCurrency(tick.value) }}</text>
           </g>
           <g v-for="tick in yearTicks" :key="`sy-${tick}`">
-            <line :x1="xPos(tick)" :x2="xPos(tick)" y1="16" y2="180" class="wealth-hurdle__grid wealth-hurdle__grid--vertical" />
-            <text :x="xPos(tick)" y="204" text-anchor="middle" class="wealth-hurdle__axis">Y{{ tick }}</text>
+            <line :x1="xPos(tick)" :x2="xPos(tick)" :y1="padding.top" :y2="viewHeight - padding.bottom" class="wealth-hurdle__grid wealth-hurdle__grid--vertical" />
+            <text :x="xPos(tick)" :y="viewHeight - 12" text-anchor="middle" class="wealth-hurdle__axis">Y{{ tick }}</text>
           </g>
           <g v-if="purchaseYear !== null">
-            <line :x1="xPos(purchaseYear)" :x2="xPos(purchaseYear)" y1="16" y2="180" class="wealth-hurdle__purchase-line" />
-            <text :x="xPos(purchaseYear)" y="28" text-anchor="middle" class="wealth-hurdle__purchase-label">Bought</text>
+            <line :x1="xPos(purchaseYear)" :x2="xPos(purchaseYear)" :y1="padding.top" :y2="viewHeight - padding.bottom" class="wealth-hurdle__purchase-line" />
+            <text :x="xPos(purchaseYear)" :y="padding.top + 14" text-anchor="middle" class="wealth-hurdle__purchase-label">Bought</text>
           </g>
-          <path :d="buildPath(points, 'userSavings', savingsDomain)" class="wealth-hurdle__line" stroke="#2563eb" />
-          <path :d="buildPath(points, 'optimalRequiredCash', savingsDomain)" class="wealth-hurdle__line wealth-hurdle__line--dotted" stroke="#7c3aed" />
+          <path :d="buildPath('userSavings', savingsDomain)" class="wealth-hurdle__line" stroke="#2563eb" />
+          <path :d="buildPath('optimalRequiredCash', savingsDomain)" class="wealth-hurdle__line wealth-hurdle__line--dotted" stroke="#7c3aed" />
+          <g v-if="displayPoint">
+            <line :x1="xPos(displayYear)" :x2="xPos(displayYear)" :y1="padding.top" :y2="viewHeight - padding.bottom" class="wealth-hurdle__hover-line" />
+            <circle :cx="xPos(displayYear)" :cy="yPos(savingsDomain, displayPoint.userSavings)" r="6.5" fill="#2563eb" class="wealth-hurdle__point" />
+            <circle :cx="xPos(displayYear)" :cy="yPos(savingsDomain, displayPoint.optimalRequiredCash)" r="6.5" fill="#7c3aed" class="wealth-hurdle__point" />
+          </g>
         </svg>
       </section>
 
@@ -51,29 +71,77 @@
           <h4>Income vs borrowing hurdle</h4>
           <div class="wealth-hurdle__legend">
             <span><i class="wealth-hurdle__swatch" style="background:#14b8a6"></i>Household income</span>
-            <span><i class="wealth-hurdle__swatch" style="background:#ef4444"></i>Income required</span>
+            <span><i class="wealth-hurdle__swatch wealth-hurdle__swatch--dashed" style="border-color:#ef4444"></i>Income required</span>
           </div>
         </div>
-        <svg class="wealth-hurdle__svg" viewBox="0 0 520 220" preserveAspectRatio="xMidYMid meet" role="img" :aria-label="`${title} income hurdle`">
-          <rect x="48" y="16" width="452" height="164" rx="18" ry="18" class="wealth-hurdle__plot-bg" />
+        <svg
+          class="wealth-hurdle__svg"
+          :viewBox="`0 0 ${viewWidth} ${viewHeight}`"
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          :aria-label="`${title} income hurdle`"
+          @pointermove="onPointerMove"
+        >
+          <rect
+            :x="padding.left"
+            :y="padding.top"
+            :width="plotWidth"
+            :height="plotHeight"
+            rx="22"
+            ry="22"
+            class="wealth-hurdle__plot-bg"
+          />
           <g v-for="tick in incomeTicks" :key="`i-${tick.value}`">
-            <line x1="48" x2="500" :y1="yPos(incomeDomain, tick.value)" :y2="yPos(incomeDomain, tick.value)" class="wealth-hurdle__grid" />
-            <text x="40" :y="yPos(incomeDomain, tick.value) + 4" class="wealth-hurdle__axis wealth-hurdle__axis--y">{{ formatShortCurrency(tick.value) }}</text>
+            <line :x1="padding.left" :x2="viewWidth - padding.right" :y1="yPos(incomeDomain, tick.value)" :y2="yPos(incomeDomain, tick.value)" class="wealth-hurdle__grid" />
+            <text :x="padding.left - 12" :y="yPos(incomeDomain, tick.value) + 5" class="wealth-hurdle__axis wealth-hurdle__axis--y">{{ formatShortCurrency(tick.value) }}</text>
           </g>
           <g v-for="tick in yearTicks" :key="`iy-${tick}`">
-            <line :x1="xPos(tick)" :x2="xPos(tick)" y1="16" y2="180" class="wealth-hurdle__grid wealth-hurdle__grid--vertical" />
-            <text :x="xPos(tick)" y="204" text-anchor="middle" class="wealth-hurdle__axis">Y{{ tick }}</text>
+            <line :x1="xPos(tick)" :x2="xPos(tick)" :y1="padding.top" :y2="viewHeight - padding.bottom" class="wealth-hurdle__grid wealth-hurdle__grid--vertical" />
+            <text :x="xPos(tick)" :y="viewHeight - 12" text-anchor="middle" class="wealth-hurdle__axis">Y{{ tick }}</text>
           </g>
-          <path :d="buildPath(points, 'userIncome', incomeDomain)" class="wealth-hurdle__line" stroke="#14b8a6" />
-          <path :d="buildPath(points, 'requiredIncome', incomeDomain)" class="wealth-hurdle__line wealth-hurdle__line--dashed" stroke="#ef4444" />
+          <g v-if="purchaseYear !== null">
+            <line :x1="xPos(purchaseYear)" :x2="xPos(purchaseYear)" :y1="padding.top" :y2="viewHeight - padding.bottom" class="wealth-hurdle__purchase-line" />
+          </g>
+          <path :d="buildPath('userIncome', incomeDomain)" class="wealth-hurdle__line" stroke="#14b8a6" />
+          <path :d="buildPath('requiredIncome', incomeDomain)" class="wealth-hurdle__line wealth-hurdle__line--dashed" stroke="#ef4444" />
+          <g v-if="displayPoint">
+            <line :x1="xPos(displayYear)" :x2="xPos(displayYear)" :y1="padding.top" :y2="viewHeight - padding.bottom" class="wealth-hurdle__hover-line" />
+            <circle :cx="xPos(displayYear)" :cy="yPos(incomeDomain, displayPoint.userIncome)" r="6.5" fill="#14b8a6" class="wealth-hurdle__point" />
+            <circle :cx="xPos(displayYear)" :cy="yPos(incomeDomain, displayPoint.requiredIncome)" r="6.5" fill="#ef4444" class="wealth-hurdle__point" />
+          </g>
         </svg>
       </section>
     </div>
+
+    <aside v-if="displayPoint" class="wealth-hurdle__readout">
+      <div class="wealth-hurdle__readout-head">
+        <p class="wealth-hurdle__readout-kicker">Selected year</p>
+        <h4>Year {{ displayYear }}</h4>
+      </div>
+      <div class="wealth-hurdle__metrics">
+        <article class="wealth-hurdle__metric">
+          <span>Liquidity Available</span>
+          <strong>{{ formatCurrency(displayPoint.userSavings) }}</strong>
+        </article>
+        <article class="wealth-hurdle__metric">
+          <span>Deposit required</span>
+          <strong>{{ formatCurrency(displayPoint.optimalRequiredCash) }}</strong>
+        </article>
+        <article class="wealth-hurdle__metric">
+          <span>Household income</span>
+          <strong>{{ formatCurrency(displayPoint.userIncome) }}</strong>
+        </article>
+        <article class="wealth-hurdle__metric">
+          <span>Income required</span>
+          <strong>{{ formatCurrency(displayPoint.requiredIncome) }}</strong>
+        </article>
+      </div>
+    </aside>
   </article>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { formatShortCurrency } from '../../wealth/finance.js'
 
 const props = defineProps({
@@ -83,49 +151,108 @@ const props = defineProps({
   points: { type: Array, default: () => [] }
 })
 
+const viewWidth = 860
+const viewHeight = 360
+const padding = {
+  top: 24,
+  right: 28,
+  bottom: 58,
+  left: 94
+}
+
+const hoveredYear = ref(null)
+
+const plotWidth = viewWidth - padding.left - padding.right
+const plotHeight = viewHeight - padding.top - padding.bottom
+
+const allYears = computed(() =>
+  [...new Set(props.points.map(point => Number(point.year) || 0))].sort((left, right) => left - right)
+)
+
+const yearDomain = computed(() => ({
+  min: 0,
+  max: Math.max(1, ...allYears.value, 0)
+}))
+
 const yearTicks = computed(() => {
-  const maxYear = Math.max(0, ...props.points.map((point) => Number(point.year) || 0))
+  const maxYear = yearDomain.value.max
   if (maxYear <= 5) return Array.from({ length: maxYear + 1 }, (_, index) => index)
   return [...new Set([0, Math.round(maxYear * 0.25), Math.round(maxYear * 0.5), Math.round(maxYear * 0.75), maxYear])]
 })
 
-const savingsDomain = computed(() => buildDomain(props.points.flatMap((point) => [point.userSavings, point.optimalRequiredCash])))
-const incomeDomain = computed(() => buildDomain(props.points.flatMap((point) => [point.userIncome, point.requiredIncome])))
+const savingsDomain = computed(() => buildDomain(props.points.flatMap(point => [point.userSavings, point.optimalRequiredCash])))
+const incomeDomain = computed(() => buildDomain(props.points.flatMap(point => [point.userIncome, point.requiredIncome])))
 const savingsTicks = computed(() => buildTicks(savingsDomain.value))
 const incomeTicks = computed(() => buildTicks(incomeDomain.value))
+
+const defaultYear = computed(() => {
+  if (props.purchaseYear !== null && Number.isFinite(Number(props.purchaseYear))) return Number(props.purchaseYear)
+  return allYears.value.length ? allYears.value[allYears.value.length - 1] : null
+})
+
+const displayYear = computed(() => hoveredYear.value ?? defaultYear.value)
+
+const displayPoint = computed(() => {
+  if (displayYear.value === null || !props.points.length) return null
+  return props.points.find(point => Number(point.year) === displayYear.value) || null
+})
+
 function buildDomain(values) {
-  const clean = values.filter((value) => Number.isFinite(Number(value)) && Number(value) >= 0).map((value) => Number(value))
+  const clean = values
+    .filter(value => Number.isFinite(Number(value)) && Number(value) >= 0)
+    .map(value => Number(value))
   const max = clean.length ? Math.max(...clean) : 1
   return {
     min: 0,
-    max: Math.max(1, max * 1.08)
+    max: Math.max(1, max * 1.1)
   }
 }
 
 function buildTicks(domain) {
-  return Array.from({ length: 4 }, (_, index) => ({
-    value: domain.min + ((domain.max - domain.min) * index) / 3
+  return Array.from({ length: 5 }, (_, index) => ({
+    value: domain.min + ((domain.max - domain.min) * index) / 4
   }))
 }
 
 function xPos(year) {
-  const maxYear = Math.max(1, Math.max(0, ...props.points.map((point) => Number(point.year) || 0)))
-  return 48 + (Math.max(0, Number(year) || 0) / maxYear) * 452
+  const span = Math.max(1, yearDomain.value.max - yearDomain.value.min)
+  return padding.left + ((Math.max(0, Number(year) || 0) - yearDomain.value.min) / span) * plotWidth
 }
 
 function yPos(domain, value) {
   const safeValue = Math.max(domain.min, Math.min(domain.max, Number(value) || 0))
   const span = Math.max(1, domain.max - domain.min)
-  return 180 - ((safeValue - domain.min) / span) * 164
+  return viewHeight - padding.bottom - ((safeValue - domain.min) / span) * plotHeight
 }
 
-function buildPath(points, key, domain) {
-  return points.reduce((path, point, index) => {
+function buildPath(key, domain) {
+  return props.points.reduce((path, point, index) => {
     const value = point?.[key]
     if (!Number.isFinite(Number(value))) return path
-    const command = path ? 'L' : 'M'
+    const command = index === 0 || !path ? 'M' : 'L'
     return `${path}${path ? ' ' : ''}${command} ${xPos(point.year)} ${yPos(domain, value)}`
   }, '')
+}
+
+function onPointerMove(event) {
+  if (!allYears.value.length) return
+
+  const svg = event.currentTarget
+  const ctm = typeof svg?.getScreenCTM === 'function' ? svg.getScreenCTM() : null
+  if (!ctm) return
+
+  const svgX = (event.clientX - ctm.e) / ctm.a
+  const chartX = clamp(svgX - padding.left, 0, plotWidth)
+  const ratio = plotWidth <= 0 ? 0 : chartX / plotWidth
+  const estimatedYear = yearDomain.value.min + ratio * (yearDomain.value.max - yearDomain.value.min)
+
+  hoveredYear.value = allYears.value.reduce((bestYear, year) =>
+    Math.abs(year - estimatedYear) < Math.abs(bestYear - estimatedYear) ? year : bestYear
+  , allYears.value[0])
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max)
 }
 
 function formatCurrency(value) {
@@ -139,7 +266,6 @@ function formatCurrency(value) {
 function formatPercent(value) {
   return `${Number(value || 0).toFixed(1)}%`
 }
-
 </script>
 
 <style scoped>
@@ -151,39 +277,40 @@ function formatPercent(value) {
 
 .wealth-hurdle__header,
 .wealth-hurdle__panel-head,
-.wealth-hurdle__legend {
+.wealth-hurdle__legend,
+.wealth-hurdle__readout-head {
   display: flex;
   gap: 0.75rem;
 }
 
 .wealth-hurdle__header,
-.wealth-hurdle__panel-head {
+.wealth-hurdle__panel-head,
+.wealth-hurdle__readout-head {
   justify-content: space-between;
   align-items: flex-start;
 }
 
 .wealth-hurdle__header h3,
-.wealth-hurdle__panel-head h4 {
+.wealth-hurdle__panel-head h4,
+.wealth-hurdle__readout-head h4 {
   margin: 0.2rem 0 0;
 }
 
-.wealth-hurdle__panel-head h4 {
-  font-size: 0.92rem;
+.wealth-hurdle__panel-head h4,
+.wealth-hurdle__readout-head h4 {
+  font-size: 0.98rem;
 }
 
 .wealth-hurdle__copy,
-.wealth-hurdle__status {
+.wealth-hurdle__status,
+.wealth-hurdle__deposit-copy,
+.wealth-hurdle__readout-kicker {
   margin: 0.3rem 0 0;
   color: #5d7394;
 }
 
 .wealth-hurdle__status {
   white-space: nowrap;
-}
-
-.wealth-hurdle__deposit-copy {
-  margin: 0;
-  color: #5d7394;
 }
 
 .wealth-hurdle__deposit-copy strong {
@@ -199,19 +326,20 @@ function formatPercent(value) {
   gap: 1rem;
 }
 
-.wealth-hurdle__panel {
+.wealth-hurdle__panel,
+.wealth-hurdle__readout {
   display: grid;
-  gap: 0.55rem;
-  padding: 0.9rem;
-  border-radius: 18px;
-  background: rgba(247, 250, 255, 0.86);
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 22px;
+  background: rgba(247, 250, 255, 0.9);
   border: 1px solid rgba(154, 174, 204, 0.16);
 }
 
 .wealth-hurdle__legend {
   flex-wrap: wrap;
   color: #5d7394;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
 }
 
 .wealth-hurdle__legend span {
@@ -221,18 +349,26 @@ function formatPercent(value) {
 }
 
 .wealth-hurdle__swatch {
-  width: 0.7rem;
-  height: 0.7rem;
+  width: 0.78rem;
+  height: 0.78rem;
   border-radius: 999px;
 }
 
-.wealth-hurdle__swatch--dashed {
+.wealth-hurdle__swatch--dashed,
+.wealth-hurdle__swatch--dotted {
   background: transparent !important;
+}
+
+.wealth-hurdle__swatch--dashed {
+  border: 2px dashed currentColor;
+}
+
+.wealth-hurdle__swatch--dotted {
   border: 2px dotted currentColor;
 }
 
 .wealth-hurdle__swatch--marker {
-  width: 0.2rem;
+  width: 0.22rem;
   border-radius: 999px;
   background: #173050;
 }
@@ -241,10 +377,12 @@ function formatPercent(value) {
   width: 100%;
   height: auto;
   display: block;
+  overflow: visible;
+  cursor: crosshair;
 }
 
 .wealth-hurdle__plot-bg {
-  fill: rgba(255, 255, 255, 0.86);
+  fill: rgba(255, 255, 255, 0.92);
   stroke: rgba(154, 174, 204, 0.18);
 }
 
@@ -254,13 +392,22 @@ function formatPercent(value) {
 }
 
 .wealth-hurdle__grid--vertical {
-  stroke-dasharray: 4 6;
+  stroke-dasharray: 4 7;
+}
+
+.wealth-hurdle__purchase-line,
+.wealth-hurdle__hover-line {
+  stroke-width: 2;
 }
 
 .wealth-hurdle__purchase-line {
-  stroke: rgba(23, 48, 80, 0.82);
-  stroke-width: 2;
-  stroke-dasharray: 6 6;
+  stroke: rgba(23, 48, 80, 0.72);
+  stroke-dasharray: 7 6;
+}
+
+.wealth-hurdle__hover-line {
+  stroke: rgba(37, 99, 235, 0.26);
+  stroke-dasharray: 4 6;
 }
 
 .wealth-hurdle__purchase-label {
@@ -280,27 +427,72 @@ function formatPercent(value) {
 
 .wealth-hurdle__line {
   fill: none;
-  stroke-width: 3;
+  stroke-width: 3.5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .wealth-hurdle__line--dashed {
-  stroke-dasharray: 8 6;
+  stroke-dasharray: 10 7;
 }
 
 .wealth-hurdle__line--dotted {
-  stroke-dasharray: 2 8;
+  stroke-dasharray: 2 10;
+}
+
+.wealth-hurdle__point {
+  stroke: rgba(255, 255, 255, 0.96);
+  stroke-width: 3;
+}
+
+.wealth-hurdle__readout {
+  grid-template-columns: auto 1fr;
+  align-items: start;
+}
+
+.wealth-hurdle__readout-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+}
+
+.wealth-hurdle__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.wealth-hurdle__metric {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(154, 174, 204, 0.14);
+}
+
+.wealth-hurdle__metric span {
+  color: #60779a;
+  font-size: 0.76rem;
+}
+
+.wealth-hurdle__metric strong {
+  color: #173050;
+  font-size: 1rem;
+}
+
+@media (max-width: 1100px) {
+  .wealth-hurdle__plots,
+  .wealth-hurdle__metrics,
+  .wealth-hurdle__readout {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 900px) {
-  .wealth-hurdle__metrics,
-  .wealth-hurdle__plots {
-    grid-template-columns: 1fr;
-  }
-
   .wealth-hurdle__header,
-  .wealth-hurdle__panel-head {
+  .wealth-hurdle__panel-head,
+  .wealth-hurdle__readout-head {
     flex-direction: column;
   }
 

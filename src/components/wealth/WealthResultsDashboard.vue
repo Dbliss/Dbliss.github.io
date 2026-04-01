@@ -119,14 +119,14 @@
       />
     </div>
 
-    <section v-if="dashboard.affordabilityCharts?.length" class="wealth-results__hurdles card">
+    <section v-if="visibleAffordabilityCharts.length" class="wealth-results__hurdles card">
       <div class="wealth-results__hurdles-head">
         <p class="wealth-results__kpi-kicker">Purchase hurdles</p>
         <p class="wealth-results__copy">Deposit, borrowing, and savings hurdles across each property pathway.</p>
       </div>
       <div class="wealth-results__hurdles-grid">
         <WealthAffordabilityHurdleChart
-          v-for="chart in dashboard.affordabilityCharts"
+          v-for="chart in visibleAffordabilityCharts"
           :key="chart.key"
           :title="chart.title"
           :purchase-year="chart.purchaseYear"
@@ -241,6 +241,11 @@ const visibleNarratives = computed(() =>
 const visibleCompositionRows = computed(() => {
   const visibleKeys = new Set(visibleStrategies.value.map(strategy => strategy.key))
   return props.dashboard.compositionRows.filter(row => visibleKeys.has(row.key))
+})
+
+const visibleAffordabilityCharts = computed(() => {
+  const visibleKeys = new Set(visibleStrategies.value.map(strategy => strategy.key))
+  return (props.dashboard.affordabilityCharts || []).filter(chart => visibleKeys.has(chart.key))
 })
 
 function formatCurrency(value) {
@@ -439,7 +444,7 @@ function formatSignedCurrency(value) {
 
 .wealth-results__hurdles-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 1rem;
 }
 

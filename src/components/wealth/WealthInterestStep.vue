@@ -23,7 +23,6 @@
         @click="$emit('select-mode', mode.key)"
       >
         <div class="wealth-interest__mode-top">
-          <span class="wealth-interest__mode-kicker-badge">{{ mode.kicker }}</span>
           <span class="wealth-interest__mode-count">{{ mode.stat }}</span>
         </div>
 
@@ -70,10 +69,9 @@ const comparisonModeScenarioKeys = {
 const comparisonModes = [
   {
     key: 'portfolioDeepDive',
-    kicker: 'Liquid only',
     title: 'Deep dive in portfolio options',
     description: 'Compare Portfolio Mix against the pure liquid tracks so you can pressure-test concentrated and diversified investing paths.',
-    stat: '6 liquid strategies',
+    stat: '5 liquid strategies + portfolio mix',
     preview: [
       'Portfolio Mix beside each pure liquid strategy',
       'A full stock-only workbook flow in Inputs',
@@ -85,7 +83,6 @@ const comparisonModes = [
   },
   {
     key: 'propertyVsStocks',
-    kicker: 'Portfolio vs property',
     title: 'Property vs stocks',
     description: 'Compare the combined Portfolio Mix path against buying a house or apartment to live in, plus the investment-property versions of both.',
     stat: 'Portfolio + 4 property paths',
@@ -100,7 +97,6 @@ const comparisonModes = [
   },
   {
     key: 'propertyInvestmentVsLiving',
-    kicker: 'Housing only',
     title: 'Property as an investment vs living',
     description: 'Focus purely on the housing decision by comparing house and apartment owner-occupier paths against their investment-property alternatives.',
     stat: '4 property paths',

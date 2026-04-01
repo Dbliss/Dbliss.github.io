@@ -82,19 +82,37 @@
               <section class="wealth-market__controls card">
                 <label class="wealth-workbook__toggle">
                   <input v-model="form.propertyConfig.firstHomeBuyerEligible" type="checkbox" />
-                  <span>Apply estimated first-home-buyer duty support to owner paths</span>
+                  <span>Apply first-home-buyer support where possible</span>
                 </label>
                 <label class="wealth-workbook__toggle">
                   <input v-model="form.propertyConfig.investWhileSavingForDeposit" type="checkbox" />
                   <span>Invest while saving for deposit</span>
                 </label>
-                <label>
-                  <span>Property surplus routing</span>
-                  <select v-model="form.propertyConfig.surplusAllocationMode">
-                    <option value="portfolio">Invest surplus</option>
-                    <option value="mortgagePrepayment">Prepay mortgage</option>
-                  </select>
-                </label>
+                <div class="wealth-routing">
+                  <div class="wealth-routing__head">
+                    <span>Property surplus routing</span>
+                  </div>
+                  <div class="wealth-routing__options">
+                    <button
+                      type="button"
+                      class="wealth-routing__option"
+                      :class="{ 'is-active': form.propertyConfig.surplusAllocationMode === 'portfolio' }"
+                      @click="form.propertyConfig.surplusAllocationMode = 'portfolio'"
+                    >
+                      <strong>Invest surplus</strong>
+                      <span>Keep excess cash in the portfolio for higher upside and more liquidity.</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="wealth-routing__option"
+                      :class="{ 'is-active': form.propertyConfig.surplusAllocationMode === 'mortgagePrepayment' }"
+                      @click="form.propertyConfig.surplusAllocationMode = 'mortgagePrepayment'"
+                    >
+                      <strong>Prepay mortgage</strong>
+                      <span>Use excess cash to reduce the loan balance and interest drag sooner.</span>
+                    </button>
+                  </div>
+                </div>
               </section>
               <section v-if="activePropertyPurchasingPower" class="wealth-market__power card">
                 <div class="wealth-property-section__head">
@@ -322,19 +340,37 @@
               <section class="wealth-market__controls card">
                 <label class="wealth-workbook__toggle">
                   <input v-model="form.propertyConfig.firstHomeBuyerEligible" type="checkbox" />
-                  <span>Apply estimated first-home-buyer duty support to owner paths</span>
+                  <span>Apply first-home-buyer support where possible</span>
                 </label>
                 <label class="wealth-workbook__toggle">
                   <input v-model="form.propertyConfig.investWhileSavingForDeposit" type="checkbox" />
                   <span>Invest while saving for deposit</span>
                 </label>
-                <label>
-                  <span>Property surplus routing</span>
-                  <select v-model="form.propertyConfig.surplusAllocationMode">
-                    <option value="portfolio">Invest surplus</option>
-                    <option value="mortgagePrepayment">Prepay mortgage</option>
-                  </select>
-                </label>
+                <div class="wealth-routing">
+                  <div class="wealth-routing__head">
+                    <span>Property surplus routing</span>
+                  </div>
+                  <div class="wealth-routing__options">
+                    <button
+                      type="button"
+                      class="wealth-routing__option"
+                      :class="{ 'is-active': form.propertyConfig.surplusAllocationMode === 'portfolio' }"
+                      @click="form.propertyConfig.surplusAllocationMode = 'portfolio'"
+                    >
+                      <strong>Invest surplus</strong>
+                      <span>Keep excess cash in the portfolio for higher upside and more liquidity.</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="wealth-routing__option"
+                      :class="{ 'is-active': form.propertyConfig.surplusAllocationMode === 'mortgagePrepayment' }"
+                      @click="form.propertyConfig.surplusAllocationMode = 'mortgagePrepayment'"
+                    >
+                      <strong>Prepay mortgage</strong>
+                      <span>Use excess cash to reduce the loan balance and interest drag sooner.</span>
+                    </button>
+                  </div>
+                </div>
               </section>
               <section v-if="activePropertyPurchasingPower" class="wealth-market__power card">
                 <div class="wealth-property-section__head">
@@ -979,6 +1015,70 @@ function estimatePurchasingPower(propertyKey, occupancyMode) {
   grid-column: 1 / -1;
 }
 
+.wealth-routing {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.wealth-routing__head {
+  display: grid;
+  gap: 0.18rem;
+  color: #5b7192;
+  font-size: 0.84rem;
+}
+
+.wealth-routing__head span {
+  font-weight: 600;
+  color: #385879;
+}
+
+.wealth-routing__head p {
+  margin: 0;
+  color: #6a819f;
+  line-height: 1.45;
+}
+
+.wealth-routing__options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.wealth-routing__option {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.9rem 1rem;
+  text-align: left;
+  border-radius: 18px;
+  border: 1px solid rgba(154, 174, 204, 0.2);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 250, 255, 0.96));
+  color: #4e6787;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.wealth-routing__option strong {
+  color: #173050;
+  font-size: 0.95rem;
+}
+
+.wealth-routing__option span {
+  line-height: 1.45;
+  font-size: 0.82rem;
+}
+
+.wealth-routing__option:hover {
+  transform: translateY(-1px);
+  border-color: rgba(71, 118, 197, 0.3);
+}
+
+.wealth-routing__option.is-active {
+  border-color: rgba(37, 99, 235, 0.34);
+  background: linear-gradient(180deg, rgba(230, 241, 255, 0.96), rgba(241, 247, 255, 0.98));
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12);
+}
+
 .wealth-market__power-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1131,7 +1231,8 @@ function estimatePurchasingPower(propertyKey, occupancyMode) {
   .wealth-market__controls-row,
   .wealth-market__controls,
   .wealth-market__power-grid,
-  .wealth-property-paths {
+  .wealth-property-paths,
+  .wealth-routing__options {
     grid-template-columns: minmax(0, 1fr);
   }
 }

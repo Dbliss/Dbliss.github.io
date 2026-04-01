@@ -190,6 +190,8 @@ const regionScoutConfig = reactive({
 const heroRef = ref(null)
 const workspaceRef = ref(null)
 let runToken = 0
+let isEnforcingWorkspaceScroll = false
+const workspaceRevealOffset = 104
 
 const suburbSearchContext = computed(() => buildAreaSearchContext(areaMarketPayload.value))
 const selectedApartmentAreaRecord = computed(() => {
@@ -724,9 +726,8 @@ async function enterWorkspace({ smooth = false } = {}) {
   hasEnteredWorkspace.value = true
   await nextTick()
 
-  if (!smooth || typeof window === 'undefined') return
-  if (wasEntered) return
-  workspaceRef.value?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  if (!smooth || typeof window === 'undefined' || wasEntered) return
+  window.scrollTo({ top: getWorkspaceTop(), behavior: 'smooth' })
 }
 
 async function scrollResultsToTop() {
@@ -737,8 +738,30 @@ async function scrollResultsToTop() {
   workspaceRef.value?.scrollTo?.({ top: 0, behavior: 'auto' })
 }
 
+function getWorkspaceTop() {
+  if (typeof window === 'undefined') return 0
+  const rectTop = workspaceRef.value?.getBoundingClientRect?.().top || 0
+  return Math.max(0, Math.round(window.scrollY + rectTop - workspaceRevealOffset))
+}
+
+function enforceWorkspaceTopBoundary() {
+  if (typeof window === 'undefined' || !hasEnteredWorkspace.value || isEnforcingWorkspaceScroll) return
+  const workspaceTop = getWorkspaceTop()
+  if (window.scrollY >= workspaceTop - 2) return
+
+  isEnforcingWorkspaceScroll = true
+  window.scrollTo({ top: workspaceTop, behavior: 'auto' })
+  window.requestAnimationFrame(() => {
+    isEnforcingWorkspaceScroll = false
+  })
+}
+
 function updateWorkspaceState() {
-  if (typeof window === 'undefined' || hasEnteredWorkspace.value) return
+  if (typeof window === 'undefined') return
+  if (hasEnteredWorkspace.value) {
+    enforceWorkspaceTopBoundary()
+    return
+  }
   const heroHeight = heroRef.value?.offsetHeight || window.innerHeight || 1
   if (window.scrollY > heroHeight * 0.28) {
     void enterWorkspace({ smooth: true })
@@ -763,9 +786,23 @@ onBeforeUnmount(() => {
   --wealth-content-max: 1360px;
   color: #173050;
   box-sizing: border-box;
+  position: relative;
   width: 100vw;
   margin-inline: calc(50% - 50vw);
   padding: 1.3rem clamp(1.2rem, 4vw, 4.4rem) 3rem;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(56, 189, 248, 0.14), transparent 32%),
+    radial-gradient(circle at 84% 8%, rgba(16, 185, 129, 0.12), transparent 28%),
+    linear-gradient(180deg, #f8fbff 0%, #eef5ff 48%, #f5f8fd 100%);
+}
+
+.wealth-page::before {
+  content: "";
+  position: absolute;
+  top: -1.2rem;
+  left: 0;
+  right: 0;
+  height: 1.2rem;
   background:
     radial-gradient(circle at 15% 0%, rgba(56, 189, 248, 0.14), transparent 32%),
     radial-gradient(circle at 84% 8%, rgba(16, 185, 129, 0.12), transparent 28%),
@@ -792,16 +829,15 @@ onBeforeUnmount(() => {
   text-align: center;
   overflow: clip;
   transition:
-    min-height 520ms cubic-bezier(0.22, 1, 0.36, 1),
-    padding 520ms cubic-bezier(0.22, 1, 0.36, 1),
-    gap 420ms cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .wealth-hero.is-entered {
-  min-height: 0;
-  gap: 0.1rem;
-  padding-top: 0.2rem;
-  padding-bottom: 0.15rem;
+  opacity: 0.38;
+  transform: translateY(-2.75rem) scale(0.985);
+  filter: blur(8px);
 }
 
 .wealth-hero__kicker,
@@ -814,12 +850,7 @@ onBeforeUnmount(() => {
 }
 
 .wealth-hero__kicker {
-  transition:
-    opacity 340ms cubic-bezier(0.22, 1, 0.36, 1),
-    max-height 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    margin 420ms cubic-bezier(0.22, 1, 0.36, 1);
-  overflow: hidden;
+  transition: opacity 260ms ease;
 }
 
 .wealth-hero__title {
@@ -827,19 +858,7 @@ onBeforeUnmount(() => {
   font-size: clamp(3rem, 2.1rem + 3vw, 5.1rem);
   line-height: 0.94;
   letter-spacing: -0.05em;
-  overflow: hidden;
-  transition:
-    opacity 340ms cubic-bezier(0.22, 1, 0.36, 1),
-    max-height 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    margin 420ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.wealth-hero.is-entered .wealth-hero__title {
-  opacity: 0;
-  max-height: 0;
-  margin: 0;
-  transform: translateY(-18px);
+  transition: opacity 260ms ease;
 }
 
 .wealth-tagline {
@@ -848,12 +867,7 @@ onBeforeUnmount(() => {
   color: #3e5d81;
   font-size: clamp(1.02rem, 0.96rem + 0.55vw, 1.28rem);
   line-height: 1.5;
-  overflow: hidden;
-  transition:
-    opacity 340ms cubic-bezier(0.22, 1, 0.36, 1),
-    max-height 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    margin 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 260ms ease;
 }
 
 .wealth-hero__description {
@@ -861,21 +875,14 @@ onBeforeUnmount(() => {
   margin: 1.1rem auto 0;
   color: #536d90;
   line-height: 1.7;
-  overflow: hidden;
-  transition:
-    opacity 340ms cubic-bezier(0.22, 1, 0.36, 1),
-    max-height 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    margin 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 260ms ease;
 }
 
 .wealth-hero.is-entered .wealth-hero__kicker,
+.wealth-hero.is-entered .wealth-hero__title,
 .wealth-hero.is-entered .wealth-tagline,
 .wealth-hero.is-entered .wealth-hero__description {
-  opacity: 0;
-  max-height: 0;
-  margin: 0;
-  transform: translateY(-18px);
+  opacity: 0.12;
 }
 
 .wealth-hero__scroll {
@@ -884,13 +891,19 @@ onBeforeUnmount(() => {
   font-size: 0.8rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.wealth-hero.is-entered .wealth-hero__scroll {
+  opacity: 0;
+  transform: translateY(-0.5rem);
 }
 
 .wealth-workspace {
-  opacity: 0.9;
-  transform: translateY(34px);
+  opacity: 0.72;
+  transform: translateY(2rem);
   transition:
-    opacity 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
     transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 

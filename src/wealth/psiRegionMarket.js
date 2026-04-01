@@ -1,11 +1,14 @@
 import yearlyRegionMetricsCsv from '../../temp_data_aggregated/yearly_region_metrics.csv?raw'
 import yearlySubregionMetricsCsv from '../../temp_data_aggregated/yearly_subregion_metrics.csv?raw'
 import yearlySuburbMetricsCsv from '../../temp_data_aggregated/yearly_suburb_metrics.csv?raw'
+import yipRentalYieldHistoryCsv from '../../temp_data_aggregated/yip_rental_yield_history.csv?raw'
+import { buildRentalYieldMarket } from './rentalYieldMarket.js'
 
 const currentMarketYear = new Date().getFullYear()
 const minimumPropertySalesCount = 100
 const minimumAnnualSalesForCalculations = 10
 const minimumRecentHistoryYears = 20
+const rentalYieldMarket = buildRentalYieldMarket(yipRentalYieldHistoryCsv, yearlySuburbMetricsCsv)
 
 export const wealthPsiRegionMarketPayload = buildAreaMarketPayload([
   { type: 'region', source: 'temp_data_aggregated/yearly_region_metrics.csv', csvText: yearlyRegionMetricsCsv },
@@ -21,11 +24,11 @@ function buildAreaMarketPayload(datasets) {
   return {
     metadata: {
       generatedFor: 'wealth pathways area market explorer',
-      sources: datasets.map((dataset) => dataset.source),
+      sources: [...datasets.map((dataset) => dataset.source), rentalYieldMarket.metadata.source],
       currentMarketYear,
       areaCount: areas.length
     },
-    areas
+    areas: areas.map(mergeRentalYieldIntoArea)
   }
 }
 
@@ -71,6 +74,8 @@ function getAreaSeed(row, type) {
       label: regionLabel,
       type,
       year,
+      regionKey,
+      subregionKey: null,
       regionLabel,
       postcode: null,
       suburb: null,
@@ -88,6 +93,8 @@ function getAreaSeed(row, type) {
       label,
       type,
       year,
+      regionKey,
+      subregionKey: cleanText(row.subregion_key),
       regionLabel,
       postcode: postcode || null,
       suburb: null,
@@ -104,6 +111,8 @@ function getAreaSeed(row, type) {
     label,
     type,
     year,
+    regionKey,
+    subregionKey: cleanText(row.subregion_key),
     regionLabel,
     postcode: postcode || null,
     suburb: suburb || suburbLabel || null,
@@ -137,6 +146,8 @@ function createAreaRecord(area) {
     key: area.key,
     label: area.label,
     type: area.type,
+    regionKey: area.regionKey || null,
+    subregionKey: area.subregionKey || null,
     regionLabel: area.regionLabel,
     suburb: area.suburb,
     postcode: area.postcode,
@@ -146,14 +157,16 @@ function createAreaRecord(area) {
       latestActualPrice: houseHistory.latestActualPoint?.value ?? null,
       annualGrowthMean: houseHistory.growthMean,
       annualGrowthVolatility: houseHistory.growthVolatility,
-      historicalAnnualGrowthRates: houseHistory.historicalAnnualGrowthRates
+      historicalAnnualGrowthRates: houseHistory.historicalAnnualGrowthRates,
+      yieldModel: null
     },
     apartment: {
       currentPriceEstimate: apartmentHistory.estimatePoint?.value ?? apartmentHistory.latestActualPoint?.value ?? null,
       latestActualPrice: apartmentHistory.latestActualPoint?.value ?? null,
       annualGrowthMean: apartmentHistory.growthMean,
       annualGrowthVolatility: apartmentHistory.growthVolatility,
-      historicalAnnualGrowthRates: apartmentHistory.historicalAnnualGrowthRates
+      historicalAnnualGrowthRates: apartmentHistory.historicalAnnualGrowthRates,
+      yieldModel: null
     },
     marketHistory: {
       currentMarketYear,
@@ -164,6 +177,28 @@ function createAreaRecord(area) {
     },
     historicalAnnualGrowthBlocks
   }
+}
+
+function mergeRentalYieldIntoArea(area) {
+  if (!area || typeof area !== 'object') return area
+
+  const yieldModelsForArea = rentalYieldMarket.areasByType?.[area.type]?.[area.key] || {}
+  return {
+    ...area,
+    house: {
+      ...(area.house || {}),
+      yieldModel: cloneYieldModel(yieldModelsForArea.house)
+    },
+    apartment: {
+      ...(area.apartment || {}),
+      yieldModel: cloneYieldModel(yieldModelsForArea.apartment)
+    }
+  }
+}
+
+function cloneYieldModel(model) {
+  if (!model || typeof model !== 'object') return null
+  return JSON.parse(JSON.stringify(model))
 }
 
 function sortAreas(left, right) {

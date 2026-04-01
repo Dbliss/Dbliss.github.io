@@ -63,7 +63,7 @@
             :style="{ fill: color }"
             tabindex="0"
             role="button"
-            :aria-label="`${title} ${point.year}: ${formatShortCurrency(point.value)}`"
+            :aria-label="`${title} ${point.year}: ${formatValue(point.value)}`"
             @pointerenter="setHoverYear(point.year)"
             @pointerleave="clearHoverYear"
             @focus="setHoverYear(point.year)"
@@ -75,7 +75,7 @@
         <g v-if="hoverPoint" class="wealth-trend__tooltip" :transform="tooltipTransform">
           <rect class="wealth-trend__tooltip-box" width="128" height="42" rx="12" ry="12" />
           <text x="12" y="18" class="wealth-trend__tooltip-year">{{ hoverPoint.year }}</text>
-          <text x="12" y="32" class="wealth-trend__tooltip-value">{{ formatShortCurrency(hoverPoint.value) }}</text>
+          <text x="12" y="32" class="wealth-trend__tooltip-value">{{ formatValue(hoverPoint.value) }}</text>
         </g>
 
         <circle
@@ -89,12 +89,12 @@
       </svg>
     </div>
 
-    <p v-else class="wealth-trend__empty">No pricing history available for this property type.</p>
+    <p v-else class="wealth-trend__empty">{{ emptyText }}</p>
 
     <div v-if="hasData" class="wealth-trend__legend">
-      <span><i class="wealth-trend__swatch wealth-trend__swatch--actual" :style="{ background: color }"></i> Actual yearly median</span>
-      <span><i class="wealth-trend__swatch wealth-trend__swatch--trend" :style="{ borderColor: color }"></i> Curved best-fit trend</span>
-      <span v-if="estimatePoint"><i class="wealth-trend__swatch wealth-trend__swatch--estimate" :style="{ background: color }"></i> Current estimate</span>
+      <span><i class="wealth-trend__swatch wealth-trend__swatch--actual" :style="{ background: color }"></i> {{ actualLegendLabel }}</span>
+      <span><i class="wealth-trend__swatch wealth-trend__swatch--trend" :style="{ borderColor: color }"></i> {{ trendLegendLabel }}</span>
+      <span v-if="estimatePoint"><i class="wealth-trend__swatch wealth-trend__swatch--estimate" :style="{ background: color }"></i> {{ estimateLegendLabel }}</span>
     </div>
   </article>
 </template>
@@ -108,6 +108,12 @@ const props = defineProps({
   subtitle: { type: String, default: '' },
   kicker: { type: String, default: 'Market history' },
   color: { type: String, default: '#2563eb' },
+  valueMode: { type: String, default: 'currency' },
+  valuePadding: { type: Number, default: null },
+  emptyText: { type: String, default: 'No pricing history available for this property type.' },
+  actualLegendLabel: { type: String, default: 'Actual yearly median' },
+  trendLegendLabel: { type: String, default: 'Curved best-fit trend' },
+  estimateLegendLabel: { type: String, default: 'Current estimate' },
   actualPoints: { type: Array, default: () => [] },
   trendPoints: { type: Array, default: () => [] },
   estimatePoint: { type: Object, default: null }
@@ -156,6 +162,15 @@ const yDomain = computed(() => {
   const values = yPoints.value.map((point) => point.value)
   const min = Math.min(...values)
   const max = Math.max(...values)
+
+  if (props.valueMode === 'percent') {
+    const padding = Number.isFinite(Number(props.valuePadding)) ? Number(props.valuePadding) : 0.005
+    return {
+      min: Math.max(0, min - padding),
+      max: max + padding
+    }
+  }
+
   const paddingAmount = Math.max((max - min) * 0.12, max * 0.08, 1)
   return {
     min: Math.max(0, min - paddingAmount),
@@ -177,7 +192,7 @@ const yTicks = computed(() => {
     const value = min + ((max - min) * ratio)
     return {
       value,
-      label: formatShortCurrency(value)
+      label: formatValue(value)
     }
   })
 })
@@ -208,14 +223,15 @@ const tooltipTransform = computed(() => {
 
 function xPos(year) {
   const { min, max } = xDomain.value
-  const span = Math.max(1, max - min)
+  const span = Math.max(Number.EPSILON, max - min)
   return padding.left + (((year - min) / span) * plotWidth)
 }
 
 function yPos(value) {
   const { min, max } = yDomain.value
-  const span = Math.max(1, max - min)
-  return padding.top + plotHeight - (((value - min) / span) * plotHeight)
+  const span = Math.max(Number.EPSILON, max - min)
+  const normalized = (value - min) / span
+  return padding.top + plotHeight - (normalized * plotHeight)
 }
 
 function toPath(points) {
@@ -223,6 +239,14 @@ function toPath(points) {
   return cleanPoints
     .map((point, index) => `${index === 0 ? 'M' : 'L'} ${xPos(point.year)} ${yPos(point.value)}`)
     .join(' ')
+}
+
+function formatValue(value) {
+  if (props.valueMode === 'percent') {
+    if (!Number.isFinite(Number(value))) return 'n/a'
+    return `${(Number(value) * 100).toFixed(2)}%`
+  }
+  return formatShortCurrency(value)
 }
 
 function setHoverYear(year) {

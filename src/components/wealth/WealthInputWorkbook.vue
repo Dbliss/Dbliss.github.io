@@ -179,7 +179,33 @@
                   <span>History window</span>
                   <strong>{{ getHistoryWindow(selectedApartmentAreaRecord, 'apartment') }}</strong>
                 </div>
+                <div>
+                  <span>Yield model source</span>
+                  <strong>{{ getYieldSourceLabel(selectedApartmentAreaPreview, 'apartment') }}</strong>
+                </div>
+                <div>
+                  <span>Latest gross yield</span>
+                  <strong>{{ formatPercent(getYieldModel(selectedApartmentAreaPreview, 'apartment')?.currentYield) }}</strong>
+                </div>
+                <div>
+                  <span>Long-run yield mean</span>
+                  <strong>{{ formatPercent(getYieldModel(selectedApartmentAreaPreview, 'apartment')?.longTermMean) }}</strong>
+                </div>
+                <div>
+                  <span>Yield volatility</span>
+                  <strong>{{ formatPercent(getYieldModel(selectedApartmentAreaPreview, 'apartment')?.volatility) }}</strong>
+                </div>
+                <div>
+                  <span>Yield history window</span>
+                  <strong>{{ getYieldHistoryWindow(selectedApartmentAreaPreview, 'apartment') }}</strong>
+                </div>
               </div>
+              <p
+                v-if="selectedApartmentAreaPreview.apartment && !hasUsableYieldModel(selectedApartmentAreaPreview, 'apartment')"
+                class="wealth-market__warning"
+              >
+                Investment apartment paths are unavailable because no rental-yield model could be resolved from suburb, subregion, or region history.
+              </p>
             </div>
 
             <div
@@ -192,6 +218,20 @@
                 :actual-points="selectedApartmentAreaRecord.marketHistory?.apartment?.actualPoints || []"
                 :trend-points="selectedApartmentAreaRecord.marketHistory?.apartment?.trendPoints || []"
                 :estimate-point="selectedApartmentAreaRecord.marketHistory?.apartment?.estimatePoint || null"
+              />
+              <WealthPropertyTrendChart
+                title="Rent yield over time"
+                kicker="Yield history"
+                color="#0f9d7a"
+                value-mode="percent"
+                :value-padding="0.005"
+                empty-text="No rental-yield history available for this property type."
+                actual-legend-label="Actual yearly yield"
+                trend-legend-label="Curved best-fit trend"
+                estimate-legend-label="Current estimate"
+                :actual-points="getYieldModel(selectedApartmentAreaPreview, 'apartment')?.actualYieldPoints || []"
+                :trend-points="buildYieldTrendPoints(selectedApartmentAreaPreview, 'apartment')"
+                :estimate-point="null"
               />
             </div>
           </div>
@@ -261,10 +301,6 @@
                     <label>
                       <span>Property vacancy %</span>
                       <input v-model.number="vacancyRatePct" type="number" min="0" max="12" step="0.1" />
-                    </label>
-                    <label>
-                      <span>Rent yield %</span>
-                      <input v-model.number="apartmentRentYieldPct" type="number" min="0" max="10" step="0.1" />
                     </label>
                     <label>
                       <span>Management fee %</span>
@@ -437,7 +473,33 @@
                   <span>History window</span>
                   <strong>{{ getHistoryWindow(selectedHouseAreaRecord, 'house') }}</strong>
                 </div>
+                <div>
+                  <span>Yield model source</span>
+                  <strong>{{ getYieldSourceLabel(selectedHouseAreaPreview, 'house') }}</strong>
+                </div>
+                <div>
+                  <span>Latest gross yield</span>
+                  <strong>{{ formatPercent(getYieldModel(selectedHouseAreaPreview, 'house')?.currentYield) }}</strong>
+                </div>
+                <div>
+                  <span>Long-run yield mean</span>
+                  <strong>{{ formatPercent(getYieldModel(selectedHouseAreaPreview, 'house')?.longTermMean) }}</strong>
+                </div>
+                <div>
+                  <span>Yield volatility</span>
+                  <strong>{{ formatPercent(getYieldModel(selectedHouseAreaPreview, 'house')?.volatility) }}</strong>
+                </div>
+                <div>
+                  <span>Yield history window</span>
+                  <strong>{{ getYieldHistoryWindow(selectedHouseAreaPreview, 'house') }}</strong>
+                </div>
               </div>
+              <p
+                v-if="selectedHouseAreaPreview.house && !hasUsableYieldModel(selectedHouseAreaPreview, 'house')"
+                class="wealth-market__warning"
+              >
+                Investment house paths are unavailable because no rental-yield model could be resolved from suburb, subregion, or region history.
+              </p>
             </div>
 
             <div
@@ -450,6 +512,20 @@
                 :actual-points="selectedHouseAreaRecord.marketHistory?.house?.actualPoints || []"
                 :trend-points="selectedHouseAreaRecord.marketHistory?.house?.trendPoints || []"
                 :estimate-point="selectedHouseAreaRecord.marketHistory?.house?.estimatePoint || null"
+              />
+              <WealthPropertyTrendChart
+                title="Rent yield over time"
+                kicker="Yield history"
+                color="#2563eb"
+                value-mode="percent"
+                :value-padding="0.005"
+                empty-text="No rental-yield history available for this property type."
+                actual-legend-label="Actual yearly yield"
+                trend-legend-label="Curved best-fit trend"
+                estimate-legend-label="Current estimate"
+                :actual-points="getYieldModel(selectedHouseAreaPreview, 'house')?.actualYieldPoints || []"
+                :trend-points="buildYieldTrendPoints(selectedHouseAreaPreview, 'house')"
+                :estimate-point="null"
               />
             </div>
           </div>
@@ -519,10 +595,6 @@
                     <label>
                       <span>Property vacancy %</span>
                       <input v-model.number="vacancyRatePct" type="number" min="0" max="12" step="0.1" />
-                    </label>
-                    <label>
-                      <span>Rent yield %</span>
-                      <input v-model.number="houseRentYieldPct" type="number" min="0" max="10" step="0.1" />
                     </label>
                     <label>
                       <span>Management fee %</span>
@@ -729,7 +801,6 @@ const houseOwnerLongRunRatePct = percentProxy(() => props.form.propertyConfig.ho
 const houseInvestmentRatePct = percentProxy(() => props.form.propertyConfig.house.investmentInterestRate, value => { props.form.propertyConfig.house.investmentInterestRate = value })
 const houseInvestmentLongRunRatePct = percentProxy(() => props.form.propertyConfig.house.investmentLongRunInterestRate, value => { props.form.propertyConfig.house.investmentLongRunInterestRate = value })
 const houseGrowthPct = percentProxy(() => props.form.propertyConfig.house.growthMean, value => { props.form.propertyConfig.house.growthMean = value })
-const houseRentYieldPct = percentProxy(() => props.form.propertyConfig.house.rentYield, value => { props.form.propertyConfig.house.rentYield = value })
 const houseManagementPct = percentProxy(() => props.form.propertyConfig.house.propertyManagementPct, value => { props.form.propertyConfig.house.propertyManagementPct = value })
 const apartmentOwnerDepositPct = percentProxy(() => props.form.propertyConfig.apartment.ownerDepositPct, value => { props.form.propertyConfig.apartment.ownerDepositPct = value })
 const apartmentDepositPct = percentProxy(() => props.form.propertyConfig.apartment.depositPct, value => { props.form.propertyConfig.apartment.depositPct = value })
@@ -746,7 +817,6 @@ const apartmentOwnerLongRunRatePct = percentProxy(() => props.form.propertyConfi
 const apartmentInvestmentRatePct = percentProxy(() => props.form.propertyConfig.apartment.investmentInterestRate, value => { props.form.propertyConfig.apartment.investmentInterestRate = value })
 const apartmentInvestmentLongRunRatePct = percentProxy(() => props.form.propertyConfig.apartment.investmentLongRunInterestRate, value => { props.form.propertyConfig.apartment.investmentLongRunInterestRate = value })
 const apartmentGrowthPct = percentProxy(() => props.form.propertyConfig.apartment.growthMean, value => { props.form.propertyConfig.apartment.growthMean = value })
-const apartmentRentYieldPct = percentProxy(() => props.form.propertyConfig.apartment.rentYield, value => { props.form.propertyConfig.apartment.rentYield = value })
 const apartmentManagementPct = percentProxy(() => props.form.propertyConfig.apartment.propertyManagementPct, value => { props.form.propertyConfig.apartment.propertyManagementPct = value })
 
 function createSharedPurchaseCostProxy(propertyKey, costKey) {
@@ -820,6 +890,48 @@ function getEstimatedLabel(areaRecord, propertyType, fallbackLabel) {
   const estimateYear = areaRecord?.marketHistory?.[propertyType]?.estimatePoint?.year
   return estimateYear ? `${fallbackLabel} (${estimateYear})` : fallbackLabel
 }
+
+function getYieldModel(preview, propertyType) {
+  const property = preview?.[propertyType]
+  const yieldModel = property?.yieldModel
+  return yieldModel && typeof yieldModel === 'object' ? yieldModel : null
+}
+
+function hasUsableYieldModel(preview, propertyType) {
+  return Boolean(getYieldModel(preview, propertyType)?.actualYieldPoints?.length)
+}
+
+function getYieldSourceLabel(preview, propertyType) {
+  const yieldModel = getYieldModel(preview, propertyType)
+  if (!yieldModel) return 'Unavailable'
+
+  const sourceType = yieldModel.sourceAreaType === 'subregion'
+    ? 'Subregion'
+    : yieldModel.sourceAreaType === 'region'
+      ? 'Region'
+      : 'Suburb'
+  const sourceLabel = String(yieldModel.sourceAreaLabel || '').trim()
+  return sourceLabel ? `${sourceType}: ${sourceLabel}` : sourceType
+}
+
+function getYieldHistoryWindow(preview, propertyType) {
+  const years = (getYieldModel(preview, propertyType)?.actualYieldPoints || []).map((point) => point.year)
+  if (!years.length) return 'No history loaded'
+  return `${Math.min(...years)}-${Math.max(...years)}`
+}
+
+function buildYieldTrendPoints(preview, propertyType) {
+  const yieldModel = getYieldModel(preview, propertyType)
+  const points = Array.isArray(yieldModel?.actualYieldPoints) ? yieldModel.actualYieldPoints : []
+  const mean = Number(yieldModel?.longTermMean)
+  if (!points.length || !Number.isFinite(mean)) return []
+
+  return points.map((point) => ({
+    year: point.year,
+    value: mean
+  }))
+}
+
 
 function hasEnoughPropertyData(areaRecord, preview, propertyType) {
   const purchasePrice = Number(preview?.[propertyType]?.purchasePrice) || 0

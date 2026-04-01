@@ -28,7 +28,8 @@ import {
   samplePortfolioSleeveReturns,
   scalePropertyCostWithPrice,
   scalePurchaseCostsWithPrice,
-  sampleNormal
+  sampleNormal,
+  getEffectivePropertyRentYield
 } from './finance.js'
 import { createBootstrapPortfolioSampler } from './assetBootstrap.js'
 import {
@@ -59,6 +60,8 @@ function sampleMarketPath(request, random) {
   const { profile, propertyConfig, housingCosts } = request
   const vacancyRate = clamp(Number(propertyConfig.vacancyRate) || wealthVacancyRate, 0, 0.12)
   const propertyGrowthBlockSampler = createPropertyGrowthBlockSampler(random, propertyConfig)
+  const houseYieldSampler = createPropertyYieldSampler(random, propertyConfig.house)
+  const apartmentYieldSampler = createPropertyYieldSampler(random, propertyConfig.apartment)
   return Array.from({ length: profile.horizonYears }, (_, yearIndex) => {
     const sampledPropertyGrowthBlock = propertyGrowthBlockSampler ? propertyGrowthBlockSampler() : null
 
@@ -72,12 +75,57 @@ function sampleMarketPath(request, random) {
       ),
       houseGrowth: samplePropertyGrowthRate(random, propertyConfig.house, -0.25, 0.25, sampledPropertyGrowthBlock?.houseGrowth),
       apartmentGrowth: samplePropertyGrowthRate(random, propertyConfig.apartment, -0.18, 0.18, sampledPropertyGrowthBlock?.apartmentGrowth),
+      houseYield: houseYieldSampler(),
+      apartmentYield: apartmentYieldSampler(),
       mortgageRateJitter: sampleNormal(random, 0, 0.0045),
       vacancyRate: clamp(sampleNormal(random, vacancyRate, wealthVacancyRateVolatility), 0, 0.12),
       rentInflation: clamp(sampleNormal(random, housingCosts.rentGrowthRate, 0.01), 0, 0.08),
       boardInflation: clamp(sampleNormal(random, housingCosts.boardGrowthRate, 0.008), 0, 0.06)
     }
   })
+}
+
+function createPropertyYieldSampler(random, property) {
+  const model = property?.yieldModel
+  if (!model || typeof model !== 'object') {
+    const fallbackYield = clamp(getEffectivePropertyRentYield(property), 0, 0.12)
+    return () => fallbackYield
+  }
+
+  let benchmarkYield = clamp(
+    Number(model.benchmarkCurrentYield ?? model.benchmarkLongTermMean ?? model.longTermMean ?? model.currentYield) || 0,
+    0.01,
+    0.12
+  )
+  let spread = Number(model.currentYield) - benchmarkYield
+  if (!Number.isFinite(spread)) {
+    spread = Number(model.spreadMean) || 0
+  }
+
+  const benchmarkMean = clamp(
+    Number(model.benchmarkLongTermMean ?? model.longTermMean ?? benchmarkYield) || benchmarkYield,
+    0.01,
+    0.12
+  )
+  const benchmarkTheta = clamp(Number(model.benchmarkMeanReversionSpeed) || 0.2, 0.05, 0.95)
+  const benchmarkSigma = clamp(Number(model.benchmarkVolatility) || 0.003, 0.0005, 0.03)
+  const spreadMean = clamp(Number(model.spreadMean) || 0, -0.06, 0.06)
+  const spreadTheta = clamp(Number(model.spreadMeanReversionSpeed) || Number(model.meanReversionSpeed) || 0.25, 0.05, 0.95)
+  const spreadSigma = clamp(Number(model.spreadVolatility) || Number(model.volatility) || 0.003, 0.0005, 0.04)
+
+  return () => {
+    benchmarkYield = clamp(
+      benchmarkYield + benchmarkTheta * (benchmarkMean - benchmarkYield) + sampleNormal(random, 0, benchmarkSigma),
+      0.01,
+      0.12
+    )
+    spread = clamp(
+      spread + spreadTheta * (spreadMean - spread) + sampleNormal(random, 0, spreadSigma),
+      -0.06,
+      0.08
+    )
+    return clamp(benchmarkYield + spread, 0.01, 0.12)
+  }
 }
 
 function createPropertyGrowthBlockSampler(random, propertyConfig) {
@@ -697,7 +745,8 @@ function simulateOwnedPropertyYear({
     vacancyRate: market.vacancyRate,
     interestPaid: amortization.interestPaid,
     yearsOwned,
-    borrowingExpensesTotalOverride
+    borrowingExpensesTotalOverride,
+    rentYieldOverride: propertyKey === 'apartment' ? market.apartmentYield : market.houseYield
   })
 
   return {
@@ -1203,6 +1252,7 @@ function normaliseProperty(property, fallback = {}) {
           .map(value => Number(value))
           .filter(value => Number.isFinite(value) && value >= -0.5 && value <= 0.5)
       : [],
+    yieldModel: normaliseYieldModel(property.yieldModel),
     rentYield: clamp(Number(property.rentYield ?? fallback.rentYield) || 0, 0, 0.1),
     propertyManagementPct: clamp(Number(property.propertyManagementPct ?? fallback.propertyManagementPct) || 0, 0, 0.15),
     councilRates: Math.max(0, Number(property.councilRates) || 0),
@@ -1277,7 +1327,67 @@ function normaliseRequest(request) {
   safe.propertyConfig.house = normaliseProperty(safe.propertyConfig.house, safe.propertyConfig)
   safe.propertyConfig.apartment = normaliseProperty(safe.propertyConfig.apartment, safe.propertyConfig)
   safe.scenarioSelection = resolveScenarioSelection(safe.scenarioSelection)
+  safe.scenarioSelection.selectedScenarioKeys = safe.scenarioSelection.selectedScenarioKeys.filter((strategyKey) =>
+    isScenarioSupportedByRequest(safe, strategyKey)
+  )
   return safe
+}
+
+function normaliseYieldModel(model) {
+  if (!model || typeof model !== 'object') return null
+
+  const actualYieldPoints = Array.isArray(model.actualYieldPoints)
+    ? model.actualYieldPoints
+        .map((point) => ({
+          year: Math.round(Number(point?.year) || 0),
+          value: Number(point?.value)
+        }))
+        .filter((point) => Number.isFinite(point.year) && Number.isFinite(point.value) && point.value > 0)
+    : []
+
+  if (!actualYieldPoints.length) return null
+
+  return {
+    sourceAreaKey: typeof model.sourceAreaKey === 'string' ? model.sourceAreaKey : null,
+    sourceAreaLabel: typeof model.sourceAreaLabel === 'string' ? model.sourceAreaLabel : '',
+    sourceAreaType: typeof model.sourceAreaType === 'string' ? model.sourceAreaType : null,
+    currentYield: clamp(Number(model.currentYield) || actualYieldPoints[actualYieldPoints.length - 1]?.value || 0, 0, 0.12),
+    longTermMean: clamp(Number(model.longTermMean) || averageSeries(actualYieldPoints.map((point) => point.value)) || 0, 0, 0.12),
+    volatility: clamp(Number(model.volatility) || 0.0025, 0.0005, 0.03),
+    meanReversionSpeed: clamp(Number(model.meanReversionSpeed) || 0.2, 0.05, 0.95),
+    spreadMean: clamp(Number(model.spreadMean) || 0, -0.06, 0.06),
+    spreadVolatility: clamp(Number(model.spreadVolatility) || Number(model.volatility) || 0.0025, 0.0005, 0.04),
+    spreadMeanReversionSpeed: clamp(Number(model.spreadMeanReversionSpeed) || Number(model.meanReversionSpeed) || 0.2, 0.05, 0.95),
+    benchmarkCurrentYield: clamp(Number(model.benchmarkCurrentYield ?? model.currentYield) || 0, 0, 0.12),
+    benchmarkLongTermMean: clamp(Number(model.benchmarkLongTermMean ?? model.longTermMean ?? model.currentYield) || 0, 0, 0.12),
+    benchmarkVolatility: clamp(Number(model.benchmarkVolatility) || Number(model.volatility) || 0.0025, 0.0005, 0.03),
+    benchmarkMeanReversionSpeed: clamp(Number(model.benchmarkMeanReversionSpeed) || Number(model.meanReversionSpeed) || 0.2, 0.05, 0.95),
+    nswSpreadMean: Number.isFinite(Number(model.nswSpreadMean)) ? Number(model.nswSpreadMean) : clamp(Number(model.spreadMean) || 0, -0.06, 0.06),
+    historicalYieldRates: Array.isArray(model.historicalYieldRates)
+      ? model.historicalYieldRates.map((value) => Number(value)).filter((value) => Number.isFinite(value) && value > 0 && value <= 0.12)
+      : actualYieldPoints.map((point) => point.value),
+    actualYieldPoints
+  }
+}
+
+function isScenarioSupportedByRequest(request, strategyKey) {
+  if (strategyKey === 'buyHouseInvestmentProperty') {
+    return hasUsableInvestmentYield(request?.propertyConfig?.house)
+  }
+  if (strategyKey === 'buyApartmentInvestmentProperty') {
+    return hasUsableInvestmentYield(request?.propertyConfig?.apartment)
+  }
+  return true
+}
+
+function hasUsableInvestmentYield(property) {
+  if (property?.yieldModel?.actualYieldPoints?.length) return true
+  return Number(property?.rentYield) > 0
+}
+
+function averageSeries(values) {
+  if (!Array.isArray(values) || !values.length) return null
+  return values.reduce((sum, value) => sum + value, 0) / values.length
 }
 
 function createSingleAssetPortfolioConfig(portfolioConfig, assetKey) {

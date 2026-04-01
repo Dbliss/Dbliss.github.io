@@ -14,20 +14,17 @@ describe('WealthInputWorkbook', () => {
         form,
         activeSheet: 'stock',
         scenarioSelection: form.scenarioSelection,
-        suburbSearchContext: { suburbOptions: [] },
-        selectedSuburbPreview: { house: null, apartment: null, vacancyRate: null }
+        regionScoutConfig: {},
+        suburbSearchContext: { suburbOptions: [] }
       }
     })
 
     expect(wrapper.text()).toContain('Stock assumptions')
-    expect(wrapper.text()).not.toContain('Common cashflow')
-    expect(wrapper.text()).not.toContain('Housing setup')
-    expect(wrapper.text()).not.toContain('Suburb defaults')
     expect(wrapper.text()).not.toContain('Apartment assumptions')
     expect(wrapper.text()).not.toContain('House assumptions')
   })
 
-  it('hides the stock sheet when only housing scenarios are selected', () => {
+  it('renders the apartment property sheet without the stock sheet when housing is selected', () => {
     const form = reactive(cloneSimulationRequest())
     form.scenarioSelection.includeStocks = false
     form.scenarioSelection.selectedScenarioKeys = ['buyApartmentHome', 'buyHouseHome']
@@ -35,17 +32,15 @@ describe('WealthInputWorkbook', () => {
     const wrapper = mount(WealthInputWorkbook, {
       props: {
         form,
-        activeSheet: 'housingSetup',
+        activeSheet: 'apartment',
         scenarioSelection: form.scenarioSelection,
-        suburbSearchContext: { suburbOptions: [] },
-        selectedSuburbPreview: { house: null, apartment: null, vacancyRate: null }
+        regionScoutConfig: {},
+        suburbSearchContext: { suburbOptions: [] }
       }
     })
 
     expect(wrapper.text()).not.toContain('Stock assumptions')
-    expect(wrapper.text()).toContain('Housing setup')
-    expect(wrapper.text()).toContain('Suburb defaults')
     expect(wrapper.text()).toContain('Apartment assumptions')
-    expect(wrapper.text()).toContain('House assumptions')
+    expect(wrapper.text()).not.toContain('Rent yield %')
   })
 })

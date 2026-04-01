@@ -72,6 +72,26 @@
             </text>
           </g>
 
+          <g v-for="marker in markerLines" :key="`marker-${marker.year}-${marker.label || 'marker'}`">
+            <line
+              :x1="xPos(marker.year)"
+              :x2="xPos(marker.year)"
+              :y1="padding.top"
+              :y2="viewHeight - padding.bottom"
+              class="wealth-chart__marker"
+              :style="{ stroke: marker.color || '#0f172a' }"
+            />
+            <text
+              :x="xPos(marker.year)"
+              :y="padding.top - 8"
+              text-anchor="middle"
+              class="wealth-chart__marker-label"
+              :style="{ fill: marker.color || '#0f172a' }"
+            >
+              {{ marker.label }}
+            </text>
+          </g>
+
           <line
             v-if="crossesZero"
             :x1="padding.left"
@@ -109,30 +129,11 @@
 
         <p v-if="series.length && !activeSeries.length" class="wealth-chart__empty">All scenarios are currently greyed out.</p>
         <p v-else-if="!series.length" class="wealth-chart__empty">Simulation results will appear here once the calculator runs.</p>
-      </div>
 
-      <aside v-if="activeSeries.length && displayYear !== null" class="wealth-chart__side card">
-        <div class="wealth-chart__side-header">
-          <p class="wealth-chart__kicker">Hovered values</p>
-          <h4>Year {{ displayYear }}</h4>
+        <div v-if="hoverSummary" class="wealth-chart__hover-summary">
+          Year {{ hoverSummary.year }}, {{ formatShortCurrency(hoverSummary.value) }}
         </div>
-        <div class="wealth-chart__side-list">
-          <div v-for="point in displayPoints" :key="point.id" class="wealth-chart__side-row">
-            <div class="wealth-chart__side-top">
-              <span class="wealth-chart__tooltip-label">
-                <i class="wealth-chart__tooltip-swatch" :style="{ background: point.color }"></i>
-                {{ point.label }}
-              </span>
-              <strong>{{ formatShortCurrency(point.mid) }}</strong>
-            </div>
-            <div class="wealth-chart__side-stats">
-              <span>P10 {{ formatShortCurrency(point.low) }}</span>
-              <span>P50 {{ formatShortCurrency(point.mid) }}</span>
-              <span>P90 {{ formatShortCurrency(point.high) }}</span>
-            </div>
-          </div>
-        </div>
-      </aside>
+      </div>
     </div>
   </section>
 </template>
@@ -145,6 +146,10 @@ const props = defineProps({
   title: { type: String, required: true },
   subtitle: { type: String, default: '' },
   kicker: { type: String, default: 'Projection' },
+  markers: {
+    type: Array,
+    default: () => []
+  },
   mutedSeriesIds: {
     type: Array,
     default: () => []
@@ -219,6 +224,15 @@ const displayPoints = computed(() => {
     .sort((left, right) => right.mid - left.mid)
 })
 
+const hoverSummary = computed(() => {
+  if (displayYear.value === null || !displayPoints.value.length) return null
+  const primaryPoint = displayPoints.value[0]
+  return {
+    year: displayYear.value,
+    value: primaryPoint.mid
+  }
+})
+
 const crossesZero = computed(() =>
   valueDomain.value.min < 0 && valueDomain.value.max > 0
 )
@@ -241,6 +255,10 @@ const yTicks = computed(() => {
     }
   })
 })
+
+const markerLines = computed(() =>
+  (props.markers || []).filter((marker) => Number.isFinite(Number(marker?.year)))
+)
 
 function xPos(year) {
   const { min, max } = yearDomain.value
@@ -343,10 +361,7 @@ function onPointerMove(event) {
 }
 
 .wealth-chart__layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.9fr) minmax(260px, 0.7fr);
-  gap: 1rem;
-  align-items: stretch;
+  display: block;
 }
 
 .wealth-chart__body {
@@ -376,6 +391,17 @@ function onPointerMove(event) {
 
 .wealth-chart__grid--vertical {
   stroke-dasharray: 4 6;
+}
+
+.wealth-chart__marker {
+  stroke-width: 2;
+  stroke-dasharray: 8 8;
+  opacity: 0.9;
+}
+
+.wealth-chart__marker-label {
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .wealth-chart__zero {
@@ -415,66 +441,23 @@ function onPointerMove(event) {
   stroke-linejoin: round;
 }
 
-.wealth-chart__side {
-  display: grid;
-  align-content: start;
-  gap: 0.9rem;
-  padding: 1rem;
-  border: 1px solid rgba(154, 174, 204, 0.28);
-  background: rgba(247, 250, 255, 0.94);
-}
-
-.wealth-chart__side-header h4 {
-  margin: 0.2rem 0 0;
-  font-size: 1.05rem;
-}
-
-.wealth-chart__side-list {
-  display: grid;
-  gap: 0.8rem;
-}
-
-.wealth-chart__side-row {
-  display: grid;
-  gap: 0.35rem;
-  padding: 0.8rem;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(154, 174, 204, 0.18);
-}
-
-.wealth-chart__side-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.wealth-chart__tooltip-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-
-.wealth-chart__side-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 0.75rem;
-  color: #526b8d;
-  font-size: 0.8rem;
-}
-
-.wealth-chart__tooltip-swatch {
-  width: 10px;
-  height: 10px;
+.wealth-chart__hover-summary {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  z-index: 2;
+  max-width: calc(100% - 1.8rem);
+  padding: 0.45rem 0.65rem;
   border-radius: 999px;
+  background: rgba(15, 40, 72, 0.88);
+  color: #ffffff;
+  font-size: 0.8rem;
+  line-height: 1;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 @media (max-width: 720px) {
-  .wealth-chart__layout {
-    grid-template-columns: 1fr;
-  }
-
   .wealth-chart__body {
     aspect-ratio: 4 / 3;
     min-height: 420px;
@@ -482,6 +465,12 @@ function onPointerMove(event) {
 
   .wealth-chart__svg {
     overflow: hidden;
+  }
+
+  .wealth-chart__hover-summary {
+    top: 0.65rem;
+    right: 0.65rem;
+    font-size: 0.75rem;
   }
 }
 </style>

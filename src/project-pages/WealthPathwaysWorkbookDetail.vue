@@ -180,10 +180,16 @@ const selectedHouseAreaSelection = ref(null)
 const areaMarketPayload = ref(wealthPsiRegionMarketPayload)
 const regionScoutConfig = reactive({
   targetYears: 5,
+  buyFlexibility: 'target',
   propertyType: 'apartment',
   granularity: 'region',
   locationKey: null,
   savingsMode: 'defaultPortfolio',
+  depositMode: 'optimal',
+  fixedDepositPct: 0.2,
+  rentalYieldWeight: 0,
+  riskAppetite: 'medium',
+  hasCustomPriceRange: false,
   minPrice: null,
   maxPrice: null
 })
@@ -205,12 +211,16 @@ const selectedHouseAreaRecord = computed(() => {
 const selectedApartmentAreaPreview = computed(() => createPropertyConfigPatchFromArea(selectedApartmentAreaRecord.value) || {
   house: null,
   apartment: null,
+  regionKey: null,
+  subregionKey: null,
   houseGrowthYears: 0,
   apartmentGrowthYears: 0
 })
 const selectedHouseAreaPreview = computed(() => createPropertyConfigPatchFromArea(selectedHouseAreaRecord.value) || {
   house: null,
   apartment: null,
+  regionKey: null,
+  subregionKey: null,
   houseGrowthYears: 0,
   apartmentGrowthYears: 0
 })
@@ -541,11 +551,20 @@ function applyAreaPatchToProperty(propertyType, selection) {
   property.firstHomeBuyerLowDepositLimit = area
     ? getFirstHomeBuyerLowDepositLimitForArea(area)
     : NSW_HOME_GUARANTEE_HIGH_CAP_LIMIT
-  if (!patch?.[propertyType]) return
+  if (!patch?.[propertyType]) {
+    property.yieldModel = null
+    property.rentYield = 0
+    return
+  }
 
   Object.entries(patch[propertyType]).forEach(([key, value]) => {
     if (key === 'historicalAnnualGrowthRates') {
       form.propertyConfig[propertyType][key] = Array.isArray(value) ? [...value] : []
+      return
+    }
+    if (key === 'yieldModel') {
+      form.propertyConfig[propertyType][key] = value ? JSON.parse(JSON.stringify(value)) : null
+      form.propertyConfig[propertyType].rentYield = Number(value?.currentYield) || 0
       return
     }
     if (Number.isFinite(Number(value))) {

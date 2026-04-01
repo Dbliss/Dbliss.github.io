@@ -36,6 +36,14 @@ export function buildAreaSearchContext(rawPayload) {
     }
   })
 
+  Object.values(areasByKey).forEach((area) => {
+    ;['house', 'apartment'].forEach((propertyType) => {
+      const property = area[propertyType]
+      if (!property) return
+      property.resolvedYieldModel = resolveYieldModelForArea(area, propertyType, areasByKey)
+    })
+  })
+
   const areaOptions = Object.values(areasByKey)
     .map((area) => ({
       key: area.key,
@@ -65,6 +73,8 @@ export function createPropertyConfigPatchFromArea(area) {
     key: area.key || null,
     label: area.label || '',
     type: area.type || null,
+    regionKey: area.regionKey || null,
+    subregionKey: area.subregionKey || null,
     historicalAnnualGrowthBlocks: Array.isArray(area.historicalAnnualGrowthBlocks)
       ? area.historicalAnnualGrowthBlocks
           .map((block) => ({
@@ -108,13 +118,16 @@ export function getFirstHomeBuyerLowDepositLimitForArea(area) {
 
 function buildPropertyPatch(propertyData) {
   if (!propertyData || typeof propertyData !== 'object') return null
+  const yieldModel = cloneYieldModel(propertyData.resolvedYieldModel || propertyData.yieldModel)
   return {
     purchasePrice: toNumber(propertyData.currentPriceEstimate ?? propertyData.latestActualPrice),
     growthMean: toNumber(propertyData.annualGrowthMean),
     growthVolatility: toNumber(propertyData.annualGrowthVolatility),
     historicalAnnualGrowthRates: Array.isArray(propertyData.historicalAnnualGrowthRates)
       ? propertyData.historicalAnnualGrowthRates.map((value) => Number(value)).filter((value) => Number.isFinite(value))
-      : []
+      : [],
+    rentYield: toNumber(yieldModel?.currentYield),
+    yieldModel
   }
 }
 
@@ -123,6 +136,10 @@ function applyPropertyPatch(target, patch) {
   Object.entries(patch).forEach(([key, value]) => {
     if (key === 'historicalAnnualGrowthRates') {
       target[key] = Array.isArray(value) ? [...value] : []
+      return
+    }
+    if (key === 'yieldModel') {
+      target[key] = cloneYieldModel(value)
       return
     }
     if (Number.isFinite(Number(value))) {
@@ -134,6 +151,42 @@ function applyPropertyPatch(target, patch) {
 function toNumber(value) {
   const safe = Number(value)
   return Number.isFinite(safe) ? safe : null
+}
+
+function resolveYieldModelForArea(area, propertyType, areasByKey) {
+  const directModel = cloneYieldModel(area?.[propertyType]?.yieldModel)
+  if (directModel) {
+    return withYieldSourceMetadata(directModel, area)
+  }
+
+  const fallbackAreas = []
+  if (area?.type === 'suburb' && area?.subregionKey && areasByKey[area.subregionKey]) {
+    fallbackAreas.push(areasByKey[area.subregionKey])
+  }
+  if (area?.regionKey && areasByKey[area.regionKey]) {
+    fallbackAreas.push(areasByKey[area.regionKey])
+  }
+
+  for (const fallbackArea of fallbackAreas) {
+    const model = cloneYieldModel(fallbackArea?.[propertyType]?.yieldModel)
+    if (model) return withYieldSourceMetadata(model, fallbackArea)
+  }
+
+  return null
+}
+
+function withYieldSourceMetadata(model, area) {
+  if (!model) return null
+  return {
+    ...model,
+    sourceAreaKey: area?.key || null,
+    sourceAreaLabel: area?.label || '',
+    sourceAreaType: area?.type || model.sourceAreaType || null
+  }
+}
+
+function cloneYieldModel(model) {
+  return model && typeof model === 'object' ? JSON.parse(JSON.stringify(model)) : null
 }
 
 function normaliseSuburbAreaRecord(area) {

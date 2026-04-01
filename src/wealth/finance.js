@@ -606,12 +606,14 @@ export function calculateInvestmentPropertyTaxPosition({
   vacancyRate,
   interestPaid,
   yearsOwned,
-  borrowingExpensesTotalOverride = null
+  borrowingExpensesTotalOverride = null,
+  rentYieldOverride = null
 }) {
   const safePropertyValue = Math.max(0, Number(propertyValue) || 0)
+  const effectiveRentYield = getEffectivePropertyRentYield(propertyConfig, rentYieldOverride)
   const rentReceived =
     safePropertyValue *
-    Math.max(0, Number(propertyConfig.rentYield) || 0) *
+    effectiveRentYield *
     (1 - clamp(Number(vacancyRate) || 0, 0, 1))
   const managementFee = rentReceived * clamp(Number(propertyConfig.propertyManagementPct) || 0, 0, 1)
   const councilRates = Math.max(0, Number(propertyConfig.councilRates) || 0)
@@ -652,12 +654,26 @@ export function calculateInvestmentPropertyTaxPosition({
     otherDeductibleExpensesAnnual
 
   return {
+    effectiveRentYield,
     rentReceived,
     managementFee,
     borrowingExpenseDeduction,
     cashOperatingExpenses,
     taxableRentalIncome
   }
+}
+
+export function getEffectivePropertyRentYield(propertyConfig, rentYieldOverride = null) {
+  if (Number.isFinite(Number(rentYieldOverride))) {
+    return clamp(Number(rentYieldOverride), 0, 0.12)
+  }
+
+  const modeledYield = Number(propertyConfig?.yieldModel?.currentYield)
+  if (Number.isFinite(modeledYield)) {
+    return clamp(modeledYield, 0, 0.12)
+  }
+
+  return clamp(Number(propertyConfig?.rentYield) || 0, 0, 0.12)
 }
 
 export function getServiceabilityAssessmentRate(productRate) {

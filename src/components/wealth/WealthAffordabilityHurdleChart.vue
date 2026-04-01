@@ -74,6 +74,9 @@
             <span><i class="wealth-hurdle__swatch wealth-hurdle__swatch--dashed" style="border-color:#ef4444"></i>Income required</span>
           </div>
         </div>
+        <p v-if="configuredDepositPct !== null" class="wealth-hurdle__panel-note">
+          Income required is based on the deposit set as {{ formatPercent(configuredDepositPct) }}.
+        </p>
         <svg
           class="wealth-hurdle__svg"
           :viewBox="`0 0 ${viewWidth} ${viewHeight}`"
@@ -146,6 +149,7 @@ import { formatShortCurrency } from '../../wealth/finance.js'
 
 const props = defineProps({
   title: { type: String, required: true },
+  configuredDepositPct: { type: Number, default: null },
   purchaseYear: { type: Number, default: null },
   purchasePoint: { type: Object, default: null },
   points: { type: Array, default: () => [] }
@@ -304,9 +308,14 @@ function formatPercent(value) {
 .wealth-hurdle__copy,
 .wealth-hurdle__status,
 .wealth-hurdle__deposit-copy,
-.wealth-hurdle__readout-kicker {
+.wealth-hurdle__readout-kicker,
+.wealth-hurdle__panel-note {
   margin: 0.3rem 0 0;
   color: #5d7394;
+}
+
+.wealth-hurdle__panel-note {
+  font-size: 0.78rem;
 }
 
 .wealth-hurdle__status {

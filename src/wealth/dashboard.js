@@ -4,9 +4,11 @@ import {
   calculatePurchaseCosts,
   clamp,
   estimateLmi,
+  formatShortCurrency,
   getEffectiveInvestmentDepositPct,
   getEffectiveOwnerDepositPct,
   isDepositScalingEnabled,
+  percentileSummary,
   rollForwardHelpDebt,
   scalePropertyCostWithPrice,
   scalePurchaseCostsWithPrice
@@ -64,6 +66,38 @@ function formatCurrency(value) {
     currency: 'AUD',
     maximumFractionDigits: 0
   }).format(Number(value) || 0)
+}
+
+function getFinalMetricSamples(result, strategyKey, metric) {
+  const fromResult = result?.finalMetricSamplesByStrategy?.[strategyKey]?.[metric]
+  if (Array.isArray(fromResult)) return fromResult
+  return []
+}
+
+function getFinalLiquidationSamples(result, strategy) {
+  const strategyKey = strategy?.key
+  if (!strategyKey) return []
+  return getFinalMetricSamples(result, strategyKey, 'sellDown')
+}
+
+function calculateBeatBaselineProbability(result, strategy, baseline) {
+  const strategySamples = getFinalLiquidationSamples(result, strategy)
+  const baselineSamples = getFinalLiquidationSamples(result, baseline)
+  const sampleCount = Math.min(strategySamples.length, baselineSamples.length)
+  if (!sampleCount) return null
+
+  let wins = 0
+  let validComparisons = 0
+
+  for (let index = 0; index < sampleCount; index += 1) {
+    const strategyValue = Number(strategySamples[index])
+    const baselineValue = Number(baselineSamples[index])
+    if (!Number.isFinite(strategyValue) || !Number.isFinite(baselineValue)) continue
+    validComparisons += 1
+    if (strategyValue > baselineValue) wins += 1
+  }
+
+  return validComparisons ? wins / validComparisons : null
 }
 
 const affordabilityChartDefinitions = [
@@ -441,6 +475,9 @@ function buildAffordabilityHurdleCharts(result, requestOverride = null) {
 
     return {
       ...definition,
+      configuredDepositPct: Number((((definition.occupancyMode === 'owner'
+        ? getEffectiveOwnerDepositPct(property)
+        : getEffectiveInvestmentDepositPct(property)) || 0) * 100).toFixed(1)),
       purchaseYear,
       purchasePoint: purchaseYear === null
         ? null
@@ -468,6 +505,7 @@ export function buildDashboardModel(result, requestedBaselineKey, inflationRate 
         breakevenYearVsBaseline,
         deltaVsBaseline,
         variabilitySpread,
+        beatBaselineProbability: key === baselineKey ? null : calculateBeatBaselineProbability(result, strategy, baseline),
         narrative: buildNarrative(strategy, baseline, deltaVsBaseline),
         baselineLabel: baseline?.label || null,
         inflationRate
@@ -480,6 +518,7 @@ export function buildDashboardModel(result, requestedBaselineKey, inflationRate 
   return {
     baselineKey,
     baseline,
+    sourceResult: result,
     strategies,
     kpis: {
       bestMedian: strategies.reduce((best, strategy) =>
@@ -495,7 +534,11 @@ export function buildDashboardModel(result, requestedBaselineKey, inflationRate 
         .filter(strategy => strategy.breakevenYearVsBaseline !== null)
         .sort((left, right) => left.breakevenYearVsBaseline - right.breakevenYearVsBaseline)[0] || null
     },
-    narratives: strategies.slice(0, 3).map(strategy => strategy.narrative),
+    narratives: strategies.slice(0, 3).map((strategy) => {
+      if (strategy.key === baselineKey) return `${strategy.label}: Baseline`
+      if (strategy.beatBaselineProbability === null) return `${strategy.label}: Baseline comparison unavailable`
+      return `${strategy.label}: ${Math.round(strategy.beatBaselineProbability * 100)}% chance to beat baseline`
+    }),
     affordabilityCharts: buildAffordabilityHurdleCharts(result, requestOverride),
     compositionRows: housingStrategies.map(strategy => ({
       key: strategy.key,
@@ -555,4 +598,34 @@ export function buildDashboardSeries(strategies, metric, inflationRate = 0.03) {
       }
     })
   }))
+}
+
+export function buildDashboardDistributionSeries(result, strategies, metric, inflationRate = 0.03) {
+  const horizonYear = Math.max(0, ...(result?.years || [0]))
+
+  return strategies.map((strategy) => {
+    let samples = getFinalMetricSamples(result, strategy.key, metric === 'holdBalance' ? 'holdBalance' : metric === 'annualSurplus' ? 'annualSurplus' : 'sellDown')
+      .filter((value) => Number.isFinite(Number(value)))
+      .map((value) => Number(value))
+
+    if (metric === 'inflationAdjusted') {
+      samples = samples.map((value) => discountToToday(value, horizonYear, inflationRate))
+    }
+
+    const summary = samples.length ? percentileSummary(samples) : { p10: 0, p50: 0, p90: 0 }
+
+    return {
+      id: strategy.key,
+      label: strategy.label,
+      color: strategy.color,
+      accent: strategy.accent,
+      samples,
+      stats: {
+        p10: summary.p10,
+        p50: summary.p50,
+        p90: summary.p90,
+        displayP50: formatShortCurrency(summary.p50)
+      }
+    }
+  })
 }

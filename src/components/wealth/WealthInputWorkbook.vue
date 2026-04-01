@@ -72,6 +72,14 @@
           </p>
         </template>
 
+        <template v-else-if="activeSheet === 'regionScout'">
+          <WealthRegionScoutStep
+            :form="form"
+            :scout-config="regionScoutConfig"
+            :suburb-search-context="suburbSearchContext"
+          />
+        </template>
+
         <template v-else-if="activeSheet === 'apartment'">
           <div class="wealth-workbook__panel-head">
             <h3>Apartment assumptions</h3>
@@ -226,15 +234,15 @@
                       <span>Scale deposit so I can purchase ASAP</span>
                     </label>
                     <label>
-                      <span>Owner deposit %</span>
+                      <span>Deposit %</span>
                       <input v-model.number="apartmentOwnerDepositPct" type="number" min="5" max="80" step="1" />
                     </label>
                     <label>
-                      <span>Owner rate %</span>
+                      <span>Interest rate %</span>
                       <input v-model.number="apartmentOwnerRatePct" type="number" min="1" max="12" step="0.1" />
                     </label>
                     <label>
-                      <span>Owner long-run rate %</span>
+                      <span>Long-run interest rate %</span>
                       <input v-model.number="apartmentOwnerLongRunRatePct" type="number" min="1" max="12" step="0.1" />
                     </label>
                   </div>
@@ -247,7 +255,7 @@
                       <span>Scale deposit so I can purchase ASAP</span>
                     </label>
                     <label>
-                      <span>Investment deposit %</span>
+                      <span>Deposit %</span>
                       <input v-model.number="apartmentDepositPct" type="number" min="5" max="80" step="1" />
                     </label>
                     <label>
@@ -263,11 +271,11 @@
                       <input v-model.number="apartmentManagementPct" type="number" min="0" max="15" step="0.1" />
                     </label>
                     <label>
-                      <span>Investment rate %</span>
+                      <span>Interest rate %</span>
                       <input v-model.number="apartmentInvestmentRatePct" type="number" min="1" max="12" step="0.1" />
                     </label>
                     <label>
-                      <span>Investment long-run rate %</span>
+                      <span>Long-run interest rate %</span>
                       <input v-model.number="apartmentInvestmentLongRunRatePct" type="number" min="1" max="12" step="0.1" />
                     </label>
                   </div>
@@ -484,15 +492,15 @@
                       <span>Scale deposit so I can purchase ASAP</span>
                     </label>
                     <label>
-                      <span>Owner deposit %</span>
+                      <span>Deposit %</span>
                       <input v-model.number="houseOwnerDepositPct" type="number" min="5" max="80" step="1" />
                     </label>
                     <label>
-                      <span>Owner rate %</span>
+                      <span>Interest rate %</span>
                       <input v-model.number="houseOwnerRatePct" type="number" min="1" max="12" step="0.1" />
                     </label>
                     <label>
-                      <span>Owner long-run rate %</span>
+                      <span>Long-run interest rate %</span>
                       <input v-model.number="houseOwnerLongRunRatePct" type="number" min="1" max="12" step="0.1" />
                     </label>
                   </div>
@@ -505,7 +513,7 @@
                       <span>Scale deposit so I can purchase ASAP</span>
                     </label>
                     <label>
-                      <span>Investment deposit %</span>
+                      <span>Deposit %</span>
                       <input v-model.number="houseDepositPct" type="number" min="5" max="80" step="1" />
                     </label>
                     <label>
@@ -521,11 +529,11 @@
                       <input v-model.number="houseManagementPct" type="number" min="0" max="15" step="0.1" />
                     </label>
                     <label>
-                      <span>Investment rate %</span>
+                      <span>Interest rate %</span>
                       <input v-model.number="houseInvestmentRatePct" type="number" min="1" max="12" step="0.1" />
                     </label>
                     <label>
-                      <span>Investment long-run rate %</span>
+                      <span>Long-run interest rate %</span>
                       <input v-model.number="houseInvestmentLongRunRatePct" type="number" min="1" max="12" step="0.1" />
                     </label>
                   </div>
@@ -592,6 +600,7 @@
 import { computed } from 'vue'
 import SuburbSearchSelector from './SuburbSearchSelector.vue'
 import WealthPropertyTrendChart from './WealthPropertyTrendChart.vue'
+import WealthRegionScoutStep from './WealthRegionScoutStep.vue'
 import { getWealthBootstrapAssets } from '../../wealth/assetBootstrap.js'
 import {
   calculatePurchaseCosts,
@@ -616,6 +625,18 @@ const props = defineProps({
   form: { type: Object, required: true },
   activeSheet: { type: String, required: true },
   scenarioSelection: { type: Object, required: true },
+  regionScoutConfig: {
+    type: Object,
+    default: () => ({
+      targetYears: 5,
+      propertyType: 'apartment',
+      granularity: 'region',
+      locationKey: null,
+      savingsMode: 'defaultPortfolio',
+      minPrice: null,
+      maxPrice: null
+    })
+  },
   suburbSearchContext: { type: Object, required: true },
   selectedApartmentAreaSelection: { type: Object, default: null },
   selectedApartmentAreaRecord: { type: Object, default: null },

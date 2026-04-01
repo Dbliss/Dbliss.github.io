@@ -265,7 +265,7 @@ export function getWealthStrategyMeta() {
     buyHouseHome: {
       group: 'housing',
       baselineEligible: false,
-      label: 'Buy House To Live In',
+      label: 'House To Live In',
       shortLabel: 'Own House',
       color: '#10b981',
       accent: 'rgba(16, 185, 129, 0.18)',
@@ -274,7 +274,7 @@ export function getWealthStrategyMeta() {
     buyApartmentHome: {
       group: 'housing',
       baselineEligible: false,
-      label: 'Buy Apartment To Live In',
+      label: 'Apartment To Live In',
       shortLabel: 'Own Apt',
       color: '#14b8a6',
       accent: 'rgba(20, 184, 166, 0.18)',
@@ -283,7 +283,7 @@ export function getWealthStrategyMeta() {
     buyHouseInvestmentProperty: {
       group: 'housing',
       baselineEligible: false,
-      label: 'Buy House As Investment + Rent',
+      label: 'House As Investment',
       shortLabel: 'Rentvest House',
       color: '#ec4899',
       accent: 'rgba(236, 72, 153, 0.18)',
@@ -292,7 +292,7 @@ export function getWealthStrategyMeta() {
     buyApartmentInvestmentProperty: {
       group: 'housing',
       baselineEligible: false,
-      label: 'Buy Apartment As Investment + Rent',
+      label: 'Apartment As Investment',
       shortLabel: 'Rentvest Apt',
       color: '#fb923c',
       accent: 'rgba(251, 146, 60, 0.18)',

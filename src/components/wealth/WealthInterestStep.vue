@@ -55,7 +55,8 @@ import {
 } from '../../data/wealthDefaults.js'
 
 const props = defineProps({
-  scenarioSelection: { type: Object, required: true }
+  scenarioSelection: { type: Object, required: true },
+  selectedMode: { type: String, default: null }
 })
 
 defineEmits(['select-mode'])
@@ -108,10 +109,27 @@ const comparisonModes = [
     includes: ['House live-in', 'Apartment live-in', 'Rentvest house', 'Rentvest apartment'],
     color: '#ea580c',
     accent: 'rgba(234, 88, 12, 0.16)'
+  },
+  {
+    key: 'regionScout',
+    title: 'Best regions to target',
+    description: 'Estimate what you could buy in a chosen number of years, pick house or apartment, and let the tool rank the strongest areas by affordability and growth.',
+    stat: 'Budget-led area finder',
+    preview: [
+      'Target year, property type, and optional region focus',
+      'Projected buying budget from your household profile',
+      'A ranked list of affordable regions and subregions'
+    ],
+    includes: ['Budget estimate', 'Area ranking', 'Growth-led shortlist'],
+    color: '#7c3aed',
+    accent: 'rgba(124, 58, 237, 0.14)'
   }
 ]
 
 const selectedMode = computed(() => {
+  if (props.selectedMode && comparisonModes.some((mode) => mode.key === props.selectedMode)) {
+    return props.selectedMode
+  }
   const selectedKeys = props.scenarioSelection.selectedScenarioKeys || []
   return comparisonModes.find(mode => matchesScenarioKeys(selectedKeys, comparisonModeScenarioKeys[mode.key]))?.key || null
 })
@@ -172,7 +190,7 @@ function getModeStyle(mode) {
 
 .wealth-interest__mode-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1.15rem;
   align-items: stretch;
 }
@@ -326,7 +344,7 @@ function getModeStyle(mode) {
   line-height: 1.4;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1280px) {
   .wealth-interest__mode-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

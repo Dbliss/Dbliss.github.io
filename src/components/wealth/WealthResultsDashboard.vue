@@ -14,18 +14,6 @@
             <option v-for="option in metricOptions" :key="option.key" :value="option.key">{{ option.label }}</option>
           </select>
         </label>
-        <div class="wealth-results__filter-group">
-          <button
-            v-for="option in groupOptions"
-            :key="option.key"
-            type="button"
-            class="wealth-results__filter"
-            :class="{ 'is-active': groupFilter === option.key }"
-            @click="$emit('update:groupFilter', option.key)"
-          >
-            {{ option.label }}
-          </button>
-        </div>
       </div>
     </div>
 
@@ -52,14 +40,6 @@
       </article>
     </section>
 
-    <div class="wealth-results__narratives card">
-      <p class="wealth-results__kpi-kicker">Synthesized takeaways</p>
-      <p v-for="line in visibleNarratives" :key="line" class="wealth-results__copy">{{ line }}</p>
-      <p v-if="!visibleNarratives.length && filteredStrategies.length" class="wealth-results__copy">All strategies in this view are currently hidden.</p>
-      <p v-if="resultsStale" class="wealth-results__stale">Inputs changed since the last run. Recalculate to refresh the dashboard.</p>
-      <p v-else-if="loading" class="wealth-results__stale">Simulation is running.</p>
-    </div>
-
     <div class="wealth-results__visibility card">
       <p class="wealth-results__kpi-kicker">Strategy visibility</p>
       <button
@@ -77,13 +57,65 @@
 
     <div class="wealth-results__chart-block">
       <WealthLineChart
+        v-if="chartView === 'projection'"
         class="wealth-results__chart"
         :title="metricMeta.title"
         :subtitle="metricMeta.subtitle"
         kicker="Scenario comparison"
         :series="series"
         :muted-series-ids="mutedStrategyKeys"
-      />
+      >
+        <template #actions>
+          <div class="wealth-results__view-toggle" role="tablist" aria-label="Scenario comparison view">
+            <button
+              type="button"
+              class="wealth-results__view-btn"
+              :class="{ 'is-active': chartView === 'projection' }"
+              @click="chartView = 'projection'"
+            >
+              Projection
+            </button>
+            <button
+              type="button"
+              class="wealth-results__view-btn"
+              :class="{ 'is-active': chartView === 'distribution' }"
+              @click="chartView = 'distribution'"
+            >
+              Distribution
+            </button>
+          </div>
+        </template>
+      </WealthLineChart>
+      <WealthDistributionChart
+        v-else
+        class="wealth-results__chart"
+        :title="distributionMeta.title"
+        :subtitle="distributionMeta.subtitle"
+        kicker="Scenario comparison"
+        :series="distributionSeries"
+        :muted-series-ids="mutedStrategyKeys"
+      >
+        <template #actions>
+          <div class="wealth-results__view-toggle" role="tablist" aria-label="Scenario comparison view">
+            <button
+              type="button"
+              class="wealth-results__view-btn"
+              :class="{ 'is-active': chartView === 'projection' }"
+              @click="chartView = 'projection'"
+            >
+              Projection
+            </button>
+            <button
+              type="button"
+              class="wealth-results__view-btn"
+              :class="{ 'is-active': chartView === 'distribution' }"
+              @click="chartView = 'distribution'"
+            >
+              Distribution
+            </button>
+          </div>
+        </template>
+      </WealthDistributionChart>
     </div>
 
     <div class="wealth-results__detail-grid">
@@ -98,13 +130,11 @@
               </div>
               <span>{{ strategy.summary.finalMedianDisplay }}</span>
             </div>
-            <p>{{ strategy.narrative }}</p>
             <div class="wealth-results__item-meta">
               <span>Downside {{ formatCurrency(strategy.summary.downsideRisk) }}</span>
               <span v-if="strategy.group === 'housing'">Vs baseline {{ formatSignedCurrency(strategy.deltaVsBaseline) }}</span>
               <span>Variability {{ formatCurrency(strategy.variabilitySpread) }}</span>
               <span v-if="strategy.purchaseYear !== null">Purchase year {{ strategy.purchaseYear }}</span>
-              <span v-if="strategy.group === 'housing' && strategy.breakevenYearVsBaseline !== null">Beats baseline in year {{ strategy.breakevenYearVsBaseline }}</span>
             </div>
           </article>
           <p v-if="!visibleStrategies.length && filteredStrategies.length" class="wealth-results__copy">Use the strategy visibility chips above to show scenarios here.</p>
@@ -129,6 +159,7 @@
           v-for="chart in visibleAffordabilityCharts"
           :key="chart.key"
           :title="chart.title"
+          :configured-deposit-pct="chart.configuredDepositPct"
           :purchase-year="chart.purchaseYear"
           :purchase-point="chart.purchasePoint"
           :points="chart.points"
@@ -140,11 +171,12 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import WealthLineChart from './WealthLineChart.vue'
+import WealthDistributionChart from './WealthDistributionChart.vue'
 import WealthAffordabilityHurdleChart from './WealthAffordabilityHurdleChart.vue'
 import WealthCompositionBars from './WealthCompositionBars.vue'
-import { buildDashboardSeries } from '../../wealth/dashboard.js'
+import { buildDashboardDistributionSeries, buildDashboardSeries } from '../../wealth/dashboard.js'
 
 const props = defineProps({
   dashboard: { type: Object, required: true },
@@ -159,11 +191,7 @@ const props = defineProps({
 
 defineEmits(['update:groupFilter', 'update:metric', 'toggle-series'])
 
-const groupOptions = [
-  { key: 'all', label: 'All' },
-  { key: 'stock', label: 'Stocks' },
-  { key: 'housing', label: 'Housing' }
-]
+const chartView = ref('projection')
 
 const metricOptions = [
   { key: 'sellDown', label: 'Liquidity Available' },
@@ -172,10 +200,7 @@ const metricOptions = [
   { key: 'holdBalance', label: 'Hold balance' }
 ]
 
-const filteredStrategies = computed(() => {
-  if (props.groupFilter === 'all') return props.dashboard.strategies
-  return props.dashboard.strategies.filter(strategy => strategy.group === props.groupFilter)
-})
+const filteredStrategies = computed(() => props.dashboard.strategies)
 
 const visibleStrategies = computed(() =>
   filteredStrategies.value.filter(strategy => !props.mutedStrategyKeys.includes(strategy.key))
@@ -214,6 +239,35 @@ const series = computed(() =>
   buildDashboardSeries(filteredStrategies.value, props.metric, props.inflationRate)
 )
 
+const distributionSeries = computed(() =>
+  buildDashboardDistributionSeries(props.dashboard.sourceResult || {}, filteredStrategies.value, props.metric, props.inflationRate)
+)
+
+const distributionMeta = computed(() => {
+  if (props.metric === 'inflationAdjusted') {
+    return {
+      title: "Final outcomes in today's dollars",
+      subtitle: 'Distribution of end-of-horizon liquidity outcomes discounted back using the rent-growth assumption as the inflation proxy.'
+    }
+  }
+  if (props.metric === 'annualSurplus') {
+    return {
+      title: 'Final-year annual surplus distribution',
+      subtitle: 'Distribution of end-of-horizon annual after-tax surplus or deficit across the simulation runs.'
+    }
+  }
+  if (props.metric === 'holdBalance') {
+    return {
+      title: 'Final hold-balance distribution',
+      subtitle: 'Distribution of end-of-horizon hold-only net worth before sale tax.'
+    }
+  }
+  return {
+    title: 'Final liquidity distribution',
+    subtitle: 'Distribution of end-of-horizon after-tax liquidity available across the simulation runs.'
+  }
+})
+
 const visibleKpis = computed(() => {
   const strategies = visibleStrategies.value
   const housingStrategies = strategies.filter(strategy => strategy.group === 'housing')
@@ -233,10 +287,6 @@ const visibleKpis = computed(() => {
       .sort((left, right) => left.breakevenYearVsBaseline - right.breakevenYearVsBaseline)[0] || null
   }
 })
-
-const visibleNarratives = computed(() =>
-  visibleStrategies.value.slice(0, 3).map(strategy => strategy.narrative)
-)
 
 const visibleCompositionRows = computed(() => {
   const visibleKeys = new Set(visibleStrategies.value.map(strategy => strategy.key))
@@ -274,7 +324,8 @@ function formatSignedCurrency(value) {
 .wealth-results__controls,
 .wealth-results__visibility,
 .wealth-results__item-top,
-.wealth-results__item-meta {
+.wealth-results__item-meta,
+.wealth-results__view-toggle {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
@@ -326,13 +377,12 @@ function formatSignedCurrency(value) {
   font: inherit;
 }
 
-.wealth-results__filter-group {
-  display: inline-flex;
-  gap: 0.45rem;
-  align-items: end;
+.wealth-results__view-toggle {
+  align-items: center;
+  justify-content: flex-end;
 }
 
-.wealth-results__filter,
+.wealth-results__view-btn,
 .wealth-results__chip {
   padding: 0.6rem 0.85rem;
   border-radius: 999px;
@@ -343,7 +393,7 @@ function formatSignedCurrency(value) {
   cursor: pointer;
 }
 
-.wealth-results__filter.is-active {
+.wealth-results__view-btn.is-active {
   background: rgba(216, 234, 255, 0.98);
   border-color: rgba(45, 118, 212, 0.3);
 }
@@ -377,17 +427,6 @@ function formatSignedCurrency(value) {
   color: #5d7394;
 }
 
-.wealth-results__narratives {
-  display: grid;
-  gap: 0.4rem;
-  padding: 1rem;
-}
-
-.wealth-results__stale {
-  margin: 0.35rem 0 0;
-  color: #b45309;
-}
-
 .wealth-results__chip {
   display: inline-flex;
   align-items: center;
@@ -396,7 +435,7 @@ function formatSignedCurrency(value) {
 }
 
 .wealth-results__chip:hover,
-.wealth-results__filter:hover {
+.wealth-results__view-btn:hover {
   transform: translateY(-1px);
 }
 

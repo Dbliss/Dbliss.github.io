@@ -171,6 +171,7 @@ function yearPoint(year, metrics) {
 function aggregateStrategy(strategyKey, buckets, strategyMeta) {
   const points = buckets.map((metrics, index) => yearPoint(index, metrics))
   const finalPoint = points[points.length - 1]
+  const finalMetrics = buckets[buckets.length - 1] || null
   const worstCashDeficitPoint = points.reduce((worst, point) =>
     !worst || point.cashDeficitP50 > worst.cashDeficitP50 ? point : worst
   , null)
@@ -193,7 +194,10 @@ function aggregateStrategy(strategyKey, buckets, strategyMeta) {
       finalMedianCashDeficit: finalPoint.cashDeficitP50,
       maxMedianCashDeficit: worstCashDeficitPoint ? worstCashDeficitPoint.cashDeficitP50 : 0,
       firstMedianDeficitYear: firstMedianDeficitPoint ? firstMedianDeficitPoint.year : null,
-      finalMedianDisplay: formatShortCurrency(finalPoint.p50)
+      finalMedianDisplay: formatShortCurrency(finalPoint.p50),
+      finalLiquidationSamples: Array.isArray(finalMetrics?.liquidationNetWorth)
+        ? [...finalMetrics.liquidationNetWorth]
+        : []
     }
   }
 }
@@ -1217,7 +1221,7 @@ function normaliseProperty(property, fallback = {}) {
 function normaliseRequest(request) {
   const safe = JSON.parse(JSON.stringify(request))
   safe.profile.horizonYears = Math.round(clamp(safe.profile.horizonYears, 10, 30))
-  safe.simulationSettings.iterations = Math.round(clamp(safe.simulationSettings.iterations, 120, 800))
+  safe.simulationSettings.iterations = Math.round(clamp(safe.simulationSettings.iterations, 120, 500))
   safe.profile.startingSavings = Math.max(0, Number(safe.profile.startingSavings) || 0)
   safe.profile = {
     ...safe.profile,
@@ -1337,12 +1341,32 @@ export function simulateWealthPathways(rawRequest) {
   const strategies = Object.fromEntries(
     selectedScenarioKeys.map(strategyKey => [strategyKey, aggregateStrategy(strategyKey, bucketsByStrategy[strategyKey], strategyMeta)])
   )
+  const finalMetricSamplesByStrategy = Object.fromEntries(
+    selectedScenarioKeys.map((strategyKey) => {
+      const finalBucket = bucketsByStrategy[strategyKey]?.[horizonYears]
+      return [
+        strategyKey,
+        {
+          sellDown: Array.isArray(finalBucket?.liquidationNetWorth)
+            ? [...finalBucket.liquidationNetWorth]
+            : [],
+          holdBalance: Array.isArray(finalBucket?.netWorth)
+            ? [...finalBucket.netWorth]
+            : [],
+          annualSurplus: Array.isArray(finalBucket?.annualSurplus)
+            ? [...finalBucket.annualSurplus]
+            : []
+        }
+      ]
+    })
+  )
 
   return {
     generatedAt: new Date().toISOString(),
     years: Array.from({ length: horizonYears + 1 }, (_, index) => index),
     iterations: request.simulationSettings.iterations,
     request,
+    finalMetricSamplesByStrategy,
     strategies,
     strategyOrder: wealthStrategyOrder.filter(key => selectedScenarioKeys.includes(key))
   }

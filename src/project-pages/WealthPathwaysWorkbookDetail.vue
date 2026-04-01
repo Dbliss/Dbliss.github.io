@@ -39,11 +39,12 @@
         <template v-else-if="currentStage === 'interests'">
           <WealthInterestStep
             :scenario-selection="form.scenarioSelection"
+            :selected-mode="selectedComparisonMode"
             @select-mode="selectComparisonMode"
           />
           <div class="wealth-stage-footer">
             <button type="button" class="wealth-secondary-btn" @click="currentStage = 'introduction'">Back</button>
-            <button type="button" class="wealth-primary-btn" @click="goToInputs">Next: Inputs</button>
+            <button type="button" class="wealth-primary-btn" @click="goToInputs">{{ interestPrimaryActionLabel }}</button>
           </div>
         </template>
 
@@ -52,6 +53,7 @@
             :form="form"
             :active-sheet="activeSheet"
             :scenario-selection="form.scenarioSelection"
+            :region-scout-config="regionScoutConfig"
             :suburb-search-context="suburbSearchContext"
             :selected-apartment-area-selection="selectedApartmentAreaSelection"
             :selected-apartment-area-record="selectedApartmentAreaRecord"
@@ -80,14 +82,14 @@
         </template>
 
         <template v-else>
-          <div class="wealth-results-toolbar">
-            <button type="button" class="wealth-secondary-btn" @click="currentStage = 'inputs'">Edit inputs</button>
-            <button type="button" class="wealth-primary-btn" data-testid="rerun-results" @click="rerunResults">
-              {{ loading ? 'Running simulation...' : 'Recalculate with current inputs' }}
-            </button>
-          </div>
-
+          <WealthRegionScoutStep
+            v-if="selectedComparisonMode === 'regionScout'"
+            :form="form"
+            :scout-config="regionScoutConfig"
+            :suburb-search-context="suburbSearchContext"
+          />
           <WealthResultsDashboard
+            v-else
             :dashboard="dashboard"
             :group-filter="groupFilter"
             :metric="resultMetric"
@@ -113,6 +115,7 @@ import WealthStageProgress from '../components/wealth/WealthStageProgress.vue'
 import WealthIntroStep from '../components/wealth/WealthIntroStep.vue'
 import WealthInterestStep from '../components/wealth/WealthInterestStep.vue'
 import WealthInputWorkbook from '../components/wealth/WealthInputWorkbook.vue'
+import WealthRegionScoutStep from '../components/wealth/WealthRegionScoutStep.vue'
 import WealthResultsDashboard from '../components/wealth/WealthResultsDashboard.vue'
 import {
   cloneSimulationRequest,
@@ -162,6 +165,7 @@ const strategyMeta = getWealthStrategyMeta()
 const client = new WealthSimulationClient()
 const currentStage = ref('introduction')
 const activeSheet = ref('stock')
+const selectedComparisonMode = ref('propertyVsStocks')
 const hasEnteredWorkspace = ref(false)
 const result = ref(null)
 const loading = ref(false)
@@ -174,6 +178,15 @@ const resultMetric = ref('sellDown')
 const selectedApartmentAreaSelection = ref(null)
 const selectedHouseAreaSelection = ref(null)
 const areaMarketPayload = ref(wealthPsiRegionMarketPayload)
+const regionScoutConfig = reactive({
+  targetYears: 5,
+  propertyType: 'apartment',
+  granularity: 'region',
+  locationKey: null,
+  savingsMode: 'defaultPortfolio',
+  minPrice: null,
+  maxPrice: null
+})
 const heroRef = ref(null)
 const workspaceRef = ref(null)
 let runToken = 0
@@ -201,6 +214,7 @@ const selectedHouseAreaPreview = computed(() => createPropertyConfigPatchFromAre
 })
 
 const availableInputSheetKeys = computed(() => {
+  if (selectedComparisonMode.value === 'regionScout') return ['regionScout']
   const keys = []
   if (form.scenarioSelection.includeStocks) keys.push('stock')
   if (form.scenarioSelection.includeHousing) keys.push('apartment', 'house')
@@ -233,6 +247,8 @@ const inputStageSubsteps = computed(() =>
     label:
       sheetKey === 'stock'
         ? 'Stock assumptions'
+        : sheetKey === 'regionScout'
+          ? 'Region scout'
         : sheetKey === 'apartment'
           ? 'Apartment assumptions'
           : sheetKey === 'house'
@@ -293,6 +309,12 @@ function getInputSheetState(sheetKey) {
       : { complete: false, message: 'Select a house area before continuing.' }
   }
 
+  if (sheetKey === 'regionScout') {
+    return Number(regionScoutConfig.targetYears) >= 1
+      ? { complete: true, message: '' }
+      : { complete: false, message: 'Set a target year before continuing.' }
+  }
+
   return { complete: true, message: '' }
 }
 
@@ -348,10 +370,13 @@ const nextInputSheetLabel = computed(() => getSheetLabel(nextInputSheet.value))
 const inputPrimaryActionLabel = computed(() =>
   isLastInputSheet.value ? 'Generate results' : `Next: ${nextInputSheetLabel.value}`
 )
+const interestPrimaryActionLabel = computed(() =>
+  selectedComparisonMode.value === 'regionScout' ? 'Next: Results' : 'Next: Inputs'
+)
 
 const disabledStageKeys = computed(() => {
   const keys = []
-  if (!(result.value && allInputSheetsComplete.value)) keys.push('results')
+  if (!((selectedComparisonMode.value === 'regionScout' || result.value) && allInputSheetsComplete.value)) keys.push('results')
   return keys
 })
 
@@ -444,6 +469,12 @@ function syncScenarioSelection(nextPatch = {}) {
 }
 
 function selectComparisonMode(modeKey) {
+  selectedComparisonMode.value = modeKey
+  if (modeKey === 'regionScout') {
+    void enterWorkspace()
+    currentStage.value = 'results'
+    return
+  }
   const selectedScenarioKeys = comparisonModeScenarioKeys[modeKey] || comparisonModeScenarioKeys.propertyVsStocks
   const stockBaselineKey = selectedScenarioKeys.includes(wealthDefaultStockBaselineKey)
     ? wealthDefaultStockBaselineKey
@@ -458,6 +489,11 @@ function selectComparisonMode(modeKey) {
 selectComparisonMode('propertyVsStocks')
 
 function goToInputs() {
+  if (selectedComparisonMode.value === 'regionScout') {
+    void enterWorkspace()
+    currentStage.value = 'results'
+    return
+  }
   void enterWorkspace()
   currentStage.value = 'inputs'
   activeSheet.value = firstInputSheet.value
@@ -591,15 +627,17 @@ async function runSimulation() {
 async function generateResults() {
   if (!allInputSheetsComplete.value) return
 
+  if (selectedComparisonMode.value === 'regionScout') {
+    await enterWorkspace()
+    currentStage.value = 'results'
+    return
+  }
+
   const ok = await runSimulation()
   if (ok) {
     await enterWorkspace()
     currentStage.value = 'results'
   }
-}
-
-async function rerunResults() {
-  await runSimulation()
 }
 
 function toggleStrategy(key) {
@@ -616,6 +654,9 @@ watch(form, () => {
 watch(currentStage, (stageKey) => {
   if (stageKey !== 'introduction') {
     void enterWorkspace()
+  }
+  if (stageKey === 'results') {
+    void scrollResultsToTop()
   }
 })
 
@@ -686,6 +727,14 @@ async function enterWorkspace({ smooth = false } = {}) {
   if (!smooth || typeof window === 'undefined') return
   if (wasEntered) return
   workspaceRef.value?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+}
+
+async function scrollResultsToTop() {
+  await nextTick()
+  if (typeof window !== 'undefined') {
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }
+  workspaceRef.value?.scrollTo?.({ top: 0, behavior: 'auto' })
 }
 
 function updateWorkspaceState() {
@@ -857,7 +906,6 @@ onBeforeUnmount(() => {
 }
 
 .wealth-stage-footer,
-.wealth-results-toolbar,
 .wealth-banner__chips {
   display: flex;
   flex-wrap: wrap;
@@ -865,7 +913,6 @@ onBeforeUnmount(() => {
 }
 
 .wealth-stage-footer,
-.wealth-results-toolbar,
 .wealth-banner {
   justify-content: space-between;
   align-items: center;
@@ -959,8 +1006,7 @@ onBeforeUnmount(() => {
   }
 
   .wealth-banner,
-  .wealth-stage-footer,
-  .wealth-results-toolbar {
+  .wealth-stage-footer {
     align-items: stretch;
   }
 }

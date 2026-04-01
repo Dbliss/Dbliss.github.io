@@ -6,6 +6,9 @@
         <h3>{{ title }}</h3>
         <p v-if="subtitle" class="wealth-chart__subtitle">{{ subtitle }}</p>
       </div>
+      <div v-if="$slots.actions" class="wealth-chart__actions">
+        <slot name="actions"></slot>
+      </div>
     </div>
 
     <div class="wealth-chart__layout">
@@ -309,6 +312,13 @@ function onPointerMove(event) {
   gap: 1rem;
   align-items: flex-start;
   flex-wrap: wrap;
+}
+
+.wealth-chart__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
 }
 
 .wealth-chart__header h3 {

@@ -82,7 +82,7 @@
               <section class="wealth-market__controls card">
                 <label class="wealth-workbook__toggle">
                   <input v-model="form.propertyConfig.firstHomeBuyerEligible" type="checkbox" />
-                  <span>Apply first-home-buyer support to owner paths</span>
+                  <span>Apply estimated first-home-buyer duty support to owner paths</span>
                 </label>
                 <label class="wealth-workbook__toggle">
                   <input v-model="form.propertyConfig.investWhileSavingForDeposit" type="checkbox" />
@@ -197,12 +197,16 @@
             <section class="wealth-property-section wealth-property-section--plain">
               <div class="wealth-property-section__head">
                 <h4>Financing paths</h4>
-                <p>These change depending on whether the property is purchased to live in or held as an investment.</p>
+                <p>These change depending on whether the property is purchased to live in or held as an investment. Lower deposits can increase estimated LMI, which remains a rough proxy rather than a lender quote.</p>
               </div>
               <div class="wealth-property-paths">
                 <div class="wealth-property-path-card">
                   <h5>Owner path</h5>
                   <div class="wealth-workbook__grid">
+                    <label class="wealth-workbook__toggle wealth-workbook__toggle--inline">
+                      <input v-model="apartmentOwnerScaleDepositToBuyAsap" type="checkbox" />
+                      <span>Scale deposit so I can purchase ASAP</span>
+                    </label>
                     <label>
                       <span>Owner deposit %</span>
                       <input v-model.number="apartmentOwnerDepositPct" type="number" min="5" max="80" step="1" />
@@ -220,6 +224,10 @@
                 <div class="wealth-property-path-card">
                   <h5>Investment path</h5>
                   <div class="wealth-workbook__grid">
+                    <label class="wealth-workbook__toggle wealth-workbook__toggle--inline">
+                      <input v-model="apartmentInvestmentScaleDepositToBuyAsap" type="checkbox" />
+                      <span>Scale deposit so I can purchase ASAP</span>
+                    </label>
                     <label>
                       <span>Investment deposit %</span>
                       <input v-model.number="apartmentDepositPct" type="number" min="5" max="80" step="1" />
@@ -252,7 +260,7 @@
             <section class="wealth-property-section wealth-property-section--plain">
               <div class="wealth-property-section__head">
                 <h4>Auto-filled property costs</h4>
-                <p>These fields are prefilled from the selected property value and can still be adjusted if needed.</p>
+                <p>These fields are prefilled from the selected property value. Stamp duty uses the current NSW stepped schedule, while land tax remains a purchase-price-based estimate only.</p>
               </div>
               <div class="wealth-workbook__grid wealth-workbook__grid--triple">
                 <label>
@@ -288,6 +296,10 @@
                   <input v-model.number="form.propertyConfig.apartment.strata" type="number" min="0" step="100" />
                 </label>
                 <label>
+                  <span>Estimated land tax (investment)</span>
+                  <input v-model.number="form.propertyConfig.apartment.landTax" type="number" min="0" step="100" />
+                </label>
+                <label>
                   <span>Borrowing expenses</span>
                   <input v-model.number="form.propertyConfig.apartment.borrowingExpensesTotal" type="number" min="0" step="100" />
                 </label>
@@ -310,7 +322,7 @@
               <section class="wealth-market__controls card">
                 <label class="wealth-workbook__toggle">
                   <input v-model="form.propertyConfig.firstHomeBuyerEligible" type="checkbox" />
-                  <span>Apply first-home-buyer support to owner paths</span>
+                  <span>Apply estimated first-home-buyer duty support to owner paths</span>
                 </label>
                 <label class="wealth-workbook__toggle">
                   <input v-model="form.propertyConfig.investWhileSavingForDeposit" type="checkbox" />
@@ -425,12 +437,16 @@
             <section class="wealth-property-section wealth-property-section--plain">
               <div class="wealth-property-section__head">
                 <h4>Financing paths</h4>
-                <p>These change depending on whether the property is purchased to live in or held as an investment.</p>
+                <p>These change depending on whether the property is purchased to live in or held as an investment. Lower deposits can increase estimated LMI, which remains a rough proxy rather than a lender quote.</p>
               </div>
               <div class="wealth-property-paths">
                 <div class="wealth-property-path-card">
                   <h5>Owner path</h5>
                   <div class="wealth-workbook__grid">
+                    <label class="wealth-workbook__toggle wealth-workbook__toggle--inline">
+                      <input v-model="houseOwnerScaleDepositToBuyAsap" type="checkbox" />
+                      <span>Scale deposit so I can purchase ASAP</span>
+                    </label>
                     <label>
                       <span>Owner deposit %</span>
                       <input v-model.number="houseOwnerDepositPct" type="number" min="5" max="80" step="1" />
@@ -448,6 +464,10 @@
                 <div class="wealth-property-path-card">
                   <h5>Investment path</h5>
                   <div class="wealth-workbook__grid">
+                    <label class="wealth-workbook__toggle wealth-workbook__toggle--inline">
+                      <input v-model="houseInvestmentScaleDepositToBuyAsap" type="checkbox" />
+                      <span>Scale deposit so I can purchase ASAP</span>
+                    </label>
                     <label>
                       <span>Investment deposit %</span>
                       <input v-model.number="houseDepositPct" type="number" min="5" max="80" step="1" />
@@ -480,7 +500,7 @@
             <section class="wealth-property-section wealth-property-section--plain">
               <div class="wealth-property-section__head">
                 <h4>Auto-filled property costs</h4>
-                <p>These fields are prefilled from the selected property value and can still be adjusted if needed.</p>
+                <p>These fields are prefilled from the selected property value. Stamp duty uses the current NSW stepped schedule, while land tax remains a purchase-price-based estimate only.</p>
               </div>
               <div class="wealth-workbook__grid wealth-workbook__grid--triple">
                 <label>
@@ -512,6 +532,10 @@
                   <input v-model.number="form.propertyConfig.house.maintenance" type="number" min="0" step="100" />
                 </label>
                 <label>
+                  <span>Estimated land tax (investment)</span>
+                  <input v-model.number="form.propertyConfig.house.landTax" type="number" min="0" step="100" />
+                </label>
+                <label>
                   <span>Borrowing expenses</span>
                   <input v-model.number="form.propertyConfig.house.borrowingExpensesTotal" type="number" min="0" step="100" />
                 </label>
@@ -539,6 +563,8 @@ import {
   estimateLmi,
   getEffectiveInvestmentDepositPct,
   getEffectiveOwnerDepositPct,
+  isDepositScalingEnabled,
+  scalePropertyCostWithPrice,
   scalePurchaseCostsWithPrice
 } from '../../wealth/finance.js'
 import { normaliseHouseholdEarners, normaliseIncomeProfile } from '../../wealth/incomeSeries.js'
@@ -633,6 +659,14 @@ const apartmentPurchasePrice = computed({
 })
 const houseOwnerDepositPct = percentProxy(() => props.form.propertyConfig.house.ownerDepositPct, value => { props.form.propertyConfig.house.ownerDepositPct = value })
 const houseDepositPct = percentProxy(() => props.form.propertyConfig.house.depositPct, value => { props.form.propertyConfig.house.depositPct = value })
+const houseOwnerScaleDepositToBuyAsap = computed({
+  get: () => props.form.propertyConfig.house.ownerScaleDepositToBuyAsap !== false,
+  set: (value) => { props.form.propertyConfig.house.ownerScaleDepositToBuyAsap = Boolean(value) }
+})
+const houseInvestmentScaleDepositToBuyAsap = computed({
+  get: () => props.form.propertyConfig.house.investmentScaleDepositToBuyAsap !== false,
+  set: (value) => { props.form.propertyConfig.house.investmentScaleDepositToBuyAsap = Boolean(value) }
+})
 const houseOwnerRatePct = percentProxy(() => props.form.propertyConfig.house.ownerInterestRate, value => { props.form.propertyConfig.house.ownerInterestRate = value })
 const houseOwnerLongRunRatePct = percentProxy(() => props.form.propertyConfig.house.ownerLongRunInterestRate, value => { props.form.propertyConfig.house.ownerLongRunInterestRate = value })
 const houseInvestmentRatePct = percentProxy(() => props.form.propertyConfig.house.investmentInterestRate, value => { props.form.propertyConfig.house.investmentInterestRate = value })
@@ -642,6 +676,14 @@ const houseRentYieldPct = percentProxy(() => props.form.propertyConfig.house.ren
 const houseManagementPct = percentProxy(() => props.form.propertyConfig.house.propertyManagementPct, value => { props.form.propertyConfig.house.propertyManagementPct = value })
 const apartmentOwnerDepositPct = percentProxy(() => props.form.propertyConfig.apartment.ownerDepositPct, value => { props.form.propertyConfig.apartment.ownerDepositPct = value })
 const apartmentDepositPct = percentProxy(() => props.form.propertyConfig.apartment.depositPct, value => { props.form.propertyConfig.apartment.depositPct = value })
+const apartmentOwnerScaleDepositToBuyAsap = computed({
+  get: () => props.form.propertyConfig.apartment.ownerScaleDepositToBuyAsap !== false,
+  set: (value) => { props.form.propertyConfig.apartment.ownerScaleDepositToBuyAsap = Boolean(value) }
+})
+const apartmentInvestmentScaleDepositToBuyAsap = computed({
+  get: () => props.form.propertyConfig.apartment.investmentScaleDepositToBuyAsap !== false,
+  set: (value) => { props.form.propertyConfig.apartment.investmentScaleDepositToBuyAsap = Boolean(value) }
+})
 const apartmentOwnerRatePct = percentProxy(() => props.form.propertyConfig.apartment.ownerInterestRate, value => { props.form.propertyConfig.apartment.ownerInterestRate = value })
 const apartmentOwnerLongRunRatePct = percentProxy(() => props.form.propertyConfig.apartment.ownerLongRunInterestRate, value => { props.form.propertyConfig.apartment.ownerLongRunInterestRate = value })
 const apartmentInvestmentRatePct = percentProxy(() => props.form.propertyConfig.apartment.investmentInterestRate, value => { props.form.propertyConfig.apartment.investmentInterestRate = value })
@@ -759,14 +801,25 @@ function buildPurchasePlan(propertyKey, occupancyMode, propertyValue, depositPct
   const deposit = scaledPrice * safeDepositPct
   const lmi = estimateLmi(scaledPrice, safeDepositPct, firstHomeBuyerEligible)
   const purchaseCosts = calculatePurchaseCosts(scaledPurchaseCosts, firstHomeBuyerEligible, scaledPrice)
+  const scaledBorrowingExpensesTotal = scalePropertyCostWithPrice(
+    propertyConfig.borrowingExpensesTotal,
+    propertyConfig.purchasePrice,
+    scaledPrice,
+    propertyKey,
+    'borrowingExpensesTotal'
+  )
   const borrowingExpensesUpfront = occupancyMode === 'investment'
-    ? Math.max(0, Number(propertyConfig.borrowingExpensesTotal) || 0)
+    ? scaledBorrowingExpensesTotal
+    : 0
+  const deductibleBorrowingExpensesTotal = occupancyMode === 'investment'
+    ? scaledBorrowingExpensesTotal + lmi
     : 0
 
   return {
     depositPct: safeDepositPct,
     requiredCash: deposit + purchaseCosts.total + borrowingExpensesUpfront,
-    openingLoanBalance: Math.max(0, scaledPrice - deposit + lmi)
+    openingLoanBalance: Math.max(0, scaledPrice - deposit + lmi),
+    deductibleBorrowingExpensesTotal
   }
 }
 
@@ -775,8 +828,10 @@ function solveBestPurchasePlan(propertyKey, occupancyMode, propertyValue) {
   if (!propertyConfig) return null
 
   const minDepositPct = getMinimumDepositPct(propertyKey, occupancyMode)
+  const allowDepositScaling = isDepositScalingEnabled(propertyConfig, occupancyMode)
   const minimumPlan = buildPurchasePlan(propertyKey, occupancyMode, propertyValue, minDepositPct)
   if (!minimumPlan || minimumPlan.requiredCash > currentStartingSavings.value) return null
+  if (!allowDepositScaling) return minimumPlan
 
   let low = minDepositPct
   let high = 0.95
@@ -816,11 +871,13 @@ function canAffordProperty(propertyKey, occupancyMode, propertyValue) {
     helpDebtBalances,
     weeklyNonHousingLivingCosts: props.form.profile.weeklyNonHousingLivingCosts,
     occupancyMode,
+    propertyType: propertyKey,
     propertyConfig,
     propertyValue,
     mortgageYears: propertyConfig.mortgageYears,
     personalHousingCostAnnual: occupancyMode === 'investment' ? currentHousingCostAnnual.value : 0,
-    vacancyRate: props.form.propertyConfig.vacancyRate
+    vacancyRate: props.form.propertyConfig.vacancyRate,
+    borrowingExpensesTotalOverride: plan.deductibleBorrowingExpensesTotal
   })
 
   return plan.openingLoanBalance <= borrowingPower.maxLoanSize
@@ -1238,6 +1295,10 @@ function estimatePurchasingPower(propertyKey, occupancyMode) {
   height: 18px;
   min-height: 0;
   padding: 0;
+}
+
+.wealth-workbook__toggle--inline {
+  grid-column: 1 / -1;
 }
 
 .wealth-workbook__summary-grid {

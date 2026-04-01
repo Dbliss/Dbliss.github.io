@@ -241,11 +241,14 @@
               <p class="wealth-field-note wealth-field-note--section">
                 NSW first-home-buyer support is automatically applied to the buy-and-live path. The investment + rent
                 path keeps the standard deposit and buying costs because those concessions depend on living in the
-                property. Owner paths waive stamp duty below $800k, taper the duty concession to $1m, and default to a
-                5% owner deposit with no LMI up to $1.5m, but you can model a higher deposit. Borrowing-power checks
-                use an APRA-style assessment rate and a living-cost floor. Editable property costs now auto-refresh from
-                NSW or Sydney-style fixed-base-plus-scaling baselines instead of a straight percentage-of-price rule.
-                Investment-property cash flow starts from a 3% vacancy baseline unless a suburb selection overrides it.
+                property. Owner paths fully waive stamp duty below $800k, then use the current NSW reduced-duty
+                concession between $800k and $1m. The low-deposit first-home-buyer cap now auto-switches between the
+                selected area's $1.5m and $800k limits. Any LMI shown is an estimate only, not a lender quote or
+                guaranteed scheme outcome. Borrowing-power checks use an APRA-style assessment rate and a living-cost
+                floor. Editable property costs now auto-refresh from NSW or Sydney-style fixed-base-plus-scaling
+                baselines instead of a straight percentage-of-price rule, while land tax remains a purchase-price-based
+                estimate. Investment-property cash flow starts from a 3% vacancy baseline unless a suburb selection
+                overrides it.
               </p>
               <SuburbSearchSelector
                 :current-selection="selectedSuburbSelection"
@@ -897,16 +900,16 @@ const labelHelp = {
   houseRentYield: 'Gross rental yield used when the house is held as an investment property.',
   housePropertyManagementPct: 'Property manager fee applied to collected rent for the house investment path.',
   housePurchasePrice: 'Manual house target in today\'s dollars. If it is above today\'s assessed serviceability limit, the model waits and lets the target grow with house prices until income and cash catch up.',
-  houseOwnerDepositPct: 'Owner-occupier deposit share used for the buy-to-live path and the max-affordable-today calculation. First-home-buyer cases default to 5 percent below $1.5m, but you can raise it.',
-  houseDepositPct: 'Deposit share for the house investment purchase. Lower deposits increase leverage and can trigger lenders mortgage insurance.',
+  houseOwnerDepositPct: 'Owner-occupier deposit share used for the buy-to-live path and the max-affordable-today calculation. First-home-buyer cases still default to 5 percent up to the selected area\'s low-deposit cap, while any resulting LMI remains an estimate only.',
+  houseDepositPct: 'Deposit share for the house investment purchase. Lower deposits increase leverage and can increase estimated lenders mortgage insurance.',
   houseMortgageYears: 'Length of the house mortgage used for amortization and repayment calculations.',
   houseOwnerInterestRate: 'Starting owner-occupier mortgage rate for the house path before the simulation drifts toward the long-run owner rate.',
   houseOwnerLongRunInterestRate: 'Steadier owner-occupier mortgage rate used after the opening years for house scenarios.',
   houseInvestmentInterestRate: 'Starting investor mortgage rate for the house investment path and serviceability checks.',
   houseInvestmentLongRunInterestRate: 'Steadier investor mortgage rate used after the opening years for house investment scenarios.',
   houseGrowthMean: 'Baseline annual house price growth used for the house path.',
-  houseCouncilRates: 'Annual council rates for the house, with land tax folded into this single editable holding-cost line. The default uses a NSW council-style fixed base plus a value-linked component.',
-  houseStampDuty: 'Shared baseline stamp duty for the house purchase. The owner path still applies first-home-buyer relief automatically, while the investment path uses the full amount.',
+  houseCouncilRates: 'Annual council rates for the house. Land tax is modeled separately as an estimated investment-property cost, while council rates use a NSW council-style fixed base plus a value-linked component.',
+  houseStampDuty: 'Shared baseline stamp duty for the house purchase using the current NSW stepped schedule. The owner path still applies an eligibility-dependent first-home-buyer concession estimate, while the investment path uses the full amount.',
   houseLegalFees: 'Shared legal and conveyancing cost baseline for the house purchase. It feeds both owner and investment paths.',
   houseBuyersCosts: 'Shared buyer-side purchase cost baseline for the house purchase, such as inspections and settlement extras.',
   houseWaterRates: 'Annual water charges. They count as a cash housing cost for owner-occupier paths and as a deductible rental expense for investment-property paths.',
@@ -917,16 +920,16 @@ const labelHelp = {
   apartmentRentYield: 'Gross rental yield used when the apartment is held as an investment property.',
   apartmentPropertyManagementPct: 'Property manager fee applied to collected rent for the apartment investment path.',
   apartmentPurchasePrice: 'Manual apartment target in today\'s dollars. If it is above today\'s assessed serviceability limit, the model waits and lets the target grow with apartment prices until income and cash catch up.',
-  apartmentOwnerDepositPct: 'Owner-occupier deposit share used for the buy-to-live path and the max-affordable-today calculation. First-home-buyer cases default to 5 percent below $1.5m, but you can raise it.',
-  apartmentDepositPct: 'Deposit share for the apartment investment purchase. Lower deposits increase leverage and can trigger lenders mortgage insurance.',
+  apartmentOwnerDepositPct: 'Owner-occupier deposit share used for the buy-to-live path and the max-affordable-today calculation. First-home-buyer cases still default to 5 percent up to the selected area\'s low-deposit cap, while any resulting LMI remains an estimate only.',
+  apartmentDepositPct: 'Deposit share for the apartment investment purchase. Lower deposits increase leverage and can increase estimated lenders mortgage insurance.',
   apartmentMortgageYears: 'Length of the apartment mortgage used for amortization and repayment calculations.',
   apartmentOwnerInterestRate: 'Starting owner-occupier mortgage rate for the apartment path before drifting toward the long-run owner rate.',
   apartmentOwnerLongRunInterestRate: 'Steadier owner-occupier mortgage rate used after the opening years for apartment scenarios.',
   apartmentInvestmentInterestRate: 'Starting investor mortgage rate for the apartment investment path and serviceability checks.',
   apartmentInvestmentLongRunInterestRate: 'Steadier investor mortgage rate used after the opening years for apartment investment scenarios.',
   apartmentGrowthMean: 'Baseline annual apartment price growth used for the apartment path.',
-  apartmentCouncilRates: 'Annual council rates for the apartment, with land tax folded into this single editable holding-cost line. The default uses a NSW-style fixed base plus a value-linked component.',
-  apartmentStampDuty: 'Shared baseline stamp duty for the apartment purchase. The owner path still applies first-home-buyer relief automatically, while the investment path uses the full amount.',
+  apartmentCouncilRates: 'Annual council rates for the apartment. Land tax is modeled separately as an estimated investment-property cost, while the default uses a NSW-style fixed base plus a value-linked component.',
+  apartmentStampDuty: 'Shared baseline stamp duty for the apartment purchase using the current NSW stepped schedule. The owner path still applies an eligibility-dependent first-home-buyer concession estimate, while the investment path uses the full amount.',
   apartmentLegalFees: 'Shared legal and conveyancing cost baseline for the apartment purchase. It feeds both owner and investment paths.',
   apartmentBuyersCosts: 'Shared buyer-side purchase cost baseline for the apartment purchase, such as inspections and settlement extras.',
   apartmentWaterRates: 'Annual water charges applied to apartment ownership.',
@@ -1728,6 +1731,7 @@ function assessCurrentPurchaseServiceability(propertyType, property, occupancyMo
     annualIncome: form.profile.annualIncome,
     weeklyNonHousingLivingCosts: form.profile.weeklyNonHousingLivingCosts,
     occupancyMode,
+    propertyType,
     propertyConfig: priceAdjustedProperty,
     propertyValue,
     mortgageYears: priceAdjustedProperty.mortgageYears,
@@ -1799,22 +1803,23 @@ function solveMaxServiceablePriceRange(propertyType, property, minimumPrice, max
 
 function calculateMaxAffordablePurchasePrice(propertyType, property) {
   const configuredDepositPct = getEffectiveOwnerDepositPct(property)
+  const firstHomeBuyerLowDepositLimit = Math.max(0, Number(property.firstHomeBuyerLowDepositLimit) || FIRST_HOME_BUYER_LOW_DEPOSIT_LIMIT)
   const affordableSegments = []
 
   if (ownerOccupierFirstHomeBuyerSupport) {
     affordableSegments.push(
-      solveMaxAffordablePriceRange(propertyType, property, 0, FIRST_HOME_BUYER_LOW_DEPOSIT_LIMIT, configuredDepositPct, true)
+      solveMaxAffordablePriceRange(propertyType, property, 0, firstHomeBuyerLowDepositLimit, configuredDepositPct, true)
     )
   }
 
   affordableSegments.push(
-    solveMaxAffordablePriceRange(
-      propertyType,
-      property,
-      ownerOccupierFirstHomeBuyerSupport ? FIRST_HOME_BUYER_LOW_DEPOSIT_LIMIT : 0,
-      20_000_000,
-      configuredDepositPct,
-      false
+      solveMaxAffordablePriceRange(
+        propertyType,
+        property,
+        ownerOccupierFirstHomeBuyerSupport ? firstHomeBuyerLowDepositLimit : 0,
+        20_000_000,
+        configuredDepositPct,
+        false
     )
   )
 
@@ -1823,22 +1828,23 @@ function calculateMaxAffordablePurchasePrice(propertyType, property) {
 
 function calculateMaxServiceablePurchasePrice(propertyType, property) {
   const configuredDepositPct = getEffectiveOwnerDepositPct(property)
+  const firstHomeBuyerLowDepositLimit = Math.max(0, Number(property.firstHomeBuyerLowDepositLimit) || FIRST_HOME_BUYER_LOW_DEPOSIT_LIMIT)
   const serviceableSegments = []
 
   if (ownerOccupierFirstHomeBuyerSupport) {
     serviceableSegments.push(
-      solveMaxServiceablePriceRange(propertyType, property, 0, FIRST_HOME_BUYER_LOW_DEPOSIT_LIMIT, configuredDepositPct, true)
+      solveMaxServiceablePriceRange(propertyType, property, 0, firstHomeBuyerLowDepositLimit, configuredDepositPct, true)
     )
   }
 
   serviceableSegments.push(
-    solveMaxServiceablePriceRange(
-      propertyType,
-      property,
-      ownerOccupierFirstHomeBuyerSupport ? FIRST_HOME_BUYER_LOW_DEPOSIT_LIMIT : 0,
-      20_000_000,
-      configuredDepositPct,
-      false
+      solveMaxServiceablePriceRange(
+        propertyType,
+        property,
+        ownerOccupierFirstHomeBuyerSupport ? firstHomeBuyerLowDepositLimit : 0,
+        20_000_000,
+        configuredDepositPct,
+        false
     )
   )
 

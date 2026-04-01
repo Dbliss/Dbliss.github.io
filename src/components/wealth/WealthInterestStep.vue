@@ -42,10 +42,6 @@
         <div class="wealth-interest__mode-includes">
           <span v-for="item in mode.includes" :key="item">{{ item }}</span>
         </div>
-
-        <div class="wealth-interest__mode-footer">
-          <span class="wealth-interest__mode-next">{{ mode.nextStep }}</span>
-        </div>
       </button>
     </div>
   </section>
@@ -84,7 +80,6 @@ const comparisonModes = [
       'Results focused on liquid pathways only'
     ],
     includes: ['Portfolio Mix', 'QQQ', 'ASX200', 'Bonds', 'Cash', 'Bitcoin'],
-    nextStep: 'Next you set the portfolio mix in Inputs.',
     color: '#2563eb',
     accent: 'rgba(37, 99, 235, 0.16)'
   },
@@ -100,7 +95,6 @@ const comparisonModes = [
       'Best for deciding between investing and buying'
     ],
     includes: ['Portfolio Mix', 'House live-in', 'Apartment live-in', 'Rentvest house', 'Rentvest apartment'],
-    nextStep: 'Next you set the portfolio mix and property assumptions.',
     color: '#0f766e',
     accent: 'rgba(15, 118, 110, 0.16)'
   },
@@ -116,7 +110,6 @@ const comparisonModes = [
       'Inputs focused purely on property setup'
     ],
     includes: ['House live-in', 'Apartment live-in', 'Rentvest house', 'Rentvest apartment'],
-    nextStep: 'Next you configure one apartment and one house setup.',
     color: '#ea580c',
     accent: 'rgba(234, 88, 12, 0.16)'
   }

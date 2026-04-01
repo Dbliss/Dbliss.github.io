@@ -45,8 +45,8 @@ describe('WealthLineChart', () => {
       }
     })
 
-    const body = wrapper.get('.wealth-chart__body')
-    body.element.getBoundingClientRect = () => ({
+    const svg = wrapper.get('svg')
+    svg.element.getBoundingClientRect = () => ({
       left: 0,
       top: 0,
       width: 400,
@@ -55,7 +55,7 @@ describe('WealthLineChart', () => {
       bottom: 300
     })
 
-    await wrapper.get('svg').trigger('pointermove', { clientX: 390, clientY: 120 })
+    await svg.trigger('pointermove', { clientX: 390, clientY: 120 })
 
     expect(wrapper.text()).toContain('Year 1')
     expect(wrapper.text()).toContain('Rent + Invest')

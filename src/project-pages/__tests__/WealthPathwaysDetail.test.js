@@ -214,7 +214,7 @@ describe.skip('WealthPathwaysDetail', () => {
     expect(wrapper.text()).not.toContain('Weekly rent + expenses at home')
     expect(wrapper.text()).not.toContain('Rent + expenses growth %')
     expect(wrapper.text()).toContain('Rent yield %')
-    expect(wrapper.text()).toContain('Owner paths waive stamp duty below $800k')
+    expect(wrapper.text()).toContain('Owner paths fully waive stamp duty below $800k')
     expect(wrapper.text()).not.toContain('Property and tax rules')
     expect(wrapper.text()).not.toContain('Vacancy %')
     expect(wrapper.text()).toContain('Management fee %')

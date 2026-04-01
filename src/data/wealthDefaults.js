@@ -2,6 +2,7 @@ import {
   estimateGenericPurchaseCosts,
   estimatePropertyCostFromPrice
 } from '../wealth/finance.js'
+import { NSW_HOME_GUARANTEE_HIGH_CAP_LIMIT } from '../wealth/areaMarket.js'
 import { buildFlatIncomeSeries } from '../wealth/incomeSeries.js'
 
 export const wealthProjectSlug = 'wealth-pathways-au'
@@ -22,8 +23,13 @@ export const wealthSimulationMetadata = {
     },
     {
       label: 'Revenue NSW first-home-buyer duty rules',
-      detail: 'NSW owner-occupier duty relief is modeled for eligible first-home buyers under the current NSW thresholds.',
+      detail: 'NSW owner-occupier duty relief is modeled as an eligibility-dependent estimate using the current NSW home-price thresholds and the corrected reduced-duty formula.',
       url: 'https://www.revenue.nsw.gov.au/taxes-duties-levies-royalties/transfer-duty/first-home-buyers'
+    },
+    {
+      label: 'Australian Government Home Guarantee Scheme property caps',
+      detail: 'LMI remains a rough estimate only in the workbook. The app no longer treats first-home-buyer status as an automatic no-LMI rule because scheme outcomes depend on product and eligibility details.',
+      url: 'https://www.housingaustralia.gov.au/support-buy-home/property-price-caps'
     },
     {
       label: 'ATO rental deductions',
@@ -94,6 +100,11 @@ export const wealthSimulationMetadata = {
       label: 'ANZ home-loan fee examples',
       detail: 'Borrowing-expense defaults are informed by current lender fee examples plus state registration charges rather than left as a flat constant.',
       url: 'https://www.anz.com.au/personal/home-loans/construction-loan/land-loan/'
+    },
+    {
+      label: 'Revenue NSW land tax rates and thresholds',
+      detail: 'Land tax stays as a purchase-price-based estimate in this workbook unless a real taxable land value is supplied, so it should be read as a proxy rather than a statutory assessment.',
+      url: 'https://www.revenue.nsw.gov.au/taxes-duties-levies-royalties/land-tax'
     }
   ]
 }
@@ -129,7 +140,10 @@ export const wealthAssumptionSections = [
       'Property pathways can route positive annual surplus either to the portfolio or to extra mortgage repayments.',
       'Headline results use an estimated sell-everything value at the horizon: liquid assets plus sale proceeds less debt and estimated CGT where applicable.',
       'Owner-occupier property is treated as main-residence exempt, while taxable portfolio and investment-property gains use a simplified discounted CGT estimate.',
+      'Owner-path transfer duty uses the current NSW stepped schedule and an eligibility-dependent first-home-buyer concession estimate, while duty still uses purchase price as the proxy input in this version.',
       'Borrowing power uses an APRA-style assessment rate, a living-cost floor, and an 80 percent rent credit for investment-property serviceability rather than a lender-specific approval engine.',
+      'Lenders mortgage insurance is shown as an estimated premium only, not a lender quote or NSW statutory amount.',
+      'Estimated land tax is still inferred from purchase price using a land-value-share proxy, so it is a directional estimate rather than an official assessment.',
       'Property pathways wait until upfront cash is available and the purchase year still ends with non-negative liquid assets; affordability warnings flag later years where liquid assets still fall below zero.',
       'Investment-property vacancy uses a 3 percent baseline and the simulation varies it year to year.',
       'Most defaults are editable so users can pressure-test their own conservative and aggressive assumptions.'
@@ -359,7 +373,9 @@ const apartmentPurchaseCosts = estimateGenericPurchaseCosts(apartmentPurchasePri
 defaultSimulationRequest.propertyConfig.house = {
   purchasePrice: housePurchasePrice,
   ownerDepositPct: 0.05,
+  ownerScaleDepositToBuyAsap: true,
   depositPct: 0.2,
+  investmentScaleDepositToBuyAsap: true,
   mortgageYears: 30,
   ownerInterestRate: 0.061,
   ownerLongRunInterestRate: 0.056,
@@ -367,6 +383,7 @@ defaultSimulationRequest.propertyConfig.house = {
   investmentLongRunInterestRate: 0.061,
   growthMean: 0.058,
   growthVolatility: 0.09,
+  firstHomeBuyerLowDepositLimit: NSW_HOME_GUARANTEE_HIGH_CAP_LIMIT,
   rentYield: 0.037,
   propertyManagementPct: 0.065,
   councilRates: estimatePropertyCostFromPrice('house', 'councilRates', housePurchasePrice),
@@ -388,7 +405,9 @@ defaultSimulationRequest.propertyConfig.house = {
 defaultSimulationRequest.propertyConfig.apartment = {
   purchasePrice: apartmentPurchasePrice,
   ownerDepositPct: 0.05,
+  ownerScaleDepositToBuyAsap: true,
   depositPct: 0.18,
+  investmentScaleDepositToBuyAsap: true,
   mortgageYears: 30,
   ownerInterestRate: 0.061,
   ownerLongRunInterestRate: 0.056,
@@ -396,6 +415,7 @@ defaultSimulationRequest.propertyConfig.apartment = {
   investmentLongRunInterestRate: 0.061,
   growthMean: 0.041,
   growthVolatility: 0.065,
+  firstHomeBuyerLowDepositLimit: NSW_HOME_GUARANTEE_HIGH_CAP_LIMIT,
   rentYield: 0.046,
   propertyManagementPct: 0.075,
   councilRates: estimatePropertyCostFromPrice('apartment', 'councilRates', apartmentPurchasePrice),

@@ -86,47 +86,56 @@
       />
     </div>
 
-    <section class="wealth-results__readout card">
-      <p class="wealth-results__kpi-kicker">Scenario readout</p>
-      <div class="wealth-results__list">
-        <article v-for="strategy in visibleStrategies" :key="strategy.key" class="wealth-results__item">
-          <div class="wealth-results__item-top">
-            <div class="wealth-results__item-title">
-              <span class="wealth-results__chip-dot" :style="{ background: strategy.color }"></span>
-              <strong>{{ strategy.label }}</strong>
+    <div class="wealth-results__detail-grid">
+      <section class="wealth-results__readout card">
+        <p class="wealth-results__kpi-kicker">Scenario readout</p>
+        <div class="wealth-results__list">
+          <article v-for="strategy in visibleStrategies" :key="strategy.key" class="wealth-results__item">
+            <div class="wealth-results__item-top">
+              <div class="wealth-results__item-title">
+                <span class="wealth-results__chip-dot" :style="{ background: strategy.color }"></span>
+                <strong>{{ strategy.label }}</strong>
+              </div>
+              <span>{{ strategy.summary.finalMedianDisplay }}</span>
             </div>
-            <span>{{ strategy.summary.finalMedianDisplay }}</span>
-          </div>
-          <p>{{ strategy.narrative }}</p>
-          <div class="wealth-results__item-meta">
-            <span>Downside {{ formatCurrency(strategy.summary.downsideRisk) }}</span>
-            <span v-if="strategy.group === 'housing'">Vs baseline {{ formatSignedCurrency(strategy.deltaVsBaseline) }}</span>
-            <span>Variability {{ formatCurrency(strategy.variabilitySpread) }}</span>
-            <span v-if="strategy.purchaseYear !== null">Purchase year {{ strategy.purchaseYear }}</span>
-            <span v-if="strategy.group === 'housing' && strategy.breakevenYearVsBaseline !== null">Beats baseline in year {{ strategy.breakevenYearVsBaseline }}</span>
-            <span>Max median cash deficit {{ formatCurrency(strategy.summary.maxMedianCashDeficit) }}</span>
-          </div>
-        </article>
-        <p v-if="!visibleStrategies.length && filteredStrategies.length" class="wealth-results__copy">Use the strategy visibility chips above to show scenarios here.</p>
+            <p>{{ strategy.narrative }}</p>
+            <div class="wealth-results__item-meta">
+              <span>Downside {{ formatCurrency(strategy.summary.downsideRisk) }}</span>
+              <span v-if="strategy.group === 'housing'">Vs baseline {{ formatSignedCurrency(strategy.deltaVsBaseline) }}</span>
+              <span>Variability {{ formatCurrency(strategy.variabilitySpread) }}</span>
+              <span v-if="strategy.purchaseYear !== null">Purchase year {{ strategy.purchaseYear }}</span>
+              <span v-if="strategy.group === 'housing' && strategy.breakevenYearVsBaseline !== null">Beats baseline in year {{ strategy.breakevenYearVsBaseline }}</span>
+            </div>
+          </article>
+          <p v-if="!visibleStrategies.length && filteredStrategies.length" class="wealth-results__copy">Use the strategy visibility chips above to show scenarios here.</p>
+        </div>
+      </section>
+
+      <WealthCompositionBars
+        v-if="visibleCompositionRows.length"
+        title="Housing balance composition"
+        subtitle="Final-year median liquid assets, home equity, and debt across the visible housing pathways."
+        :rows="visibleCompositionRows"
+      />
+    </div>
+
+    <section v-if="dashboard.affordabilityCharts?.length" class="wealth-results__hurdles card">
+      <div class="wealth-results__hurdles-head">
+        <p class="wealth-results__kpi-kicker">Purchase hurdles</p>
+        <p class="wealth-results__copy">Deposit, borrowing, and savings hurdles across each property pathway.</p>
+      </div>
+      <div class="wealth-results__hurdles-grid">
+        <WealthAffordabilityHurdleChart
+          v-for="chart in dashboard.affordabilityCharts"
+          :key="chart.key"
+          :title="chart.title"
+          :purchase-year="chart.purchaseYear"
+          :purchase-point="chart.purchasePoint"
+          :points="chart.points"
+        />
       </div>
     </section>
 
-    <section v-if="dashboard.affordabilityCharts?.length" class="wealth-results__hurdles">
-      <WealthAffordabilityHurdleChart
-        v-for="chart in dashboard.affordabilityCharts"
-        :key="chart.key"
-        :title="chart.title"
-        :purchase-year="chart.purchaseYear"
-        :points="chart.points"
-      />
-    </section>
-
-    <WealthCompositionBars
-      v-if="visibleCompositionRows.length"
-      title="Housing balance composition"
-      subtitle="Final-year median liquid assets, home equity, and debt across the visible housing pathways."
-      :rows="visibleCompositionRows"
-    />
   </section>
 </template>
 
@@ -157,7 +166,7 @@ const groupOptions = [
 ]
 
 const metricOptions = [
-  { key: 'sellDown', label: 'Sell-down value' },
+  { key: 'sellDown', label: 'Liquidity Available' },
   { key: 'inflationAdjusted', label: "Today's dollars" },
   { key: 'annualSurplus', label: 'Annual surplus' },
   { key: 'holdBalance', label: 'Hold balance' }
@@ -179,7 +188,7 @@ const noVisibleStrategies = computed(() =>
 const metricMeta = computed(() => {
   if (props.metric === 'inflationAdjusted') {
     return {
-      title: "Sell-down value in today's dollars",
+      title: "Liquidity Available in today's dollars",
       subtitle: 'Median, downside, and upside outcomes discounted back using the rent-growth assumption as the inflation proxy.'
     }
   }
@@ -196,7 +205,7 @@ const metricMeta = computed(() => {
     }
   }
   return {
-    title: 'After-tax sell-down outcome bands',
+    title: 'After-tax liquidity available bands',
     subtitle: 'Each year assumes the remaining assets were sold in that year and estimated CGT was netted out where applicable.'
   }
 })
@@ -406,7 +415,29 @@ function formatSignedCurrency(value) {
   padding: 1rem;
 }
 
+.wealth-results__detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
 .wealth-results__hurdles {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.wealth-results__hurdles-head {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.wealth-results__hurdles-head .wealth-results__copy {
+  margin: 0;
+}
+
+.wealth-results__hurdles-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
@@ -444,7 +475,8 @@ function formatSignedCurrency(value) {
 @media (max-width: 1080px) {
   .wealth-results__kpis,
   .wealth-results__chart-block,
-  .wealth-results__hurdles {
+  .wealth-results__detail-grid,
+  .wealth-results__hurdles-grid {
     grid-template-columns: 1fr;
   }
 }

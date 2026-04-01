@@ -9,6 +9,7 @@ import {
   calculatePurchaseCosts,
   clamp,
   createMulberry32,
+  createPriceAdjustedPropertyConfig,
   estimateCapitalGainsTax,
   estimateLmi,
   estimatePortfolioTaxableIncome,
@@ -19,11 +20,13 @@ import {
   getOwnerHoldingCosts,
   getPropertyInterestRate,
   getPropertyLongRunInterestRate,
+  isDepositScalingEnabled,
   interpolateRate,
   normalisePortfolioWeights,
   percentileSummary,
   roundCurrency,
   samplePortfolioSleeveReturns,
+  scalePropertyCostWithPrice,
   scalePurchaseCostsWithPrice,
   sampleNormal
 } from './finance.js'
@@ -420,8 +423,18 @@ function getPurchasePlanAtDepositPct(propertyKey, property, propertyValue, occup
   const deposit = scaledValue * effectiveDepositPct
   const lmi = estimateLmi(scaledValue, effectiveDepositPct, firstHomeBuyerEligible)
   const purchaseCosts = calculatePurchaseCosts(purchaseCostsInput, firstHomeBuyerEligible, scaledValue)
+  const scaledBorrowingExpensesTotal = scalePropertyCostWithPrice(
+    property.borrowingExpensesTotal,
+    property.purchasePrice,
+    scaledValue,
+    propertyKey,
+    'borrowingExpensesTotal'
+  )
   const borrowingExpensesUpfront = occupancyMode === 'investment'
-    ? Math.max(0, Number(property.borrowingExpensesTotal) || 0)
+    ? scaledBorrowingExpensesTotal
+    : 0
+  const deductibleBorrowingExpensesTotal = occupancyMode === 'investment'
+    ? scaledBorrowingExpensesTotal + lmi
     : 0
 
   return {
@@ -430,6 +443,7 @@ function getPurchasePlanAtDepositPct(propertyKey, property, propertyValue, occup
     lmi,
     purchaseCosts,
     borrowingExpensesUpfront,
+    deductibleBorrowingExpensesTotal,
     upfrontCash: deposit + purchaseCosts.total + borrowingExpensesUpfront,
     openingMortgageBalance: Math.max(0, scaledValue - deposit + lmi)
   }
@@ -446,7 +460,7 @@ function getPurchasePlan(propertyKey, property, propertyValue, occupancyMode, fi
   )
 }
 
-function getPurchaseServiceability(request, market, occupancyMode, property, propertyValue, purchasePlan, atHomeHousingCosts, helpDebtBalance) {
+function getPurchaseServiceability(request, market, occupancyMode, propertyKey, property, propertyValue, purchasePlan, atHomeHousingCosts, helpDebtBalance) {
   const annualIncomeByBorrower = getEarnersForYear(request.profile, market.yearIndex, helpDebtBalance)
     .map((earner) => earner.annualIncome)
   return assessPropertyPurchaseServiceability({
@@ -457,12 +471,14 @@ function getPurchaseServiceability(request, market, occupancyMode, property, pro
     helpDebtBalances: helpDebtBalance,
     weeklyNonHousingLivingCosts: request.profile.weeklyNonHousingLivingCosts,
     occupancyMode,
+    propertyType: propertyKey,
     propertyConfig: property,
     propertyValue,
     mortgageYears: property.mortgageYears,
     openingLoanBalance: purchasePlan.openingMortgageBalance,
     personalHousingCostAnnual: occupancyMode === 'investment' ? atHomeHousingCosts : 0,
-    vacancyRate: clamp(Number(request.propertyConfig.vacancyRate) || wealthVacancyRate, 0, 0.12)
+    vacancyRate: clamp(Number(request.propertyConfig.vacancyRate) || wealthVacancyRate, 0, 0.12),
+    borrowingExpensesTotalOverride: purchasePlan.deductibleBorrowingExpensesTotal
   })
 }
 
@@ -479,6 +495,7 @@ function solvePurchasePlanForAvailableCash({
   availableCash
 }) {
   const minimumDepositPct = getMinimumDepositPct(property, occupancyMode)
+  const allowDepositScaling = isDepositScalingEnabled(property, occupancyMode)
   const minimumPlan = getPurchasePlanAtDepositPct(
     propertyKey,
     property,
@@ -494,6 +511,7 @@ function solvePurchasePlanForAvailableCash({
     request,
     market,
     occupancyMode,
+    propertyKey,
     property,
     propertyValue,
     minimumPlan,
@@ -507,6 +525,8 @@ function solvePurchasePlanForAvailableCash({
       serviceability: minimumServiceability
     }
   }
+
+  if (!allowDepositScaling) return null
 
   let low = minimumDepositPct
   let high = 0.95
@@ -550,6 +570,7 @@ function solvePurchasePlanForAvailableCash({
     request,
     market,
     occupancyMode,
+    propertyKey,
     property,
     propertyValue,
     feasiblePlan,
@@ -585,6 +606,7 @@ function solvePurchasePlanForAvailableCash({
       request,
       market,
       occupancyMode,
+      propertyKey,
       property,
       propertyValue,
       midpointPlan,
@@ -637,14 +659,16 @@ function simulateOwnedPropertyYear({
   propertyValue,
   mortgageBalance,
   yearsOwned,
-  atHomeHousingCosts
+  atHomeHousingCosts,
+  borrowingExpensesTotalOverride = null
 }) {
   const property = request.propertyConfig[propertyKey]
   const openingPropertyValue = Math.max(0, Number(propertyValue) || 0)
+  const adjustedProperty = createPriceAdjustedPropertyConfig(propertyKey, property, openingPropertyValue)
   const yearsRemaining = Math.max(1, property.mortgageYears - yearsOwned)
   const baseRate = interpolateRate(
-    getPropertyInterestRate(property, occupancyMode),
-    getPropertyLongRunInterestRate(property, occupancyMode),
+    getPropertyInterestRate(adjustedProperty, occupancyMode),
+    getPropertyLongRunInterestRate(adjustedProperty, occupancyMode),
     yearsOwned,
     5
   )
@@ -657,18 +681,19 @@ function simulateOwnedPropertyYear({
     return {
       endPropertyValue,
       endMortgageBalance,
-      housingCashCosts: amortization.payment + getOwnerHoldingCosts(property),
+      housingCashCosts: amortization.payment + getOwnerHoldingCosts(adjustedProperty),
       rentalReceipts: 0,
       taxRentalIncome: 0
     }
   }
 
   const rentalTaxPosition = calculateInvestmentPropertyTaxPosition({
-    propertyConfig: property,
+    propertyConfig: adjustedProperty,
     propertyValue: openingPropertyValue,
     vacancyRate: market.vacancyRate,
     interestPaid: amortization.interestPaid,
-    yearsOwned
+    yearsOwned,
+    borrowingExpensesTotalOverride
   })
 
   return {
@@ -819,6 +844,7 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
   let helpDebtBalances = normaliseHouseholdEarners(profile).map((earner) => earner.helpDebtBalance)
   let portfolioCostBasis = getInvestedBalance(liquidAssets)
   let propertyCostBase = 0
+  let investmentBorrowingExpensesTotal = 0
   let purchased = false
   let yearsOwned = 0
   let rentLevel = housingCosts.weeklyRent * 52
@@ -860,7 +886,8 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
         propertyValue: targetPropertyValue,
         mortgageBalance: openingPlan.openingMortgageBalance,
         yearsOwned: 0,
-        atHomeHousingCosts
+        atHomeHousingCosts,
+        borrowingExpensesTotalOverride: openingPlan.deductibleBorrowingExpensesTotal
       })
       const openingTaxPosition = calculateHouseholdTaxPosition({
         taxYear: profile.taxYear,
@@ -890,6 +917,7 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
         propertyValue = targetPropertyValue
         mortgageBalance = openingPlan.openingMortgageBalance
         propertyCostBase = getPropertyCostBaseAtPurchase(targetPropertyValue, openingPlan.purchaseCosts)
+        investmentBorrowingExpensesTotal = openingPlan.deductibleBorrowingExpensesTotal
         purchased = true
       }
     }
@@ -981,7 +1009,8 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
           propertyValue: targetPropertyValue,
           mortgageBalance: purchasePlan.openingMortgageBalance,
           yearsOwned: 0,
-          atHomeHousingCosts
+          atHomeHousingCosts,
+          borrowingExpensesTotalOverride: purchasePlan.deductibleBorrowingExpensesTotal
         })
         const purchaseTaxPosition = calculateHouseholdTaxPosition({
           taxYear: profile.taxYear,
@@ -1011,6 +1040,7 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
           endPropertyValue = purchaseOwnedYear.endPropertyValue
           endMortgageBalance = purchaseAllocation.endingMortgageBalance
           propertyCostBase = getPropertyCostBaseAtPurchase(targetPropertyValue, purchasePlan.purchaseCosts)
+          investmentBorrowingExpensesTotal = purchasePlan.deductibleBorrowingExpensesTotal
           yearsOwned = 1
           housingCashCosts = purchaseOwnedYear.housingCashCosts
           rentalReceipts = purchaseOwnedYear.rentalReceipts
@@ -1035,7 +1065,8 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
         propertyValue,
         mortgageBalance: endMortgageBalance,
         yearsOwned,
-        atHomeHousingCosts
+        atHomeHousingCosts,
+        borrowingExpensesTotalOverride: investmentBorrowingExpensesTotal
       })
       endMortgageBalance = ownedYear.endMortgageBalance
       endPropertyValue = ownedYear.endPropertyValue
@@ -1139,16 +1170,23 @@ function normaliseProperty(property, fallback = {}) {
   )
   const purchasePrice = Math.max(0, Number(property.purchasePrice) || 0)
   const investmentDepositPct = clamp(Number(property.depositPct) || 0, 0.05, 0.95)
+  const firstHomeBuyerLowDepositLimit = Math.max(
+    0,
+    Number(property.firstHomeBuyerLowDepositLimit ?? FIRST_HOME_BUYER_LOW_DEPOSIT_LIMIT) || FIRST_HOME_BUYER_LOW_DEPOSIT_LIMIT
+  )
   const defaultOwnerDepositPct =
-    Boolean(fallback.firstHomeBuyerEligible) && purchasePrice > 0 && purchasePrice <= FIRST_HOME_BUYER_LOW_DEPOSIT_LIMIT
+    Boolean(fallback.firstHomeBuyerEligible) && purchasePrice > 0 && purchasePrice <= firstHomeBuyerLowDepositLimit
       ? 0.05
       : investmentDepositPct
 
   return {
     ...property,
     purchasePrice,
+    firstHomeBuyerLowDepositLimit,
     ownerDepositPct: clamp(Number(property.ownerDepositPct ?? defaultOwnerDepositPct) || 0, 0.05, 0.95),
+    ownerScaleDepositToBuyAsap: property.ownerScaleDepositToBuyAsap !== false,
     depositPct: investmentDepositPct,
+    investmentScaleDepositToBuyAsap: property.investmentScaleDepositToBuyAsap !== false,
     mortgageYears: Math.max(1, Math.round(Number(property.mortgageYears) || 30)),
     ownerInterestRate: getPropertyInterestRate(property, 'owner'),
     ownerLongRunInterestRate: getPropertyLongRunInterestRate(property, 'owner'),

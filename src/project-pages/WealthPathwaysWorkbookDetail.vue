@@ -17,8 +17,11 @@
         :current-substep="activeSheet"
         :substeps="inputStageSubsteps"
         substep-host-key="inputs"
+        :stage-disabled-keys="disabledStageKeys"
+        :completed-substep-keys="completedInputSheetKeys"
+        :substep-disabled-keys="disabledInputSheetKeys"
         @select-stage="handleStageSelect"
-        @select-substep="activeSheet = $event"
+        @select-substep="handleSubstepSelect"
       />
 
       <div v-if="errorMessage" class="wealth-error">{{ errorMessage }}</div>
@@ -60,9 +63,18 @@
           />
 
           <div class="wealth-stage-footer">
-            <button type="button" class="wealth-secondary-btn" @click="currentStage = 'interests'">Back</button>
-            <button type="button" class="wealth-primary-btn" data-testid="continue-results" @click="generateResults">
-              {{ loading ? 'Running simulation...' : 'Generate results' }}
+            <button type="button" class="wealth-secondary-btn" @click="goToPreviousInputStep">
+              {{ activeSheet === firstInputSheet ? 'Back: Interests' : `Back: ${previousInputSheetLabel}` }}
+            </button>
+            <p v-if="activeInputSheetMessage" class="wealth-stage-hint">{{ activeInputSheetMessage }}</p>
+            <button
+              type="button"
+              class="wealth-primary-btn"
+              data-testid="continue-results"
+              :disabled="loading || !activeInputSheetComplete"
+              @click="goToNextInputStep"
+            >
+              {{ loading ? 'Running simulation...' : inputPrimaryActionLabel }}
             </button>
           </div>
         </template>
@@ -115,7 +127,12 @@ import {
 import { estimateGenericPurchaseCosts, estimatePropertyCostFromPrice, clamp } from '../wealth/finance.js'
 import { WealthSimulationClient } from '../wealth/client.js'
 import { buildDashboardModel } from '../wealth/dashboard.js'
-import { buildAreaSearchContext, createPropertyConfigPatchFromArea } from '../wealth/areaMarket.js'
+import {
+  NSW_HOME_GUARANTEE_HIGH_CAP_LIMIT,
+  buildAreaSearchContext,
+  createPropertyConfigPatchFromArea,
+  getFirstHomeBuyerLowDepositLimitForArea
+} from '../wealth/areaMarket.js'
 import { wealthPsiRegionMarketPayload } from '../wealth/psiRegionMarket.js'
 
 const props = defineProps({
@@ -134,13 +151,11 @@ const comparisonModeScenarioKeys = {
   propertyInvestmentVsLiving: [...wealthHousingStrategyKeys]
 }
 
-const housePropertyCostKeys = ['councilRates', 'waterRates', 'insurance', 'maintenance', 'borrowingExpensesTotal', 'otherDeductibleExpensesAnnual']
-const apartmentPropertyCostKeys = ['councilRates', 'waterRates', 'insurance', 'maintenance', 'strata', 'borrowingExpensesTotal', 'otherDeductibleExpensesAnnual']
+const housePropertyCostKeys = ['councilRates', 'waterRates', 'insurance', 'maintenance', 'landTax', 'borrowingExpensesTotal', 'otherDeductibleExpensesAnnual']
+const apartmentPropertyCostKeys = ['councilRates', 'waterRates', 'insurance', 'maintenance', 'strata', 'landTax', 'borrowingExpensesTotal', 'otherDeductibleExpensesAnnual']
 
 const form = reactive(cloneSimulationRequest())
 form.propertyConfig.vacancyRate = wealthVacancyRate
-form.propertyConfig.house.landTax = 0
-form.propertyConfig.apartment.landTax = 0
 form.scenarioSelection = resolveScenarioSelection(form.scenarioSelection)
 
 const strategyMeta = getWealthStrategyMeta()
@@ -208,7 +223,7 @@ const emptyDashboard = {
 
 const dashboard = computed(() =>
   result.value
-    ? buildDashboardModel(result.value, form.scenarioSelection.stockBaselineKey, form.housingCosts.rentGrowthRate)
+    ? buildDashboardModel(result.value, form.scenarioSelection.stockBaselineKey, form.housingCosts.rentGrowthRate, form)
     : emptyDashboard
 )
 
@@ -225,6 +240,120 @@ const inputStageSubsteps = computed(() =>
             : sheetKey
   }))
 )
+
+function isStockSheetComplete() {
+  const weights = [
+    Number(form.portfolioConfig.asxWeight) || 0,
+    Number(form.portfolioConfig.qqqWeight) || 0,
+    Number(form.portfolioConfig.bondWeight) || 0,
+    Number(form.portfolioConfig.cashWeight) || 0,
+    Number(form.portfolioConfig.bitcoinWeight) || 0
+  ]
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0)
+  return totalWeight > 0 && Math.abs(totalWeight - 1) < 0.011
+}
+
+function isPropertySheetComplete(propertyType) {
+  const selection = propertyType === 'apartment'
+    ? selectedApartmentAreaSelection.value
+    : selectedHouseAreaSelection.value
+  const record = propertyType === 'apartment'
+    ? selectedApartmentAreaRecord.value
+    : selectedHouseAreaRecord.value
+  const preview = propertyType === 'apartment'
+    ? selectedApartmentAreaPreview.value
+    : selectedHouseAreaPreview.value
+
+  const purchasePrice = Number(preview?.[propertyType]?.purchasePrice) || 0
+  const actualPoints = record?.marketHistory?.[propertyType]?.actualPoints || []
+
+  if (!selection?.key || !record) return false
+  if (!(purchasePrice > 0 && actualPoints.length > 0)) return false
+
+  const property = form.propertyConfig[propertyType]
+  return Number(property?.purchasePrice) > 0
+}
+
+function getInputSheetState(sheetKey) {
+  if (sheetKey === 'stock') {
+    return isStockSheetComplete()
+      ? { complete: true, message: '' }
+      : { complete: false, message: 'Set a valid 100% portfolio mix before continuing.' }
+  }
+
+  if (sheetKey === 'apartment') {
+    return isPropertySheetComplete('apartment')
+      ? { complete: true, message: '' }
+      : { complete: false, message: 'Select an apartment area before continuing.' }
+  }
+
+  if (sheetKey === 'house') {
+    return isPropertySheetComplete('house')
+      ? { complete: true, message: '' }
+      : { complete: false, message: 'Select a house area before continuing.' }
+  }
+
+  return { complete: true, message: '' }
+}
+
+const completedInputSheetKeys = computed(() =>
+  availableInputSheetKeys.value.filter(sheetKey => getInputSheetState(sheetKey).complete)
+)
+
+const firstIncompleteInputSheetIndex = computed(() =>
+  availableInputSheetKeys.value.findIndex(sheetKey => !getInputSheetState(sheetKey).complete)
+)
+
+const furthestUnlockedInputSheetIndex = computed(() => {
+  const firstIncompleteIndex = firstIncompleteInputSheetIndex.value
+  if (firstIncompleteIndex < 0) return Math.max(availableInputSheetKeys.value.length - 1, 0)
+  return firstIncompleteIndex
+})
+
+const disabledInputSheetKeys = computed(() =>
+  availableInputSheetKeys.value.filter((sheetKey, index) => index > furthestUnlockedInputSheetIndex.value)
+)
+
+const allInputSheetsComplete = computed(() =>
+  availableInputSheetKeys.value.every(sheetKey => getInputSheetState(sheetKey).complete)
+)
+
+const activeInputSheetState = computed(() => getInputSheetState(activeSheet.value))
+const activeInputSheetComplete = computed(() => activeInputSheetState.value.complete)
+const activeInputSheetMessage = computed(() => activeInputSheetState.value.message)
+const activeInputSheetIndex = computed(() => availableInputSheetKeys.value.indexOf(activeSheet.value))
+const firstInputSheet = computed(() => availableInputSheetKeys.value[0] || '')
+const isLastInputSheet = computed(() =>
+  activeInputSheetIndex.value >= 0 && activeInputSheetIndex.value === availableInputSheetKeys.value.length - 1
+)
+
+const nextInputSheet = computed(() =>
+  !isLastInputSheet.value && activeInputSheetIndex.value >= 0
+    ? availableInputSheetKeys.value[activeInputSheetIndex.value + 1]
+    : ''
+)
+
+const previousInputSheet = computed(() =>
+  activeInputSheetIndex.value > 0
+    ? availableInputSheetKeys.value[activeInputSheetIndex.value - 1]
+    : ''
+)
+
+function getSheetLabel(sheetKey) {
+  return inputStageSubsteps.value.find((substep) => substep.key === sheetKey)?.label || sheetKey
+}
+
+const previousInputSheetLabel = computed(() => getSheetLabel(previousInputSheet.value))
+const nextInputSheetLabel = computed(() => getSheetLabel(nextInputSheet.value))
+const inputPrimaryActionLabel = computed(() =>
+  isLastInputSheet.value ? 'Generate results' : `Next: ${nextInputSheetLabel.value}`
+)
+
+const disabledStageKeys = computed(() => {
+  const keys = []
+  if (!(result.value && allInputSheetsComplete.value)) keys.push('results')
+  return keys
+})
 
 function scaleValueFromBaseline(currentValue, previousBaseline, nextBaseline) {
   const safeCurrentValue = Math.max(0, Number(currentValue) || 0)
@@ -331,18 +460,49 @@ selectComparisonMode('propertyVsStocks')
 function goToInputs() {
   void enterWorkspace()
   currentStage.value = 'inputs'
+  activeSheet.value = firstInputSheet.value
 }
 
 function handleStageSelect(stageKey) {
-  if (stageKey === 'results' && !result.value) return
+  if (disabledStageKeys.value.includes(stageKey)) return
   if (stageKey === 'inputs' && currentStage.value === 'introduction') return
   void enterWorkspace()
   currentStage.value = stageKey
 }
 
+function handleSubstepSelect(sheetKey) {
+  if (!availableInputSheetKeys.value.includes(sheetKey)) return
+  if (disabledInputSheetKeys.value.includes(sheetKey)) return
+  activeSheet.value = sheetKey
+}
+
+function goToPreviousInputStep() {
+  if (previousInputSheet.value) {
+    activeSheet.value = previousInputSheet.value
+    return
+  }
+
+  currentStage.value = 'interests'
+}
+
+async function goToNextInputStep() {
+  if (!activeInputSheetComplete.value) return
+
+  if (!isLastInputSheet.value) {
+    activeSheet.value = nextInputSheet.value
+    return
+  }
+
+  await generateResults()
+}
+
 function applyAreaPatchToProperty(propertyType, selection) {
   const area = selection?.key ? suburbSearchContext.value.areasByKey[selection.key] : null
   const patch = createPropertyConfigPatchFromArea(area)
+  const property = form.propertyConfig[propertyType]
+  property.firstHomeBuyerLowDepositLimit = area
+    ? getFirstHomeBuyerLowDepositLimitForArea(area)
+    : NSW_HOME_GUARANTEE_HIGH_CAP_LIMIT
   if (!patch?.[propertyType]) return
 
   Object.entries(patch[propertyType]).forEach(([key, value]) => {
@@ -355,7 +515,6 @@ function applyAreaPatchToProperty(propertyType, selection) {
     }
   })
 
-  const property = form.propertyConfig[propertyType]
   syncSharedPurchaseCosts(propertyType, property, property.purchasePrice, property.purchasePrice)
   syncPropertyCostsWithPrice(
     propertyType,
@@ -397,8 +556,6 @@ function handlePropertyAreaSelect({ propertyType, selection }) {
 function cloneRequest() {
   const request = JSON.parse(JSON.stringify(form))
   request.propertyConfig.vacancyRate = clamp(Number(request.propertyConfig.vacancyRate) || wealthVacancyRate, 0, 0.12)
-  request.propertyConfig.house.landTax = 0
-  request.propertyConfig.apartment.landTax = 0
   request.scenarioSelection = resolveScenarioSelection(request.scenarioSelection)
   return request
 }
@@ -432,6 +589,8 @@ async function runSimulation() {
 }
 
 async function generateResults() {
+  if (!allInputSheetsComplete.value) return
+
   const ok = await runSimulation()
   if (ok) {
     await enterWorkspace()
@@ -712,6 +871,13 @@ onBeforeUnmount(() => {
   align-items: center;
 }
 
+.wealth-stage-hint {
+  flex: 1 1 18rem;
+  margin: 0;
+  color: #5d7394;
+  line-height: 1.5;
+}
+
 .wealth-page :deep(.card) {
   border: 1px solid rgba(154, 174, 204, 0.22);
   background: rgba(255, 255, 255, 0.92);
@@ -757,6 +923,7 @@ onBeforeUnmount(() => {
   transform: translateY(-1px);
 }
 
+.wealth-primary-btn:disabled,
 .wealth-secondary-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;

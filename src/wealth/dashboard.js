@@ -6,7 +6,9 @@ import {
   estimateLmi,
   getEffectiveInvestmentDepositPct,
   getEffectiveOwnerDepositPct,
+  isDepositScalingEnabled,
   rollForwardHelpDebt,
+  scalePropertyCostWithPrice,
   scalePurchaseCostsWithPrice
 } from './finance.js'
 import { normaliseHouseholdEarners, normaliseIncomeProfile } from './incomeSeries.js'
@@ -101,14 +103,25 @@ function buildPurchasePlanWithDepositPct(propertyKey, property, propertyValue, o
   const deposit = scaledValue * effectiveDepositPct
   const lmi = estimateLmi(scaledValue, effectiveDepositPct, firstHomeBuyerEligible)
   const purchaseCosts = calculatePurchaseCosts(purchaseCostsInput, firstHomeBuyerEligible, scaledValue)
+  const scaledBorrowingExpensesTotal = scalePropertyCostWithPrice(
+    property.borrowingExpensesTotal,
+    property.purchasePrice,
+    scaledValue,
+    propertyKey,
+    'borrowingExpensesTotal'
+  )
   const borrowingExpensesUpfront = occupancyMode === 'investment'
-    ? Math.max(0, Number(property.borrowingExpensesTotal) || 0)
+    ? scaledBorrowingExpensesTotal
+    : 0
+  const deductibleBorrowingExpensesTotal = occupancyMode === 'investment'
+    ? scaledBorrowingExpensesTotal + lmi
     : 0
 
   return {
     deposit,
     requiredCash: deposit + purchaseCosts.total + borrowingExpensesUpfront,
-    openingLoanBalance: Math.max(0, scaledValue - deposit + lmi)
+    openingLoanBalance: Math.max(0, scaledValue - deposit + lmi),
+    deductibleBorrowingExpensesTotal
   }
 }
 
@@ -141,12 +154,14 @@ function assessPurchaseServiceabilityAtDepositPct({
     helpDebtBalances,
     weeklyNonHousingLivingCosts: request.profile.weeklyNonHousingLivingCosts,
     occupancyMode,
+    propertyType: propertyKey,
     propertyConfig,
     propertyValue,
     mortgageYears: propertyConfig.mortgageYears,
     openingLoanBalance: plan.openingLoanBalance,
     personalHousingCostAnnual,
-    vacancyRate: request.propertyConfig.vacancyRate
+    vacancyRate: request.propertyConfig.vacancyRate,
+    borrowingExpensesTotalOverride: plan.deductibleBorrowingExpensesTotal
   })
 
   return {
@@ -170,6 +185,7 @@ function solveOptimalDepositPlan({
   const configuredDepositPct = occupancyMode === 'owner'
     ? getEffectiveOwnerDepositPct(property)
     : getEffectiveInvestmentDepositPct(property)
+  const allowDepositScaling = isDepositScalingEnabled(property, occupancyMode)
 
   const configured = assessPurchaseServiceabilityAtDepositPct({
     request,
@@ -186,8 +202,18 @@ function solveOptimalDepositPlan({
   if (configured.serviceability.affordable) {
     return {
       depositPct: configuredDepositPct,
+      deposit: configured.plan.deposit,
       requiredCash: configured.plan.requiredCash,
       affordable: true
+    }
+  }
+
+  if (!allowDepositScaling) {
+    return {
+      depositPct: configuredDepositPct,
+      deposit: configured.plan.deposit,
+      requiredCash: configured.plan.requiredCash,
+      affordable: false
     }
   }
 
@@ -208,6 +234,7 @@ function solveOptimalDepositPlan({
   if (!highAssessment.serviceability.affordable) {
     return {
       depositPct: high,
+      deposit: highAssessment.plan.deposit,
       requiredCash: highAssessment.plan.requiredCash,
       affordable: false
     }
@@ -237,6 +264,7 @@ function solveOptimalDepositPlan({
 
   return {
     depositPct: high,
+    deposit: highAssessment.plan.deposit,
     requiredCash: highAssessment.plan.requiredCash,
     affordable: true
   }
@@ -273,12 +301,14 @@ function solveRequiredHouseholdIncome({
       helpDebtBalances,
       weeklyNonHousingLivingCosts: request.profile.weeklyNonHousingLivingCosts,
       occupancyMode,
+      propertyType: property,
       propertyConfig,
       propertyValue,
       mortgageYears: propertyConfig.mortgageYears,
       openingLoanBalance: plan.openingLoanBalance,
       personalHousingCostAnnual,
-      vacancyRate: request.propertyConfig.vacancyRate
+      vacancyRate: request.propertyConfig.vacancyRate,
+      borrowingExpensesTotalOverride: plan.deductibleBorrowingExpensesTotal
     })
 
     if (serviceability.affordable) {
@@ -300,12 +330,14 @@ function solveRequiredHouseholdIncome({
       helpDebtBalances,
       weeklyNonHousingLivingCosts: request.profile.weeklyNonHousingLivingCosts,
       occupancyMode,
+      propertyType: property,
       propertyConfig,
       propertyValue,
       mortgageYears: propertyConfig.mortgageYears,
       openingLoanBalance: plan.openingLoanBalance,
       personalHousingCostAnnual,
-      vacancyRate: request.propertyConfig.vacancyRate
+      vacancyRate: request.propertyConfig.vacancyRate,
+      borrowingExpensesTotalOverride: plan.deductibleBorrowingExpensesTotal
     })
 
     if (serviceability.affordable) {
@@ -318,8 +350,8 @@ function solveRequiredHouseholdIncome({
   return Math.round(high / 1000) * 1000
 }
 
-function buildAffordabilityHurdleCharts(result) {
-  const request = result?.request
+function buildAffordabilityHurdleCharts(result, requestOverride = null) {
+  const request = requestOverride || result?.request
   if (!request?.profile || !result?.strategies) return []
 
   const householdProfile = normaliseIncomeProfile(request.profile)
@@ -393,6 +425,7 @@ function buildAffordabilityHurdleCharts(result) {
         requiredIncome,
         userSavings: userSavings === null ? null : Math.round(userSavings),
         requiredCash: Math.round(plan.requiredCash),
+        optimalDepositAmount: Math.round(optimalDeposit.deposit),
         optimalRequiredCash: Math.round(optimalDeposit.requiredCash),
         optimalDepositPct: Number((optimalDeposit.depositPct * 100).toFixed(1)),
         optimalDepositAffordable: optimalDeposit.affordable
@@ -409,12 +442,15 @@ function buildAffordabilityHurdleCharts(result) {
     return {
       ...definition,
       purchaseYear,
+      purchasePoint: purchaseYear === null
+        ? null
+        : points.find((point) => point.year === purchaseYear) || null,
       points
     }
   })
 }
 
-export function buildDashboardModel(result, requestedBaselineKey, inflationRate = 0.03) {
+export function buildDashboardModel(result, requestedBaselineKey, inflationRate = 0.03, requestOverride = null) {
   const baselineKey = resolveBaselineKey(result, requestedBaselineKey)
   const baseline = baselineKey ? result?.strategies?.[baselineKey] || null : null
   const strategies = orderStrategyKeys(result)
@@ -460,7 +496,7 @@ export function buildDashboardModel(result, requestedBaselineKey, inflationRate 
         .sort((left, right) => left.breakevenYearVsBaseline - right.breakevenYearVsBaseline)[0] || null
     },
     narratives: strategies.slice(0, 3).map(strategy => strategy.narrative),
-    affordabilityCharts: buildAffordabilityHurdleCharts(result),
+    affordabilityCharts: buildAffordabilityHurdleCharts(result, requestOverride),
     compositionRows: housingStrategies.map(strategy => ({
       key: strategy.key,
       label: strategy.shortLabel,

@@ -8,8 +8,10 @@
         class="wealth-progress__step"
         :class="{
           'is-active': stage.key === currentStage,
-          'is-complete': index < currentIndex
+          'is-complete': index < currentIndex,
+          'is-disabled': stageDisabledKeys.includes(stage.key)
         }"
+        :disabled="stageDisabledKeys.includes(stage.key)"
         @click="$emit('select-stage', stage.key)"
       >
         <span class="wealth-progress__index">{{ index + 1 }}</span>
@@ -31,7 +33,12 @@
             :key="substep.key"
             type="button"
             class="wealth-progress__substep"
-            :class="{ 'is-active': substep.key === currentSubstep }"
+            :class="{
+              'is-active': substep.key === currentSubstep,
+              'is-complete': completedSubstepKeys.includes(substep.key),
+              'is-disabled': substepDisabledKeys.includes(substep.key)
+            }"
+            :disabled="substepDisabledKeys.includes(substep.key)"
             @click="$emit('select-substep', substep.key)"
           >
             {{ substep.label }}
@@ -50,7 +57,10 @@ const props = defineProps({
   currentStage: { type: String, required: true },
   currentSubstep: { type: String, default: '' },
   substeps: { type: Array, default: () => [] },
-  substepHostKey: { type: String, default: '' }
+  substepHostKey: { type: String, default: '' },
+  stageDisabledKeys: { type: Array, default: () => [] },
+  completedSubstepKeys: { type: Array, default: () => [] },
+  substepDisabledKeys: { type: Array, default: () => [] }
 })
 
 defineEmits(['select-stage', 'select-substep'])
@@ -123,6 +133,11 @@ const substepHostIndex = computed(() =>
   transform: translateY(-1px);
 }
 
+.wealth-progress__step:disabled,
+.wealth-progress__substep:disabled {
+  cursor: not-allowed;
+}
+
 .wealth-progress__step.is-active {
   border-color: rgba(45, 118, 212, 0.32);
   background: rgba(223, 237, 255, 0.96);
@@ -171,6 +186,16 @@ const substepHostIndex = computed(() =>
   border-color: rgba(45, 118, 212, 0.3);
   background: rgba(216, 234, 255, 0.98);
   color: #153355;
+}
+
+.wealth-progress__substep.is-complete:not(.is-active) {
+  border-color: rgba(16, 185, 129, 0.24);
+  background: rgba(220, 252, 231, 0.62);
+}
+
+.wealth-progress__step.is-disabled:not(.is-active),
+.wealth-progress__substep.is-disabled:not(.is-active) {
+  opacity: 0.5;
 }
 
 @media (max-width: 780px) {

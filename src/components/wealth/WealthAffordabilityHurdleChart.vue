@@ -1,21 +1,28 @@
 <template>
-  <article class="wealth-hurdle card">
+  <article class="wealth-hurdle">
     <div class="wealth-hurdle__header">
       <div>
-        <p class="wealth-hurdle__kicker">Purchase hurdles</p>
         <h3>{{ title }}</h3>
+        <p v-if="purchasePoint" class="wealth-hurdle__copy">
+          Purchase year {{ purchaseYear }} with {{ formatCurrency(purchasePoint.optimalRequiredCash) }} total cash required.
+        </p>
       </div>
       <p class="wealth-hurdle__status">
         {{ purchaseYear === null ? 'Not reached in horizon' : `Median purchase year ${purchaseYear}` }}
       </p>
     </div>
 
+    <p v-if="purchasePoint" class="wealth-hurdle__deposit-copy">
+      Deposit required in simulation
+      <strong>{{ formatCurrency(purchasePoint.optimalDepositAmount) }} / {{ formatPercent(purchasePoint.optimalDepositPct) }} of home value</strong>
+    </p>
+
     <div class="wealth-hurdle__plots">
       <section class="wealth-hurdle__panel">
         <div class="wealth-hurdle__panel-head">
-          <h4>Deposit required vs sell-down value</h4>
+          <h4>Deposit required vs liquidity available</h4>
           <div class="wealth-hurdle__legend">
-            <span><i class="wealth-hurdle__swatch" style="background:#2563eb"></i>Sell-down value</span>
+            <span><i class="wealth-hurdle__swatch" style="background:#2563eb"></i>Liquidity Available</span>
             <span><i class="wealth-hurdle__swatch wealth-hurdle__swatch--dashed" style="border-color:#7c3aed"></i>Deposit required</span>
             <span v-if="purchaseYear !== null"><i class="wealth-hurdle__swatch wealth-hurdle__swatch--marker"></i>Purchase year</span>
           </div>
@@ -72,6 +79,7 @@ import { formatShortCurrency } from '../../wealth/finance.js'
 const props = defineProps({
   title: { type: String, required: true },
   purchaseYear: { type: Number, default: null },
+  purchasePoint: { type: Object, default: null },
   points: { type: Array, default: () => [] }
 })
 
@@ -120,6 +128,18 @@ function buildPath(points, key, domain) {
   }, '')
 }
 
+function formatCurrency(value) {
+  return new Intl.NumberFormat('en-AU', {
+    style: 'currency',
+    currency: 'AUD',
+    maximumFractionDigits: 0
+  }).format(Number(value) || 0)
+}
+
+function formatPercent(value) {
+  return `${Number(value || 0).toFixed(1)}%`
+}
+
 </script>
 
 <style scoped>
@@ -142,14 +162,6 @@ function buildPath(points, key, domain) {
   align-items: flex-start;
 }
 
-.wealth-hurdle__kicker {
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.72rem;
-  color: #5d7ba3;
-}
-
 .wealth-hurdle__header h3,
 .wealth-hurdle__panel-head h4 {
   margin: 0.2rem 0 0;
@@ -167,6 +179,18 @@ function buildPath(points, key, domain) {
 
 .wealth-hurdle__status {
   white-space: nowrap;
+}
+
+.wealth-hurdle__deposit-copy {
+  margin: 0;
+  color: #5d7394;
+}
+
+.wealth-hurdle__deposit-copy strong {
+  display: block;
+  margin-top: 0.15rem;
+  color: #173050;
+  font-size: 1rem;
 }
 
 .wealth-hurdle__plots {
@@ -278,6 +302,10 @@ function buildPath(points, key, domain) {
   .wealth-hurdle__header,
   .wealth-hurdle__panel-head {
     flex-direction: column;
+  }
+
+  .wealth-hurdle__status {
+    white-space: normal;
   }
 }
 </style>

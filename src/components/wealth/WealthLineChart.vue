@@ -16,6 +16,7 @@
       >
         <svg
           v-if="activeSeries.length"
+          ref="svgRef"
           class="wealth-chart__svg"
           :viewBox="`0 0 ${viewWidth} ${viewHeight}`"
           preserveAspectRatio="xMidYMid meet"
@@ -161,6 +162,7 @@ const padding = {
 }
 
 const bodyRef = ref(null)
+const svgRef = ref(null)
 const hoveredYear = ref(null)
 
 function isMuted(id) {
@@ -273,10 +275,16 @@ const renderedSeries = computed(() =>
 )
 
 function onPointerMove(event) {
-  if (!bodyRef.value || !allYears.value.length) return
-  const rect = bodyRef.value.getBoundingClientRect()
-  const x = clamp(event.clientX - rect.left, 0, rect.width)
-  const ratio = rect.width <= 0 ? 0 : x / rect.width
+  const svg = svgRef.value || event.currentTarget
+  if (!svg || !allYears.value.length) return
+
+  const ctm = typeof svg.getScreenCTM === 'function' ? svg.getScreenCTM() : null
+  if (!ctm) return
+
+  const svgX = ((event.clientX - ctm.e) / ctm.a)
+  const plotWidth = viewWidth - padding.left - padding.right
+  const chartX = clamp(svgX - padding.left, 0, plotWidth)
+  const ratio = plotWidth <= 0 ? 0 : chartX / plotWidth
   const estimatedYear = yearDomain.value.min + ratio * (yearDomain.value.max - yearDomain.value.min)
 
   hoveredYear.value = allYears.value.reduce((bestYear, year) =>

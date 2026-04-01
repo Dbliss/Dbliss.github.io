@@ -5,9 +5,11 @@ import {
   calculateAnnualMortgagePayment,
   calculateAustralianAnnualTax,
   calculateHelpCompulsoryRepayment,
+  calculateFirstHomeBuyerStampDuty,
   calculatePurchaseCosts,
   estimateGenericPurchaseCosts,
   estimateLmi,
+  estimateNswTransferDuty,
   estimatePortfolioTaxableIncome,
   getEffectiveInvestmentDepositPct,
   getEffectiveOwnerDepositPct,
@@ -28,9 +30,16 @@ describe('wealth finance helpers', () => {
     expect(year.interestPaid).toBeGreaterThan(0)
   })
 
-  it('waives owner stamp duty below 800k and tapers it to 1m', () => {
+  it('calculates NSW transfer duty using stepped $100 blocks', () => {
+    expect(estimateNswTransferDuty(17_000)).toBe(212.5)
+    expect(estimateNswTransferDuty(17_001)).toBe(213.5)
+    expect(estimateNswTransferDuty(900_000)).toBe(34_912)
+    expect(estimateNswTransferDuty(900_001)).toBe(34_917)
+  })
+
+  it('applies the corrected NSW first-home-buyer concession for owner duty', () => {
     const config = {
-      stampDuty: 32000,
+      stampDuty: estimateNswTransferDuty(900000),
       legalFees: 2500,
       buyersCosts: 1800
     }
@@ -38,11 +47,15 @@ describe('wealth finance helpers', () => {
     const regular = calculatePurchaseCosts(config, false, 900000)
     const fullyExempt = calculatePurchaseCosts(config, true, 750000)
     const tapered = calculatePurchaseCosts(config, true, 900000)
+    const noConcession = calculatePurchaseCosts(config, true, 1_000_000)
 
     expect(fullyExempt.stampDuty).toBe(0)
     expect(fullyExempt.total).toBe(4300)
-    expect(tapered.stampDuty).toBe(16000)
+    expect(tapered.stampDuty).toBe(19_706)
     expect(tapered.total).toBeLessThan(regular.total)
+    expect(regular.stampDuty).toBe(34_912)
+    expect(noConcession.stampDuty).toBe(estimateNswTransferDuty(1_000_000))
+    expect(calculateFirstHomeBuyerStampDuty(900_000, true)).toBe(19_706)
   })
 
   it('keeps owner and investment deposit settings distinct', () => {
@@ -51,8 +64,8 @@ describe('wealth finance helpers', () => {
     expect(getEffectiveInvestmentDepositPct({ ownerDepositPct: 0.05, depositPct: 0.2 })).toBeCloseTo(0.2)
   })
 
-  it('removes LMI for eligible first-home-buyer purchases and scales it with higher LVRs otherwise', () => {
-    expect(estimateLmi(1_400_000, 0.05, true)).toBe(0)
+  it('scales estimated LMI with higher LVRs regardless of first-home-buyer flag', () => {
+    expect(estimateLmi(900000, 0.1, true)).toBe(estimateLmi(900000, 0.1, false))
     expect(estimateLmi(900000, 0.15, false)).toBeLessThan(estimateLmi(900000, 0.1, false))
     expect(estimateLmi(900000, 0.1, false)).toBeLessThan(estimateLmi(900000, 0.05, false))
   })

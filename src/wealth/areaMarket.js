@@ -1,3 +1,12 @@
+export const NSW_HOME_GUARANTEE_HIGH_CAP_LIMIT = 1_500_000
+export const NSW_HOME_GUARANTEE_OTHER_CAP_LIMIT = 800_000
+const NSW_HOME_GUARANTEE_HIGH_CAP_REGIONS = new Set([
+  'Central Coast',
+  'Metropolitan Sydney',
+  'Illawarra',
+  'Hunter'
+])
+
 export function normaliseAreaMarketPayload(rawPayload) {
   const payload = rawPayload && typeof rawPayload === 'object' ? rawPayload : {}
   const areas = Array.isArray(payload.areas)
@@ -81,6 +90,20 @@ export function applyAreaMarketToForm(form, area) {
   applyPropertyPatch(form.propertyConfig.house, patch.house)
   applyPropertyPatch(form.propertyConfig.apartment, patch.apartment)
   return patch
+}
+
+export function getFirstHomeBuyerLowDepositLimitForArea(area) {
+  const regionLabel = String(area?.regionLabel || '').trim()
+  if (regionLabel) {
+    return NSW_HOME_GUARANTEE_HIGH_CAP_REGIONS.has(regionLabel)
+      ? NSW_HOME_GUARANTEE_HIGH_CAP_LIMIT
+      : NSW_HOME_GUARANTEE_OTHER_CAP_LIMIT
+  }
+
+  const areaLabel = String(area?.label || '').trim()
+  return NSW_HOME_GUARANTEE_HIGH_CAP_REGIONS.has(areaLabel)
+    ? NSW_HOME_GUARANTEE_HIGH_CAP_LIMIT
+    : NSW_HOME_GUARANTEE_OTHER_CAP_LIMIT
 }
 
 function buildPropertyPatch(propertyData) {

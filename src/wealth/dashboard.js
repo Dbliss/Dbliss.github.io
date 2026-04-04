@@ -488,6 +488,9 @@ function buildAffordabilityHurdleCharts(result, requestOverride = null) {
 }
 
 export function buildDashboardModel(result, requestedBaselineKey, inflationRate = 0.03, requestOverride = null) {
+  const request = requestOverride || result?.request || {}
+  const housingCosts = request.housingCosts || {}
+  const propertyConfig = request.propertyConfig || {}
   const baselineKey = resolveBaselineKey(result, requestedBaselineKey)
   const baseline = baselineKey ? result?.strategies?.[baselineKey] || null : null
   const strategies = orderStrategyKeys(result)
@@ -508,7 +511,13 @@ export function buildDashboardModel(result, requestedBaselineKey, inflationRate 
         beatBaselineProbability: key === baselineKey ? null : calculateBeatBaselineProbability(result, strategy, baseline),
         narrative: buildNarrative(strategy, baseline, deltaVsBaseline),
         baselineLabel: baseline?.label || null,
-        inflationRate
+        inflationRate,
+        guidanceLiveAtHome: Boolean(housingCosts.liveAtHome),
+        guidanceLiveAtHomeYears: Math.max(0, Number(housingCosts.liveAtHomeYears) || 0),
+        guidanceInvestWhileSavingForDeposit: Boolean(propertyConfig.investWhileSavingForDeposit),
+        guidanceSurplusAllocationMode: propertyConfig.surplusAllocationMode === 'mortgagePrepayment'
+          ? 'mortgagePrepayment'
+          : 'invest'
       }
     })
     .sort((left, right) => right.summary.finalMedianNetWorth - left.summary.finalMedianNetWorth)

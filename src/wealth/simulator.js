@@ -39,7 +39,18 @@ import {
   wealthVacancyRate,
   wealthVacancyRateVolatility
 } from '../data/wealthDefaults.js'
-import { getIncomeForYear, getIncomeScaleForYear, normaliseHouseholdEarners, normaliseIncomeProfile } from './incomeSeries.js'
+import {
+  getAdjustedWeeklyLivingCosts,
+  getIncomeScaleForYear,
+  getEarnerAnnualIncomeForYear,
+  normaliseCareerBreakPlan,
+  normaliseCareerBreakPlans,
+  normaliseFamilyPlan,
+  normaliseHouseholdEarners,
+  normaliseIncomeProfile
+} from './incomeSeries.js'
+
+const PARENTAL_LEAVE_BASE_PAYMENT = 25000
 
 function createStrategyBuckets(horizonYears) {
   return Array.from({ length: horizonYears + 1 }, () => ({
@@ -52,7 +63,48 @@ function createStrategyBuckets(horizonYears) {
     totalTax: [],
     taxDelta: [],
     cashDeficit: [],
-    estimatedSaleTax: []
+    estimatedSaleTax: [],
+    cashflowSalaryIncome: [],
+    cashflowPortfolioReturn: [],
+    cashflowRentalIncome: [],
+    cashflowTaxes: [],
+    cashflowHelpRepayments: [],
+    cashflowLivingCosts: [],
+    cashflowHousingCosts: [],
+    cashflowUpfrontCosts: [],
+    cashflowSurplus: [],
+    cashflowDeficit: [],
+    detailSalaryIncome: [],
+    detailParentalLeavePayment: [],
+    detailAsxDividends: [],
+    detailQqqDividends: [],
+    detailBondIncome: [],
+    detailCashInterest: [],
+    detailPortfolioGrowth: [],
+    detailRentPaid: [],
+    detailBoardPaid: [],
+    detailRentReceived: [],
+    detailMortgageInterest: [],
+    detailMortgagePrincipal: [],
+    detailOwnerCosts: [],
+    detailPropertyManagement: [],
+    detailCouncilRates: [],
+    detailWaterRates: [],
+    detailInsurance: [],
+    detailMaintenance: [],
+    detailStrata: [],
+    detailLandTax: [],
+    detailOtherPropertyCosts: [],
+    detailRentalTaxImpact: [],
+    detailTaxes: [],
+    detailHelpRepayments: [],
+    detailDeposit: [],
+    detailStampDuty: [],
+    detailLegalFees: [],
+    detailBuyersCosts: [],
+    detailBorrowingExpenses: [],
+    detailSurplus: [],
+    detailDeficit: []
   }))
 }
 
@@ -181,6 +233,47 @@ function yearPoint(year, metrics) {
   const taxDelta = percentileSummary(metrics.taxDelta)
   const cashDeficit = percentileSummary(metrics.cashDeficit)
   const estimatedSaleTax = percentileSummary(metrics.estimatedSaleTax)
+  const cashflowSalaryIncome = percentileSummary(metrics.cashflowSalaryIncome)
+  const cashflowPortfolioReturn = percentileSummary(metrics.cashflowPortfolioReturn)
+  const cashflowRentalIncome = percentileSummary(metrics.cashflowRentalIncome)
+  const cashflowTaxes = percentileSummary(metrics.cashflowTaxes)
+  const cashflowHelpRepayments = percentileSummary(metrics.cashflowHelpRepayments)
+  const cashflowLivingCosts = percentileSummary(metrics.cashflowLivingCosts)
+  const cashflowHousingCosts = percentileSummary(metrics.cashflowHousingCosts)
+  const cashflowUpfrontCosts = percentileSummary(metrics.cashflowUpfrontCosts)
+  const cashflowSurplus = percentileSummary(metrics.cashflowSurplus)
+  const cashflowDeficit = percentileSummary(metrics.cashflowDeficit)
+  const detailSalaryIncome = percentileSummary(metrics.detailSalaryIncome)
+  const detailParentalLeavePayment = percentileSummary(metrics.detailParentalLeavePayment)
+  const detailAsxDividends = percentileSummary(metrics.detailAsxDividends)
+  const detailQqqDividends = percentileSummary(metrics.detailQqqDividends)
+  const detailBondIncome = percentileSummary(metrics.detailBondIncome)
+  const detailCashInterest = percentileSummary(metrics.detailCashInterest)
+  const detailPortfolioGrowth = percentileSummary(metrics.detailPortfolioGrowth)
+  const detailRentPaid = percentileSummary(metrics.detailRentPaid)
+  const detailBoardPaid = percentileSummary(metrics.detailBoardPaid)
+  const detailRentReceived = percentileSummary(metrics.detailRentReceived)
+  const detailMortgageInterest = percentileSummary(metrics.detailMortgageInterest)
+  const detailMortgagePrincipal = percentileSummary(metrics.detailMortgagePrincipal)
+  const detailOwnerCosts = percentileSummary(metrics.detailOwnerCosts)
+  const detailPropertyManagement = percentileSummary(metrics.detailPropertyManagement)
+  const detailCouncilRates = percentileSummary(metrics.detailCouncilRates)
+  const detailWaterRates = percentileSummary(metrics.detailWaterRates)
+  const detailInsurance = percentileSummary(metrics.detailInsurance)
+  const detailMaintenance = percentileSummary(metrics.detailMaintenance)
+  const detailStrata = percentileSummary(metrics.detailStrata)
+  const detailLandTax = percentileSummary(metrics.detailLandTax)
+  const detailOtherPropertyCosts = percentileSummary(metrics.detailOtherPropertyCosts)
+  const detailRentalTaxImpact = percentileSummary(metrics.detailRentalTaxImpact)
+  const detailTaxes = percentileSummary(metrics.detailTaxes)
+  const detailHelpRepayments = percentileSummary(metrics.detailHelpRepayments)
+  const detailDeposit = percentileSummary(metrics.detailDeposit)
+  const detailStampDuty = percentileSummary(metrics.detailStampDuty)
+  const detailLegalFees = percentileSummary(metrics.detailLegalFees)
+  const detailBuyersCosts = percentileSummary(metrics.detailBuyersCosts)
+  const detailBorrowingExpenses = percentileSummary(metrics.detailBorrowingExpenses)
+  const detailSurplus = percentileSummary(metrics.detailSurplus)
+  const detailDeficit = percentileSummary(metrics.detailDeficit)
   return {
     year,
     p10: roundCurrency(liquidationNetWorth.p10),
@@ -212,7 +305,52 @@ function yearPoint(year, metrics) {
     cashDeficitP90: roundCurrency(cashDeficit.p90),
     estimatedSaleTaxP10: roundCurrency(estimatedSaleTax.p10),
     estimatedSaleTaxP50: roundCurrency(estimatedSaleTax.p50),
-    estimatedSaleTaxP90: roundCurrency(estimatedSaleTax.p90)
+    estimatedSaleTaxP90: roundCurrency(estimatedSaleTax.p90),
+    cashflowBreakdown: {
+      salaryIncome: roundCurrency(cashflowSalaryIncome.p50),
+      portfolioReturn: roundCurrency(cashflowPortfolioReturn.p50),
+      rentalIncome: roundCurrency(cashflowRentalIncome.p50),
+      taxes: roundCurrency(cashflowTaxes.p50),
+      helpRepayments: roundCurrency(cashflowHelpRepayments.p50),
+      livingCosts: roundCurrency(cashflowLivingCosts.p50),
+      housingCosts: roundCurrency(cashflowHousingCosts.p50),
+      upfrontCosts: roundCurrency(cashflowUpfrontCosts.p50),
+      surplus: roundCurrency(cashflowSurplus.p50),
+      deficit: roundCurrency(cashflowDeficit.p50)
+    },
+    detailedCashflowBreakdown: {
+      salaryIncome: roundCurrency(detailSalaryIncome.p50),
+      parentalLeavePayment: roundCurrency(detailParentalLeavePayment.p50),
+      asxDividends: roundCurrency(detailAsxDividends.p50),
+      qqqDividends: roundCurrency(detailQqqDividends.p50),
+      bondIncome: roundCurrency(detailBondIncome.p50),
+      cashInterest: roundCurrency(detailCashInterest.p50),
+      portfolioGrowth: roundCurrency(detailPortfolioGrowth.p50),
+      rentPaid: roundCurrency(detailRentPaid.p50),
+      boardPaid: roundCurrency(detailBoardPaid.p50),
+      rentReceived: roundCurrency(detailRentReceived.p50),
+      mortgageInterest: roundCurrency(detailMortgageInterest.p50),
+      mortgagePrincipal: roundCurrency(detailMortgagePrincipal.p50),
+      ownerCosts: roundCurrency(detailOwnerCosts.p50),
+      propertyManagement: roundCurrency(detailPropertyManagement.p50),
+      councilRates: roundCurrency(detailCouncilRates.p50),
+      waterRates: roundCurrency(detailWaterRates.p50),
+      insurance: roundCurrency(detailInsurance.p50),
+      maintenance: roundCurrency(detailMaintenance.p50),
+      strata: roundCurrency(detailStrata.p50),
+      landTax: roundCurrency(detailLandTax.p50),
+      otherPropertyCosts: roundCurrency(detailOtherPropertyCosts.p50),
+      rentalTaxImpact: roundCurrency(detailRentalTaxImpact.p50),
+      taxes: roundCurrency(detailTaxes.p50),
+      helpRepayments: roundCurrency(detailHelpRepayments.p50),
+      deposit: roundCurrency(detailDeposit.p50),
+      stampDuty: roundCurrency(detailStampDuty.p50),
+      legalFees: roundCurrency(detailLegalFees.p50),
+      buyersCosts: roundCurrency(detailBuyersCosts.p50),
+      borrowingExpenses: roundCurrency(detailBorrowingExpenses.p50),
+      surplus: roundCurrency(detailSurplus.p50),
+      deficit: roundCurrency(detailDeficit.p50)
+    }
   }
 }
 
@@ -261,6 +399,47 @@ function addMetrics(bucket, snapshot) {
   bucket.taxDelta.push(snapshot.taxDelta)
   bucket.cashDeficit.push(snapshot.cashDeficit)
   bucket.estimatedSaleTax.push(snapshot.estimatedSaleTax)
+  bucket.cashflowSalaryIncome.push(snapshot.cashflowBreakdown.salaryIncome)
+  bucket.cashflowPortfolioReturn.push(snapshot.cashflowBreakdown.portfolioReturn)
+  bucket.cashflowRentalIncome.push(snapshot.cashflowBreakdown.rentalIncome)
+  bucket.cashflowTaxes.push(snapshot.cashflowBreakdown.taxes)
+  bucket.cashflowHelpRepayments.push(snapshot.cashflowBreakdown.helpRepayments)
+  bucket.cashflowLivingCosts.push(snapshot.cashflowBreakdown.livingCosts)
+  bucket.cashflowHousingCosts.push(snapshot.cashflowBreakdown.housingCosts)
+  bucket.cashflowUpfrontCosts.push(snapshot.cashflowBreakdown.upfrontCosts)
+  bucket.cashflowSurplus.push(snapshot.cashflowBreakdown.surplus)
+  bucket.cashflowDeficit.push(snapshot.cashflowBreakdown.deficit)
+  bucket.detailSalaryIncome.push(snapshot.detailedCashflowBreakdown.salaryIncome)
+  bucket.detailParentalLeavePayment.push(snapshot.detailedCashflowBreakdown.parentalLeavePayment)
+  bucket.detailAsxDividends.push(snapshot.detailedCashflowBreakdown.asxDividends)
+  bucket.detailQqqDividends.push(snapshot.detailedCashflowBreakdown.qqqDividends)
+  bucket.detailBondIncome.push(snapshot.detailedCashflowBreakdown.bondIncome)
+  bucket.detailCashInterest.push(snapshot.detailedCashflowBreakdown.cashInterest)
+  bucket.detailPortfolioGrowth.push(snapshot.detailedCashflowBreakdown.portfolioGrowth)
+  bucket.detailRentPaid.push(snapshot.detailedCashflowBreakdown.rentPaid)
+  bucket.detailBoardPaid.push(snapshot.detailedCashflowBreakdown.boardPaid)
+  bucket.detailRentReceived.push(snapshot.detailedCashflowBreakdown.rentReceived)
+  bucket.detailMortgageInterest.push(snapshot.detailedCashflowBreakdown.mortgageInterest)
+  bucket.detailMortgagePrincipal.push(snapshot.detailedCashflowBreakdown.mortgagePrincipal)
+  bucket.detailOwnerCosts.push(snapshot.detailedCashflowBreakdown.ownerCosts)
+  bucket.detailPropertyManagement.push(snapshot.detailedCashflowBreakdown.propertyManagement)
+  bucket.detailCouncilRates.push(snapshot.detailedCashflowBreakdown.councilRates)
+  bucket.detailWaterRates.push(snapshot.detailedCashflowBreakdown.waterRates)
+  bucket.detailInsurance.push(snapshot.detailedCashflowBreakdown.insurance)
+  bucket.detailMaintenance.push(snapshot.detailedCashflowBreakdown.maintenance)
+  bucket.detailStrata.push(snapshot.detailedCashflowBreakdown.strata)
+  bucket.detailLandTax.push(snapshot.detailedCashflowBreakdown.landTax)
+  bucket.detailOtherPropertyCosts.push(snapshot.detailedCashflowBreakdown.otherPropertyCosts)
+  bucket.detailRentalTaxImpact.push(snapshot.detailedCashflowBreakdown.rentalTaxImpact)
+  bucket.detailTaxes.push(snapshot.detailedCashflowBreakdown.taxes)
+  bucket.detailHelpRepayments.push(snapshot.detailedCashflowBreakdown.helpRepayments)
+  bucket.detailDeposit.push(snapshot.detailedCashflowBreakdown.deposit)
+  bucket.detailStampDuty.push(snapshot.detailedCashflowBreakdown.stampDuty)
+  bucket.detailLegalFees.push(snapshot.detailedCashflowBreakdown.legalFees)
+  bucket.detailBuyersCosts.push(snapshot.detailedCashflowBreakdown.buyersCosts)
+  bucket.detailBorrowingExpenses.push(snapshot.detailedCashflowBreakdown.borrowingExpenses)
+  bucket.detailSurplus.push(snapshot.detailedCashflowBreakdown.surplus)
+  bucket.detailDeficit.push(snapshot.detailedCashflowBreakdown.deficit)
 }
 
 function isLiveAtHomeYear(request, yearIndex) {
@@ -276,16 +455,49 @@ function shouldApplyFirstHomeBuyerSupport(request, occupancyMode) {
 }
 
 function getAnnualSalary(profile, yearIndex) {
-  return getIncomeForYear(profile, yearIndex)
+  return getEarnersForYear(profile, yearIndex).reduce((sum, earner) => sum + earner.annualIncome, 0)
 }
 
 function getEarnersForYear(profile, yearIndex, helpDebtBalances = []) {
   const earners = normaliseHouseholdEarners(profile)
   return earners.map((earner, index) => ({
     ...earner,
-    annualIncome: Number(earner.annualIncomeSeries?.[yearIndex]) || 0,
+    annualIncome: getEarnerAnnualIncomeForYear(earner, yearIndex, earners.length),
     helpDebtBalance: Math.max(0, Number(helpDebtBalances[index] ?? earner.helpDebtBalance) || 0)
   }))
+}
+
+function getParentalLeavePaymentForYear(profile, yearIndex, paymentAmount = PARENTAL_LEAVE_BASE_PAYMENT) {
+  const earners = normaliseHouseholdEarners(profile)
+  const familyPlan = normaliseFamilyPlan(profile, earners.length)
+  const targetYear = Math.max(1, Math.round(Number(yearIndex) || 0) + 1)
+
+  if (earners.length < 2) {
+    return { total: 0, allocations: earners.map(() => 0) }
+  }
+
+  const hasPlannedChild = familyPlan.plannedChildren.some((child) => Number(child?.year) === targetYear)
+  if (!hasPlannedChild) {
+    return { total: 0, allocations: earners.map(() => 0) }
+  }
+
+  const recipientIndex = earners.findIndex((earner) =>
+    normaliseCareerBreakPlans(
+      earner?.careerBreakPlans?.length ? earner.careerBreakPlans : earner?.careerBreakPlan,
+      profile?.horizonYears,
+      earners.length > 1
+    ).some((plan) => plan.reason === 'child' && Number(plan.startYear) === targetYear)
+  )
+
+  if (recipientIndex < 0) {
+    return { total: 0, allocations: earners.map(() => 0) }
+  }
+
+  const total = Math.max(0, Math.round(Number(paymentAmount) || 0))
+  return {
+    total,
+    allocations: earners.map((_, index) => (index === recipientIndex ? total : 0))
+  }
 }
 
 function allocateSupplementaryIncome(earners, amount) {
@@ -335,7 +547,7 @@ function calculateHouseholdTaxPosition({
 }
 
 function getAnnualNonHousingLivingCosts(profile, yearIndex) {
-  return profile.weeklyNonHousingLivingCosts * 52 * getIncomeScaleForYear(profile, yearIndex)
+  return getAdjustedWeeklyLivingCosts(profile, yearIndex) * 52 * getIncomeScaleForYear(profile, yearIndex)
 }
 
 function getInvestedBalance(liquidAssets) {
@@ -376,6 +588,7 @@ function estimateLiquidationPosition({
   liquidAssets,
   portfolioCostBasis = 0,
   portfolioYearsHeld = 0,
+  propertyHoldings = null,
   propertyValue = 0,
   mortgageBalance = 0,
   propertyCostBase = 0,
@@ -383,20 +596,39 @@ function estimateLiquidationPosition({
   propertyMainResidenceExempt = false
 }) {
   const portfolioMarketValue = getInvestedBalance(liquidAssets)
-  const propertyMarketValue = Math.max(0, Number(propertyValue) || 0)
-  const debt = Math.max(0, Number(mortgageBalance) || 0)
   const portfolioRawGain = portfolioMarketValue - Math.max(0, Number(portfolioCostBasis) || 0)
-  const propertyRawGain = propertyMainResidenceExempt ? 0 : propertyMarketValue - Math.max(0, Number(propertyCostBase) || 0)
-  const capitalLoss = Math.abs(Math.min(0, portfolioRawGain)) + Math.abs(Math.min(0, propertyRawGain))
+  const resolvedPropertyHoldings = Array.isArray(propertyHoldings) && propertyHoldings.length
+    ? propertyHoldings
+    : [{
+        value: propertyValue,
+        debt: mortgageBalance,
+        costBase: propertyCostBase,
+        yearsOwned: propertyYearsOwned,
+        mainResidenceExempt: propertyMainResidenceExempt
+      }]
+  const propertyMarketValue = resolvedPropertyHoldings.reduce((sum, holding) => sum + Math.max(0, Number(holding?.value) || 0), 0)
+  const debt = resolvedPropertyHoldings.reduce((sum, holding) => sum + Math.max(0, Number(holding?.debt) || 0), 0)
+  const propertyGainBuckets = resolvedPropertyHoldings.map((holding) => {
+    const marketValue = Math.max(0, Number(holding?.value) || 0)
+    const costBase = Math.max(0, Number(holding?.costBase) || 0)
+    const mainResidenceExempt = Boolean(holding?.mainResidenceExempt)
+    const rawGain = mainResidenceExempt ? 0 : marketValue - costBase
+
+    return {
+      rawGain,
+      discountPct: mainResidenceExempt ? 1 : getDiscountPct(holding?.yearsOwned)
+    }
+  })
+  const capitalLoss = Math.abs(Math.min(0, portfolioRawGain)) + propertyGainBuckets.reduce((sum, bucket) => sum + Math.abs(Math.min(0, bucket.rawGain)), 0)
   const positiveGainBuckets = [
     {
       grossGain: Math.max(0, portfolioRawGain),
       discountPct: getDiscountPct(portfolioYearsHeld)
     },
-    {
-      grossGain: Math.max(0, propertyRawGain),
-      discountPct: propertyMainResidenceExempt ? 1 : getDiscountPct(propertyYearsOwned)
-    }
+    ...propertyGainBuckets.map((bucket) => ({
+      grossGain: Math.max(0, bucket.rawGain),
+      discountPct: bucket.discountPct
+    }))
   ]
     .filter(bucket => bucket.grossGain > 0)
     .sort((left, right) => left.discountPct - right.discountPct)
@@ -436,7 +668,9 @@ function createSnapshot({
   totalTax = 0,
   taxDelta = 0,
   liquidationNetWorth = 0,
-  estimatedSaleTax = 0
+  estimatedSaleTax = 0,
+  cashflowBreakdown = {},
+  detailedCashflowBreakdown = {}
 }) {
   const homeEquity = propertyValue - mortgageBalance
   return {
@@ -449,7 +683,64 @@ function createSnapshot({
     totalTax,
     taxDelta,
     cashDeficit: Math.max(0, -liquidAssets),
-    estimatedSaleTax
+    estimatedSaleTax,
+    cashflowBreakdown: {
+      salaryIncome: Math.max(0, Number(cashflowBreakdown.salaryIncome) || 0),
+      portfolioReturn: Number(cashflowBreakdown.portfolioReturn) || 0,
+      rentalIncome: Math.max(0, Number(cashflowBreakdown.rentalIncome) || 0),
+      taxes: Math.max(0, Number(cashflowBreakdown.taxes) || 0),
+      helpRepayments: Math.max(0, Number(cashflowBreakdown.helpRepayments) || 0),
+      livingCosts: Math.max(0, Number(cashflowBreakdown.livingCosts) || 0),
+      housingCosts: Math.max(0, Number(cashflowBreakdown.housingCosts) || 0),
+      upfrontCosts: Math.max(0, Number(cashflowBreakdown.upfrontCosts) || 0),
+      surplus: Math.max(0, Number(cashflowBreakdown.surplus) || 0),
+      deficit: Math.max(0, Number(cashflowBreakdown.deficit) || 0)
+    },
+    detailedCashflowBreakdown: {
+      salaryIncome: Math.max(0, Number(detailedCashflowBreakdown.salaryIncome) || 0),
+      parentalLeavePayment: Math.max(0, Number(detailedCashflowBreakdown.parentalLeavePayment) || 0),
+      asxDividends: Math.max(0, Number(detailedCashflowBreakdown.asxDividends) || 0),
+      qqqDividends: Math.max(0, Number(detailedCashflowBreakdown.qqqDividends) || 0),
+      bondIncome: Math.max(0, Number(detailedCashflowBreakdown.bondIncome) || 0),
+      cashInterest: Math.max(0, Number(detailedCashflowBreakdown.cashInterest) || 0),
+      portfolioGrowth: Number(detailedCashflowBreakdown.portfolioGrowth) || 0,
+      rentPaid: Math.max(0, Number(detailedCashflowBreakdown.rentPaid) || 0),
+      boardPaid: Math.max(0, Number(detailedCashflowBreakdown.boardPaid) || 0),
+      rentReceived: Math.max(0, Number(detailedCashflowBreakdown.rentReceived) || 0),
+      mortgageInterest: Math.max(0, Number(detailedCashflowBreakdown.mortgageInterest) || 0),
+      mortgagePrincipal: Math.max(0, Number(detailedCashflowBreakdown.mortgagePrincipal) || 0),
+      ownerCosts: Math.max(0, Number(detailedCashflowBreakdown.ownerCosts) || 0),
+      propertyManagement: Math.max(0, Number(detailedCashflowBreakdown.propertyManagement) || 0),
+      councilRates: Math.max(0, Number(detailedCashflowBreakdown.councilRates) || 0),
+      waterRates: Math.max(0, Number(detailedCashflowBreakdown.waterRates) || 0),
+      insurance: Math.max(0, Number(detailedCashflowBreakdown.insurance) || 0),
+      maintenance: Math.max(0, Number(detailedCashflowBreakdown.maintenance) || 0),
+      strata: Math.max(0, Number(detailedCashflowBreakdown.strata) || 0),
+      landTax: Math.max(0, Number(detailedCashflowBreakdown.landTax) || 0),
+      otherPropertyCosts: Math.max(0, Number(detailedCashflowBreakdown.otherPropertyCosts) || 0),
+      rentalTaxImpact: Number(detailedCashflowBreakdown.rentalTaxImpact) || 0,
+      taxes: Math.max(0, Number(detailedCashflowBreakdown.taxes) || 0),
+      helpRepayments: Math.max(0, Number(detailedCashflowBreakdown.helpRepayments) || 0),
+      deposit: Math.max(0, Number(detailedCashflowBreakdown.deposit) || 0),
+      stampDuty: Math.max(0, Number(detailedCashflowBreakdown.stampDuty) || 0),
+      legalFees: Math.max(0, Number(detailedCashflowBreakdown.legalFees) || 0),
+      buyersCosts: Math.max(0, Number(detailedCashflowBreakdown.buyersCosts) || 0),
+      borrowingExpenses: Math.max(0, Number(detailedCashflowBreakdown.borrowingExpenses) || 0),
+      surplus: Math.max(0, Number(detailedCashflowBreakdown.surplus) || 0),
+      deficit: Math.max(0, Number(detailedCashflowBreakdown.deficit) || 0)
+    }
+  }
+}
+
+function buildExistingPropertyHolding(existingProperty, overrides = {}) {
+  if (!existingProperty?.enabled) return null
+
+  return {
+    value: Math.max(0, Number(overrides.value ?? existingProperty.currentValue) || 0),
+    debt: Math.max(0, Number(overrides.debt ?? existingProperty.mortgageBalance) || 0),
+    costBase: Math.max(0, Number(overrides.costBase ?? existingProperty.currentValue) || 0),
+    yearsOwned: Math.max(0, Number(overrides.yearsOwned ?? 0) || 0),
+    mainResidenceExempt: (overrides.occupancyMode ?? existingProperty.occupancyMode) === 'owner'
   }
 }
 
@@ -521,7 +812,7 @@ function getPurchaseServiceability(request, market, occupancyMode, propertyKey, 
     helpDebtBalance,
     annualIncomeByBorrower,
     helpDebtBalances: helpDebtBalance,
-    weeklyNonHousingLivingCosts: request.profile.weeklyNonHousingLivingCosts,
+    weeklyNonHousingLivingCosts: getAdjustedWeeklyLivingCosts(request.profile, market.yearIndex),
     occupancyMode,
     propertyType: propertyKey,
     propertyConfig: property,
@@ -690,6 +981,11 @@ function getPortfolioLedger(portfolioConfig, openingLiquidAssets, market) {
   return {
     portfolioYear,
     portfolioReturn,
+    asxDistribution: taxableIncome.asxDistribution,
+    qqqDistribution: taxableIncome.qqqDistribution,
+    bondIncome: taxableIncome.bondIncome,
+    cashInterest: taxableIncome.cashInterest,
+    portfolioGrowth: portfolioReturn - taxableIncome.cashIncome,
     taxablePortfolioIncome: taxableIncome.taxableIncome,
     frankingCredits: taxableIncome.frankingCredits
   }
@@ -698,8 +994,151 @@ function getPortfolioLedger(portfolioConfig, openingLiquidAssets, market) {
 function getCashSavingsLedger() {
   return {
     portfolioReturn: 0,
+    asxDistribution: 0,
+    qqqDistribution: 0,
+    bondIncome: 0,
+    cashInterest: 0,
+    portfolioGrowth: 0,
     taxablePortfolioIncome: 0,
     frankingCredits: 0
+  }
+}
+
+function normaliseExistingProperty(existingProperty = {}) {
+  const propertyType = existingProperty?.propertyType === 'apartment' ? 'apartment' : 'house'
+  const occupancyMode = existingProperty?.occupancyMode === 'investment' ? 'investment' : 'owner'
+  const currentValue = Math.max(0, Number(existingProperty?.currentValue ?? existingProperty?.purchasePrice) || 0)
+
+  return {
+    ...existingProperty,
+    enabled: Boolean(existingProperty?.enabled),
+    occupancyMode,
+    propertyType,
+    areaLabel: String(existingProperty?.areaLabel || ''),
+    areaKey: existingProperty?.areaKey || null,
+    currentValue,
+    purchasePrice: currentValue,
+    mortgageBalance: Math.max(0, Number(existingProperty?.mortgageBalance) || 0),
+    mortgageYears: Math.max(1, Math.round(Number(existingProperty?.mortgageYears) || 25)),
+    annualRepaymentOverride: Math.max(0, Number(existingProperty?.annualRepaymentOverride) || 0),
+    ownerInterestRate: clamp(Number(existingProperty?.ownerInterestRate) || 0, 0, 0.2),
+    ownerLongRunInterestRate: clamp(Number(existingProperty?.ownerLongRunInterestRate ?? existingProperty?.ownerInterestRate) || 0, 0, 0.2),
+    investmentInterestRate: clamp(Number(existingProperty?.investmentInterestRate ?? existingProperty?.ownerInterestRate) || 0, 0, 0.2),
+    investmentLongRunInterestRate: clamp(Number(existingProperty?.investmentLongRunInterestRate ?? existingProperty?.investmentInterestRate ?? existingProperty?.ownerInterestRate) || 0, 0, 0.2),
+    growthMean: clamp(Number(existingProperty?.growthMean) || 0, -0.1, 0.2),
+    growthVolatility: clamp(Number(existingProperty?.growthVolatility) || 0, 0, 0.3),
+    historicalAnnualGrowthRates: Array.isArray(existingProperty?.historicalAnnualGrowthRates)
+      ? existingProperty.historicalAnnualGrowthRates.map((value) => Number(value)).filter((value) => Number.isFinite(value) && value >= -0.5 && value <= 0.5)
+      : [],
+    yieldModel: normaliseYieldModel(existingProperty?.yieldModel),
+    rentYield: clamp(Number(existingProperty?.rentYield) || 0, 0, 0.12),
+    propertyManagementPct: clamp(Number(existingProperty?.propertyManagementPct) || 0, 0, 0.15),
+    councilRates: Math.max(0, Number(existingProperty?.councilRates) || 0),
+    waterRates: Math.max(0, Number(existingProperty?.waterRates) || 0),
+    insurance: Math.max(0, Number(existingProperty?.insurance) || 0),
+    maintenance: Math.max(0, Number(existingProperty?.maintenance) || 0),
+    strata: Math.max(0, Number(existingProperty?.strata) || 0),
+    landTax: Math.max(0, Number(existingProperty?.landTax) || 0),
+    borrowingExpensesTotal: Math.max(0, Number(existingProperty?.borrowingExpensesTotal) || 0),
+    otherDeductibleExpensesAnnual: Math.max(0, Number(existingProperty?.otherDeductibleExpensesAnnual) || 0),
+    ownerPurchaseCosts: { stampDuty: 0, legalFees: 0, buyersCosts: 0 },
+    investmentPurchaseCosts: { stampDuty: 0, legalFees: 0, buyersCosts: 0 }
+  }
+}
+
+function simulateExistingPropertyYear(existingProperty, market, yearsOwned = 0) {
+  if (!existingProperty?.enabled) {
+    return {
+      endPropertyValue: 0,
+      endMortgageBalance: 0,
+      housingCashCosts: 0,
+      rentalReceipts: 0,
+      taxRentalIncome: 0,
+      mortgageInterest: 0,
+      mortgagePrincipal: 0,
+      propertyExpenses: {
+        managementFee: 0,
+        councilRates: 0,
+        waterRates: 0,
+        insurance: 0,
+        maintenance: 0,
+        strata: 0,
+        landTax: 0,
+        otherPropertyCosts: 0
+      }
+    }
+  }
+
+  const propertyKey = existingProperty.propertyType === 'apartment' ? 'apartment' : 'house'
+  const openingPropertyValue = Math.max(0, Number(existingProperty.currentValue) || 0)
+  const adjustedProperty = createPriceAdjustedPropertyConfig(propertyKey, existingProperty, openingPropertyValue)
+  const yearsRemaining = Math.max(1, existingProperty.mortgageYears - yearsOwned)
+  const occupancyMode = existingProperty.occupancyMode === 'investment' ? 'investment' : 'owner'
+  const baseRate = interpolateRate(
+    getPropertyInterestRate(adjustedProperty, occupancyMode),
+    getPropertyLongRunInterestRate(adjustedProperty, occupancyMode),
+    yearsOwned,
+    5
+  )
+  const mortgageRate = clamp(baseRate + market.mortgageRateJitter, 0.03, 0.11)
+  const amortization = amortizeOneYear(existingProperty.mortgageBalance, mortgageRate, yearsRemaining)
+  const annualRepayment = existingProperty.annualRepaymentOverride > 0
+    ? existingProperty.annualRepaymentOverride
+    : amortization.payment
+  const principalPaid = Math.max(0, annualRepayment - amortization.interestPaid)
+  const endMortgageBalance = Math.max(0, existingProperty.mortgageBalance - principalPaid)
+  const endPropertyValue = openingPropertyValue * (1 + getPropertyGrowth(market, propertyKey))
+
+  if (occupancyMode === 'owner') {
+    const ownerHoldingCosts = getOwnerHoldingCosts(adjustedProperty)
+    return {
+      endPropertyValue,
+      endMortgageBalance,
+      housingCashCosts: annualRepayment + ownerHoldingCosts,
+      rentalReceipts: 0,
+      taxRentalIncome: 0,
+      mortgageInterest: amortization.interestPaid,
+      mortgagePrincipal: principalPaid,
+      propertyExpenses: {
+        managementFee: 0,
+        councilRates: adjustedProperty.councilRates,
+        waterRates: adjustedProperty.waterRates,
+        insurance: adjustedProperty.insurance,
+        maintenance: adjustedProperty.maintenance,
+        strata: adjustedProperty.strata,
+        landTax: 0,
+        otherPropertyCosts: 0
+      }
+    }
+  }
+
+  const rentalTaxPosition = calculateInvestmentPropertyTaxPosition({
+    propertyConfig: adjustedProperty,
+    propertyValue: openingPropertyValue,
+    vacancyRate: market.vacancyRate,
+    interestPaid: amortization.interestPaid,
+    yearsOwned,
+    rentYieldOverride: propertyKey === 'apartment' ? market.apartmentYield : market.houseYield
+  })
+
+  return {
+    endPropertyValue,
+    endMortgageBalance,
+    housingCashCosts: annualRepayment + rentalTaxPosition.cashOperatingExpenses,
+    rentalReceipts: rentalTaxPosition.rentReceived,
+    taxRentalIncome: rentalTaxPosition.taxableRentalIncome,
+    mortgageInterest: amortization.interestPaid,
+    mortgagePrincipal: principalPaid,
+    propertyExpenses: {
+      managementFee: rentalTaxPosition.managementFee,
+      councilRates: rentalTaxPosition.councilRates,
+      waterRates: rentalTaxPosition.waterRates,
+      insurance: rentalTaxPosition.insurance,
+      maintenance: rentalTaxPosition.maintenance,
+      strata: rentalTaxPosition.strata,
+      landTax: rentalTaxPosition.landTax,
+      otherPropertyCosts: rentalTaxPosition.otherDeductibleExpensesAnnual
+    }
   }
 }
 
@@ -730,12 +1169,28 @@ function simulateOwnedPropertyYear({
   const endPropertyValue = openingPropertyValue * (1 + getPropertyGrowth(market, propertyKey))
 
   if (occupancyMode === 'owner') {
+    const ownerHoldingCosts = getOwnerHoldingCosts(adjustedProperty)
     return {
       endPropertyValue,
       endMortgageBalance,
-      housingCashCosts: amortization.payment + getOwnerHoldingCosts(adjustedProperty),
+      housingCashCosts: amortization.payment + ownerHoldingCosts,
       rentalReceipts: 0,
-      taxRentalIncome: 0
+      taxRentalIncome: 0,
+      mortgageInterest: amortization.interestPaid,
+      mortgagePrincipal: amortization.principalPaid,
+      ownerHoldingCosts,
+      propertyExpenses: {
+        managementFee: 0,
+        councilRates: adjustedProperty.councilRates,
+        waterRates: adjustedProperty.waterRates,
+        insurance: adjustedProperty.insurance,
+        maintenance: adjustedProperty.maintenance,
+        strata: adjustedProperty.strata,
+        landTax: 0,
+        otherPropertyCosts: 0,
+        rentalTaxImpact: 0,
+        borrowingExpenses: 0
+      }
     }
   }
 
@@ -757,7 +1212,22 @@ function simulateOwnedPropertyYear({
       amortization.payment +
       rentalTaxPosition.cashOperatingExpenses,
     rentalReceipts: rentalTaxPosition.rentReceived,
-    taxRentalIncome: rentalTaxPosition.taxableRentalIncome
+    taxRentalIncome: rentalTaxPosition.taxableRentalIncome,
+    mortgageInterest: amortization.interestPaid,
+    mortgagePrincipal: amortization.principalPaid,
+    ownerHoldingCosts: atHomeHousingCosts,
+    propertyExpenses: {
+      managementFee: rentalTaxPosition.managementFee,
+      councilRates: rentalTaxPosition.councilRates,
+      waterRates: rentalTaxPosition.waterRates,
+      insurance: rentalTaxPosition.insurance,
+      maintenance: rentalTaxPosition.maintenance,
+      strata: rentalTaxPosition.strata,
+      landTax: rentalTaxPosition.landTax,
+      otherPropertyCosts: rentalTaxPosition.otherDeductibleExpensesAnnual,
+      rentalTaxImpact: 0,
+      borrowingExpenses: rentalTaxPosition.borrowingExpenseDeduction
+    }
   }
 }
 
@@ -789,6 +1259,7 @@ function applyHelpDebtCashflow(earners, annualSurplus) {
   return {
     ledgers,
     closingBalances: ledgers.map((ledger) => ledger.closingBalance),
+    totalRepayment,
     annualSurplusAfterHelp: annualSurplus - totalRepayment
   }
 }
@@ -824,38 +1295,65 @@ function getAvailablePurchaseLiquidity({
 }
 
 function simulateRentInvestPath(request, marketPath) {
-  const { profile, housingCosts, portfolioConfig } = request
+  const { profile, housingCosts, portfolioConfig, existingProperty } = request
   let liquidAssets = profile.startingSavings
   let helpDebtBalances = normaliseHouseholdEarners(profile).map((earner) => earner.helpDebtBalance)
   let portfolioCostBasis = getInvestedBalance(liquidAssets)
+  let existingPropertyValue = existingProperty.enabled ? existingProperty.currentValue : 0
+  let existingMortgageBalance = existingProperty.enabled ? existingProperty.mortgageBalance : 0
+  let existingYearsOwned = 0
   let rentLevel = housingCosts.weeklyRent * 52
   let boardLevel = housingCosts.weeklyBoardAtHome * 52
+  let parentalLeavePaymentLevel = PARENTAL_LEAVE_BASE_PAYMENT
   const openingLiquidation = estimateLiquidationPosition({
     taxYear: profile.taxYear,
     salaryIncome: profile.annualIncome,
     liquidAssets,
-    portfolioCostBasis
+    portfolioCostBasis,
+    propertyHoldings: [buildExistingPropertyHolding(existingProperty)]
   })
-  const points = [createSnapshot({ liquidAssets: profile.startingSavings, ...openingLiquidation })]
+  const points = [createSnapshot({
+    liquidAssets: profile.startingSavings,
+    propertyValue: existingPropertyValue,
+    mortgageBalance: existingMortgageBalance,
+    ...openingLiquidation
+  })]
 
   marketPath.forEach((market, yearIndex) => {
     if (yearIndex > 0) {
       rentLevel *= 1 + market.rentInflation
       boardLevel *= 1 + market.boardInflation
+      parentalLeavePaymentLevel *= 1 + market.rentInflation
     }
 
-    const housingCashCosts = isLiveAtHomeYear(request, yearIndex) ? boardLevel : rentLevel
+    const baseHousingCashCosts = isLiveAtHomeYear(request, yearIndex) ? boardLevel : rentLevel
     const openingLiquidAssets = liquidAssets
-    const earners = getEarnersForYear(profile, yearIndex, helpDebtBalances)
+    const baseEarners = getEarnersForYear(profile, yearIndex, helpDebtBalances)
+    const parentalLeavePayment = getParentalLeavePaymentForYear(profile, yearIndex, parentalLeavePaymentLevel)
+    const earners = baseEarners.map((earner, index) => ({
+      ...earner,
+      annualIncome: earner.annualIncome + (parentalLeavePayment.allocations[index] || 0)
+    }))
+    const existingOwnedYear = simulateExistingPropertyYear({
+      ...existingProperty,
+      currentValue: existingPropertyValue,
+      mortgageBalance: existingMortgageBalance
+    }, market, existingYearsOwned)
     const portfolioLedger = getPortfolioLedger(portfolioConfig, openingLiquidAssets, market)
     const taxPosition = calculateHouseholdTaxPosition({
       taxYear: profile.taxYear,
       earners,
       taxablePortfolioIncome: portfolioLedger.taxablePortfolioIncome,
+      taxableRentalIncome: existingOwnedYear.taxRentalIncome,
       frankingCredits: portfolioLedger.frankingCredits
     })
+    const housingCashCosts = existingProperty.enabled && existingProperty.occupancyMode === 'owner'
+      ? existingOwnedYear.housingCashCosts
+      : baseHousingCashCosts + existingOwnedYear.housingCashCosts
     const annualSurplus =
-      market.income -
+      market.income +
+      parentalLeavePayment.total +
+      existingOwnedYear.rentalReceipts -
       taxPosition.totalTax -
       market.nonHousingLivingCosts -
       housingCashCosts
@@ -865,19 +1363,78 @@ function simulateRentInvestPath(request, marketPath) {
     const preFlowInvestedBalance = getInvestedBalance(openingLiquidAssets) + portfolioLedger.portfolioReturn
     liquidAssets += portfolioLedger.portfolioReturn + helpCashflow.annualSurplusAfterHelp
     portfolioCostBasis = updatePortfolioCostBasis(portfolioCostBasis, preFlowInvestedBalance, liquidAssets)
+    existingPropertyValue = existingOwnedYear.endPropertyValue
+    existingMortgageBalance = existingOwnedYear.endMortgageBalance
+    if (existingProperty.enabled) existingYearsOwned += 1
     const liquidation = estimateLiquidationPosition({
       taxYear: profile.taxYear,
       salaryIncome: market.income,
       liquidAssets,
       portfolioCostBasis,
-      portfolioYearsHeld: yearIndex + 1
+      portfolioYearsHeld: yearIndex + 1,
+      propertyHoldings: [
+        buildExistingPropertyHolding(existingProperty, {
+          value: existingPropertyValue,
+          debt: existingMortgageBalance,
+          yearsOwned: existingYearsOwned
+        })
+      ]
     })
 
     points.push(createSnapshot({
       liquidAssets,
+      propertyValue: existingPropertyValue,
+      mortgageBalance: existingMortgageBalance,
       annualSurplus: helpCashflow.annualSurplusAfterHelp,
       totalTax: taxPosition.totalTax,
       taxDelta: taxPosition.deltaVsSalaryOnly,
+      cashflowBreakdown: {
+        salaryIncome: market.income + parentalLeavePayment.total,
+        portfolioReturn: portfolioLedger.portfolioReturn,
+        rentalIncome: existingOwnedYear.rentalReceipts,
+        taxes: taxPosition.totalTax,
+        helpRepayments: helpCashflow.totalRepayment,
+        livingCosts: market.nonHousingLivingCosts,
+        housingCosts: housingCashCosts,
+        upfrontCosts: 0,
+        surplus: Math.max(0, helpCashflow.annualSurplusAfterHelp),
+        deficit: Math.max(0, -helpCashflow.annualSurplusAfterHelp)
+      },
+      detailedCashflowBreakdown: {
+        salaryIncome: market.income,
+        parentalLeavePayment: parentalLeavePayment.total,
+        asxDividends: portfolioLedger.asxDistribution,
+        qqqDividends: portfolioLedger.qqqDistribution,
+        bondIncome: portfolioLedger.bondIncome,
+        cashInterest: portfolioLedger.cashInterest,
+        portfolioGrowth: portfolioLedger.portfolioGrowth,
+        rentPaid: existingProperty.enabled && existingProperty.occupancyMode === 'owner' ? 0 : (baseHousingCashCosts === rentLevel ? baseHousingCashCosts : 0),
+        boardPaid: existingProperty.enabled && existingProperty.occupancyMode === 'owner' ? 0 : (baseHousingCashCosts === boardLevel ? baseHousingCashCosts : 0),
+        rentReceived: existingOwnedYear.rentalReceipts,
+        mortgageInterest: existingOwnedYear.mortgageInterest,
+        mortgagePrincipal: existingOwnedYear.mortgagePrincipal,
+        ownerCosts: existingProperty.enabled && existingProperty.occupancyMode === 'owner'
+          ? existingOwnedYear.propertyExpenses.councilRates + existingOwnedYear.propertyExpenses.waterRates + existingOwnedYear.propertyExpenses.insurance + existingOwnedYear.propertyExpenses.maintenance + existingOwnedYear.propertyExpenses.strata
+          : 0,
+        propertyManagement: existingOwnedYear.propertyExpenses.managementFee,
+        councilRates: existingOwnedYear.propertyExpenses.councilRates,
+        waterRates: existingOwnedYear.propertyExpenses.waterRates,
+        insurance: existingOwnedYear.propertyExpenses.insurance,
+        maintenance: existingOwnedYear.propertyExpenses.maintenance,
+        strata: existingOwnedYear.propertyExpenses.strata,
+        landTax: existingOwnedYear.propertyExpenses.landTax,
+        otherPropertyCosts: existingOwnedYear.propertyExpenses.otherPropertyCosts,
+        rentalTaxImpact: Math.max(0, taxPosition.deltaVsSalaryOnly),
+        taxes: taxPosition.totalTax,
+        helpRepayments: helpCashflow.totalRepayment,
+        deposit: 0,
+        stampDuty: 0,
+        legalFees: 0,
+        buyersCosts: 0,
+        borrowingExpenses: 0,
+        surplus: Math.max(0, helpCashflow.annualSurplusAfterHelp),
+        deficit: Math.max(0, -helpCashflow.annualSurplusAfterHelp)
+      },
       ...liquidation
     }))
   })
@@ -886,7 +1443,7 @@ function simulateRentInvestPath(request, marketPath) {
 }
 
 function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
-  const { profile, housingCosts, portfolioConfig, propertyConfig } = request
+  const { profile, housingCosts, portfolioConfig, propertyConfig, existingProperty } = request
   const property = propertyConfig[propertyKey]
   const firstHomeBuyerEligible = shouldApplyFirstHomeBuyerSupport(request, occupancyMode)
   const investWhileSavingForDeposit = Boolean(propertyConfig.investWhileSavingForDeposit)
@@ -894,18 +1451,24 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
   let targetPropertyValue = property.purchasePrice
   let propertyValue = 0
   let mortgageBalance = 0
+  let existingPropertyValue = existingProperty.enabled ? existingProperty.currentValue : 0
+  let existingMortgageBalance = existingProperty.enabled ? existingProperty.mortgageBalance : 0
   let helpDebtBalances = normaliseHouseholdEarners(profile).map((earner) => earner.helpDebtBalance)
   let portfolioCostBasis = getInvestedBalance(liquidAssets)
   let propertyCostBase = 0
+  let existingPropertyCostBase = existingProperty.enabled ? existingProperty.currentValue : 0
   let investmentBorrowingExpensesTotal = 0
   let purchased = false
   let yearsOwned = 0
+  let existingYearsOwned = 0
   let rentLevel = housingCosts.weeklyRent * 52
   let boardLevel = housingCosts.weeklyBoardAtHome * 52
+  let parentalLeavePaymentLevel = PARENTAL_LEAVE_BASE_PAYMENT
 
   if (marketPath[0]) {
     const openingMarket = marketPath[0]
-    const atHomeHousingCosts = isLiveAtHomeYear(request, 0) ? boardLevel : rentLevel
+    const baseHousingCosts = isLiveAtHomeYear(request, 0) ? boardLevel : rentLevel
+    const atHomeHousingCosts = existingProperty.enabled && existingProperty.occupancyMode === 'owner' ? 0 : baseHousingCosts
     const openingEarners = getEarnersForYear(profile, 0, helpDebtBalances)
     const openingPortfolioLedger = getPortfolioLedger(portfolioConfig, liquidAssets, openingMarket)
     const openingGrossLiquidAssets = liquidAssets + openingPortfolioLedger.portfolioReturn
@@ -981,28 +1544,57 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
     salaryIncome: profile.annualIncome,
     liquidAssets,
     portfolioCostBasis,
-    propertyValue,
-    mortgageBalance,
-    propertyCostBase,
-    propertyYearsOwned: yearsOwned,
-    propertyMainResidenceExempt: occupancyMode === 'owner'
+    propertyHoldings: [
+      buildExistingPropertyHolding(existingProperty, {
+        value: existingPropertyValue,
+        debt: existingMortgageBalance,
+        costBase: existingPropertyCostBase,
+        yearsOwned: existingYearsOwned
+      }),
+      {
+        value: propertyValue,
+        debt: mortgageBalance,
+        costBase: propertyCostBase,
+        yearsOwned,
+        mainResidenceExempt: occupancyMode === 'owner'
+      }
+    ].filter(Boolean)
   })
-  const points = [createSnapshot({ liquidAssets, propertyValue, mortgageBalance, ...openingLiquidation })]
+  const points = [createSnapshot({
+    liquidAssets,
+    propertyValue: propertyValue + existingPropertyValue,
+    mortgageBalance: mortgageBalance + existingMortgageBalance,
+    ...openingLiquidation
+  })]
 
   marketPath.forEach((market, yearIndex) => {
     if (yearIndex > 0) {
       rentLevel *= 1 + market.rentInflation
       boardLevel *= 1 + market.boardInflation
+      parentalLeavePaymentLevel *= 1 + market.rentInflation
     }
 
     const purchasedAtStart = purchased
     const openingLiquidAssets = liquidAssets
-    const earners = getEarnersForYear(profile, yearIndex, helpDebtBalances)
+    const baseEarners = getEarnersForYear(profile, yearIndex, helpDebtBalances)
+    const parentalLeavePayment = getParentalLeavePaymentForYear(profile, yearIndex, parentalLeavePaymentLevel)
+    const earners = baseEarners.map((earner, index) => ({
+      ...earner,
+      annualIncome: earner.annualIncome + (parentalLeavePayment.allocations[index] || 0)
+    }))
     const portfolioLedger = purchasedAtStart || investWhileSavingForDeposit
       ? getPortfolioLedger(portfolioConfig, openingLiquidAssets, market)
       : getCashSavingsLedger()
     const liveAtHomeThisYear = isLiveAtHomeYear(request, yearIndex)
-    const atHomeHousingCosts = liveAtHomeThisYear ? boardLevel : rentLevel
+    const householdBaseHousingCosts = existingProperty.enabled && existingProperty.occupancyMode === 'owner'
+      ? 0
+      : (liveAtHomeThisYear ? boardLevel : rentLevel)
+    const existingOwnedYear = simulateExistingPropertyYear({
+      ...existingProperty,
+      currentValue: existingPropertyValue,
+      mortgageBalance: existingMortgageBalance
+    }, market, existingYearsOwned)
+    const atHomeHousingCosts = householdBaseHousingCosts
     let annualSurplus = 0
     let totalTax = 0
     let taxDelta = 0
@@ -1011,6 +1603,41 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
     let taxRentalIncome = 0
     let housingCashCosts = 0
     let rentalReceipts = 0
+    let upfrontCosts = 0
+    let annualSurplusBeforeHelp = 0
+    let detailedBreakdown = {
+      salaryIncome: market.income,
+      parentalLeavePayment: parentalLeavePayment.total,
+      asxDividends: portfolioLedger.asxDistribution,
+      qqqDividends: portfolioLedger.qqqDistribution,
+      bondIncome: portfolioLedger.bondIncome,
+      cashInterest: portfolioLedger.cashInterest,
+      portfolioGrowth: portfolioLedger.portfolioGrowth,
+      rentPaid: 0,
+      boardPaid: 0,
+      rentReceived: 0,
+      mortgageInterest: 0,
+      mortgagePrincipal: 0,
+      ownerCosts: 0,
+      propertyManagement: 0,
+      councilRates: 0,
+      waterRates: 0,
+      insurance: 0,
+      maintenance: 0,
+      strata: 0,
+      landTax: 0,
+      otherPropertyCosts: 0,
+      rentalTaxImpact: 0,
+      taxes: 0,
+      helpRepayments: 0,
+      deposit: 0,
+      stampDuty: 0,
+      legalFees: 0,
+      buyersCosts: 0,
+      borrowingExpenses: 0,
+      surplus: 0,
+      deficit: 0
+    }
     let allocation = null
 
     if (!purchased) {
@@ -1019,15 +1646,21 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
         taxYear: profile.taxYear,
         earners,
         taxablePortfolioIncome: portfolioLedger.taxablePortfolioIncome,
+        taxableRentalIncome: existingOwnedYear.taxRentalIncome,
         frankingCredits: portfolioLedger.frankingCredits
       })
       totalTax = waitTaxPosition.totalTax
       taxDelta = waitTaxPosition.deltaVsSalaryOnly
       annualSurplus =
-        market.income -
+        market.income +
+        parentalLeavePayment.total +
+        existingOwnedYear.rentalReceipts -
         totalTax -
         market.nonHousingLivingCosts -
-        housingCashCosts
+        (housingCashCosts + existingOwnedYear.housingCashCosts)
+      annualSurplusBeforeHelp = annualSurplus
+      detailedBreakdown.rentPaid = liveAtHomeThisYear ? 0 : householdBaseHousingCosts
+      detailedBreakdown.boardPaid = liveAtHomeThisYear ? householdBaseHousingCosts : 0
 
       const prePurchaseGrossLiquidAssets = openingLiquidAssets + portfolioLedger.portfolioReturn
       const purchaseLiquidity = getAvailablePurchaseLiquidity({
@@ -1069,16 +1702,20 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
           taxYear: profile.taxYear,
           earners,
           taxablePortfolioIncome: portfolioLedger.taxablePortfolioIncome,
-          taxableRentalIncome: purchaseOwnedYear.taxRentalIncome,
+          taxableRentalIncome: purchaseOwnedYear.taxRentalIncome + existingOwnedYear.taxRentalIncome,
           frankingCredits: portfolioLedger.frankingCredits
         })
         const purchaseAnnualSurplus =
           market.income +
+          parentalLeavePayment.total +
+          existingOwnedYear.rentalReceipts +
           purchaseOwnedYear.rentalReceipts -
           purchaseTaxPosition.totalTax -
           market.nonHousingLivingCosts -
           purchaseOwnedYear.housingCashCosts -
+          existingOwnedYear.housingCashCosts -
           purchasePlan.upfrontCash
+        annualSurplusBeforeHelp = purchaseAnnualSurplus
         const purchaseHelpCashflow = applyHelpDebtCashflow(earners, purchaseAnnualSurplus)
         const purchaseAllocation = applySurplusAllocation({
           liquidAssets: purchaseLiquidity.availableCash,
@@ -1098,11 +1735,31 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
           housingCashCosts = purchaseOwnedYear.housingCashCosts
           rentalReceipts = purchaseOwnedYear.rentalReceipts
           taxRentalIncome = purchaseOwnedYear.taxRentalIncome
+          upfrontCosts = purchasePlan.upfrontCash
           totalTax = purchaseTaxPosition.totalTax
           taxDelta = purchaseTaxPosition.deltaVsSalaryOnly
           annualSurplus = purchaseHelpCashflow.annualSurplusAfterHelp
           allocation = purchaseAllocation
           helpDebtBalances = purchaseHelpCashflow.closingBalances
+          detailedBreakdown.rentPaid = occupancyMode === 'investment' && !liveAtHomeThisYear ? householdBaseHousingCosts : 0
+          detailedBreakdown.boardPaid = occupancyMode === 'investment' && liveAtHomeThisYear ? householdBaseHousingCosts : 0
+          detailedBreakdown.rentReceived = rentalReceipts
+          detailedBreakdown.mortgageInterest = purchaseOwnedYear.mortgageInterest
+          detailedBreakdown.mortgagePrincipal = purchaseOwnedYear.mortgagePrincipal
+          detailedBreakdown.ownerCosts = occupancyMode === 'owner' ? purchaseOwnedYear.propertyExpenses.councilRates + purchaseOwnedYear.propertyExpenses.waterRates + purchaseOwnedYear.propertyExpenses.insurance + purchaseOwnedYear.propertyExpenses.maintenance + purchaseOwnedYear.propertyExpenses.strata : 0
+          detailedBreakdown.propertyManagement = purchaseOwnedYear.propertyExpenses.managementFee
+          detailedBreakdown.councilRates = purchaseOwnedYear.propertyExpenses.councilRates
+          detailedBreakdown.waterRates = purchaseOwnedYear.propertyExpenses.waterRates
+          detailedBreakdown.insurance = purchaseOwnedYear.propertyExpenses.insurance
+          detailedBreakdown.maintenance = purchaseOwnedYear.propertyExpenses.maintenance
+          detailedBreakdown.strata = purchaseOwnedYear.propertyExpenses.strata
+          detailedBreakdown.landTax = purchaseOwnedYear.propertyExpenses.landTax
+          detailedBreakdown.otherPropertyCosts = purchaseOwnedYear.propertyExpenses.otherPropertyCosts
+          detailedBreakdown.deposit = purchasePlan.deposit
+          detailedBreakdown.stampDuty = purchasePlan.purchaseCosts.stampDuty
+          detailedBreakdown.legalFees = purchasePlan.purchaseCosts.legalFees
+          detailedBreakdown.buyersCosts = purchasePlan.purchaseCosts.buyersCosts
+          detailedBreakdown.borrowingExpenses = purchasePlan.borrowingExpensesUpfront
         } else {
           targetPropertyValue *= 1 + getPropertyGrowth(market, propertyKey)
         }
@@ -1132,7 +1789,7 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
         taxYear: profile.taxYear,
         earners,
         taxablePortfolioIncome: portfolioLedger.taxablePortfolioIncome,
-        taxableRentalIncome: taxRentalIncome,
+        taxableRentalIncome: taxRentalIncome + existingOwnedYear.taxRentalIncome,
         frankingCredits: portfolioLedger.frankingCredits
       })
 
@@ -1140,14 +1797,33 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
       taxDelta = taxPosition.deltaVsSalaryOnly
       annualSurplus =
         market.income +
+        parentalLeavePayment.total +
+        existingOwnedYear.rentalReceipts +
         rentalReceipts -
         totalTax -
         market.nonHousingLivingCosts -
-        housingCashCosts
+        housingCashCosts -
+        existingOwnedYear.housingCashCosts
+      annualSurplusBeforeHelp = annualSurplus
+      detailedBreakdown.rentPaid = occupancyMode === 'investment' && !liveAtHomeThisYear ? householdBaseHousingCosts : 0
+      detailedBreakdown.boardPaid = occupancyMode === 'investment' && liveAtHomeThisYear ? householdBaseHousingCosts : 0
+      detailedBreakdown.rentReceived = rentalReceipts
+      detailedBreakdown.mortgageInterest = ownedYear.mortgageInterest
+      detailedBreakdown.mortgagePrincipal = ownedYear.mortgagePrincipal
+      detailedBreakdown.ownerCosts = occupancyMode === 'owner' ? ownedYear.propertyExpenses.councilRates + ownedYear.propertyExpenses.waterRates + ownedYear.propertyExpenses.insurance + ownedYear.propertyExpenses.maintenance + ownedYear.propertyExpenses.strata : 0
+      detailedBreakdown.propertyManagement = ownedYear.propertyExpenses.managementFee
+      detailedBreakdown.councilRates = ownedYear.propertyExpenses.councilRates
+      detailedBreakdown.waterRates = ownedYear.propertyExpenses.waterRates
+      detailedBreakdown.insurance = ownedYear.propertyExpenses.insurance
+      detailedBreakdown.maintenance = ownedYear.propertyExpenses.maintenance
+      detailedBreakdown.strata = ownedYear.propertyExpenses.strata
+      detailedBreakdown.landTax = ownedYear.propertyExpenses.landTax
+      detailedBreakdown.otherPropertyCosts = ownedYear.propertyExpenses.otherPropertyCosts
+      detailedBreakdown.borrowingExpenses = 0
     }
 
     const annualCashflow = allocation
-      ? { annualSurplusAfterHelp: annualSurplus }
+      ? { annualSurplusAfterHelp: annualSurplus, totalRepayment: Math.max(0, annualSurplusBeforeHelp - annualSurplus), closingBalances: helpDebtBalances }
       : applyHelpDebtCashflow(earners, annualSurplus)
     if (!allocation) {
       helpDebtBalances = annualCashflow.closingBalances
@@ -1173,26 +1849,73 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
         : updatePortfolioCostBasis(portfolioCostBasis, preFlowInvestedBalance, liquidAssets)
     mortgageBalance = purchased ? allocation.endingMortgageBalance : 0
     propertyValue = purchased ? endPropertyValue : 0
+    existingPropertyValue = existingOwnedYear.endPropertyValue
+    existingMortgageBalance = existingOwnedYear.endMortgageBalance
+    if (existingProperty.enabled) existingYearsOwned += 1
     const liquidation = estimateLiquidationPosition({
       taxYear: profile.taxYear,
       salaryIncome: market.income,
       liquidAssets,
       portfolioCostBasis,
       portfolioYearsHeld: yearIndex + 1,
-      propertyValue,
-      mortgageBalance,
-      propertyCostBase,
-      propertyYearsOwned: yearsOwned,
-      propertyMainResidenceExempt: occupancyMode === 'owner'
+      propertyHoldings: [
+        buildExistingPropertyHolding(existingProperty, {
+          value: existingPropertyValue,
+          debt: existingMortgageBalance,
+          costBase: existingPropertyCostBase,
+          yearsOwned: existingYearsOwned
+        }),
+        {
+          value: propertyValue,
+          debt: mortgageBalance,
+          costBase: propertyCostBase,
+          yearsOwned,
+          mainResidenceExempt: occupancyMode === 'owner'
+        }
+      ].filter(Boolean)
     })
 
     points.push(createSnapshot({
       liquidAssets,
-      propertyValue,
-      mortgageBalance,
+      propertyValue: propertyValue + existingPropertyValue,
+      mortgageBalance: mortgageBalance + existingMortgageBalance,
       annualSurplus: annualCashflow.annualSurplusAfterHelp,
       totalTax,
       taxDelta,
+      cashflowBreakdown: {
+        salaryIncome: market.income + parentalLeavePayment.total,
+        portfolioReturn: portfolioLedger.portfolioReturn,
+        rentalIncome: rentalReceipts + existingOwnedYear.rentalReceipts,
+        taxes: totalTax,
+        helpRepayments: annualCashflow.totalRepayment,
+        livingCosts: market.nonHousingLivingCosts,
+        housingCosts: housingCashCosts + existingOwnedYear.housingCashCosts,
+        upfrontCosts,
+        surplus: Math.max(0, annualCashflow.annualSurplusAfterHelp),
+        deficit: Math.max(0, -annualCashflow.annualSurplusAfterHelp)
+      },
+      detailedCashflowBreakdown: {
+        ...detailedBreakdown,
+        rentReceived: (Number(detailedBreakdown.rentReceived) || 0) + existingOwnedYear.rentalReceipts,
+        mortgageInterest: (Number(detailedBreakdown.mortgageInterest) || 0) + existingOwnedYear.mortgageInterest,
+        mortgagePrincipal: (Number(detailedBreakdown.mortgagePrincipal) || 0) + existingOwnedYear.mortgagePrincipal,
+        ownerCosts: (Number(detailedBreakdown.ownerCosts) || 0) + (existingProperty.enabled && existingProperty.occupancyMode === 'owner'
+          ? existingOwnedYear.propertyExpenses.councilRates + existingOwnedYear.propertyExpenses.waterRates + existingOwnedYear.propertyExpenses.insurance + existingOwnedYear.propertyExpenses.maintenance + existingOwnedYear.propertyExpenses.strata
+          : 0),
+        propertyManagement: (Number(detailedBreakdown.propertyManagement) || 0) + existingOwnedYear.propertyExpenses.managementFee,
+        councilRates: (Number(detailedBreakdown.councilRates) || 0) + existingOwnedYear.propertyExpenses.councilRates,
+        waterRates: (Number(detailedBreakdown.waterRates) || 0) + existingOwnedYear.propertyExpenses.waterRates,
+        insurance: (Number(detailedBreakdown.insurance) || 0) + existingOwnedYear.propertyExpenses.insurance,
+        maintenance: (Number(detailedBreakdown.maintenance) || 0) + existingOwnedYear.propertyExpenses.maintenance,
+        strata: (Number(detailedBreakdown.strata) || 0) + existingOwnedYear.propertyExpenses.strata,
+        landTax: (Number(detailedBreakdown.landTax) || 0) + existingOwnedYear.propertyExpenses.landTax,
+        otherPropertyCosts: (Number(detailedBreakdown.otherPropertyCosts) || 0) + existingOwnedYear.propertyExpenses.otherPropertyCosts,
+        rentalTaxImpact: Math.max(0, taxDelta),
+        taxes: totalTax,
+        helpRepayments: annualCashflow.totalRepayment,
+        surplus: Math.max(0, annualCashflow.annualSurplusAfterHelp),
+        deficit: Math.max(0, -annualCashflow.annualSurplusAfterHelp)
+      },
       ...liquidation
     }))
   })
@@ -1279,6 +2002,16 @@ function normaliseRequest(request) {
   }
   safe.profile.taxYear = '2026-27'
   const normalisedEarners = normaliseHouseholdEarners(safe.profile)
+  safe.profile.earners = normalisedEarners.map((earner) => ({
+    ...earner,
+    careerBreakPlans: normaliseCareerBreakPlans(
+      earner.careerBreakPlans?.length ? earner.careerBreakPlans : earner.careerBreakPlan,
+      safe.profile.horizonYears,
+      normalisedEarners.length > 1
+    ),
+    careerBreakPlan: normaliseCareerBreakPlan(earner.careerBreakPlan, safe.profile.horizonYears, normalisedEarners.length > 1)
+  }))
+  safe.profile.familyPlan = normaliseFamilyPlan(safe.profile, normalisedEarners.length)
   safe.profile.startingSavings = normalisedEarners
     .reduce((sum, earner) => sum + Math.max(0, Number(earner.startingSavings) || 0), 0)
   safe.profile.helpDebtBalance = normalisedEarners
@@ -1326,6 +2059,7 @@ function normaliseRequest(request) {
     : []
   safe.propertyConfig.house = normaliseProperty(safe.propertyConfig.house, safe.propertyConfig)
   safe.propertyConfig.apartment = normaliseProperty(safe.propertyConfig.apartment, safe.propertyConfig)
+  safe.existingProperty = normaliseExistingProperty(safe.existingProperty)
   safe.scenarioSelection = resolveScenarioSelection(safe.scenarioSelection)
   safe.scenarioSelection.selectedScenarioKeys = safe.scenarioSelection.selectedScenarioKeys.filter((strategyKey) =>
     isScenarioSupportedByRequest(safe, strategyKey)

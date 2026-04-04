@@ -311,6 +311,10 @@ export const defaultSimulationRequest = {
     incomeCurve: 'sigmoid',
     weeklyNonHousingLivingCosts: 400,
     horizonYears: 30,
+    familyPlan: {
+      existingChildren: 0,
+      plannedChildren: []
+    },
     useCustomIncomeSeries: false,
     annualIncomeSeries: [],
     earners: [
@@ -322,6 +326,14 @@ export const defaultSimulationRequest = {
         helpDebtBalance: 15000,
         incomeGrowthRate: 0.036,
         incomeCurve: 'sigmoid',
+        careerBreakPlans: [],
+        careerBreakPlan: {
+          enabled: false,
+          startYear: 5,
+          durationYears: 1,
+          neverReturn: false,
+          reason: 'personal'
+        },
         useCustomIncomeSeries: false,
         annualIncomeSeries: []
       }
@@ -357,6 +369,36 @@ export const defaultSimulationRequest = {
     vacancyRate: wealthVacancyRate,
     house: {},
     apartment: {}
+  },
+  existingProperty: {
+    enabled: false,
+    occupancyMode: 'owner',
+    propertyType: 'house',
+    areaLabel: '',
+    areaKey: null,
+    currentValue: 900000,
+    purchasePrice: 900000,
+    mortgageBalance: 450000,
+    mortgageYears: 25,
+    annualRepaymentOverride: 0,
+    ownerInterestRate: 0.061,
+    ownerLongRunInterestRate: 0.056,
+    investmentInterestRate: 0.066,
+    investmentLongRunInterestRate: 0.061,
+    growthMean: 0.055,
+    growthVolatility: 0.085,
+    rentYield: 0.035,
+    propertyManagementPct: 0.065,
+    councilRates: estimatePropertyCostFromPrice('house', 'councilRates', 900000),
+    waterRates: estimatePropertyCostFromPrice('house', 'waterRates', 900000),
+    insurance: estimatePropertyCostFromPrice('house', 'insurance', 900000),
+    maintenance: estimatePropertyCostFromPrice('house', 'maintenance', 900000),
+    strata: 0,
+    landTax: 0,
+    borrowingExpensesTotal: 0,
+    otherDeductibleExpensesAnnual: estimatePropertyCostFromPrice('house', 'otherDeductibleExpensesAnnual', 900000),
+    historicalAnnualGrowthRates: [],
+    yieldModel: null
   },
   scenarioSelection: createDefaultScenarioSelection(),
   simulationSettings: {

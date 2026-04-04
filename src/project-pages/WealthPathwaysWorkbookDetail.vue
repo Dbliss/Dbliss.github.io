@@ -26,13 +26,29 @@
 
       <div v-if="errorMessage" class="wealth-error">{{ errorMessage }}</div>
 
+      <div v-if="regionScoutLoadingScreen && selectedComparisonMode === 'regionScout'" class="wealth-region-scout-overlay">
+        <div class="wealth-region-scout-loading card">
+          <p class="wealth-region-scout-loading__eyebrow">Calculating shortlist</p>
+          <h3>Ranking the best {{ regionScoutConfig.granularity === 'region' ? 'regions' : 'suburbs' }}</h3>
+          <p>Comparing affordability, growth, yield, and timing for your current settings.</p>
+          <div class="wealth-region-scout-loading__spinner" aria-hidden="true"></div>
+        </div>
+      </div>
+
       <Transition name="wealth-stage-slide" mode="out-in">
         <section :key="currentStage" class="wealth-stage">
         <template v-if="currentStage === 'introduction'">
-          <WealthIntroStep :form="form" />
+          <WealthIntroStep
+            :form="form"
+            :suburb-search-context="suburbSearchContext"
+            :selected-existing-property-area-selection="selectedExistingPropertyAreaSelection"
+            :selected-existing-property-area-record="selectedExistingPropertyAreaRecord"
+            @select-existing-property-area="handleExistingPropertyAreaSelect"
+          />
           <div class="wealth-stage-footer">
             <button type="button" class="wealth-secondary-btn" disabled>Back</button>
-            <button type="button" class="wealth-primary-btn" @click="currentStage = 'interests'">Next: Interests</button>
+            <p v-if="introductionStageMessage" class="wealth-stage-hint">{{ introductionStageMessage }}</p>
+            <button type="button" class="wealth-primary-btn" :disabled="!canProceedToInterests" @click="goToInterests">Next: Interests</button>
           </div>
         </template>
 
@@ -44,7 +60,6 @@
           />
           <div class="wealth-stage-footer">
             <button type="button" class="wealth-secondary-btn" @click="currentStage = 'introduction'">Back</button>
-            <button type="button" class="wealth-primary-btn" @click="goToInputs">{{ interestPrimaryActionLabel }}</button>
           </div>
         </template>
 
@@ -82,12 +97,15 @@
         </template>
 
         <template v-else>
-          <WealthRegionScoutStep
-            v-if="selectedComparisonMode === 'regionScout'"
-            :form="form"
-            :scout-config="regionScoutConfig"
-            :suburb-search-context="suburbSearchContext"
-          />
+          <div v-if="selectedComparisonMode === 'regionScout'" class="wealth-region-scout-stage">
+            <WealthRegionScoutStep
+              view="results"
+              :form="form"
+              :scout-config="regionScoutConfig"
+              :suburb-search-context="suburbSearchContext"
+              @loading-change="handleRegionScoutLoadingChange"
+            />
+          </div>
           <WealthResultsDashboard
             v-else
             :dashboard="dashboard"
@@ -165,18 +183,20 @@ const strategyMeta = getWealthStrategyMeta()
 const client = new WealthSimulationClient()
 const currentStage = ref('introduction')
 const activeSheet = ref('stock')
-const selectedComparisonMode = ref('propertyVsStocks')
+const selectedComparisonMode = ref(null)
 const hasEnteredWorkspace = ref(false)
 const result = ref(null)
 const loading = ref(false)
 const errorMessage = ref('')
 const lastRunAt = ref('')
 const resultsStale = ref(true)
+const regionScoutLoadingScreen = ref(false)
 const mutedStrategyKeys = ref([])
 const groupFilter = ref('all')
 const resultMetric = ref('sellDown')
 const selectedApartmentAreaSelection = ref(null)
 const selectedHouseAreaSelection = ref(null)
+const selectedExistingPropertyAreaSelection = ref(null)
 const areaMarketPayload = ref(wealthPsiRegionMarketPayload)
 const regionScoutConfig = reactive({
   targetYears: 5,
@@ -224,8 +244,13 @@ const selectedHouseAreaPreview = computed(() => createPropertyConfigPatchFromAre
   houseGrowthYears: 0,
   apartmentGrowthYears: 0
 })
+const selectedExistingPropertyAreaRecord = computed(() => {
+  const key = selectedExistingPropertyAreaSelection.value?.key
+  return key ? suburbSearchContext.value.areasByKey[key] || null : null
+})
 
 const availableInputSheetKeys = computed(() => {
+  if (!selectedComparisonMode.value) return []
   if (selectedComparisonMode.value === 'regionScout') return ['regionScout']
   const keys = []
   if (form.scenarioSelection.includeStocks) keys.push('stock')
@@ -322,9 +347,22 @@ function getInputSheetState(sheetKey) {
   }
 
   if (sheetKey === 'regionScout') {
-    return Number(regionScoutConfig.targetYears) >= 1
+    const portfolioWeights = [
+      Number(form.portfolioConfig.asxWeight) || 0,
+      Number(form.portfolioConfig.qqqWeight) || 0,
+      Number(form.portfolioConfig.bondWeight) || 0,
+      Number(form.portfolioConfig.cashWeight) || 0,
+      Number(form.portfolioConfig.bitcoinWeight) || 0
+    ]
+    const portfolioTotal = portfolioWeights.reduce((sum, value) => sum + value, 0)
+    const hasValidSavingsMode = regionScoutConfig.savingsMode === 'cash' || Math.abs(portfolioTotal - 1) < 0.011
+    const hasValidLocation = regionScoutConfig.locationKey
+      ? true
+      : ['region', 'suburb'].includes(regionScoutConfig.granularity)
+
+    return hasValidSavingsMode && hasValidLocation
       ? { complete: true, message: '' }
-      : { complete: false, message: 'Set a target year before continuing.' }
+      : { complete: false, message: 'Complete the region scout inputs before continuing.' }
   }
 
   return { complete: true, message: '' }
@@ -382,12 +420,21 @@ const nextInputSheetLabel = computed(() => getSheetLabel(nextInputSheet.value))
 const inputPrimaryActionLabel = computed(() =>
   isLastInputSheet.value ? 'Generate results' : `Next: ${nextInputSheetLabel.value}`
 )
-const interestPrimaryActionLabel = computed(() =>
-  selectedComparisonMode.value === 'regionScout' ? 'Next: Results' : 'Next: Inputs'
-)
+const introductionStageState = computed(() => {
+  if (!form.existingProperty?.enabled) {
+    return { complete: true, message: '' }
+  }
 
+  return selectedExistingPropertyAreaSelection.value?.key
+    ? { complete: true, message: '' }
+    : { complete: false, message: 'Select the postcode/suburb for the existing property before continuing.' }
+})
+const canProceedToInterests = computed(() => introductionStageState.value.complete)
+const introductionStageMessage = computed(() => introductionStageState.value.message)
 const disabledStageKeys = computed(() => {
   const keys = []
+  if (!canProceedToInterests.value) keys.push('interests')
+  if (!selectedComparisonMode.value) keys.push('inputs')
   if (!((selectedComparisonMode.value === 'regionScout' || result.value) && allInputSheetsComplete.value)) keys.push('results')
   return keys
 })
@@ -482,11 +529,6 @@ function syncScenarioSelection(nextPatch = {}) {
 
 function selectComparisonMode(modeKey) {
   selectedComparisonMode.value = modeKey
-  if (modeKey === 'regionScout') {
-    void enterWorkspace()
-    currentStage.value = 'results'
-    return
-  }
   const selectedScenarioKeys = comparisonModeScenarioKeys[modeKey] || comparisonModeScenarioKeys.propertyVsStocks
   const stockBaselineKey = selectedScenarioKeys.includes(wealthDefaultStockBaselineKey)
     ? wealthDefaultStockBaselineKey
@@ -496,16 +538,18 @@ function selectComparisonMode(modeKey) {
     selectedScenarioKeys,
     stockBaselineKey
   })
+
+  if (currentStage.value === 'interests') {
+    goToInputs()
+  }
 }
 
-selectComparisonMode('propertyVsStocks')
+function goToInterests() {
+  if (!canProceedToInterests.value) return
+  currentStage.value = 'interests'
+}
 
 function goToInputs() {
-  if (selectedComparisonMode.value === 'regionScout') {
-    void enterWorkspace()
-    currentStage.value = 'results'
-    return
-  }
   void enterWorkspace()
   currentStage.value = 'inputs'
   activeSheet.value = firstInputSheet.value
@@ -610,6 +654,44 @@ function handlePropertyAreaSelect({ propertyType, selection }) {
   syncJointGrowthBlocks()
 }
 
+function handleExistingPropertyAreaSelect(selection) {
+  selectedExistingPropertyAreaSelection.value = selection || null
+  const area = selection?.key ? suburbSearchContext.value.areasByKey[selection.key] : null
+  const patch = createPropertyConfigPatchFromArea(area)
+  const propertyType = form.existingProperty.propertyType === 'apartment' ? 'apartment' : 'house'
+  const propertyPatch = patch?.[propertyType]
+
+  form.existingProperty.areaKey = selection?.key || null
+  form.existingProperty.areaLabel = area?.label || ''
+
+  if (!propertyPatch) {
+    form.existingProperty.yieldModel = null
+    form.existingProperty.historicalAnnualGrowthRates = []
+    return
+  }
+
+  form.existingProperty.currentValue = Math.max(0, Number(propertyPatch.purchasePrice) || 0)
+  form.existingProperty.purchasePrice = form.existingProperty.currentValue
+  form.existingProperty.growthMean = Number(propertyPatch.growthMean) || form.existingProperty.growthMean
+  form.existingProperty.growthVolatility = Number(propertyPatch.growthVolatility) || form.existingProperty.growthVolatility
+  form.existingProperty.rentYield = Number(propertyPatch.rentYield) || form.existingProperty.rentYield
+  form.existingProperty.yieldModel = propertyPatch.yieldModel ? JSON.parse(JSON.stringify(propertyPatch.yieldModel)) : null
+  form.existingProperty.historicalAnnualGrowthRates = Array.isArray(propertyPatch.historicalAnnualGrowthRates)
+    ? [...propertyPatch.historicalAnnualGrowthRates]
+    : []
+  form.existingProperty.councilRates = estimatePropertyCostFromPrice(propertyType, 'councilRates', form.existingProperty.currentValue)
+  form.existingProperty.waterRates = estimatePropertyCostFromPrice(propertyType, 'waterRates', form.existingProperty.currentValue)
+  form.existingProperty.insurance = estimatePropertyCostFromPrice(propertyType, 'insurance', form.existingProperty.currentValue)
+  form.existingProperty.maintenance = estimatePropertyCostFromPrice(propertyType, 'maintenance', form.existingProperty.currentValue)
+  form.existingProperty.strata = propertyType === 'apartment'
+    ? estimatePropertyCostFromPrice(propertyType, 'strata', form.existingProperty.currentValue)
+    : 0
+  form.existingProperty.landTax = form.existingProperty.occupancyMode === 'investment'
+    ? estimatePropertyCostFromPrice(propertyType, 'landTax', form.existingProperty.currentValue)
+    : 0
+  form.existingProperty.otherDeductibleExpensesAnnual = estimatePropertyCostFromPrice(propertyType, 'otherDeductibleExpensesAnnual', form.existingProperty.currentValue)
+}
+
 function cloneRequest() {
   const request = JSON.parse(JSON.stringify(form))
   request.propertyConfig.vacancyRate = clamp(Number(request.propertyConfig.vacancyRate) || wealthVacancyRate, 0, 0.12)
@@ -649,6 +731,7 @@ async function generateResults() {
   if (!allInputSheetsComplete.value) return
 
   if (selectedComparisonMode.value === 'regionScout') {
+    regionScoutLoadingScreen.value = true
     await enterWorkspace()
     currentStage.value = 'results'
     return
@@ -666,6 +749,10 @@ function toggleStrategy(key) {
   if (next.has(key)) next.delete(key)
   else next.add(key)
   mutedStrategyKeys.value = Array.from(next)
+}
+
+function handleRegionScoutLoadingChange(isLoading) {
+  regionScoutLoadingScreen.value = Boolean(isLoading)
 }
 
 watch(form, () => {
@@ -919,6 +1006,7 @@ onBeforeUnmount(() => {
 }
 
 .wealth-workspace {
+  position: relative;
   opacity: 0.72;
   transform: translateY(2rem);
   transition:
@@ -1017,6 +1105,58 @@ onBeforeUnmount(() => {
   color: #b91c1c;
 }
 
+.wealth-region-scout-stage {
+  display: grid;
+}
+
+.wealth-region-scout-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  align-items: start;
+  padding-top: 1rem;
+  background: rgba(243, 248, 255, 0.82);
+  backdrop-filter: blur(4px);
+}
+
+.wealth-region-scout-loading {
+  display: grid;
+  gap: 0.85rem;
+  place-items: center;
+  min-height: 22rem;
+  padding: 2.2rem;
+  text-align: center;
+}
+
+.wealth-region-scout-loading__eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.74rem;
+  color: #5d7ba3;
+}
+
+.wealth-region-scout-loading h3 {
+  margin: 0.15rem 0 0;
+  color: #173050;
+}
+
+.wealth-region-scout-loading p {
+  margin: 0;
+  color: #5d7394;
+  line-height: 1.55;
+}
+
+.wealth-region-scout-loading__spinner {
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 999px;
+  border: 4px solid rgba(154, 174, 204, 0.26);
+  border-top-color: #173050;
+  animation: wealth-region-scout-spin 0.85s linear infinite;
+}
+
 .wealth-stage-slide-enter-active,
 .wealth-stage-slide-leave-active {
   transition: opacity 180ms ease, transform 180ms ease;
@@ -1026,6 +1166,16 @@ onBeforeUnmount(() => {
 .wealth-stage-slide-leave-to {
   opacity: 0;
   transform: translateX(24px);
+}
+
+@keyframes wealth-region-scout-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 720px) {

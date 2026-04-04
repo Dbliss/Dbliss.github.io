@@ -11,12 +11,180 @@ function clampIncomeCurve(value) {
   return 'sigmoid'
 }
 
+function createDefaultCareerBreakPlan(horizonYears = 30) {
+  return {
+    id: null,
+    enabled: false,
+    startYear: Math.min(5, Math.max(1, horizonYears)),
+    durationYears: 1,
+    neverReturn: false,
+    reason: 'personal'
+  }
+}
+
+function createDefaultFamilyPlan() {
+  return {
+    existingChildren: 0,
+    plannedChildren: []
+  }
+}
+
 export function clampIncomeGrowthRate(value) {
   return clamp(Number(value) || 0, 0, 0.1)
 }
 
 function getSafeHorizonYears(value) {
   return Math.max(1, Math.round(Number(value) || 1))
+}
+
+export function normaliseCareerBreakPlan(plan = {}, horizonYears = 30, allowChildReason = true) {
+  const safeHorizonYears = getSafeHorizonYears(horizonYears)
+  const safeDuration = Number(plan?.durationYears)
+  const durationYears = safeDuration === 0.5
+    ? 0.5
+    : Math.max(1, Math.min(safeHorizonYears, Math.round(safeDuration || 1)))
+  const reason = plan?.reason === 'child' && allowChildReason ? 'child' : 'personal'
+  const minimumStartYear = reason === 'child' ? Math.min(2, safeHorizonYears) : 1
+
+  return {
+    ...createDefaultCareerBreakPlan(safeHorizonYears),
+    id: plan?.id || null,
+    enabled: Boolean(plan?.enabled),
+    startYear: clamp(Math.round(Number(plan?.startYear) || minimumStartYear), minimumStartYear, safeHorizonYears),
+    durationYears,
+    neverReturn: Boolean(plan?.neverReturn),
+    reason
+  }
+}
+
+export function normaliseCareerBreakPlans(plans = [], horizonYears = 30, allowChildReason = true) {
+  const safeHorizonYears = getSafeHorizonYears(horizonYears)
+  const rawPlans = Array.isArray(plans) && plans.length
+    ? plans
+    : [plans].filter(Boolean)
+
+  return rawPlans
+    .map((plan, index) => normaliseCareerBreakPlan(plan, safeHorizonYears, allowChildReason))
+    .filter((plan) => plan.enabled)
+    .map((plan, index) => ({
+      ...plan,
+      id: plan.id || `career-break-${index + 1}`
+    }))
+    .sort((left, right) => left.startYear - right.startYear)
+}
+
+export function normaliseFamilyPlan(profile = {}, householdSize = null) {
+  const resolvedHouseholdSize = householdSize ?? (Array.isArray(profile?.earners) && profile.earners.length ? profile.earners.length : 1)
+  if (resolvedHouseholdSize < 2) {
+    return createDefaultFamilyPlan()
+  }
+
+  const existingChildren = Math.max(0, Math.min(6, Math.round(Number(profile?.familyPlan?.existingChildren) || 0)))
+  const plannedChildren = Array.isArray(profile?.familyPlan?.plannedChildren)
+    ? profile.familyPlan.plannedChildren
+        .map((child, index) => ({
+          id: child?.id || `planned-child-${index + 1}`,
+          year: Math.max(2, Math.round(Number(child?.year) || 2))
+        }))
+        .slice(0, 6)
+    : []
+
+  return {
+    existingChildren,
+    plannedChildren
+  }
+}
+
+export function getPlannedChildrenCountByYear(profile = {}, yearIndex = 0) {
+  const familyPlan = normaliseFamilyPlan(profile)
+  const safeYear = Math.max(0, Math.round(Number(yearIndex) || 0))
+  return familyPlan.plannedChildren.filter((child) => Math.max(1, Math.round(Number(child.year) || 1)) <= safeYear + 1).length
+}
+
+export function getTotalChildrenCountByYear(profile = {}, yearIndex = 0) {
+  const familyPlan = normaliseFamilyPlan(profile)
+  return familyPlan.existingChildren + getPlannedChildrenCountByYear(profile, yearIndex)
+}
+
+export function getAdjustedWeeklyLivingCosts(profile = {}, yearIndex = 0) {
+  const baseWeeklyCost = Math.max(0, Number(profile?.weeklyNonHousingLivingCosts) || 0)
+  const householdSize = Array.isArray(profile?.earners) && profile.earners.length ? profile.earners.length : 1
+  if (householdSize < 2) return baseWeeklyCost
+
+  const familyPlan = normaliseFamilyPlan(profile, householdSize)
+  const currentFactor = 1 + (familyPlan.existingChildren * 0.2)
+  const targetFactor = 1 + (getTotalChildrenCountByYear(profile, yearIndex) * 0.2)
+  if (currentFactor <= 0) return baseWeeklyCost
+  return baseWeeklyCost * (targetFactor / currentFactor)
+}
+
+export function getCareerBreakIncomeFactor(earner = {}, yearIndex = 0, householdSize = 1) {
+  const safeYearIndex = Math.max(0, Math.round(Number(yearIndex) || 0))
+  const plans = normaliseCareerBreakPlans(
+    earner?.careerBreakPlans?.length ? earner.careerBreakPlans : earner?.careerBreakPlan,
+    earner?.horizonYears,
+    householdSize > 1
+  )
+  if (!plans.length) return 1
+
+  let leaveFraction = 0
+  for (const plan of plans) {
+    const startIndex = Math.max(0, plan.startYear - 1)
+    if (safeYearIndex < startIndex) continue
+    if (plan.neverReturn) return 0
+    if (plan.durationYears === 0.5) {
+      if (safeYearIndex === startIndex) {
+        leaveFraction += 0.5
+      }
+      continue
+    }
+    if (safeYearIndex < startIndex + plan.durationYears) {
+      leaveFraction += 1
+    }
+  }
+
+  return Math.max(0, 1 - Math.min(1, leaveFraction))
+}
+
+export function getEarnerAnnualIncomeForYear(earner = {}, yearIndex = 0, householdSize = 1) {
+  const safeYearIndex = Math.max(0, Math.round(Number(yearIndex) || 0))
+  const baseSeries = Array.isArray(earner?.annualIncomeSeries) && earner.annualIncomeSeries.length
+    ? earner.annualIncomeSeries
+    : [Math.max(0, Number(earner?.annualIncome) || 0)]
+  const safeBaseIncome = (index) => Math.max(0, Number(baseSeries[Math.max(0, Math.min(index, baseSeries.length - 1))] ?? earner?.annualIncome) || 0)
+  const plans = normaliseCareerBreakPlans(
+    earner?.careerBreakPlans?.length ? earner.careerBreakPlans : earner?.careerBreakPlan,
+    earner?.horizonYears,
+    householdSize > 1
+  )
+
+  if (!plans.length) return Math.round(safeBaseIncome(safeYearIndex))
+
+  let sourceIndex = -1
+  let inFullLeaveBlock = false
+
+  for (let index = 0; index <= safeYearIndex; index += 1) {
+    const leaveFactor = getCareerBreakIncomeFactor({
+      ...earner,
+      careerBreakPlans: plans
+    }, index, householdSize)
+
+    if (leaveFactor <= 0) {
+      if (!inFullLeaveBlock) {
+        sourceIndex = Math.max(-1, sourceIndex - 1)
+        inFullLeaveBlock = true
+      }
+      if (index === safeYearIndex) return 0
+      continue
+    }
+
+    inFullLeaveBlock = false
+    sourceIndex += 1
+    const income = safeBaseIncome(sourceIndex) * leaveFactor
+    if (index === safeYearIndex) return Math.round(income)
+  }
+
+  return Math.round(safeBaseIncome(safeYearIndex))
 }
 
 function normaliseSingleIncomeProfile(profile = {}) {
@@ -72,6 +240,16 @@ export function normaliseHouseholdEarners(profile = {}) {
       label: String(earner?.label || `Borrower ${index + 1}`),
       startingSavings: Math.max(0, Number(earner?.startingSavings) || 0),
       helpDebtBalance: Math.max(0, Number(earner?.helpDebtBalance) || 0),
+      careerBreakPlans: normaliseCareerBreakPlans(
+        earner?.careerBreakPlans?.length ? earner.careerBreakPlans : earner?.careerBreakPlan,
+        safeHorizonYears,
+        earners.length > 1
+      ),
+      careerBreakPlan: normaliseCareerBreakPlans(
+        earner?.careerBreakPlans?.length ? earner.careerBreakPlans : earner?.careerBreakPlan,
+        safeHorizonYears,
+        earners.length > 1
+      )[0] || createDefaultCareerBreakPlan(safeHorizonYears),
       ...normalisedIncome
     }
   })
@@ -81,6 +259,8 @@ export function normaliseHouseholdEarners(profile = {}) {
     label: 'Borrower 1',
     startingSavings: 0,
     helpDebtBalance: 0,
+    careerBreakPlans: [],
+    careerBreakPlan: createDefaultCareerBreakPlan(safeHorizonYears),
     ...normaliseSingleIncomeProfile({ annualIncome: 0, horizonYears: safeHorizonYears })
   }]
 }
@@ -186,6 +366,7 @@ export function normaliseIncomeProfile(profile = {}) {
     useCustomIncomeSeries: householdUsesCustomSeries,
     annualIncomeSeries,
     earners: normalisedEarners,
+    familyPlan: normaliseFamilyPlan(profile, normalisedEarners.length),
     startingSavings: normalisedEarners.reduce((sum, earner) => sum + earner.startingSavings, 0),
     helpDebtBalance: normalisedEarners.reduce((sum, earner) => sum + earner.helpDebtBalance, 0)
   }

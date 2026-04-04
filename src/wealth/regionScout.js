@@ -25,10 +25,7 @@ const DEFAULT_REGION_SCOUT_CONFIG = {
   depositMode: 'optimal',
   fixedDepositPct: 0.2,
   rentalYieldWeight: 0,
-  riskAppetite: 'medium',
-  hasCustomPriceRange: false,
-  minPrice: null,
-  maxPrice: null
+  riskAppetite: 'medium'
 }
 
 const SUPPORTED_AREA_TYPES = new Set(['region', 'suburb'])
@@ -42,28 +39,25 @@ const ASSET_KEY_BY_WEIGHT = {
 
 export function normaliseRegionScoutConfig(config = {}) {
   const buyFlexibility = config.buyFlexibility === 'whenever' ? 'whenever' : 'target'
-  const hasCustomPriceRange = Boolean(config.hasCustomPriceRange)
+  const locationKey = typeof config.locationKey === 'string' && config.locationKey.trim()
+    ? config.locationKey.trim()
+    : null
 
   return {
     targetYears: Math.round(clamp(Number(config.targetYears) || DEFAULT_REGION_SCOUT_CONFIG.targetYears, 0, 20)),
     buyFlexibility,
     propertyType: config.propertyType === 'house' ? 'house' : 'apartment',
-    granularity: config.granularity === 'suburb' ? 'suburb' : 'region',
-    locationKey: typeof config.locationKey === 'string' && config.locationKey.trim()
-      ? config.locationKey.trim()
-      : null,
+    granularity: locationKey ? 'suburb' : (config.granularity === 'suburb' ? 'suburb' : 'region'),
+    locationKey,
     savingsMode: config.savingsMode === 'cash' ? 'cash' : 'defaultPortfolio',
     depositMode: config.depositMode === 'fixed' ? 'fixed' : 'optimal',
     fixedDepositPct: clamp(Number(config.fixedDepositPct) || DEFAULT_REGION_SCOUT_CONFIG.fixedDepositPct, 0.05, 0.95),
     rentalYieldWeight: clamp(Number(config.rentalYieldWeight) || 0, 0, 1),
-    riskAppetite: ['small', 'medium', 'large'].includes(config.riskAppetite) ? config.riskAppetite : 'medium',
-    hasCustomPriceRange,
-    minPrice: hasCustomPriceRange ? parseOptionalPrice(config.minPrice) : null,
-    maxPrice: hasCustomPriceRange ? parseOptionalPrice(config.maxPrice) : null
+    riskAppetite: ['small', 'medium', 'large'].includes(config.riskAppetite) ? config.riskAppetite : 'medium'
   }
 }
 
-export function buildRegionScoutModel({ form, suburbSearchContext, config }) {
+export function buildRegionScoutPreviewModel({ form, suburbSearchContext, config }) {
   const resolvedConfig = normaliseRegionScoutConfig(config)
   const location = resolvedConfig.locationKey
     ? suburbSearchContext?.areasByKey?.[resolvedConfig.locationKey] || null
@@ -72,26 +66,6 @@ export function buildRegionScoutModel({ form, suburbSearchContext, config }) {
   const detailTimeline = buildAffordabilityTimeline(form, resolvedConfig.propertyType, resolvedConfig, 30)
   const summaryYear = resolvedConfig.buyFlexibility === 'target' ? resolvedConfig.targetYears : 0
   const summaryEntry = summaryTimeline.find((entry) => entry.year === summaryYear) || summaryTimeline[0] || createEmptyTimelineEntry()
-
-  const candidates = Object.values(suburbSearchContext?.areasByKey || {})
-    .filter((area) => SUPPORTED_AREA_TYPES.has(area?.type))
-    .filter((area) => area.type === resolvedConfig.granularity)
-    .filter((area) => matchesLocation(area, location, resolvedConfig.granularity))
-    .map((area) => buildRecommendation(area, form, resolvedConfig, detailTimeline))
-    .filter(Boolean)
-
-  const filteredCandidates = candidates
-    .filter((candidate) => (
-      (resolvedConfig.minPrice === null || candidate.priceToday >= resolvedConfig.minPrice) &&
-      (resolvedConfig.maxPrice === null || candidate.priceToday <= resolvedConfig.maxPrice)
-    ))
-    .sort(compareRecommendations)
-
-  const recommendations = filteredCandidates.slice(0, 12)
-  const bestTiming = recommendations
-    .map((candidate) => candidate.selectedYear)
-    .filter((year) => Number.isFinite(year))
-    .sort((left, right) => left - right)[0] ?? null
 
   return {
     config: resolvedConfig,
@@ -105,12 +79,45 @@ export function buildRegionScoutModel({ form, suburbSearchContext, config }) {
     currentSnapshot: summaryTimeline[0] || createEmptyTimelineEntry(),
     futureSnapshot: summaryEntry,
     affordabilityTimeline: summaryTimeline,
-    detailTimeline,
+    detailTimeline
+  }
+}
+
+export function buildRegionScoutResultsModel({ form, suburbSearchContext, config, previewModel = null }) {
+  const preview = previewModel || buildRegionScoutPreviewModel({ form, suburbSearchContext, config })
+  const resolvedConfig = preview.config
+  const location = preview.location
+
+  const statewideCandidates = Object.values(suburbSearchContext?.areasByKey || {})
+    .filter((area) => SUPPORTED_AREA_TYPES.has(area?.type))
+    .filter((area) => area.type === resolvedConfig.granularity)
+    .map((area) => buildRecommendation(area, form, resolvedConfig, preview.detailTimeline))
+    .filter(Boolean)
+
+  const candidates = statewideCandidates.filter((area) => matchesLocation(area, location, resolvedConfig.granularity))
+  const filteredCandidates = candidates.sort(compareRecommendations)
+  const scoreReferenceRecommendations = [...statewideCandidates].sort(compareRecommendations)
+
+  const recommendations = filteredCandidates.slice(0, 12)
+  const bestTiming = recommendations
+    .map((candidate) => candidate.selectedYear)
+    .filter((year) => Number.isFinite(year))
+    .sort((left, right) => left - right)[0] ?? null
+
+  return {
+    ...preview,
+    allRecommendations: filteredCandidates,
+    scoreReferenceRecommendations,
     recommendations,
     totalMatches: filteredCandidates.length,
     hasRecommendations: recommendations.length > 0,
     bestTiming
   }
+}
+
+export function buildRegionScoutModel(args) {
+  const preview = buildRegionScoutPreviewModel(args)
+  return buildRegionScoutResultsModel({ ...args, previewModel: preview })
 }
 
 function buildAffordabilityTimeline(form, propertyType, config, horizonYears = 20) {
@@ -350,6 +357,7 @@ function buildRecommendation(area, form, config, detailTimeline) {
     }
   })
 
+  const targetSeriesPoint = priceRequirementSeries.find((point) => point.year === config.targetYears) || null
   const selectedSeriesPoint = resolveSelectedTimingPoint(priceRequirementSeries, config)
   const summaryPoint = priceRequirementSeries.find((point) => point.year === (config.buyFlexibility === 'target' ? config.targetYears : 0))
     || priceRequirementSeries[0]
@@ -358,10 +366,14 @@ function buildRecommendation(area, form, config, detailTimeline) {
   const lastYear = actualPoints[actualPoints.length - 1]?.year || null
   const historyYears = firstYear && lastYear ? Math.max(1, (lastYear - firstYear) + 1) : actualPoints.length
   const salesAverage = Number(area?.marketHistory?.salesSummary?.[`${config.propertyType}Average`]) || 0
-  const comparisonPrice = selectedSeriesPoint?.projectedPrice || summaryPoint?.projectedPrice || priceToday
-  const comparisonBudget = detailTimeline.find((point) => point.year === (selectedSeriesPoint?.year ?? summaryPoint?.year ?? 0)) || detailTimeline[0]
+  const comparisonPoint = config.buyFlexibility === 'target'
+    ? (targetSeriesPoint || summaryPoint)
+    : (selectedSeriesPoint || summaryPoint)
+  const comparisonPrice = comparisonPoint?.projectedPrice || summaryPoint?.projectedPrice || priceToday
+  const comparisonBudget = detailTimeline.find((point) => point.year === (comparisonPoint?.year ?? summaryPoint?.year ?? 0)) || detailTimeline[0]
   const budgetGap = (comparisonBudget?.affordablePrice || 0) - comparisonPrice
   const monteCarloSeries = buildMonteCarloSeries(priceToday, growthMean, growthVolatility, 30, seedFromKey(area.key))
+  const affordableAtTargetYear = Boolean(targetSeriesPoint?.affordable)
 
   return {
     key: area.key,
@@ -372,7 +384,8 @@ function buildRecommendation(area, form, config, detailTimeline) {
     buyYearPrice: comparisonPrice,
     comparisonPrice,
     selectedYear: selectedSeriesPoint?.year ?? null,
-    selectedTimingLabel: selectedSeriesPoint?.label || (config.buyFlexibility === 'target' ? yearLabel(config.targetYears) : 'Not affordable in 20 years'),
+    earliestAffordableYear: priceRequirementSeries.find((point) => point.affordable)?.year ?? null,
+    selectedTimingLabel: selectedSeriesPoint?.label || 'Not affordable in 20 years',
     growthMean,
     growthScore: marketScore.growthScore,
     growthScoreRaw: marketScore.growthMedian,
@@ -384,9 +397,9 @@ function buildRecommendation(area, form, config, detailTimeline) {
     historyYears,
     salesAverage,
     budgetGap,
-    isAffordable: Boolean(selectedSeriesPoint),
-    requiredCashAtBuyYear: selectedSeriesPoint?.requiredCash || 0,
-    requiredDepositPctAtBuyYear: selectedSeriesPoint?.depositPct || null,
+    isAffordable: config.buyFlexibility === 'target' ? affordableAtTargetYear : Boolean(selectedSeriesPoint?.affordable),
+    requiredCashAtBuyYear: comparisonPoint?.requiredCash || 0,
+    requiredDepositPctAtBuyYear: comparisonPoint?.depositPct || null,
     actualPoints,
     trendPoints: area?.marketHistory?.[config.propertyType]?.trendPoints || [],
     estimatePoint: area?.marketHistory?.[config.propertyType]?.estimatePoint || null,
@@ -411,10 +424,18 @@ function buildRecommendation(area, form, config, detailTimeline) {
 function resolveSelectedTimingPoint(priceRequirementSeries, config) {
   if (config.buyFlexibility === 'target') {
     const point = priceRequirementSeries.find((entry) => entry.year === config.targetYears)
-    return point
+    if (point?.affordable) {
+      return {
+        ...point,
+        label: yearLabel(config.targetYears)
+      }
+    }
+
+    const earliestAffordable = priceRequirementSeries.find((entry) => entry.affordable)
+    return earliestAffordable
       ? {
-          ...point,
-          label: yearLabel(config.targetYears)
+          ...earliestAffordable,
+          label: `Earliest affordable: ${yearLabel(earliestAffordable.year)}`
         }
       : null
   }
@@ -578,12 +599,8 @@ function calculateStandardDeviation(values = []) {
 function matchesLocation(area, location, granularity) {
   if (!location) return true
   if (granularity === 'region') return area.key === location.key
+  if (area.regionKey && location.key) return area.regionKey === location.key
   return area.regionLabel === location.label
-}
-
-function parseOptionalPrice(value) {
-  const safeValue = Number(value)
-  return Number.isFinite(safeValue) && safeValue > 0 ? safeValue : null
 }
 
 function roundToNearestThousand(value) {

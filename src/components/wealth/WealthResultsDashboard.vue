@@ -64,6 +64,47 @@
         :series="series"
         :muted-series-ids="mutedStrategyKeys"
       />
+
+      <section v-if="visibleStrategies.length" class="wealth-results__flow-stack card">
+        <div class="wealth-results__flow-controls">
+          <button
+            v-for="strategy in visibleStrategies"
+            :key="strategy.key"
+            type="button"
+            class="wealth-results__chip"
+            :class="{ 'is-active': strategy.key === sharedFlowStrategyKey }"
+            @click="sharedFlowStrategyKey = strategy.key"
+          >
+            <span class="wealth-results__chip-dot" :style="{ background: strategy.color }"></span>
+            {{ strategy.shortLabel || strategy.label }}
+          </button>
+        </div>
+
+        <WealthIncomeAllocationChart
+          embedded
+          :show-strategy-controls="false"
+          :strategies="visibleStrategies"
+          :selected-strategy-key="sharedFlowStrategyKey"
+          :selected-year="sharedFlowYear"
+          :detail-period-key="sharedFlowPeriodKey"
+          @update:selected-strategy-key="sharedFlowStrategyKey = $event"
+          @update:selected-year="sharedFlowYear = $event"
+          @update:detail-period-key="sharedFlowPeriodKey = $event"
+        />
+
+        <WealthIncomeAllocationChart
+          embedded
+          variant="guidance"
+          :show-strategy-controls="false"
+          :strategies="visibleStrategies"
+          :selected-strategy-key="sharedFlowStrategyKey"
+          :selected-year="sharedFlowYear"
+          :detail-period-key="sharedFlowPeriodKey"
+          @update:selected-strategy-key="sharedFlowStrategyKey = $event"
+          @update:selected-year="sharedFlowYear = $event"
+          @update:detail-period-key="sharedFlowPeriodKey = $event"
+        />
+      </section>
     </div>
 
     <div class="wealth-results__detail-grid">
@@ -119,10 +160,11 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import WealthLineChart from './WealthLineChart.vue'
 import WealthAffordabilityHurdleChart from './WealthAffordabilityHurdleChart.vue'
 import WealthCompositionBars from './WealthCompositionBars.vue'
+import WealthIncomeAllocationChart from './WealthIncomeAllocationChart.vue'
 import { buildDashboardSeries } from '../../wealth/dashboard.js'
 
 const props = defineProps({
@@ -150,6 +192,20 @@ const filteredStrategies = computed(() => props.dashboard.strategies)
 const visibleStrategies = computed(() =>
   filteredStrategies.value.filter(strategy => !props.mutedStrategyKeys.includes(strategy.key))
 )
+
+const sharedFlowStrategyKey = ref('')
+const sharedFlowYear = ref(null)
+const sharedFlowPeriodKey = ref('annual')
+
+watch(visibleStrategies, (strategies) => {
+  if (!strategies.some((strategy) => strategy.key === sharedFlowStrategyKey.value)) {
+    sharedFlowStrategyKey.value = strategies[0]?.key || ''
+  }
+  if (!strategies.length) {
+    sharedFlowYear.value = null
+    sharedFlowPeriodKey.value = 'annual'
+  }
+}, { immediate: true })
 
 const noVisibleStrategies = computed(() =>
   !visibleStrategies.value.length && filteredStrategies.value.length > 0
@@ -346,6 +402,12 @@ function formatSignedCurrency(value) {
   opacity: 0.45;
 }
 
+.wealth-results__chip.is-active {
+  border-color: rgba(37, 99, 235, 0.34);
+  background: rgba(219, 234, 254, 0.9);
+  color: #173050;
+}
+
 .wealth-results__chip-dot {
   width: 0.72rem;
   height: 0.72rem;
@@ -356,6 +418,18 @@ function formatSignedCurrency(value) {
 .wealth-results__chart-block {
   display: grid;
   gap: 1.2rem;
+}
+
+.wealth-results__flow-stack {
+  display: grid;
+  gap: 1.2rem;
+  padding: 1rem;
+}
+
+.wealth-results__flow-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .wealth-results__readout {

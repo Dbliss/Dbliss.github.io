@@ -74,6 +74,7 @@
 
         <template v-else-if="activeSheet === 'regionScout'">
           <WealthRegionScoutStep
+            view="inputs"
             :form="form"
             :scout-config="regionScoutConfig"
             :suburb-search-context="suburbSearchContext"
@@ -675,6 +676,7 @@ import WealthPropertyTrendChart from './WealthPropertyTrendChart.vue'
 import WealthRegionScoutStep from './WealthRegionScoutStep.vue'
 import { getWealthBootstrapAssets } from '../../wealth/assetBootstrap.js'
 import {
+  amortizeOneYear,
   calculatePurchaseCosts,
   estimatePropertyBorrowingPower,
   estimateLmi,
@@ -684,7 +686,7 @@ import {
   scalePropertyCostWithPrice,
   scalePurchaseCostsWithPrice
 } from '../../wealth/finance.js'
-import { normaliseHouseholdEarners, normaliseIncomeProfile } from '../../wealth/incomeSeries.js'
+import { getAdjustedWeeklyLivingCosts, getEarnerAnnualIncomeForYear, normaliseHouseholdEarners, normaliseIncomeProfile } from '../../wealth/incomeSeries.js'
 import {
   getLockedWeightKeys,
   isPortfolioWeightLocked,
@@ -839,9 +841,22 @@ const houseBuyersCosts = createSharedPurchaseCostProxy('house', 'buyersCosts')
 
 const householdProfile = computed(() => normaliseIncomeProfile(props.form.profile))
 const currentEarners = computed(() => normaliseHouseholdEarners(props.form.profile))
-const currentHouseholdIncome = computed(() => householdProfile.value.annualIncomeSeries?.[0] || householdProfile.value.annualIncome || 0)
+const currentHouseholdIncome = computed(() =>
+  currentEarners.value.reduce((sum, earner) => sum + getEarnerAnnualIncomeForYear(earner, 0, currentEarners.value.length), 0)
+)
 const currentStartingSavings = computed(() => householdProfile.value.startingSavings || 0)
 const currentHousingCostAnnual = computed(() => {
+  if (props.form.existingProperty?.enabled && props.form.existingProperty?.occupancyMode === 'owner') {
+    const property = props.form.existingProperty
+    const annualRepayment = getEstimatedExistingPropertyRepayment(property)
+    const estimatedHoldingCosts =
+      Math.max(0, Number(property.councilRates) || 0) +
+      Math.max(0, Number(property.waterRates) || 0) +
+      Math.max(0, Number(property.insurance) || 0) +
+      Math.max(0, Number(property.maintenance) || 0) +
+      Math.max(0, Number(property.strata) || 0)
+    return annualRepayment + estimatedHoldingCosts
+  }
   const housingCosts = props.form.housingCosts || {}
   const livesAtHomeNow = Boolean(housingCosts.liveAtHome) && Number(housingCosts.liveAtHomeYears || 0) > 0
   return livesAtHomeNow
@@ -947,6 +962,20 @@ function clampPct(value) {
   return Math.min(0.95, Math.max(0.05, Number(value) || 0))
 }
 
+function getEstimatedExistingPropertyRepayment(property) {
+  if (!property || !Number(property.mortgageBalance)) return 0
+  const occupancyMode = property.occupancyMode === 'investment' ? 'investment' : 'owner'
+  const annualRate = occupancyMode === 'investment'
+    ? Number(property.investmentInterestRate)
+    : Number(property.ownerInterestRate)
+  const yearsRemaining = Math.max(1, Math.round(Number(property.mortgageYears) || 25))
+  return amortizeOneYear(
+    Math.max(0, Number(property.mortgageBalance) || 0),
+    Math.max(0, annualRate || 0),
+    yearsRemaining
+  ).payment
+}
+
 function getMinimumDepositPct(propertyKey, occupancyMode) {
   const propertyConfig = props.form.propertyConfig?.[propertyKey]
   if (!propertyConfig) return 0.05
@@ -1038,7 +1067,7 @@ function canAffordProperty(propertyKey, occupancyMode, propertyValue) {
     annualIncome: currentHouseholdIncome.value,
     annualIncomeByBorrower: borrowerIncomes,
     helpDebtBalances,
-    weeklyNonHousingLivingCosts: props.form.profile.weeklyNonHousingLivingCosts,
+    weeklyNonHousingLivingCosts: getAdjustedWeeklyLivingCosts(props.form.profile, 0),
     occupancyMode,
     propertyType: propertyKey,
     propertyConfig,

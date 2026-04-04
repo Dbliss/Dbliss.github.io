@@ -44,6 +44,26 @@
           :d="guide.path"
           class="income-editor__guide"
         />
+        <g
+          v-for="marker in childYearMarkers"
+          :key="`child-${marker.year}`"
+          class="income-editor__marker-group"
+        >
+          <line
+            :x1="marker.x"
+            :x2="marker.x"
+            :y1="CHART_TOP"
+            :y2="CHART_HEIGHT - CHART_BOTTOM"
+            class="income-editor__marker-line"
+          />
+          <text
+            :x="marker.x + 6"
+            :y="CHART_TOP + 12"
+            class="income-editor__marker-label"
+          >
+            Child year {{ marker.year }}
+          </text>
+        </g>
         <path :d="areaPath" class="income-editor__area" />
         <path :d="linePath" class="income-editor__line" />
 
@@ -59,6 +79,7 @@
             class="income-editor__point"
             :class="{
               'is-locked': point.index === 0,
+              'is-leave': point.isLeaveYear,
               'is-active': hoverYearIndex === point.index || selectedYearIndex === point.index
             }"
             @click="selectedYearIndex = point.index"
@@ -87,13 +108,16 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import {
   buildFlatIncomeSeries,
+  getCareerBreakIncomeFactor,
+  getEarnerAnnualIncomeForYear,
   normaliseIncomeProfile,
   resizeCustomIncomeSeries
 } from '../../wealth/incomeSeries.js'
 
 const props = defineProps({
   profile: { type: Object, required: true },
-  profileLabel: { type: String, default: 'this person' }
+  profileLabel: { type: String, default: 'this person' },
+  plannedChildYears: { type: Array, default: () => [] }
 })
 
 const CHART_WIDTH = 760
@@ -181,18 +205,22 @@ watch(
 )
 
 const incomeSeries = computed(() => normaliseIncomeProfile(props.profile).annualIncomeSeries)
+const displayIncomeSeries = computed(() =>
+  incomeSeries.value.map((_, index) => getEarnerAnnualIncomeForYear(props.profile, index, 2))
+)
 
 const chartMetrics = computed(() => {
-  const series = incomeSeries.value
+  const series = displayIncomeSeries.value
   const baseIncome = Math.max(series[0] || 0, 1)
   const maxIncome = Math.max(...series, 1)
-  const visualMin = Math.max(0, baseIncome * 0.7)
+  const hasZeroIncomeYear = series.some((income) => Number(income) <= 0)
+  const visualMin = hasZeroIncomeYear ? 0 : Math.max(0, baseIncome * 0.7)
   const visualMax = Math.max(maxIncome * 1.08, visualMin + 1000)
   return { visualMin, visualMax }
 })
 
 const chartPoints = computed(() => {
-  const series = incomeSeries.value
+  const series = displayIncomeSeries.value
   const usableWidth = CHART_WIDTH - CHART_LEFT - CHART_RIGHT
   const usableHeight = CHART_HEIGHT - CHART_TOP - CHART_BOTTOM
   const denominator = Math.max(1, series.length - 1)
@@ -204,6 +232,7 @@ const chartPoints = computed(() => {
     return {
       index,
       income,
+      isLeaveYear: getCareerBreakIncomeFactor(props.profile, index, 2) === 0,
       x,
       y
     }
@@ -235,6 +264,18 @@ const yGuides = computed(() => {
       labelY: y + 3
     }
   })
+})
+
+const childYearMarkers = computed(() => {
+  const usableWidth = CHART_WIDTH - CHART_LEFT - CHART_RIGHT
+  const denominator = Math.max(1, displayIncomeSeries.value.length - 1)
+  return props.plannedChildYears
+    .map((year) => Math.round(Number(year) || 0))
+    .filter((year) => year >= 1 && year <= props.profile.horizonYears)
+    .map((year) => ({
+      year,
+      x: CHART_LEFT + (usableWidth * (year - 1)) / denominator
+    }))
 })
 
 const hoverPoint = computed(() => {
@@ -286,7 +327,9 @@ function resetToFlatGrowth() {
 
 function updateIncomeAtIndex(index, value) {
   if (index <= 0) return
-  const nextValue = Math.max(0, Math.round(Number(value) || 0))
+  const leaveFactor = getCareerBreakIncomeFactor(props.profile, index, 2)
+  if (leaveFactor === 0) return
+  const nextValue = Math.max(0, Math.round((Number(value) || 0) / leaveFactor))
   const currentSeries = [...incomeSeries.value]
   const currentValue = Math.max(0, currentSeries[index] || 0)
   const nextSeries = [...currentSeries]
@@ -318,9 +361,11 @@ function startDrag(index, event) {
   selectedYearIndex.value = index
   hoverYearIndex.value = index
   if (index === 0) return
+  if (getCareerBreakIncomeFactor(props.profile, index, 2) === 0) return
   draggingYearIndex.value = index
   dragStartY.value = event.clientY
-  dragStartIncome.value = incomeSeries.value[index] || 0
+  const leaveFactor = getCareerBreakIncomeFactor(props.profile, index, 2)
+  dragStartIncome.value = (incomeSeries.value[index] || 0) * leaveFactor
   event.preventDefault()
 }
 
@@ -462,6 +507,18 @@ onBeforeUnmount(() => {
   stroke-width: 1;
 }
 
+.income-editor__marker-line {
+  stroke: rgba(234, 88, 12, 0.72);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 5;
+}
+
+.income-editor__marker-label {
+  fill: #c2410c;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
 .income-editor__area {
   fill: rgba(125, 211, 252, 0.18);
 }
@@ -484,6 +541,11 @@ onBeforeUnmount(() => {
 
 .income-editor__point.is-active {
   fill: #dff3ff;
+}
+
+.income-editor__point.is-leave {
+  fill: #fff7ed;
+  stroke: #ea580c;
 }
 
 .income-editor__point.is-locked {

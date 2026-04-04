@@ -126,18 +126,11 @@ const comparisonModes = [
   }
 ]
 
-const selectedMode = computed(() => {
-  if (props.selectedMode && comparisonModes.some((mode) => mode.key === props.selectedMode)) {
-    return props.selectedMode
-  }
-  const selectedKeys = props.scenarioSelection.selectedScenarioKeys || []
-  return comparisonModes.find(mode => matchesScenarioKeys(selectedKeys, comparisonModeScenarioKeys[mode.key]))?.key || null
-})
-
-function matchesScenarioKeys(selectedKeys, targetKeys) {
-  if (selectedKeys.length !== targetKeys.length) return false
-  return targetKeys.every(key => selectedKeys.includes(key))
-}
+const selectedMode = computed(() =>
+  props.selectedMode && comparisonModes.some((mode) => mode.key === props.selectedMode)
+    ? props.selectedMode
+    : null
+)
 
 function getModeStyle(mode) {
   return {

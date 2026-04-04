@@ -18,7 +18,7 @@
               </button>
               <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.buyFlexibility === 'whenever' }" @click="setWheneverMode()">
                 <strong>Buy whenever I can afford to</strong>
-                <span>Let the scout surface the earliest realistic entry point.</span>
+                <span>Automatically find the earliest buying point.</span>
               </button>
             </div>
             <div class="wealth-scout__selection-detail">
@@ -110,32 +110,6 @@
             </div>
             <input v-model.number="fixedDepositPctUi" class="wealth-scout__slider" type="range" min="5" max="40" step="1" />
           </div>
-          <div class="wealth-scout__summary-grid">
-            <article class="wealth-scout__summary-card">
-              <span>{{ draftConfig.buyFlexibility === 'target' ? `Purchasing power ${buyTimingLabel.toLowerCase()}` : 'Current purchasing power' }}</span>
-              <strong>{{ formatCurrency(previewModel.budget.affordablePrice) }}</strong>
-              <small>Based on income, savings, HELP debt, and the deposit strategy above</small>
-            </article>
-            <article class="wealth-scout__summary-card">
-              <span>Projected sell-off savings</span>
-              <strong>{{ formatCurrency(previewModel.futureSnapshot.liquidSavings) }}</strong>
-              <small>{{ savingsPathLabel }}</small>
-            </article>
-            <article class="wealth-scout__summary-card">
-              <span>Deposit cash needed</span>
-              <strong>{{ formatCurrency(previewModel.budget.requiredCash) }}</strong>
-              <small>{{ depositModeLabel }}</small>
-            </article>
-            <article class="wealth-scout__summary-card">
-              <span>Projected household income</span>
-              <strong>{{ formatCurrency(previewModel.futureSnapshot.annualIncome) }}</strong>
-              <small>{{ draftConfig.buyFlexibility === 'target' ? buyTimingLabel : 'Current year snapshot' }}</small>
-            </article>
-          </div>
-          <div class="wealth-scout__charts">
-            <WealthLineChart title="Purchasing power over time" subtitle="The max property value your savings and serviceability support." kicker="0-20 year path" :series="purchasingPowerChartSeries" :markers="buyYearMarker" />
-            <WealthLineChart title="Required deposit vs your sell-off savings" subtitle="Deposit cash includes purchase costs. Savings reflect the cash or portfolio sell-off path." kicker="Deposit runway" :series="depositChartSeries" :markers="buyYearMarker" />
-          </div>
         </section>
 
         <section class="wealth-scout__input-section">
@@ -209,7 +183,7 @@
           </div>
           <div class="wealth-scout__ranking">
             <div class="wealth-scout__ranking-head">
-              <strong>Priority weighting</strong>
+              <strong>Do you have value growth or rental yield?</strong>
               <span>{{ rankingPreferenceLabel }}</span>
             </div>
             <input v-model.number="draftConfig.rentalYieldWeight" class="wealth-scout__slider" type="range" min="0" max="1" step="0.05" />
@@ -219,7 +193,7 @@
               <span>Rental yield only</span>
             </div>
             <div class="wealth-scout__mini-head">
-              <strong>How comfortable are you with risk?</strong>
+              <strong>What is your risk appetite?</strong>
             </div>
             <div class="wealth-scout__choice-grid wealth-scout__choice-grid--three">
               <button type="button" class="wealth-scout__choice wealth-scout__choice--compact" :class="{ 'is-active': draftConfig.riskAppetite === 'small' }" @click="setRiskAppetite('small')">
@@ -268,7 +242,7 @@
               </button>
               <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.buyFlexibility === 'whenever' }" @click="setWheneverMode()">
                 <strong>Buy whenever I can afford to</strong>
-                <span>Let the scout surface the earliest realistic entry point.</span>
+                <span>Automatically find the earliest buying point.</span>
               </button>
             </div>
 
@@ -361,33 +335,8 @@
             </div>
             <input v-model.number="fixedDepositPctUi" class="wealth-scout__slider" type="range" min="5" max="40" step="1" />
           </div>
-
-          <div class="wealth-scout__summary-grid">
-            <article class="wealth-scout__summary-card">
-              <span>{{ draftConfig.buyFlexibility === 'target' ? `Purchasing power ${buyTimingLabel.toLowerCase()}` : 'Current purchasing power' }}</span>
-              <strong>{{ formatCurrency(previewModel.budget.affordablePrice) }}</strong>
-              <small>Based on income, savings, HELP debt, and the deposit strategy above</small>
-            </article>
-            <article class="wealth-scout__summary-card">
-              <span>Projected sell-off savings</span>
-              <strong>{{ formatCurrency(previewModel.futureSnapshot.liquidSavings) }}</strong>
-              <small>{{ savingsPathLabel }}</small>
-            </article>
-            <article class="wealth-scout__summary-card">
-              <span>Deposit cash needed</span>
-              <strong>{{ formatCurrency(previewModel.budget.requiredCash) }}</strong>
-              <small>{{ depositModeLabel }}</small>
-            </article>
-            <article class="wealth-scout__summary-card">
-              <span>Projected household income</span>
-              <strong>{{ formatCurrency(previewModel.futureSnapshot.annualIncome) }}</strong>
-              <small>{{ draftConfig.buyFlexibility === 'target' ? buyTimingLabel : 'Current year snapshot' }}</small>
-            </article>
-          </div>
-
           <div class="wealth-scout__charts">
             <WealthLineChart title="Purchasing power over time" subtitle="The max property value your savings and serviceability support." kicker="0-20 year path" :series="purchasingPowerChartSeries" :markers="buyYearMarker" />
-            <WealthLineChart title="Required deposit vs your sell-off savings" subtitle="Deposit cash includes purchase costs. Savings reflect the cash or portfolio sell-off path." kicker="Deposit runway" :series="depositChartSeries" :markers="buyYearMarker" />
           </div>
 
         </template>
@@ -474,7 +423,7 @@
 
           <div class="wealth-scout__ranking">
             <div class="wealth-scout__ranking-head">
-              <strong>Priority weighting</strong>
+              <strong>Do you have value growth or rental yield?</strong>
               <span>{{ rankingPreferenceLabel }}</span>
             </div>
             <input
@@ -631,7 +580,6 @@
                     <WealthPropertyTrendChart :title="`Historical ${propertyTypeLabel.toLowerCase()} price`" :subtitle="recommendation.selectedTimingLabel" color="#0f766e" :actual-points="recommendation.actualPoints" :trend-points="recommendation.trendPoints" :estimate-point="recommendation.estimatePoint" />
                     <WealthLineChart :title="`${propertyTypeLabel} price Monte Carlo`" subtitle="P10 / P50 / P90 projection for the next 30 years." kicker="Forward market path" :series="buildMonteCarloChartSeries(recommendation)" :markers="buildResultMarkers(recommendation)" />
                     <WealthLineChart title="Purchasing power vs required property value" subtitle="Compare what you can buy against the projected price path." kicker="30-year affordability" :series="buildResultPowerSeries(recommendation)" :markers="buildResultMarkers(recommendation)" />
-                    <WealthLineChart title="Required deposit vs your sell-off savings" subtitle="Deposit cash includes purchase costs." kicker="30-year deposit path" :series="buildResultDepositSeries(recommendation)" :markers="buildResultMarkers(recommendation)" />
                   </div>
                 </div>
               </Transition>

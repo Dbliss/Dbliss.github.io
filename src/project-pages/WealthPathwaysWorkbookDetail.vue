@@ -26,12 +26,12 @@
 
       <div v-if="errorMessage" class="wealth-error">{{ errorMessage }}</div>
 
-      <div v-if="regionScoutLoadingScreen && selectedComparisonMode === 'regionScout'" class="wealth-region-scout-overlay">
-        <div class="wealth-region-scout-loading card">
-          <p class="wealth-region-scout-loading__eyebrow">Calculating shortlist</p>
-          <h3>Ranking the best {{ regionScoutConfig.granularity === 'region' ? 'regions' : 'suburbs' }}</h3>
-          <p>Comparing affordability, growth, yield, and timing for your current settings.</p>
-          <div class="wealth-region-scout-loading__spinner" aria-hidden="true"></div>
+      <div v-if="showResultsLoadingScreen" class="wealth-results-loading-overlay">
+        <div class="wealth-results-loading card">
+          <p class="wealth-results-loading__eyebrow">{{ loadingScreenContent.eyebrow }}</p>
+          <h3>{{ loadingScreenContent.title }}</h3>
+          <p>{{ loadingScreenContent.copy }}</p>
+          <div class="wealth-results-loading__spinner" aria-hidden="true"></div>
         </div>
       </div>
 
@@ -185,6 +185,7 @@ const errorMessage = ref('')
 const lastRunAt = ref('')
 const resultsStale = ref(true)
 const regionScoutLoadingScreen = ref(false)
+const resultsLoadingScreen = ref(false)
 const mutedStrategyKeys = ref([])
 const groupFilter = ref('all')
 const resultMetric = ref('sellDown')
@@ -236,6 +237,24 @@ const selectedHouseAreaPreview = computed(() => createPropertyConfigPatchFromAre
   subregionKey: null,
   houseGrowthYears: 0,
   apartmentGrowthYears: 0
+})
+const showResultsLoadingScreen = computed(() =>
+  regionScoutLoadingScreen.value || resultsLoadingScreen.value
+)
+const loadingScreenContent = computed(() => {
+  if (selectedComparisonMode.value === 'regionScout') {
+    return {
+      eyebrow: 'Calculating shortlist',
+      title: `Ranking the best ${regionScoutConfig.granularity === 'region' ? 'regions' : 'suburbs'}`,
+      copy: 'Comparing affordability, growth, yield, and timing for your current settings.'
+    }
+  }
+
+  return {
+    eyebrow: 'Running simulation',
+    title: 'Building your results dashboard',
+    copy: 'Calculating every pathway across your current assumptions before loading the comparison view.'
+  }
 })
 
 const availableInputSheetKeys = computed(() => {
@@ -686,10 +705,16 @@ async function generateResults() {
     return
   }
 
-  const ok = await runSimulation()
-  if (ok) {
-    await enterWorkspace()
-    currentStage.value = 'results'
+  resultsLoadingScreen.value = true
+  await enterWorkspace()
+  currentStage.value = 'results'
+  try {
+    const ok = await runSimulation()
+    if (!ok) {
+      currentStage.value = 'inputs'
+    }
+  } finally {
+    resultsLoadingScreen.value = false
   }
 }
 
@@ -1058,7 +1083,7 @@ onBeforeUnmount(() => {
   display: grid;
 }
 
-.wealth-region-scout-overlay {
+.wealth-results-loading-overlay {
   position: absolute;
   inset: 0;
   z-index: 30;
@@ -1069,7 +1094,7 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(4px);
 }
 
-.wealth-region-scout-loading {
+.wealth-results-loading {
   display: grid;
   gap: 0.85rem;
   place-items: center;
@@ -1078,7 +1103,7 @@ onBeforeUnmount(() => {
   text-align: center;
 }
 
-.wealth-region-scout-loading__eyebrow {
+.wealth-results-loading__eyebrow {
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.16em;
@@ -1086,18 +1111,18 @@ onBeforeUnmount(() => {
   color: #5d7ba3;
 }
 
-.wealth-region-scout-loading h3 {
+.wealth-results-loading h3 {
   margin: 0.15rem 0 0;
   color: #173050;
 }
 
-.wealth-region-scout-loading p {
+.wealth-results-loading p {
   margin: 0;
   color: #5d7394;
   line-height: 1.55;
 }
 
-.wealth-region-scout-loading__spinner {
+.wealth-results-loading__spinner {
   width: 3.2rem;
   height: 3.2rem;
   border-radius: 999px;

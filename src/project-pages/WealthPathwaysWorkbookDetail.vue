@@ -287,6 +287,9 @@ function isStockSheetComplete() {
   const weights = [
     Number(form.portfolioConfig.asxWeight) || 0,
     Number(form.portfolioConfig.qqqWeight) || 0,
+    Number(form.portfolioConfig.vgsWeight) || 0,
+    Number(form.portfolioConfig.vgeWeight) || 0,
+    Number(form.portfolioConfig.dbpWeight) || 0,
     Number(form.portfolioConfig.bondWeight) || 0,
     Number(form.portfolioConfig.cashWeight) || 0,
     Number(form.portfolioConfig.bitcoinWeight) || 0
@@ -339,6 +342,9 @@ function getInputSheetState(sheetKey) {
     const portfolioWeights = [
       Number(form.portfolioConfig.asxWeight) || 0,
       Number(form.portfolioConfig.qqqWeight) || 0,
+      Number(form.portfolioConfig.vgsWeight) || 0,
+      Number(form.portfolioConfig.vgeWeight) || 0,
+      Number(form.portfolioConfig.dbpWeight) || 0,
       Number(form.portfolioConfig.bondWeight) || 0,
       Number(form.portfolioConfig.cashWeight) || 0,
       Number(form.portfolioConfig.bitcoinWeight) || 0

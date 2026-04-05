@@ -1160,6 +1160,9 @@ function createPortfolioConfigDraft(config) {
   return {
     qqqWeight: Number(config?.qqqWeight) || 0,
     asxWeight: Number(config?.asxWeight) || 0,
+    vgsWeight: Number(config?.vgsWeight) || 0,
+    vgeWeight: Number(config?.vgeWeight) || 0,
+    dbpWeight: Number(config?.dbpWeight) || 0,
     bondWeight: Number(config?.bondWeight) || 0,
     cashWeight: Number(config?.cashWeight) || 0,
     bitcoinWeight: Number(config?.bitcoinWeight) || 0,

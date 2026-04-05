@@ -155,6 +155,9 @@ export const wealthStockStrategyKeys = [
   'stockPortfolio',
   'stockQqq',
   'stockAsx200',
+  'stockVgs',
+  'stockVge',
+  'stockDbp',
   'stockBonds',
   'stockCash',
   'stockBitcoin'
@@ -234,6 +237,33 @@ export function getWealthStrategyMeta() {
       color: '#22c55e',
       accent: 'rgba(34, 197, 94, 0.18)',
       description: 'Stay liquid and direct surplus cash into an ASX200-style equity portfolio.'
+    },
+    stockVgs: {
+      group: 'stock',
+      baselineEligible: true,
+      label: 'International Developed Markets',
+      shortLabel: 'VGS',
+      color: '#6366f1',
+      accent: 'rgba(99, 102, 241, 0.18)',
+      description: 'Stay liquid and direct surplus cash into developed international equities via VGS.'
+    },
+    stockVge: {
+      group: 'stock',
+      baselineEligible: true,
+      label: 'Emerging Markets',
+      shortLabel: 'VGE',
+      color: '#ec4899',
+      accent: 'rgba(236, 72, 153, 0.18)',
+      description: 'Stay liquid and direct surplus cash into emerging-market equities via VGE.'
+    },
+    stockDbp: {
+      group: 'stock',
+      baselineEligible: true,
+      label: 'Gold & Silver',
+      shortLabel: 'DBP',
+      color: '#a16207',
+      accent: 'rgba(161, 98, 7, 0.18)',
+      description: 'Stay liquid and direct surplus cash into gold and silver exposure via DBP.'
     },
     stockBonds: {
       group: 'stock',
@@ -350,6 +380,9 @@ export const defaultSimulationRequest = {
   portfolioConfig: {
     asxWeight: 0.20,
     qqqWeight: 0.65,
+    vgsWeight: 0,
+    vgeWeight: 0,
+    dbpWeight: 0,
     bondWeight: 0.10,
     cashWeight: 0.05,
     bitcoinWeight: 0,
@@ -357,6 +390,9 @@ export const defaultSimulationRequest = {
     asxDividendYield: 0.032,
     asxFrankingPct: 0.75,
     qqqDividendYield: 0.0045,
+    vgsDividendYield: 0.02,
+    vgeDividendYield: 0.025,
+    dbpIncomeYield: 0,
     bondIncomeYield: 0.042,
     cashReturnMean: 0.035,
     bootstrapMethod: 'historical-block',

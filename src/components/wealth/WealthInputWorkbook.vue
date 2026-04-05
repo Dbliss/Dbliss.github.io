@@ -5,7 +5,7 @@
         <template v-if="activeSheet === 'stock'">
           <div class="wealth-workbook__panel-head">
             <h3>Stock assumptions</h3>
-            <p>Configure the Portfolio Mix sleeve allocation here. The single-asset stock scenarios still run as pure QQQ, ASX200, bonds, high-interest cash, and bitcoin tracks.</p>
+            <p>Configure the Portfolio Mix sleeve allocation here. The single-asset stock scenarios still run as pure QQQ, ASX200, VGS, VGE, DBP, bonds, high-interest cash, and bitcoin tracks.</p>
           </div>
           <div class="wealth-workbook__allocation-grid">
             <label
@@ -737,10 +737,10 @@ const bootstrapSamplingNote = computed(() => {
   const blockSizeMonths = Math.max(1, Math.round(Number(props.form.portfolioConfig.bootstrapBlockSizeMonths) || 3))
 
   if (method === 'historical-monthly') {
-    return 'Stock paths bootstrap shared historical months across QQQ, ASX200, bonds, and cash so cross-asset moves stay aligned within each simulated year. Bitcoin still uses its shorter 4 year history.'
+    return 'Stock paths bootstrap shared historical months across QQQ, ASX200, VGS, VGE, DBP, bonds, and cash so cross-asset moves stay aligned within each simulated year. Bitcoin still uses its shorter 5 year history.'
   }
 
-  return `Stock paths bootstrap shared ${blockSizeMonths}-month historical blocks across QQQ, ASX200, bonds, and cash so crashes and momentum clusters stay intact within each simulated year. Bitcoin still uses its shorter 4 year history.`
+  return `Stock paths bootstrap shared ${blockSizeMonths}-month historical blocks across QQQ, ASX200, VGS, VGE, DBP, bonds, and cash so crashes and momentum clusters stay intact within each simulated year. Bitcoin still uses its shorter 5 year history.`
 })
 
 function percentProxy(getter, setter) {

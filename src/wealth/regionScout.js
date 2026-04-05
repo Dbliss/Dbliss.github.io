@@ -32,6 +32,9 @@ const SUPPORTED_AREA_TYPES = new Set(['region', 'suburb'])
 const ASSET_KEY_BY_WEIGHT = {
   qqqWeight: 'qqq',
   asxWeight: 'asx200',
+  vgsWeight: 'vgs',
+  vgeWeight: 'vge',
+  dbpWeight: 'dbp',
   bondWeight: 'bonds',
   cashWeight: 'cash',
   bitcoinWeight: 'bitcoin'

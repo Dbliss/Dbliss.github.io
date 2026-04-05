@@ -141,11 +141,17 @@
               :key="`${point.id}-summary-${hoverSummary.year}`"
               class="wealth-chart__hover-row"
             >
-              <div class="wealth-chart__hover-series">
-                <span class="wealth-chart__hover-dot-key" :style="{ background: point.color }"></span>
-                <span>{{ point.label }}</span>
+              <div class="wealth-chart__hover-series wealth-chart__hover-series--stacked">
+                <div class="wealth-chart__hover-series-label">
+                  <span class="wealth-chart__hover-dot-key" :style="{ background: point.color }"></span>
+                  <span>{{ point.label }}</span>
+                </div>
+                <div class="wealth-chart__hover-values">
+                  <span>P10 {{ formatShortCurrency(point.low) }}</span>
+                  <span>P50 {{ formatShortCurrency(point.mid) }}</span>
+                  <span>P90 {{ formatShortCurrency(point.high) }}</span>
+                </div>
               </div>
-              <strong>{{ formatShortCurrency(point.mid) }}</strong>
             </div>
           </div>
         </div>
@@ -244,7 +250,7 @@ const hoverSummary = computed(() => {
   if (displayYear.value === null || !displayPoints.value.length) return null
   return {
     year: displayYear.value,
-    label: 'Expected outcome'
+    label: 'Outcomes'
   }
 })
 
@@ -501,13 +507,23 @@ function onPointerMove(event) {
 }
 
 .wealth-chart__hover-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  align-items: center;
+  display: grid;
+  gap: 0.28rem;
 }
 
 .wealth-chart__hover-series {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.wealth-chart__hover-series--stacked {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.wealth-chart__hover-series-label {
   min-width: 0;
   display: flex;
   align-items: center;
@@ -518,6 +534,15 @@ function onPointerMove(event) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.wealth-chart__hover-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.8rem;
+  padding-left: 1rem;
+  color: rgba(226, 236, 249, 0.92);
+  font-size: 0.76rem;
 }
 
 .wealth-chart__hover-dot-key {

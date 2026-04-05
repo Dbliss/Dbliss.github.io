@@ -163,7 +163,7 @@ watch(
       return
     }
 
-    resetToFlatGrowth()
+    syncIncomeSeries()
   },
   { immediate: true }
 )
@@ -177,7 +177,7 @@ watch(
       return
     }
 
-    resetToFlatGrowth()
+    syncIncomeSeries()
   },
   { immediate: true }
 )
@@ -191,7 +191,7 @@ watch(
       return
     }
 
-    resetToFlatGrowth()
+    syncIncomeSeries()
   },
   { immediate: true }
 )
@@ -325,24 +325,53 @@ function resetToFlatGrowth() {
   )
 }
 
-function updateIncomeAtIndex(index, value) {
-  if (index <= 0) return
-  const leaveFactor = getCareerBreakIncomeFactor(props.profile, index, 2)
+function getSourceSeriesIndexForDisplayYear(displayIndex) {
+  const safeDisplayIndex = Math.max(0, Math.round(Number(displayIndex) || 0))
+  let sourceIndex = -1
+  let inFullLeaveBlock = false
+
+  for (let index = 0; index <= safeDisplayIndex; index += 1) {
+    const leaveFactor = getCareerBreakIncomeFactor(props.profile, index, 2)
+
+    if (leaveFactor <= 0) {
+      if (!inFullLeaveBlock) {
+        sourceIndex = Math.max(-1, sourceIndex - 1)
+        inFullLeaveBlock = true
+      }
+      if (index === safeDisplayIndex) return null
+      continue
+    }
+
+    inFullLeaveBlock = false
+    sourceIndex += 1
+    if (index === safeDisplayIndex) {
+      return sourceIndex
+    }
+  }
+
+  return null
+}
+
+function updateIncomeAtDisplayIndex(displayIndex, value) {
+  if (displayIndex <= 0) return
+  const leaveFactor = getCareerBreakIncomeFactor(props.profile, displayIndex, 2)
   if (leaveFactor === 0) return
+  const sourceIndex = getSourceSeriesIndexForDisplayYear(displayIndex)
+  if (sourceIndex === null || sourceIndex <= 0) return
   const nextValue = Math.max(0, Math.round((Number(value) || 0) / leaveFactor))
   const currentSeries = [...incomeSeries.value]
-  const currentValue = Math.max(0, currentSeries[index] || 0)
+  const currentValue = Math.max(0, currentSeries[sourceIndex] || 0)
   const nextSeries = [...currentSeries]
 
-  nextSeries[index] = nextValue
+  nextSeries[sourceIndex] = nextValue
 
   if (currentValue > 0) {
     const scale = nextValue / currentValue
-    for (let offsetIndex = index + 1; offsetIndex < nextSeries.length; offsetIndex += 1) {
+    for (let offsetIndex = sourceIndex + 1; offsetIndex < nextSeries.length; offsetIndex += 1) {
       nextSeries[offsetIndex] = Math.max(0, Math.round(currentSeries[offsetIndex] * scale))
     }
   } else {
-    for (let offsetIndex = index + 1; offsetIndex < nextSeries.length; offsetIndex += 1) {
+    for (let offsetIndex = sourceIndex + 1; offsetIndex < nextSeries.length; offsetIndex += 1) {
       nextSeries[offsetIndex] = nextValue
     }
   }
@@ -402,7 +431,7 @@ function handlePointerMove(event) {
     ? Math.min(10000, 1000 * (Math.floor(dragDistance / 70) + 1))
     : 1000 * (Math.floor(dragDistance / 70) + 1)
   const nextIncome = Math.max(0, dragStartIncome.value + incomeSteps * dollarsPerStep)
-  updateIncomeAtIndex(index, nextIncome)
+  updateIncomeAtDisplayIndex(index, nextIncome)
   hoverYearIndex.value = index
 }
 

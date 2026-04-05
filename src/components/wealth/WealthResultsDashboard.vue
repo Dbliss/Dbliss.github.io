@@ -6,15 +6,6 @@
         <h2>Interactive outcome dashboard</h2>
         <p v-if="lastRunAt" class="wealth-results__copy">Last calculated {{ lastRunAt }}</p>
       </div>
-
-      <div class="wealth-results__controls">
-        <label class="wealth-results__select">
-          <span>Metric</span>
-          <select :value="metric" @change="$emit('update:metric', $event.target.value)">
-            <option v-for="option in metricOptions" :key="option.key" :value="option.key">{{ option.label }}</option>
-          </select>
-        </label>
-      </div>
     </div>
 
     <section class="wealth-results__kpis">
@@ -27,11 +18,6 @@
         <p class="wealth-results__kpi-kicker">Strongest downside</p>
         <h3>{{ visibleKpis.downsideLeader?.label || (noVisibleStrategies ? 'No visible strategy' : 'No result') }}</h3>
         <p>{{ visibleKpis.downsideLeader ? `${formatCurrency(visibleKpis.downsideLeader.summary.downsideRisk)} at the 10th percentile.` : noVisibleStrategies ? 'Use the strategy visibility chips above to show at least one strategy.' : 'Run the model to populate this card.' }}</p>
-      </article>
-      <article class="wealth-results__kpi card">
-        <p class="wealth-results__kpi-kicker">First to beat baseline</p>
-        <h3>{{ visibleKpis.firstHousingBeatBaseline?.label || (noVisibleStrategies ? 'No visible strategy' : 'No housing overtake') }}</h3>
-        <p>{{ visibleKpis.firstHousingBeatBaseline ? `Beats ${dashboard.baseline?.label} in year ${visibleKpis.firstHousingBeatBaseline.breakevenYearVsBaseline}.` : noVisibleStrategies ? 'Use the strategy visibility chips above to show at least one strategy.' : 'No housing path overtakes the selected portfolio baseline on the median track.' }}</p>
       </article>
       <article class="wealth-results__kpi card">
         <p class="wealth-results__kpi-kicker">Widest variability</p>
@@ -63,7 +49,15 @@
         kicker="Scenario comparison"
         :series="series"
         :muted-series-ids="mutedStrategyKeys"
-      />
+      >
+        <template #actions>
+          <label class="wealth-results__select" aria-label="Select result metric">
+            <select :value="metric" @change="$emit('update:metric', $event.target.value)">
+              <option v-for="option in metricOptions" :key="option.key" :value="option.key">{{ option.label }}</option>
+            </select>
+          </label>
+        </template>
+      </WealthLineChart>
 
       <section v-if="visibleStrategies.length" class="wealth-results__flow-stack card">
         <div class="wealth-results__flow-controls">
@@ -293,7 +287,6 @@ function formatSignedCurrency(value) {
 }
 
 .wealth-results__toolbar,
-.wealth-results__controls,
 .wealth-results__visibility,
 .wealth-results__item-top,
 .wealth-results__item-meta {
@@ -304,10 +297,6 @@ function formatSignedCurrency(value) {
 
 .wealth-results__toolbar {
   justify-content: space-between;
-  align-items: end;
-}
-
-.wealth-results__controls {
   align-items: end;
 }
 
@@ -369,7 +358,7 @@ function formatSignedCurrency(value) {
 
 .wealth-results__kpis {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.85rem;
 }
 
@@ -418,6 +407,11 @@ function formatSignedCurrency(value) {
 .wealth-results__chart-block {
   display: grid;
   gap: 1.2rem;
+}
+
+.wealth-results__chart {
+  width: 90%;
+  margin: 0 auto;
 }
 
 .wealth-results__flow-stack {
@@ -499,6 +493,10 @@ function formatSignedCurrency(value) {
   .wealth-results__detail-grid,
   .wealth-results__hurdles-grid {
     grid-template-columns: 1fr;
+  }
+
+  .wealth-results__chart {
+    width: 100%;
   }
 }
 </style>

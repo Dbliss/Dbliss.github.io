@@ -362,9 +362,9 @@ const guidanceMeta = {
   kicker: 'Budget Guide',
   title: 'How to allocate the money you receive',
   subtitle: 'Turns the yearly result into a practical budget: gross income in, tax and required spending out, then the exact next step for any remaining cash.',
-  positiveLabel: 'Receipts',
-  negativeLabel: 'Allocations',
-  percentLabelSuffix: 'of budget'
+  positiveLabel: 'Inflow',
+  negativeLabel: 'Outflow',
+  percentLabelSuffix: 'of flow'
 }
 
 const wealthMeta = {
@@ -442,6 +442,9 @@ function buildCashflowSegments(point) {
     { key: 'parentalLeavePayment', label: 'Parental leave payment', value: Number(detailed.parentalLeavePayment) || 0, color: '#1d4ed8', directionLabel: 'Income' },
     { key: 'asxDividends', label: 'ASX dividends', value: Number(detailed.asxDividends) || 0, color: '#3b82f6', directionLabel: 'Income' },
     { key: 'qqqDividends', label: 'QQQ distributions', value: Number(detailed.qqqDividends) || 0, color: '#60a5fa', directionLabel: 'Income' },
+    { key: 'vgsDividends', label: 'VGS distributions', value: Number(detailed.vgsDividends) || 0, color: '#818cf8', directionLabel: 'Income' },
+    { key: 'vgeDividends', label: 'VGE distributions', value: Number(detailed.vgeDividends) || 0, color: '#f472b6', directionLabel: 'Income' },
+    { key: 'dbpIncome', label: 'DBP income', value: Number(detailed.dbpIncome) || 0, color: '#d97706', directionLabel: 'Income' },
     { key: 'bondIncome', label: 'Bond income', value: Number(detailed.bondIncome) || 0, color: '#38bdf8', directionLabel: 'Income' },
     { key: 'cashInterest', label: 'Cash interest', value: Number(detailed.cashInterest) || 0, color: '#0ea5e9', directionLabel: 'Income' },
     { key: 'rentReceived', label: 'Rent received', value: Number(detailed.rentReceived) || 0, color: '#14b8a6', directionLabel: 'Income' },
@@ -461,6 +464,9 @@ function buildGuidanceSegments(point) {
   const portfolioCashIncome =
     (Number(detailed.asxDividends) || 0) +
     (Number(detailed.qqqDividends) || 0) +
+    (Number(detailed.vgsDividends) || 0) +
+    (Number(detailed.vgeDividends) || 0) +
+    (Number(detailed.dbpIncome) || 0) +
     (Number(detailed.bondIncome) || 0) +
     (Number(detailed.cashInterest) || 0)
   const parentalLeavePayment = Number(detailed.parentalLeavePayment) || 0
@@ -561,6 +567,9 @@ function buildNetWorthChangeSegments(point, previousPoint) {
   const cashYield =
     (Number(detailed.asxDividends) || 0) +
     (Number(detailed.qqqDividends) || 0) +
+    (Number(detailed.vgsDividends) || 0) +
+    (Number(detailed.vgeDividends) || 0) +
+    (Number(detailed.dbpIncome) || 0) +
     (Number(detailed.bondIncome) || 0) +
     (Number(detailed.cashInterest) || 0) +
     (Number(detailed.rentReceived) || 0)
@@ -634,13 +643,15 @@ function getSegmentsForPoint(point, previousPoint) {
     return { ...entry, start, end: negativeCursor }
   })
 
-  const totalFlow = sumAbs(segments.map((segment) => segment.value))
   const tooltipSegments = segments.map((segment) => ({
     ...segment,
     amount: Math.abs(segment.value),
-    percentLabel: totalFlow > 0
-      ? `${((Math.abs(segment.value) / totalFlow) * 100).toFixed(1)}% ${activeModeMeta.value.percentLabelSuffix}`
-      : `0.0% ${activeModeMeta.value.percentLabelSuffix}`
+    percentLabel: `${(
+      (
+        Math.abs(segment.value) /
+        Math.max(1, segment.value >= 0 ? positiveCursor : Math.abs(negativeCursor))
+      ) * 100
+    ).toFixed(1)}% ${activeModeMeta.value.percentLabelSuffix}`
   }))
 
   return {

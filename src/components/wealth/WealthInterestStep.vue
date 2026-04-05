@@ -72,13 +72,13 @@ const comparisonModes = [
     key: 'portfolioDeepDive',
     title: 'Deep dive in portfolio options',
     description: 'Compare Portfolio Mix against the pure liquid tracks so you can pressure-test concentrated and diversified investing paths.',
-    stat: '5 liquid strategies + portfolio mix',
+    stat: '8 liquid strategies + portfolio mix',
     preview: [
       'Portfolio Mix beside each pure liquid strategy',
       'A full stock-only workbook flow in Inputs',
       'Results focused on liquid pathways only'
     ],
-    includes: ['Portfolio Mix', 'QQQ', 'ASX200', 'Bonds', 'Cash', 'Bitcoin'],
+    includes: ['Portfolio Mix', 'QQQ', 'ASX200', 'VGS', 'VGE', 'DBP', 'Bonds', 'Cash', 'Bitcoin'],
     color: '#2563eb',
     accent: 'rgba(37, 99, 235, 0.16)'
   },

@@ -79,6 +79,9 @@ function createStrategyBuckets(horizonYears) {
     detailParentalLeavePayment: [],
     detailAsxDividends: [],
     detailQqqDividends: [],
+    detailVgsDividends: [],
+    detailVgeDividends: [],
+    detailDbpIncome: [],
     detailBondIncome: [],
     detailCashInterest: [],
     detailPortfolioGrowth: [],
@@ -249,6 +252,9 @@ function yearPoint(year, metrics) {
   const detailParentalLeavePayment = percentileSummary(metrics.detailParentalLeavePayment)
   const detailAsxDividends = percentileSummary(metrics.detailAsxDividends)
   const detailQqqDividends = percentileSummary(metrics.detailQqqDividends)
+  const detailVgsDividends = percentileSummary(metrics.detailVgsDividends)
+  const detailVgeDividends = percentileSummary(metrics.detailVgeDividends)
+  const detailDbpIncome = percentileSummary(metrics.detailDbpIncome)
   const detailBondIncome = percentileSummary(metrics.detailBondIncome)
   const detailCashInterest = percentileSummary(metrics.detailCashInterest)
   const detailPortfolioGrowth = percentileSummary(metrics.detailPortfolioGrowth)
@@ -328,6 +334,9 @@ function yearPoint(year, metrics) {
       parentalLeavePayment: roundCurrency(detailParentalLeavePayment.p50),
       asxDividends: roundCurrency(detailAsxDividends.p50),
       qqqDividends: roundCurrency(detailQqqDividends.p50),
+      vgsDividends: roundCurrency(detailVgsDividends.p50),
+      vgeDividends: roundCurrency(detailVgeDividends.p50),
+      dbpIncome: roundCurrency(detailDbpIncome.p50),
       bondIncome: roundCurrency(detailBondIncome.p50),
       cashInterest: roundCurrency(detailCashInterest.p50),
       portfolioGrowth: roundCurrency(detailPortfolioGrowth.p50),
@@ -419,6 +428,9 @@ function addMetrics(bucket, snapshot) {
   bucket.detailParentalLeavePayment.push(snapshot.detailedCashflowBreakdown.parentalLeavePayment)
   bucket.detailAsxDividends.push(snapshot.detailedCashflowBreakdown.asxDividends)
   bucket.detailQqqDividends.push(snapshot.detailedCashflowBreakdown.qqqDividends)
+  bucket.detailVgsDividends.push(snapshot.detailedCashflowBreakdown.vgsDividends)
+  bucket.detailVgeDividends.push(snapshot.detailedCashflowBreakdown.vgeDividends)
+  bucket.detailDbpIncome.push(snapshot.detailedCashflowBreakdown.dbpIncome)
   bucket.detailBondIncome.push(snapshot.detailedCashflowBreakdown.bondIncome)
   bucket.detailCashInterest.push(snapshot.detailedCashflowBreakdown.cashInterest)
   bucket.detailPortfolioGrowth.push(snapshot.detailedCashflowBreakdown.portfolioGrowth)
@@ -744,6 +756,9 @@ function createSnapshot({
       parentalLeavePayment: Math.max(0, Number(detailedCashflowBreakdown.parentalLeavePayment) || 0),
       asxDividends: Math.max(0, Number(detailedCashflowBreakdown.asxDividends) || 0),
       qqqDividends: Math.max(0, Number(detailedCashflowBreakdown.qqqDividends) || 0),
+      vgsDividends: Math.max(0, Number(detailedCashflowBreakdown.vgsDividends) || 0),
+      vgeDividends: Math.max(0, Number(detailedCashflowBreakdown.vgeDividends) || 0),
+      dbpIncome: Math.max(0, Number(detailedCashflowBreakdown.dbpIncome) || 0),
       bondIncome: Math.max(0, Number(detailedCashflowBreakdown.bondIncome) || 0),
       cashInterest: Math.max(0, Number(detailedCashflowBreakdown.cashInterest) || 0),
       portfolioGrowth: Number(detailedCashflowBreakdown.portfolioGrowth) || 0,
@@ -1026,6 +1041,9 @@ function getPortfolioLedger(portfolioConfig, openingLiquidAssets, market) {
     portfolioReturn,
     asxDistribution: taxableIncome.asxDistribution,
     qqqDistribution: taxableIncome.qqqDistribution,
+    vgsDistribution: taxableIncome.vgsDistribution,
+    vgeDistribution: taxableIncome.vgeDistribution,
+    dbpIncome: taxableIncome.dbpIncome,
     bondIncome: taxableIncome.bondIncome,
     cashInterest: taxableIncome.cashInterest,
     portfolioGrowth: portfolioReturn - taxableIncome.cashIncome,
@@ -1039,6 +1057,9 @@ function getCashSavingsLedger() {
     portfolioReturn: 0,
     asxDistribution: 0,
     qqqDistribution: 0,
+    vgsDistribution: 0,
+    vgeDistribution: 0,
+    dbpIncome: 0,
     bondIncome: 0,
     cashInterest: 0,
     portfolioGrowth: 0,
@@ -1450,6 +1471,9 @@ function simulateRentInvestPath(request, marketPath) {
         parentalLeavePayment: parentalLeavePayment.total,
         asxDividends: portfolioLedger.asxDistribution,
         qqqDividends: portfolioLedger.qqqDistribution,
+        vgsDividends: portfolioLedger.vgsDistribution,
+        vgeDividends: portfolioLedger.vgeDistribution,
+        dbpIncome: portfolioLedger.dbpIncome,
         bondIncome: portfolioLedger.bondIncome,
         cashInterest: portfolioLedger.cashInterest,
         portfolioGrowth: portfolioLedger.portfolioGrowth,
@@ -1656,6 +1680,9 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
       parentalLeavePayment: parentalLeavePayment.total,
       asxDividends: portfolioLedger.asxDistribution,
       qqqDividends: portfolioLedger.qqqDistribution,
+      vgsDividends: portfolioLedger.vgsDistribution,
+      vgeDividends: portfolioLedger.vgeDistribution,
+      dbpIncome: portfolioLedger.dbpIncome,
       bondIncome: portfolioLedger.bondIncome,
       cashInterest: portfolioLedger.cashInterest,
       portfolioGrowth: portfolioLedger.portfolioGrowth,
@@ -2176,6 +2203,9 @@ function createSingleAssetPortfolioConfig(portfolioConfig, assetKey) {
     ...portfolioConfig,
     asxWeight: assetKey === 'asx' ? 1 : 0,
     qqqWeight: assetKey === 'qqq' ? 1 : 0,
+    vgsWeight: assetKey === 'vgs' ? 1 : 0,
+    vgeWeight: assetKey === 'vge' ? 1 : 0,
+    dbpWeight: assetKey === 'dbp' ? 1 : 0,
     bondWeight: assetKey === 'bond' ? 1 : 0,
     cashWeight: assetKey === 'cash' ? 1 : 0,
     bitcoinWeight: assetKey === 'bitcoin' ? 1 : 0
@@ -2206,6 +2236,18 @@ export function simulateWealthPathways(rawRequest) {
       stockAsx200: simulateRentInvestPath({
         ...request,
         portfolioConfig: createSingleAssetPortfolioConfig(request.portfolioConfig, 'asx')
+      }, marketPath),
+      stockVgs: simulateRentInvestPath({
+        ...request,
+        portfolioConfig: createSingleAssetPortfolioConfig(request.portfolioConfig, 'vgs')
+      }, marketPath),
+      stockVge: simulateRentInvestPath({
+        ...request,
+        portfolioConfig: createSingleAssetPortfolioConfig(request.portfolioConfig, 'vge')
+      }, marketPath),
+      stockDbp: simulateRentInvestPath({
+        ...request,
+        portfolioConfig: createSingleAssetPortfolioConfig(request.portfolioConfig, 'dbp')
       }, marketPath),
       stockBonds: simulateRentInvestPath({
         ...request,

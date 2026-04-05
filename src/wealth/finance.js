@@ -219,16 +219,30 @@ export function normalisePortfolioWeights(portfolioConfig) {
   const rawWeights = {
     asxWeight: Math.max(0, Number(portfolioConfig.asxWeight) || 0),
     qqqWeight: Math.max(0, Number(portfolioConfig.qqqWeight) || 0),
+    vgsWeight: Math.max(0, Number(portfolioConfig.vgsWeight) || 0),
+    vgeWeight: Math.max(0, Number(portfolioConfig.vgeWeight) || 0),
+    dbpWeight: Math.max(0, Number(portfolioConfig.dbpWeight) || 0),
     bondWeight: Math.max(0, Number(portfolioConfig.bondWeight) || 0),
     cashWeight: Math.max(0, Number(portfolioConfig.cashWeight) || 0),
     bitcoinWeight: Math.max(0, Number(portfolioConfig.bitcoinWeight) || 0)
   }
-  const totalWeight = rawWeights.asxWeight + rawWeights.qqqWeight + rawWeights.bondWeight + rawWeights.cashWeight + rawWeights.bitcoinWeight
+  const totalWeight =
+    rawWeights.asxWeight +
+    rawWeights.qqqWeight +
+    rawWeights.vgsWeight +
+    rawWeights.vgeWeight +
+    rawWeights.dbpWeight +
+    rawWeights.bondWeight +
+    rawWeights.cashWeight +
+    rawWeights.bitcoinWeight
 
   if (totalWeight <= 0) {
     return {
       asxWeight: 0.2,
       qqqWeight: 0.7,
+      vgsWeight: 0,
+      vgeWeight: 0,
+      dbpWeight: 0,
       bondWeight: 0.1,
       cashWeight: 0,
       bitcoinWeight: 0
@@ -238,6 +252,9 @@ export function normalisePortfolioWeights(portfolioConfig) {
   return {
     asxWeight: rawWeights.asxWeight / totalWeight,
     qqqWeight: rawWeights.qqqWeight / totalWeight,
+    vgsWeight: rawWeights.vgsWeight / totalWeight,
+    vgeWeight: rawWeights.vgeWeight / totalWeight,
+    dbpWeight: rawWeights.dbpWeight / totalWeight,
     bondWeight: rawWeights.bondWeight / totalWeight,
     cashWeight: rawWeights.cashWeight / totalWeight,
     bitcoinWeight: rawWeights.bitcoinWeight / totalWeight
@@ -249,6 +266,9 @@ export function samplePortfolioSleeveReturns(random, sampleAssetYear) {
   const sharedSample = typeof sampler.sampleAll === 'function' ? sampler.sampleAll(random) : null
   const asxReturn = clamp(sharedSample?.asxReturn ?? sampler('asx200', random), -0.75, 0.75)
   const qqqReturn = clamp(sharedSample?.qqqReturn ?? sampler('qqq', random), -0.85, 0.95)
+  const vgsReturn = clamp(sharedSample?.vgsReturn ?? sampler('vgs', random), -0.75, 0.75)
+  const vgeReturn = clamp(sharedSample?.vgeReturn ?? sampler('vge', random), -0.85, 0.95)
+  const dbpReturn = clamp(sharedSample?.dbpReturn ?? sampler('dbp', random), -0.35, 0.45)
   const bondReturn = clamp(sharedSample?.bondReturn ?? sampler('bonds', random), -0.25, 0.25)
   const cashReturn = clamp(sharedSample?.cashReturn ?? sampler('cash', random), -0.02, 0.12)
   const bitcoinReturn = clamp(sharedSample?.bitcoinReturn ?? sampler('bitcoin', random), -0.95, 2.5)
@@ -256,6 +276,9 @@ export function samplePortfolioSleeveReturns(random, sampleAssetYear) {
   return {
     asxReturn,
     qqqReturn,
+    vgsReturn,
+    vgeReturn,
+    dbpReturn,
     bondReturn,
     cashReturn,
     bitcoinReturn
@@ -266,6 +289,9 @@ export function buildPortfolioYearFromSleeves(portfolioConfig, sleeveReturns) {
   const weights = normalisePortfolioWeights(portfolioConfig)
   const asxReturn = clamp(Number(sleeveReturns?.asxReturn) || 0, -0.75, 0.75)
   const qqqReturn = clamp(Number(sleeveReturns?.qqqReturn) || 0, -0.85, 0.95)
+  const vgsReturn = clamp(Number(sleeveReturns?.vgsReturn) || 0, -0.75, 0.75)
+  const vgeReturn = clamp(Number(sleeveReturns?.vgeReturn) || 0, -0.85, 0.95)
+  const dbpReturn = clamp(Number(sleeveReturns?.dbpReturn) || 0, -0.35, 0.45)
   const bondReturn = clamp(Number(sleeveReturns?.bondReturn) || 0, -0.25, 0.25)
   const cashReturn = clamp(Number(sleeveReturns?.cashReturn) || 0, -0.02, 0.12)
   const bitcoinReturn = clamp(Number(sleeveReturns?.bitcoinReturn) || 0, -0.95, 2.5)
@@ -273,15 +299,28 @@ export function buildPortfolioYearFromSleeves(portfolioConfig, sleeveReturns) {
   const totalReturn =
     weights.asxWeight * asxReturn +
     weights.qqqWeight * qqqReturn +
+    weights.vgsWeight * vgsReturn +
+    weights.vgeWeight * vgeReturn +
+    weights.dbpWeight * dbpReturn +
     weights.bondWeight * bondReturn +
     weights.cashWeight * cashReturn +
     weights.bitcoinWeight * bitcoinReturn
 
   const asxDividendIncome = weights.asxWeight * (portfolioConfig.asxDividendYield || 0)
   const qqqDividendIncome = weights.qqqWeight * (portfolioConfig.qqqDividendYield || 0)
+  const vgsDividendIncome = weights.vgsWeight * (portfolioConfig.vgsDividendYield || 0)
+  const vgeDividendIncome = weights.vgeWeight * (portfolioConfig.vgeDividendYield || 0)
+  const dbpIncome = weights.dbpWeight * (portfolioConfig.dbpIncomeYield || 0)
   const bondIncome = weights.bondWeight * (portfolioConfig.bondIncomeYield || 0)
   const cashIncome = weights.cashWeight * (portfolioConfig.cashReturnMean || 0)
-  const distributionYield = asxDividendIncome + qqqDividendIncome + bondIncome + cashIncome
+  const distributionYield =
+    asxDividendIncome +
+    qqqDividendIncome +
+    vgsDividendIncome +
+    vgeDividendIncome +
+    dbpIncome +
+    bondIncome +
+    cashIncome
 
   return {
     weights,
@@ -302,11 +341,21 @@ export function estimatePortfolioTaxableIncome(portfolioConfig, portfolioBalance
   const weights = normalisePortfolioWeights(portfolioConfig)
   const asxDistribution = safeBalance * weights.asxWeight * Math.max(0, Number(portfolioConfig.asxDividendYield) || 0)
   const qqqDistribution = safeBalance * weights.qqqWeight * Math.max(0, Number(portfolioConfig.qqqDividendYield) || 0)
+  const vgsDistribution = safeBalance * weights.vgsWeight * Math.max(0, Number(portfolioConfig.vgsDividendYield) || 0)
+  const vgeDistribution = safeBalance * weights.vgeWeight * Math.max(0, Number(portfolioConfig.vgeDividendYield) || 0)
+  const dbpIncome = safeBalance * weights.dbpWeight * Math.max(0, Number(portfolioConfig.dbpIncomeYield) || 0)
   const bondIncome = safeBalance * weights.bondWeight * Math.max(0, Number(portfolioConfig.bondIncomeYield) || 0)
   const cashInterest = safeBalance * weights.cashWeight * Math.max(0, Number(portfolioConfig.cashReturnMean) || 0)
   const frankedDistribution = asxDistribution * clamp(Number(portfolioConfig.asxFrankingPct) || 0, 0, 1)
   const frankingCredits = frankedDistribution * (companyTaxRate / (1 - companyTaxRate))
-  const cashIncome = asxDistribution + qqqDistribution + bondIncome + cashInterest
+  const cashIncome =
+    asxDistribution +
+    qqqDistribution +
+    vgsDistribution +
+    vgeDistribution +
+    dbpIncome +
+    bondIncome +
+    cashInterest
   const taxableIncome = cashIncome + frankingCredits
 
   return {
@@ -316,6 +365,9 @@ export function estimatePortfolioTaxableIncome(portfolioConfig, portfolioBalance
     frankingCredits,
     asxDistribution,
     qqqDistribution,
+    vgsDistribution,
+    vgeDistribution,
+    dbpIncome,
     bondIncome,
     cashInterest
   }

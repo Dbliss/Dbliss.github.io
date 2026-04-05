@@ -3,6 +3,9 @@ const EPSILON = 1e-9
 export const portfolioAllocationFields = [
   { key: 'qqqWeight', label: 'US Stock - QQQ', color: '#2563eb' },
   { key: 'asxWeight', label: 'AU Stocks - ASX200', color: '#16a34a' },
+  { key: 'vgsWeight', label: 'International Developed Markets - VGS', color: '#6366f1' },
+  { key: 'vgeWeight', label: 'Emerging Markets - VGE', color: '#ec4899' },
+  { key: 'dbpWeight', label: 'Gold & Silver - DBP', color: '#a16207' },
   { key: 'bondWeight', label: 'Bonds', color: '#f59e0b' },
   { key: 'cashWeight', label: 'High Interest Cash', color: '#475569' },
   { key: 'bitcoinWeight', label: 'Bitcoin', color: '#f97316' }

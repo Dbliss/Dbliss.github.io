@@ -22,7 +22,7 @@
         <input v-model.number="form.profile.horizonYears" type="number" min="10" max="30" step="1" />
       </label>
       <label>
-        <span>Living costs except rent (food, bills, etc.)</span>
+        <span>Living costs except rent (food, holidays, car, etc.)</span>
         <input v-model.number="form.profile.weeklyNonHousingLivingCosts" type="number" min="0" step="25" />
       </label>
     </div>
@@ -37,19 +37,19 @@
           <span>Current housing status</span>
           <select v-model="currentHousingStatus">
             <option value="renting">Renting</option>
-            <option value="livingAtHome">Living at home</option>
+            <option value="livingAtHome">Living at home (with parents)</option>
           </select>
         </label>
         <label>
-          <span>Rent cost + Utilities</span>
+          <span>{{ currentHousingStatus === 'livingAtHome' ? 'Rent + utilities once moved out' : 'Rent cost + utilities' }}</span>
           <input v-model.number="form.housingCosts.weeklyRent" type="number" min="0" step="10" />
         </label>
         <label v-if="form.housingCosts.liveAtHome">
-          <span>Years living at home</span>
+          <span>Years living with parents</span>
           <input v-model.number="form.housingCosts.liveAtHomeYears" type="number" min="1" :max="Math.max(1, form.profile.horizonYears - 1)" step="1" />
         </label>
         <label v-if="form.housingCosts.liveAtHome">
-          <span>At-home rent + bills cost</span>
+          <span>At-home contribution</span>
           <input v-model.number="form.housingCosts.weeklyBoardAtHome" type="number" min="0" step="10" />
         </label>
       </div>
@@ -80,28 +80,15 @@
           :key="child.id || index"
           class="wealth-family-plan__row"
         >
-          <label class="wealth-family-plan__field">
-            <span>{{ getPlannedChildLabel(index) }}</span>
-            <select class="wealth-family-plan__select" :value="child.year" @change="updatePlannedChildYear(index, $event.target.value)">
-              <option
-                v-for="year in getAvailableChildYears(child.year)"
-                :key="year"
-                :value="year"
-              >
-                Year {{ year }}
-              </option>
-            </select>
-          </label>
+          <div class="wealth-family-plan__item">
+            <span class="wealth-family-plan__item-label">{{ getPlannedChildLabel(index) }}</span>
+            <strong class="wealth-family-plan__item-value">Year {{ child.year }}</strong>
+          </div>
           <button type="button" class="wealth-family-plan__remove" @click="removePlannedChild(index)">Remove</button>
         </div>
-        <button
-          type="button"
-          class="wealth-family-plan__add"
-          :disabled="plannedChildren.length >= 6"
-          @click="addPlannedChild"
-        >
-          {{ plannedChildren.length >= 6 ? 'Maximum planned children reached' : 'Add planned child' }}
-        </button>
+        <p v-if="!plannedChildren.length" class="wealth-family-plan__empty">
+          Add planned children from the wealth trajectory chart below.
+        </p>
       </div>
       <p class="wealth-sheet__subsection-copy">
         Each child increases the non-rent living-cost ~20%. Hugely estimated - take with caution. If you already have children, child costs are assumed already-included.  
@@ -175,7 +162,7 @@
                 type="checkbox"
                 @change="toggleCareerBreak(earner, $event.target.checked)"
               />
-              <span>Plan a break from work</span>
+              <span>Plan a break from work or a child</span>
             </label>
 
             <div v-if="hasCareerBreaks(earner)" class="wealth-break-plan__list">
@@ -235,7 +222,7 @@
               </div>
               <button
                 type="button"
-                class="wealth-family-plan__add"
+                class="wealth-break-plan__add"
                 :disabled="getBreakPlans(earner).length >= 6"
                 @click="addCareerBreak(earner)"
               >
@@ -268,32 +255,10 @@
       </div>
     </section>
   </section>
-  <Teleport to="body">
-    <div v-if="modalState.open" class="wealth-modal-backdrop" @click="handleModalBackdrop">
-      <div class="wealth-modal" role="dialog" aria-modal="true" @click.stop>
-        <p class="wealth-modal__title">{{ modalState.title }}</p>
-        <p v-if="modalState.message" class="wealth-modal__message">{{ modalState.message }}</p>
-        <input
-          v-if="modalState.mode === 'prompt'"
-          v-model.trim="modalState.input"
-          class="wealth-modal__input"
-          type="text"
-          :placeholder="modalState.placeholder"
-          @keydown.enter.prevent="confirmModal"
-        />
-        <div class="wealth-modal__actions">
-          <button type="button" class="wealth-modal__btn wealth-modal__btn--ghost" @click="cancelModal">Cancel</button>
-          <button type="button" class="wealth-modal__btn wealth-modal__btn--primary" @click="confirmModal">
-            {{ modalState.confirmLabel }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import WealthIncomeGrowthEditor from './WealthIncomeGrowthEditor.vue'
 import {
   getEarnerAnnualIncomeForYear,
@@ -355,17 +320,6 @@ const DEFAULT_EARNERS = [
 
 const props = defineProps({
   form: { type: Object, required: true }
-})
-const modalState = reactive({
-  open: false,
-  mode: 'confirm',
-  title: '',
-  message: '',
-  placeholder: '',
-  confirmLabel: 'Confirm',
-  input: '',
-  expectedText: '',
-  resolve: null
 })
 
 const earners = computed(() => props.form.profile.earners || [])
@@ -625,36 +579,6 @@ function syncParentLeaveChildYears(earner) {
   sortAndDeduplicatePlannedChildren()
 }
 
-function getAvailableChildYears(currentYear) {
-  const current = Math.max(2, Math.round(Number(currentYear) || 2))
-  const takenYears = new Set(
-    plannedChildren.value
-      .map((child) => Math.round(Number(child?.year) || 0))
-      .filter((year) => year >= 2 && year !== current)
-  )
-
-  return Array.from({ length: props.form.profile.horizonYears }, (_, index) => index + 1)
-    .filter((year) => year >= 2 && !takenYears.has(year))
-}
-
-function updatePlannedChildYear(index, value) {
-  const familyPlan = ensureFamilyPlan()
-  const targetYear = Math.max(2, Math.min(props.form.profile.horizonYears, Math.round(Number(value) || 2)))
-  const existingAtYear = familyPlan.plannedChildren.findIndex((child, childIndex) =>
-    childIndex !== index && Number(child?.year) === targetYear
-  )
-
-  if (existingAtYear >= 0) {
-    familyPlan.plannedChildren.splice(index, 1)
-    sortAndDeduplicatePlannedChildren()
-    return
-  }
-
-  if (!familyPlan.plannedChildren[index]) return
-  familyPlan.plannedChildren[index].year = targetYear
-  sortAndDeduplicatePlannedChildren()
-}
-
 function getPlannedChildLabel(index) {
   if (index === 0) return 'First child'
   if (index === 1) return 'Second child'
@@ -663,51 +587,6 @@ function getPlannedChildLabel(index) {
   if (index === 4) return 'Fifth child'
   if (index === 5) return 'Sixth child'
   return `Child ${index + 1}`
-}
-
-function openConfirmModal({
-  title,
-  message = '',
-  confirmLabel = 'Confirm'
-} = {}) {
-  return new Promise((resolve) => {
-    modalState.open = true
-    modalState.mode = 'confirm'
-    modalState.title = title
-    modalState.message = message
-    modalState.placeholder = ''
-    modalState.confirmLabel = confirmLabel
-    modalState.input = ''
-    modalState.expectedText = ''
-    modalState.resolve = resolve
-  })
-}
-
-function closeModal(result) {
-  const resolver = modalState.resolve
-  modalState.open = false
-  modalState.mode = 'confirm'
-  modalState.title = ''
-  modalState.message = ''
-  modalState.placeholder = ''
-  modalState.confirmLabel = 'Confirm'
-  modalState.input = ''
-  modalState.expectedText = ''
-  modalState.resolve = null
-  if (typeof resolver === 'function') resolver(result)
-}
-
-function cancelModal() {
-  closeModal(false)
-}
-
-function confirmModal() {
-  if (modalState.mode === 'prompt' && modalState.input !== modalState.expectedText) return
-  closeModal(true)
-}
-
-function handleModalBackdrop() {
-  cancelModal()
 }
 
 function getDurationLabel(value) {
@@ -989,9 +868,10 @@ watch(
 
 .wealth-family-plan__head {
   margin-top: -0.25rem;
-  color: #6a7f9f;
-  font-size: 0.74rem;
-  letter-spacing: 0.08em;
+  color: #173050;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -1002,11 +882,30 @@ watch(
 .wealth-family-plan__row {
   display: flex;
   gap: 0.45rem;
-  align-items: end;
+  align-items: center;
 }
 
 .wealth-family-plan__field {
   flex: 1 1 auto;
+}
+
+.wealth-family-plan__item {
+  flex: 1 1 auto;
+  display: grid;
+  gap: 0.15rem;
+  min-height: 2.9rem;
+  padding: 0.8rem 0.95rem;
+  border-radius: 16px;
+  border: 1px solid rgba(154, 174, 204, 0.18);
+  background: linear-gradient(180deg, rgba(249, 251, 255, 0.98), rgba(241, 246, 255, 0.96));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.wealth-family-plan__item-label {
+  color: #4f6887;
+  font-size: 0.83rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .wealth-family-plan__field span {
@@ -1043,6 +942,22 @@ watch(
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
+.wealth-family-plan__item-value {
+  color: #173050;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.wealth-family-plan__empty {
+  margin: 0;
+  padding: 0.95rem 1rem;
+  border-radius: 16px;
+  border: 1px dashed rgba(154, 174, 204, 0.35);
+  background: rgba(248, 251, 255, 0.9);
+  color: #5d7394;
+  line-height: 1.5;
+}
+
 .wealth-family-plan__remove {
   min-height: 2.9rem;
   padding: 0.7rem 0.85rem;
@@ -1055,96 +970,6 @@ watch(
   white-space: nowrap;
 }
 
-.wealth-family-plan__add {
-  justify-self: start;
-  min-height: 2.7rem;
-  padding: 0.65rem 1rem;
-  border-radius: 999px;
-  border: 1px solid rgba(15, 108, 171, 0.18);
-  background: linear-gradient(180deg, rgba(231, 245, 255, 0.95), rgba(215, 238, 255, 0.92));
-  color: #0f6cab;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.wealth-family-plan__add:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
-.wealth-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  display: grid;
-  place-items: center;
-  padding: 1.25rem;
-  background: transparent;
-}
-
-.wealth-modal {
-  width: min(100%, 28rem);
-  display: grid;
-  gap: 0.9rem;
-  padding: 1.2rem;
-  border-radius: 20px;
-  background: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.2);
-}
-
-.wealth-modal__title {
-  margin: 0;
-  color: #173050;
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.wealth-modal__message {
-  margin: 0;
-  color: #5b7192;
-  line-height: 1.5;
-}
-
-.wealth-modal__input {
-  width: 100%;
-  min-height: 3rem;
-  padding: 0.8rem 0.95rem;
-  border-radius: 14px;
-  border: 1px solid rgba(154, 174, 204, 0.24);
-  background: rgba(248, 251, 255, 0.98);
-  color: #173050;
-  font: inherit;
-}
-
-.wealth-modal__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.6rem;
-}
-
-.wealth-modal__btn {
-  min-height: 2.8rem;
-  padding: 0.7rem 1rem;
-  border-radius: 14px;
-  font: inherit;
-  cursor: pointer;
-}
-
-.wealth-modal__btn--ghost {
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  background: #ffffff;
-  color: #5d7394;
-}
-
-.wealth-modal__btn--primary {
-  border: 1px solid rgba(15, 108, 171, 0.18);
-  background: linear-gradient(180deg, rgba(231, 245, 255, 0.95), rgba(215, 238, 255, 0.92));
-  color: #0f6cab;
-  font-weight: 600;
-}
-
 .wealth-break-plan {
   display: grid;
   gap: 0.8rem;
@@ -1153,6 +978,35 @@ watch(
 .wealth-break-plan__list {
   display: grid;
   gap: 0.6rem;
+}
+
+.wealth-break-plan__add {
+  justify-self: center;
+  min-height: 2.9rem;
+  min-width: 13.5rem;
+  width: 130%;
+  max-width: 18rem;
+  padding: 0.78rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 108, 171, 0.18);
+  background: linear-gradient(180deg, rgba(231, 245, 255, 0.95), rgba(215, 238, 255, 0.92));
+  color: #0f6cab;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.wealth-break-plan__add:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(15, 108, 171, 0.26);
+  background: linear-gradient(180deg, rgba(237, 248, 255, 0.98), rgba(220, 240, 255, 0.95));
+}
+
+.wealth-break-plan__add:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .wealth-break-plan__row {

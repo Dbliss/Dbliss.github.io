@@ -1,10 +1,13 @@
 import rawWealthAssetBootstrapData from '../data/generated/wealthAssetBootstrap.json'
 
-export const wealthBootstrapAssetOrder = ['qqq', 'asx200', 'bonds', 'cash', 'bitcoin']
-const wealthBootstrapSharedAssetOrder = ['qqq', 'asx200', 'bonds', 'cash']
+export const wealthBootstrapAssetOrder = ['qqq', 'asx200', 'vgs', 'vge', 'dbp', 'bonds', 'cash', 'bitcoin']
+const wealthBootstrapSharedAssetOrder = ['qqq', 'asx200', 'vgs', 'vge', 'dbp', 'bonds', 'cash']
 const wealthBootstrapStandaloneAssetOrder = wealthBootstrapAssetOrder.filter(
   key => !wealthBootstrapSharedAssetOrder.includes(key)
 )
+const ASSET_LOOKBACK_MONTHS = {
+  bitcoin: 60
+}
 
 function normaliseMonthlyReturn(entry) {
   const totalReturn = Number(entry?.totalReturn)
@@ -17,23 +20,31 @@ function normaliseMonthlyReturn(entry) {
 }
 
 function normaliseAsset(entry, key) {
-  const monthlyReturns = Array.isArray(entry?.monthlyReturns)
+  const rawMonthlyReturns = Array.isArray(entry?.monthlyReturns)
     ? entry.monthlyReturns.map(normaliseMonthlyReturn).filter(Boolean)
     : []
+  const maxLookbackMonths = ASSET_LOOKBACK_MONTHS[key] || 0
+  const monthlyReturns = maxLookbackMonths > 0
+    ? rawMonthlyReturns.slice(-maxLookbackMonths)
+    : rawMonthlyReturns
 
   return {
     key,
     label: entry?.label || key,
     ticker: entry?.ticker || '',
     currency: entry?.currency || '',
-    lookbackYears: Math.max(0, Number(entry?.lookbackYears) || 0),
+    lookbackYears: roundLookbackYears(monthlyReturns.length),
     source: entry?.source || '',
     sourceUrl: entry?.sourceUrl || '',
-    startMonth: entry?.startMonth || (monthlyReturns[0]?.month ?? null),
-    endMonth: entry?.endMonth || (monthlyReturns[monthlyReturns.length - 1]?.month ?? null),
-    months: Math.max(0, Number(entry?.months) || monthlyReturns.length),
+    startMonth: monthlyReturns[0]?.month ?? entry?.startMonth ?? null,
+    endMonth: monthlyReturns[monthlyReturns.length - 1]?.month ?? entry?.endMonth ?? null,
+    months: monthlyReturns.length,
     monthlyReturns
   }
+}
+
+function roundLookbackYears(monthCount) {
+  return Math.round((Math.max(0, Number(monthCount) || 0) / 12) * 10) / 10
 }
 
 export const wealthAssetBootstrapData = (() => {
@@ -137,6 +148,9 @@ export function createBootstrapPortfolioSampler(random, options = {}) {
   sampleAssetYear.sampleAll = () => ({
     qqqReturn: sampleAssetYear('qqq'),
     asxReturn: sampleAssetYear('asx200'),
+    vgsReturn: sampleAssetYear('vgs'),
+    vgeReturn: sampleAssetYear('vge'),
+    dbpReturn: sampleAssetYear('dbp'),
     bondReturn: sampleAssetYear('bonds'),
     cashReturn: sampleAssetYear('cash'),
     bitcoinReturn: sampleAssetYear('bitcoin')

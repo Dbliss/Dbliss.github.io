@@ -10,7 +10,7 @@
         </h1>
         <p class="section-sub">
           Mechatronic Engineer working as Full-Stack Developer based in Sydney. I design and build robust systems
-          from dashboards and APIs to data/ML tools with a focus on reliability and performance.
+          across backend, frontend and cloud infrastructure with a focus on reliability and performance.
         </p>
 
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">

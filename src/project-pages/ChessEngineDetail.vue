@@ -35,257 +35,307 @@
 		<article
 			ref="contentRef"
 			class="content prose"
-			:class="{ 'is-visible': contentDomVisible, 'is-guided': contentView === 'guided' }"
+			:class="{ 'is-visible': contentDomVisible }"
 			:aria-hidden="(!contentDomVisible).toString()"
 		>
-			<!-- Content shell (guided by default, optional "show all") -->
-			<div class="content-shell" :class="{ 'is-guided': contentView === 'guided' }">
+			<div class="content-shell">
 				
 
-				<aside class="content-nav" v-if="contentDomVisible">
-					<div class="nav-title mono">Sections</div>
-					<button
-						v-for="s in CONTENT_SECTIONS"
-						:key="s.id"
-						class="nav-btn"
-						:class="{ 'is-active': activeSection === s.id }"
-						type="button"
-						@click="setActiveSection(s.id)"
-					>
-						<span class="nav-dot" aria-hidden="true"></span>
-						<span class="nav-label">{{ s.label }}</span>
-					</button>
-				</aside>
-
 				<main class="content-main">
-					
-					<!-- Context -->
-					<section
-						class="card"
-						data-section="context"
-						v-show="contentView === 'all' || activeSection === 'context'"
-					>
-						<div class="content-intro">
-							<div class="section-label">Chess · Project</div>
-							<h1 class="content-title">Chess Engine (C++)</h1>
-							<div class="hero-meta mono">
-								<strong>Stack:</strong> C++ · Optimisation · Algorithms · Evaluation & Search
-							</div>
-							<p class="intro-desc">
-								A chess engine built from scratch in C++. It generates legal moves, searches future positions, and scores them with a
-								hand-tuned evaluation function. The focus is correctness first, then performance, then iteration speed.
-							</p>
+					<section class="notebook-cell notebook-hero" data-section="overview" id="overview">
+						<div class="cell-meta mono">Notebook 01 - Backend Case Study</div>
+						<h1 class="content-title">Chess Engine in C++</h1>
+						<p class="hero-dek">
+							A from-scratch engine focused on the hard parts of systems work: legal move generation, deep search,
+							cache-aware optimisation, and turning a command-line prototype into something people can actually play.
+						</p>
+
+						<div class="hero-chip-row mono">
+							<span class="hero-chip">C++</span>
+							<span class="hero-chip">Alpha-beta search</span>
+							<span class="hero-chip">Zobrist hashing</span>
+							<span class="hero-chip">Perft validation</span>
+							<span class="hero-chip">Engine UI</span>
 						</div>
 
-						<div class="section-label">Overview</div>
+						<div class="metrics-grid">
+							<div class="metric-card">
+								<div class="metric-label mono">Strength proxy</div>
+								<div class="metric-value">2000+ Elo</div>
+								<p>Rated play online against bots and human opponents.</p>
+							</div>
+							<div class="metric-card">
+								<div class="metric-label mono">Validation</div>
+								<div class="metric-value">12 perft suites</div>
+								<p>Used as the correctness gate before pushing performance work.</p>
+							</div>
+							<div class="metric-card">
+								<div class="metric-label mono">Search profile</div>
+								<div class="metric-value">~99.98% pruned</div>
+								<p>Typical branch reduction once move ordering and pruning are active.</p>
+							</div>
+							<div class="metric-card">
+								<div class="metric-label mono">Throughput</div>
+								<div class="metric-value">~130k pos/s</div>
+								<p>Representative figure from the current engine build and search settings.</p>
+							</div>
+						</div>
 
-						<div class="content-grid">
+						<div class="jump-row mono" aria-label="Documentation sections">
+							<button type="button" class="jump-link" @click="scrollToContentSection('why')">Why</button>
+							<button type="button" class="jump-link" @click="scrollToContentSection('architecture')">Architecture</button>
+							<button type="button" class="jump-link" @click="scrollToContentSection('board-state')">Board State</button>
+							<button type="button" class="jump-link" @click="scrollToContentSection('search-stack')">Search</button>
+							<button type="button" class="jump-link" @click="scrollToContentSection('evaluation')">Evaluation</button>
+							<button type="button" class="jump-link" @click="scrollToContentSection('testing')">Testing</button>
+							<button type="button" class="jump-link" @click="scrollToContentSection('optimisation')">Optimisation</button>
+							<button type="button" class="jump-link" @click="scrollToContentSection('interface')">Interface</button>
+							<button type="button" class="jump-link" @click="scrollToContentSection('results')">Results</button>
+						</div>
+
+						<figure class="feature-frame">
+							<img class="media-img media-img-wide" :src="chessBoardImg" alt="Chess engine interface showing the board and controls" loading="lazy" />
+							<figcaption class="media-cap">
+								The project outcome was not just an engine binary. It became a playable, inspectable product with a board UI, move feedback, and room to iterate.
+							</figcaption>
+						</figure>
+					</section>
+
+					<section class="notebook-cell" data-section="why" id="why">
+						<div class="section-badge mono">02 - Why this project mattered</div>
+						<h2 class="section-title">A systems problem with objective feedback</h2>
+						<p>
+							I wanted a project where optimisation was not decorative. Chess forces hard tradeoffs between correctness,
+							speed, memory, and search quality. The rules are rigid enough to validate precisely, but the branching factor is
+							large enough that weak engineering choices show up immediately in performance and playing strength.
+						</p>
+						<p>
+							That made the project a useful proving ground for modern C++ habits: clear data ownership, incremental state updates,
+							hot-path awareness, and measurable iteration rather than vague "cleanup". It also let me build something with a
+							recognisable benchmark culture, where move generation, search depth, and Elo all give concrete signals about progress.
+						</p>
+						<div class="callout-note">
+							<strong>Speak about here:</strong> why chess was a better fit than a generic algorithm project, what parts most accelerated C++ fluency,
+							and which optimisation ideas transferred cleanly to other backend work.
+						</div>
+					</section>
+
+					<section class="notebook-cell" data-section="architecture" id="architecture">
+						<div class="section-badge mono">03 - Engine architecture</div>
+						<h2 class="section-title">The runtime loop is simple on paper and brutal in practice</h2>
+						<p class="mono pipeline-line">Board State -> Legal Moves -> Ordered Search -> Evaluation -> Best Move</p>
+						<div class="two-col-grid">
 							<div>
-								<div class="mini-title mono">What to look for</div>
-								<ul>
-									<li><strong>Fast board representation</strong> and move generation</li>
-									<li><strong>Search engineering</strong> (alpha-beta, move ordering, quiescence)</li>
-									<li><strong>Caching</strong> via transposition tables + Zobrist hashing</li>
-									<li><strong>Validation</strong> (perft + regression harness)</li>
+								<h3 class="subhead">Core backend flow</h3>
+								<ul class="note-list">
+									<li>The board is represented in a format designed for cheap updates and fast legal-move queries.</li>
+									<li>Move generation produces candidate positions, then legality filters remove states that leave the king exposed.</li>
+									<li>The search stack traverses those positions under a time or depth budget.</li>
+									<li>The evaluation layer scores quieter leaf positions using hand-tuned heuristics.</li>
+									<li>Transposition hits and move ordering feed back into the search to avoid wasted work.</li>
 								</ul>
 							</div>
-
 							<div>
-								<div class="mini-title mono">Benchmarks I track</div>
-								<ul>
-									<li><strong>Perft validation:</strong> 12 reference positions up to depth 8</li>
-									<li><strong>Search pruning:</strong> ~99.98% of branches removed in typical games</li>
-									<li><strong>Throughput:</strong> ~130k positions evaluated per second</li>
+								<h3 class="subhead">What to expand later</h3>
+								<ul class="prompt-list">
+									<li>Describe the exact board representation and why it won over simpler array-based layouts.</li>
+									<li>Call out where incremental updates save time during search unwind and replay.</li>
+									<li>Explain how engine state is separated from UI state and command handling.</li>
 								</ul>
 							</div>
 						</div>
 
-						<div class="media-row">
-							<figure class="media-figure media-figure-board">
-								<img class="media-img media-img-board" :src="chessBoardImg" alt="Chess engine UI board view" loading="lazy" />
-								<figcaption class="media-cap">
-									Engine UI with board state, move feedback, and controls.
-								</figcaption>
-							</figure>
-						</div>
-
-						<h2 class="section-title small">Why I built it</h2>
-
-						<p>
-							University projects taught me how to code, but their projects were also small in scope,
-							and often prioritised building to the syllabus, with no push for full code optimisation or competitive benchmarking.
-							I wanted a project with C++ that actually forced real learning of the language, an opportunity for real-optimisation.
-							To succeed, my goal was to thoroughly learn runtime optimisation, proper c++ code layout, bit operations, caching, and memory minimisation.
-						</p>
-
-						<p>
-							A chess engine is the perfect solution. Chess is a game with a strict ruleset, meaning software can easily compute the optimal play.
-							However, the search space of the game is massive, so optimisation is required, with effective code functionality. 
-							Chess engines have also have extensive documentation online about, so learning optimal code structure code be easily followed. 
-							The 3rd appeal to chess as a problem is that progress is easily measurable the speed, and logic of the engine can all be objectively
-							measured using chess's well established elo system, where my engine can compete against other bots or players to gain a rating.
-						</p>				
+						<figure class="feature-frame">
+							<img class="media-img media-img-log" :src="engineLogImg" alt="Search log from the chess engine while evaluating positions" loading="lazy" />
+							<figcaption class="media-cap">
+								Search output while iterative deepening, scoring candidate lines, and surfacing the current best move.
+							</figcaption>
+						</figure>
 					</section>
 
-					<!-- Approach -->
-					<section
-						class="card"
-						data-section="approach"
-						v-show="contentView === 'all' || activeSection === 'approach'"
-					>
-						<h2 class="section-title small">How the engine thinks</h2>
+					<section class="notebook-cell" data-section="board-state" id="board-state">
+						<div class="section-badge mono">04 - Board state and move generation</div>
+						<h2 class="section-title">Correctness came before speed, because bad move generation poisons everything above it</h2>
+						<p>
+							The move generator had to handle the complete ruleset, not just the common path. Castling, promotions, en passant,
+							pins, check evasions, and discovered attacks all push against naive implementations. That meant the early work was less
+							about "playing chess" and more about building confidence in the legality model one edge case at a time.
+						</p>
+						<p>
+							Once that base layer was stable, it became much easier to optimise with intent. A fast engine built on incorrect state
+							transitions is useless; a slower but trusted engine gives you somewhere solid to measure from.
+						</p>
 
-						<p>At runtime the engine repeats this loop:</p>
-						<ol>
-							<li>Represent the board in a format optimized for speed.</li>
-							<li>Generate legal candidate moves from the position.</li>
-							<li>Search forward (depth-limited) to predict consequences.</li>
-							<li>Evaluate leaf positions using scoring heuristics.</li>
-							<li>Pick the best move under time constraints.</li>
-						</ol>
-
-						<p class="mono pipeline-line">Board State -> Move Gen -> Search -> Evaluate -> Best Move</p>
-
-						<div class="media-row">
-							<figure class="media-figure media-figure-log">
-								<img class="media-img media-img-log" :src="engineLogImg" alt="Engine search log output" loading="lazy" />
-								<figcaption class="media-cap">Search output while deepening and scoring positions.</figcaption>
+						<div class="image-grid image-grid-dual">
+							<figure class="feature-frame">
+								<img class="media-img" :src="gameplayImg" alt="Live gameplay view from the chess engine interface" loading="lazy" />
+								<figcaption class="media-cap">Gameplay view showing the engine as an interactive system rather than a console-only prototype.</figcaption>
 							</figure>
+							<div class="annotation-panel">
+								<h3 class="subhead">Add detail here</h3>
+								<ul class="prompt-list">
+									<li>Speak about pinned-piece logic and how legal move filtering differs from pseudo-legal move generation.</li>
+									<li>Speak about castling legality, attack maps, and how king safety checks were structured.</li>
+									<li>Speak about en passant and promotion handling, especially any bugs or edge cases caught by perft.</li>
+								</ul>
+							</div>
 						</div>
 					</section>
 
-					<!-- Features -->
-					<section
-						class="card"
-						data-section="features"
-						v-show="contentView === 'all' || activeSection === 'features'"
-					>
-						<h2 class="section-title small">Key implementation features</h2>
-
-						<h3 class="subhead">A) Transposition table + position hashing</h3>
+					<section class="notebook-cell" data-section="search-stack" id="search-stack">
+						<div class="section-badge mono">05 - Search stack</div>
+						<h2 class="section-title">Most of the engine's strength comes from refusing to search obviously bad branches</h2>
 						<p>
-							The engine uses a fixed-size transposition table to cache evaluated positions during search. This turns the search from a pure tree into an
-							implicit graph: the same position reached via different move orders can reuse work instead of recomputing it.
+							The core search uses alpha-beta pruning with strong move ordering, so the engine spends more time on lines that are
+							likely to matter and cuts large portions of the tree once bounds become clear. Iterative deepening makes the engine
+							practical under time limits and improves ordering information as each deeper pass begins.
 						</p>
 						<p>
-							Each entry stores the position hash, score, depth, bound type (exact / upper / lower), and the best move found. During search, the table is
-							probed to reuse exact results, trigger cutoffs, and improve move ordering.
+							Transposition tables turn repeated work into table lookups, while quiescence search avoids evaluating volatile positions
+							as if they were settled. Together those ideas shift the engine away from brute force and toward a search that is both
+							faster and more stable.
 						</p>
-
-						<h3 class="subhead">B) Zobrist hashing</h3>
-						<p>
-							<strong>Zobrist hashing</strong> provides a compact 64-bit key representing the entire position (pieces, side to move, castling, en passant).
-							Hash updates are incremental (XOR in/out), making them cheap enough to live inside the hot path of the search.
-						</p>
-
-						<h3 class="subhead">C) Search designed for exponential growth</h3>
-						<p>
-							The core is <strong>alpha-beta pruning</strong> with strong <strong>move ordering</strong>. With good ordering, alpha-beta can reduce the
-							effective complexity from roughly <span class="mono">O(b^d)</span> toward <span class="mono">O(b^(d/2))</span> in the best case.
-						</p>
-						<p>
-							At the root, <strong>iterative deepening</strong> gives a usable best move at all times and improves ordering for deeper iterations.
-							At leaf nodes, <strong>quiescence search</strong> extends tactical lines (captures/checks) to avoid evaluating noisy positions.
-							Additional pruning like <strong>null move</strong> can safely cut large branches in many positions.
-						</p>
-
-						<h3 class="subhead">D) Evaluation as a readable heuristic</h3>
-						<p>
-							The evaluation function is intentionally transparent: it follows classical chess principles and produces a score you can debug.
-							That makes iteration much faster than an opaque model when your goal is engineering insight and predictable behaviour.
-						</p>
+						<div class="two-col-grid">
+							<div class="notebook-subcell">
+								<h3 class="subhead">Implemented ideas</h3>
+								<ul class="note-list">
+									<li>Alpha-beta pruning</li>
+									<li>Move ordering</li>
+									<li>Iterative deepening</li>
+									<li>Quiescence search</li>
+									<li>Transposition table probes</li>
+									<li>Zobrist position hashing</li>
+								</ul>
+							</div>
+							<div class="notebook-subcell">
+								<h3 class="subhead">Expand this section later</h3>
+								<ul class="prompt-list">
+									<li>Speak about the exact move-ordering heuristics and how much they changed node counts.</li>
+									<li>Speak about TT entry format: hash, depth, score, bound type, and stored best move.</li>
+									<li>Speak about where null-move pruning or other selective pruning is safe versus risky.</li>
+								</ul>
+							</div>
+						</div>
 					</section>
 
-					<!-- Process -->
-					<section
-						class="card"
-						data-section="process"
-						v-show="contentView === 'all' || activeSection === 'process'"
-					>
-						<h2 class="section-title small">How I built it</h2>
-
-						<h3 class="subhead">Building the rules (correctness first)</h3>
+					<section class="notebook-cell" data-section="evaluation" id="evaluation">
+						<div class="section-badge mono">06 - Position evaluation</div>
+						<h2 class="section-title">The evaluation function stayed interpretable on purpose</h2>
 						<p>
-							I started with a terminal interface and implemented every move type with a focus on correctness and speed.
-							Chess looks simple until you hit edge cases (castling legality, en passant, promotions, pinned pieces, check rules).
-							I used <strong>perft</strong> positions to validate move generation across many depths and scenarios.
+							I kept the scoring layer readable rather than treating it like a black box. For this project the goal was engineering
+							insight: when the engine prefers one line, I want to understand whether that came from material balance, mobility,
+							king safety, development, pawn structure, or endgame simplification. That makes tuning slower than dropping in a model,
+							but much faster when debugging behaviour.
 						</p>
+						<div class="callout-note">
+							<strong>Speak about here:</strong> material weighting, piece-square tables, mobility scoring, king safety, passed pawns,
+							endgame adjustments, and which terms were easiest or hardest to tune without causing unstable play.
+						</div>
+					</section>
 
-						<h3 class="subhead">Building the engine (performance second)</h3>
+					<section class="notebook-cell" data-section="testing" id="testing">
+						<div class="section-badge mono">07 - Correctness and testing</div>
+						<h2 class="section-title">Perft was the contract that kept optimisation honest</h2>
 						<p>
-							After the rules were solid, I implemented search and then layered in the features that make engines practical:
-							transposition tables, hashing, move ordering, and quiescence. The goal was always measurable gains, not guesswork.
+							Every optimisation pass had to preserve correctness. Perft testing provided that foundation by comparing generated node
+							counts against known reference positions across multiple depths. It is one of the fastest ways to expose subtle move
+							generation bugs, especially around special rules and check resolution.
 						</p>
+						<div class="image-grid image-grid-dual">
+							<figure class="feature-frame">
+								<img class="media-img media-img-perft" :src="perftImg" alt="Perft validation output used to test chess move generation" loading="lazy" />
+								<figcaption class="media-cap">Perft output used as the first line of defence against illegal move generation and state corruption.</figcaption>
+							</figure>
+							<div class="annotation-panel">
+								<h3 class="subhead">Add detail here</h3>
+								<ul class="prompt-list">
+									<li>Speak about the 12 reference positions and the kinds of edge cases each one covers.</li>
+									<li>Speak about any regression harnesses, self-play checks, or before/after benchmarks used after code changes.</li>
+									<li>Speak about specific bugs caught by testing, not just that testing existed.</li>
+								</ul>
+							</div>
+						</div>
+					</section>
 
-						<h3 class="subhead">Improving the engine (iteration loop)</h3>
+					<section class="notebook-cell" data-section="optimisation" id="optimisation">
+						<div class="section-badge mono">08 - Performance and optimisation</div>
+						<h2 class="section-title">Once the rules were trusted, optimisation became a compounding game</h2>
 						<p>
-							I set the project up so each version could be tested against prior versions. That enabled real A/B testing:
-							ship a change, run the suite, measure whether it helps, and keep only improvements that are statistically convincing.
+							The backend work shifted toward reducing pointless computation. Hashing made repeated states cheap to recognise, move
+							ordering made pruning more aggressive, and incremental state updates kept the hot path lean. The project became a practical
+							lesson in how small wins stack inside a search-heavy system.
 						</p>
+						<div class="results-grid">
+							<div class="result-tile">
+								<div class="metric-label mono">Hot path themes</div>
+								<p>State mutation cost, cache reuse, branch pruning, and keeping inner loops predictable.</p>
+							</div>
+							<div class="result-tile">
+								<div class="metric-label mono">Measured outcomes</div>
+								<p>Typical branch reduction near 99.98% with representative throughput around 130k evaluated positions per second.</p>
+							</div>
+							<div class="result-tile">
+								<div class="metric-label mono">Topics to add</div>
+								<p>Speak about profiling method, memory layout, hash collision strategy, and which changes gave the biggest real-world gains.</p>
+							</div>
+						</div>
+					</section>
 
-						<h3 class="subhead">Building a UI (so other people can actually use it)</h3>
+					<section class="notebook-cell" data-section="interface" id="interface">
+						<div class="section-badge mono">09 - Interface and playability</div>
+						<h2 class="section-title">The UI mattered because it made the engine legible</h2>
 						<p>
-							A terminal is fine for development, but a UI makes the project legible. I added piece interaction, engine settings, and feedback
-							(sounds for moves/captures/checks), so the project feels like a real product instead of a demo.
+							Shipping only a terminal build would have hidden much of the project's value. The interface makes the engine inspectable:
+							board state is visible, move feedback is immediate, and the project reads as a complete tool instead of an isolated algorithm.
+							That matters when showing work to other engineers, hiring managers, or non-specialists.
 						</p>
-
-						<div class="media-row">
-							<figure class="media-figure media-figure-perft">
-								<img class="media-img media-img-perft" :src="perftImg" alt="Perft validation output and test suite" loading="lazy" />
-								<figcaption class="media-cap">Perft test suite used to validate move generation and edge cases.</figcaption>
+						<div class="image-grid image-grid-triple">
+							<figure class="feature-frame">
+								<img class="media-img" :src="lichessImg" alt="Online chess rating or match result screenshot for the engine" loading="lazy" />
+								<figcaption class="media-cap">External play evidence that the engine reached a meaningful level of practical strength.</figcaption>
+							</figure>
+							<figure class="feature-frame">
+								<img class="media-img" :src="lichessAltImg" alt="Additional online chess match or rating screenshot for the engine" loading="lazy" />
+								<figcaption class="media-cap">A second result view that helps frame rating progress and live-game behaviour.</figcaption>
+							</figure>
+							<figure class="feature-frame">
+								<img class="media-img" :src="gameplayImg" alt="Chess engine gameplay screen showing pieces and move interface" loading="lazy" />
+								<figcaption class="media-cap">The engine presented as a usable product with visual feedback and a more polished interaction loop.</figcaption>
 							</figure>
 						</div>
 					</section>
 
-					<!-- Results -->
-					<section
-						class="card"
-						data-section="results"
-						v-show="contentView === 'all' || activeSection === 'results'"
-					>
-						<h2 class="section-title small">Outcomes</h2>
-
-						<ul>
-							<li><strong>Correctness:</strong> 100% adherence to 12 unique perft tests at depth 8</li>
-							<li><strong>Typical efficiency:</strong> typically prunes the tree by ~99.98%</li>
-							<li><strong>Typical speed:</strong> 8.5B nodes searched, ~130k positions evaluated per second</li>
-							<li><strong>Strength proxy:</strong> over 2000 Elo online vs bots and humans</li>
-						</ul>
+					<section class="notebook-cell" data-section="results" id="results">
+						<div class="section-badge mono">10 - Results and takeaways</div>
+						<h2 class="section-title">What this project proves</h2>
+						<div class="two-col-grid">
+							<div>
+								<ul class="note-list">
+									<li>I can break a dense technical problem into testable backend subsystems.</li>
+									<li>I can write performance-conscious C++ and keep it explainable.</li>
+									<li>I can validate correctness under edge-case-heavy rules rather than assuming the implementation is fine.</li>
+									<li>I can turn a backend-heavy system into something legible for users and reviewers.</li>
+								</ul>
+							</div>
+							<div>
+								<div class="callout-note">
+									<strong>Speak about here:</strong> exact Elo comparison, benchmark methodology, strongest engineering decision,
+									and which subsystem would be rebuilt first if starting the engine again today.
+								</div>
+							</div>
+						</div>
 					</section>
 
-					<!-- Learnings -->
-					<section
-						class="card"
-						data-section="learnings"
-						v-show="contentView === 'all' || activeSection === 'learnings'"
-					>
-						<h2 class="section-title small">Key learnings</h2>
-						<ul>
-							<li>I can take an ambiguous, complex problem and decompose it into tractable subsystems</li>
-							<li>I can write performance-critical C++ that stays maintainable</li>
-							<li>I can validate correctness under tricky edge conditions</li>
-							<li>I can iterate using measurements, not vibes</li>
-							<li>I can communicate technical work without assuming specialist knowledge</li>
+					<section class="notebook-cell notebook-cell-end" data-section="future" id="future">
+						<div class="section-badge mono">11 - Future work</div>
+						<h2 class="section-title">Next research directions</h2>
+						<ul class="note-list">
+							<li>Improve move ordering so the engine reaches more tactical depth at the same time budget.</li>
+							<li>Explore faster sliding-piece generation such as magic bitboards.</li>
+							<li>Test richer evaluation terms or a lightweight learned evaluator without losing interpretability.</li>
+							<li>Document portability work for macOS and non-Windows users.</li>
 						</ul>
 					</section>
-
-					<!-- Tradeoffs -->
-					<section
-						class="card"
-						data-section="tradeoffs"
-						v-show="contentView === 'all' || activeSection === 'tradeoffs'"
-					>
-						<h2 class="section-title small">Future improvements</h2>
-						<ul>
-							<li>Improve move ordering (stronger heuristics -> deeper search at the same time)</li>
-							<li>Use magic bitboards for faster sliding-piece move generation</li>
-							<li>Explore a neural network evaluation function</li>
-							<li>Improve usability on macOS and for non-Windows users</li>
-						</ul>
-					</section>
-
-					<!-- (Optional) “All view” helper: tiny footer spacing -->
-					<div class="content-footer-spacer" aria-hidden="true"></div>
 				</main>
 			</div>
 		</article>
@@ -302,6 +352,9 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 
 import chessModelUrl from "../assets/chess-engine/chess_set.glb?url";
 import chessBoardImg from "../assets/chess-engine/board.PNG";
+import gameplayImg from "../assets/chess-engine/game.PNG";
+import lichessImg from "../assets/chess-engine/lichess.png";
+import lichessAltImg from "../assets/chess-engine/lichess2.PNG";
 import engineLogImg from "../assets/chess-engine/log.PNG";
 import perftImg from "../assets/chess-engine/perft_tests.PNG";
 
@@ -680,6 +733,25 @@ function scrollContentIntoView() {
 	const y = Math.round(r.top + window.scrollY);
 	const top = Math.max(contentLockActive ? contentLockMinY : y, y) - 12;
 
+	window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+}
+
+function scrollToContentSection(id) {
+	const root = contentRef.value;
+	if (!root) {
+		scrollContentIntoView();
+		return;
+	}
+
+	const target = root.querySelector(`#${id}`);
+	if (!target) {
+		scrollContentIntoView();
+		return;
+	}
+
+	const r = target.getBoundingClientRect();
+	const y = Math.round(r.top + window.scrollY);
+	const top = Math.max(contentLockActive ? contentLockMinY : y, y) - 12;
 	window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
 }
 
@@ -3488,7 +3560,7 @@ function sleep(ms) {
 	position: relative;
 	z-index: 5;
 	padding: 18px;
-	width: min(1600px, calc(100vw - 36px));
+	width: min(1240px, calc(100vw - 32px));
 	margin: 0 auto;
 	max-width: 100%;
 	box-sizing: border-box;
@@ -3506,58 +3578,28 @@ function sleep(ms) {
 	pointer-events: auto;
 }
 
-.content.is-visible.is-guided {
-	margin-top: 12px;
+.content-shell {
+	display: flex;
+	justify-content: center;
 }
 
-.card {
-	border-radius: 14px;
-	padding: 14px;
-	background: rgba(10, 16, 32);
-	border: 1px solid rgba(231, 238, 252, 0.18);
-	backdrop-filter: blur(10px);
-}
-
-.card.soft {
-	background: rgba(10, 16, 32, 0.55);
-	border: 1px solid rgba(231, 238, 252, 0.14);
-}
-
-.section-label {
-	font-size: 0.75rem;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	opacity: 0.8;
-	color: rgba(var(--sub), 0.9);
-}
-
-.section-title.small {
-	font-size: 1.05rem;
-	margin: 6px 0 10px;
-	color: rgba(var(--title), 0.95);
-}
-
-.hero {
-	margin-bottom: 16px;
+.content-main {
+	width: min(920px, 100%);
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
 }
 
 .content-title {
 	font-weight: 900;
 	letter-spacing: 0.01em;
-	line-height: 1.05;
-	font-size: clamp(28px, 4.6vw, 50px);
-	color: rgba(var(--title), 0.96);
-	margin: 6px 0 8px;
+	line-height: 0.98;
+	font-size: clamp(34px, 5.2vw, 68px);
+	color: rgba(var(--title), 0.98);
+	margin: 0;
 	text-shadow:
-		0 0 14px rgba(var(--accent), 0.22),
+		0 0 14px rgba(var(--accent), 0.18),
 		0 12px 60px rgba(0, 0, 0, 0.45);
-}
-
-.hero-meta {
-	font-size: 0.9rem;
-	opacity: 0.9;
-	color: rgba(var(--sub), 0.85);
-	margin-bottom: 10px;
 }
 
 .prose {
@@ -3565,319 +3607,280 @@ function sleep(ms) {
 }
 
 .prose p {
-	margin: 10px 0;
+	margin: 0;
 	color: rgba(var(--sub), 0.88);
-	line-height: 1.65;
+	line-height: 1.72;
 }
 
 .prose ul,
 .prose ol {
-	margin: 10px 0;
-	padding-left: 22px;
-	color: rgba(var(--sub), 0.88);
-	line-height: 1.6;
-}
-
-.prose li {
-	margin: 6px 0;
-}
-
-.prose .subhead {
-	margin-top: 14px;
-	margin-bottom: 6px;
-	font-size: 1.02rem;
-	font-weight: 800;
-	color: rgba(var(--title), 0.95);
-}
-
-.callout {
-	margin-top: 12px;
-	padding: 12px 12px;
-	border-radius: 12px;
-	background: rgba(10, 16, 32, 0.46);
-	border: 1px solid rgba(var(--accent), 0.18);
-	color: rgba(var(--sub), 0.9);
-}
-
-.content-shell {
-	display: grid;
-	grid-template-columns: 210px minmax(0, 920px);
-	gap: 16px;
-	align-items: start;
-	min-width: 0;
-	justify-content: center;
-	align-content: start;
-}
-
-.content-topbar {
-	grid-column: 1 / -1;
-	display: flex;
-	align-items: flex-start;
-	justify-content: space-between;
-	gap: 12px;
-
-	position: sticky;
-	top: 12px;
-	z-index: 50;
-
-	border-radius: 14px;
-	padding: 12px 12px;
-	background: rgba(10, 16, 32, 0.72);
-	border: 1px solid rgba(231, 238, 252, 0.16);
-	backdrop-filter: blur(12px);
-}
-
-.topbar-left {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	min-width: 240px;
-}
-
-.topbar-title {
-	display: flex;
-	align-items: baseline;
-	gap: 10px;
-	color: rgba(var(--title), 0.95);
-	font-weight: 800;
-}
-
-.topbar-progress {
-	opacity: 0.75;
-	font-weight: 700;
-}
-
-.topbar-sub {
-	color: rgba(var(--sub), 0.82);
-	font-size: 0.92rem;
-}
-
-.topbar-actions {
-	display: flex;
-	gap: 10px;
-	align-items: center;
-	flex-wrap: wrap;
-	justify-content: flex-end;
-}
-
-.pill {
-	cursor: pointer;
-	border-radius: 999px;
-	padding: 10px 14px;
-
-	background: rgba(10, 16, 32, 0.62);
-	border: 1px solid rgba(var(--accent), 0.35);
-	color: rgba(var(--title), 0.95);
-
-	font-weight: 800;
-	letter-spacing: 0.01em;
-}
-
-.pill.secondary {
-	opacity: 0.9;
-	border-color: rgba(231, 238, 252, 0.18);
-}
-
-.pill:disabled {
-	opacity: 0.45;
-	cursor: not-allowed;
-}
-
-.jump select {
-	height: 40px;
-	border-radius: 999px;
-	padding: 0 12px;
-
-	background: rgba(10, 16, 32, 0.62);
-	border: 1px solid rgba(231, 238, 252, 0.18);
-	color: rgba(var(--title), 0.92);
-	outline: none;
-}
-
-.jump select:focus-visible {
-	outline: 2px solid rgba(var(--accent), 0.55);
-	outline-offset: 2px;
-}
-
-.content-nav {
-	position: sticky;
-	top: 12px; /* topbar removed, so keep it near the top */
-	border-radius: 14px;
-	padding: 12px;
-
-	background: rgba(10, 16, 32, 0.62);
-	border: 1px solid rgba(231, 238, 252, 0.16);
-	backdrop-filter: blur(12px);
-	min-width: 0;
-	margin-left: -12px;
-	align-self: start;
-}
-
-.nav-title {
-	color: rgba(var(--title), 0.92);
-	font-weight: 900;
-	margin-bottom: 10px;
-	letter-spacing: 0.01em;
-}
-
-.nav-btn {
-	width: 100%;
-	display: flex;
-	align-items: center;
-	gap: 10px;
-
-	text-align: left;
-	cursor: pointer;
-
-	border-radius: 12px;
-	padding: 10px 10px;
-
-	background: rgba(255, 255, 255, 0.02);
-	border: 1px solid rgba(231, 238, 252, 0.10);
-	color: rgba(var(--sub), 0.9);
-}
-
-.nav-btn:hover {
-	background: rgba(255, 255, 255, 0.04);
-}
-
-.nav-btn.is-active {
-	border-color: rgba(var(--accent), 0.42);
-	background: rgba(var(--accent), 0.10);
-	color: rgba(var(--title), 0.95);
-}
-
-.nav-dot {
-	width: 8px;
-	height: 8px;
-	border-radius: 999px;
-	background: rgba(231, 238, 252, 0.28);
-}
-
-.nav-btn.is-active .nav-dot {
-	background: rgba(var(--accent), 0.95);
-	box-shadow: 0 0 18px rgba(var(--accent), 0.25);
-}
-
-.nav-label {
-	font-weight: 700;
-}
-
-.nav-hint {
-	margin-top: 10px;
-	color: rgba(var(--sub), 0.72);
-	font-size: 0.86rem;
-	line-height: 1.4;
-}
-
-.content-main {
-	display: flex;
-	flex-direction: column;
-	gap: 14px;
-	min-width: 0;
-	max-width: 920px;
-	width: 100%;
-	margin: 0 auto;
-	align-self: start;
-}
-
-.content-grid {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-	gap: 12px;
-	margin-top: 12px;
-	min-width: 0;
-}
-
-.mini-title {
-	color: rgba(var(--title), 0.92);
-	font-weight: 900;
-	margin-bottom: 8px;
-}
-
-.content-intro {
-	margin-bottom: 14px;
-}
-
-.intro-desc {
 	margin: 0;
+	padding-left: 18px;
 	color: rgba(var(--sub), 0.88);
 	line-height: 1.65;
 }
 
-.media-row {
-	margin-top: 14px;
+.prose li {
+	margin: 0 0 8px;
 }
 
-.media-figure {
+.prose .subhead {
 	margin: 0;
+	font-size: 0.95rem;
+	font-weight: 800;
+	letter-spacing: 0.01em;
+	color: rgba(var(--title), 0.95);
 }
 
-.media-figure img {
+.notebook-cell {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	padding: clamp(22px, 3vw, 34px);
+	border-radius: 20px;
+	background:
+		linear-gradient(180deg, rgba(14, 18, 28, 0.92), rgba(9, 12, 20, 0.94)),
+		radial-gradient(circle at top right, rgba(var(--accent), 0.12), rgba(0, 0, 0, 0) 42%);
+	border: 1px solid rgba(222, 228, 243, 0.14);
+	box-shadow:
+		0 24px 70px rgba(0, 0, 0, 0.34),
+		inset 0 1px 0 rgba(255, 255, 255, 0.04);
+	backdrop-filter: blur(12px);
+	overflow: hidden;
+}
+
+.notebook-cell::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background:
+		linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+		linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+	background-size: 48px 48px;
+	opacity: 0.22;
+	pointer-events: none;
+	mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.75), transparent 96%);
+}
+
+.notebook-cell > * {
+	position: relative;
+	z-index: 1;
+}
+
+.notebook-hero {
+	gap: 22px;
+	padding-top: clamp(28px, 4vw, 40px);
+}
+
+.notebook-cell-end {
+	margin-bottom: min(18vh, 180px);
+}
+
+.cell-meta,
+.section-badge {
+	font-size: 0.78rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: rgba(var(--sub), 0.66);
+}
+
+.section-title {
+	margin: 0;
+	font-size: clamp(1.35rem, 2vw, 2rem);
+	line-height: 1.12;
+	color: rgba(var(--title), 0.96);
+}
+
+.hero-dek {
+	max-width: 64ch;
+	font-size: clamp(1rem, 1.8vw, 1.16rem);
+	color: rgba(var(--sub), 0.9);
+}
+
+.hero-chip-row,
+.jump-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.hero-chip,
+.jump-link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 36px;
+	padding: 0 14px;
+	border-radius: 999px;
+	border: 1px solid rgba(221, 227, 242, 0.16);
+	background: rgba(255, 255, 255, 0.03);
+	color: rgba(var(--title), 0.9);
+	text-decoration: none;
+	font-size: 0.82rem;
+	letter-spacing: 0.06em;
+}
+
+.jump-link {
+	cursor: pointer;
+	font: inherit;
+	appearance: none;
+}
+
+.jump-link:hover,
+.hero-chip:hover {
+	border-color: rgba(var(--accent), 0.4);
+	background: rgba(var(--accent), 0.1);
+}
+
+.metrics-grid,
+.results-grid,
+.two-col-grid,
+.image-grid {
+	display: grid;
+	gap: 14px;
+}
+
+.metrics-grid {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.results-grid {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.two-col-grid,
+.image-grid-dual {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.image-grid-triple {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.metric-card,
+.result-tile,
+.annotation-panel,
+.notebook-subcell {
+	padding: 16px;
+	border-radius: 16px;
+	background: rgba(255, 255, 255, 0.028);
+	border: 1px solid rgba(221, 227, 242, 0.1);
+}
+
+.metric-label {
+	font-size: 0.72rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: rgba(var(--sub), 0.62);
+	margin-bottom: 10px;
+}
+
+.metric-value {
+	font-size: clamp(1.2rem, 2vw, 1.8rem);
+	font-weight: 800;
+	color: rgba(var(--title), 0.96);
+	margin-bottom: 8px;
+}
+
+.feature-frame {
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.feature-frame img,
+.media-img {
 	width: 100%;
 	height: auto;
 	display: block;
-	border-radius: 12px;
+	border-radius: 16px;
 }
 
 .media-img {
 	margin: 0 auto;
-	max-width: 760px;
+	max-width: 100%;
 }
 
-.media-img-board {
-	max-width: 820px;
+.media-img-wide {
+	max-width: 100%;
 }
 
 .media-img-log {
-	max-width: 680px;
-}
-
-.media-img-perft {
 	max-width: 720px;
 }
 
+.media-img-perft {
+	max-width: 760px;
+}
+
 .media-cap {
-	margin-top: 8px;
-	color: rgba(var(--sub), 0.82);
+	margin: 0;
+	color: rgba(var(--sub), 0.76);
 	font-size: 0.92rem;
-	line-height: 1.5;
+	line-height: 1.55;
 }
 
 .pipeline-line {
-	margin: 10px 0 0;
-	color: rgba(var(--sub), 0.85);
+	padding: 12px 14px;
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.03);
+	border: 1px solid rgba(221, 227, 242, 0.12);
+	color: rgba(var(--title), 0.9);
+	font-size: 0.86rem;
+	letter-spacing: 0.06em;
 }
 
-.content-footer-spacer {
-	height: 6px;
+.note-list,
+.prompt-list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
 }
 
-.content-shell.is-guided .content-footer-spacer {
-	height: clamp(24px, 22vh, 240px);
+.prompt-list {
+	color: rgba(var(--sub), 0.78);
 }
 
-.content-shell.is-guided .content-main::after {
-	content: "";
-	display: block;
-	height: min(80vh, 720px);
-	flex: 0 0 auto;
+.callout-note {
+	padding: 15px 16px;
+	border-left: 3px solid rgba(var(--accent), 0.65);
+	border-radius: 14px;
+	background: rgba(var(--accent), 0.08);
+	color: rgba(var(--sub), 0.9);
 }
 
 @media (max-width: 980px) {
-	.content-shell {
+	.content {
+		padding: 14px;
+		width: min(100vw, calc(100vw - 16px));
+	}
+
+	.metrics-grid,
+	.results-grid,
+	.two-col-grid,
+	.image-grid-dual,
+	.image-grid-triple {
 		grid-template-columns: 1fr;
 	}
-	.content-nav {
-		position: relative;
-		top: 0;
-		margin-left: 0;
+}
+
+@media (max-width: 640px) {
+	.notebook-cell {
+		padding: 20px 16px;
+		border-radius: 18px;
+		gap: 16px;
 	}
-	.content-grid {
-		grid-template-columns: 1fr;
+
+	.content-title {
+		font-size: clamp(2rem, 11vw, 2.8rem);
 	}
-	.media-grid {
-		grid-template-columns: 1fr;
+
+	.hero-chip,
+	.jump-link {
+		font-size: 0.76rem;
+		padding: 0 12px;
 	}
 }
 

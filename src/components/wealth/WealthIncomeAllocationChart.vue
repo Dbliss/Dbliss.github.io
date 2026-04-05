@@ -797,6 +797,8 @@ function setCurrentStrategyKey(value) {
   background: linear-gradient(180deg, rgba(248, 251, 255, 0.96), rgba(241, 247, 255, 0.94));
   border-color: rgba(154, 174, 204, 0.22);
   color: #11233e;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .wealth-flow--embedded + .wealth-flow--embedded {
@@ -886,12 +888,15 @@ function setCurrentStrategyKey(value) {
   grid-template-columns: minmax(0, 1fr) 360px;
   gap: 1rem;
   align-items: start;
+  min-width: 0;
 }
 
 .wealth-flow__body {
   position: relative;
   height: 520px;
   min-height: 520px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .wealth-flow__svg {
@@ -900,6 +905,7 @@ function setCurrentStrategyKey(value) {
   display: block;
   overflow: visible;
   cursor: pointer;
+  touch-action: pan-y;
 }
 
 .wealth-flow__plot-bg {
@@ -996,6 +1002,7 @@ function setCurrentStrategyKey(value) {
   padding: 1rem;
   border: 1px solid rgba(154, 174, 204, 0.28);
   background: rgba(247, 250, 255, 0.94);
+  min-width: 0;
 }
 
 .wealth-flow__side-topline {
@@ -1015,6 +1022,7 @@ function setCurrentStrategyKey(value) {
 .wealth-flow__detail-column {
   display: grid;
   gap: 0.3rem;
+  min-width: 0;
 }
 
 .wealth-flow__detail-list {
@@ -1066,6 +1074,10 @@ function setCurrentStrategyKey(value) {
   gap: 0;
   font-size: 0.84rem;
   line-height: 1.2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .wealth-flow__side-meta {
@@ -1119,16 +1131,15 @@ function setCurrentStrategyKey(value) {
 
 @media (max-width: 720px) {
   .wealth-flow__body {
-    height: 400px;
-    min-height: 400px;
+    height: 320px;
+    min-height: 320px;
   }
 
   .wealth-flow__svg {
     overflow: hidden;
   }
 
-  .wealth-flow__side-topline,
-  .wealth-flow__detail-layout {
+  .wealth-flow__side-topline {
     display: grid;
     grid-template-columns: 1fr;
   }
@@ -1138,9 +1149,58 @@ function setCurrentStrategyKey(value) {
   }
 
   .wealth-flow__detail-bar {
-    min-height: 220px;
-    height: 220px;
-    width: 78px;
+    min-height: 182px;
+    height: 182px;
+    width: 58px;
+  }
+
+  .wealth-flow__side {
+    padding: 0.8rem;
+  }
+
+  .wealth-flow__detail-layout {
+    grid-template-columns: minmax(0, 1fr) 58px minmax(0, 1fr);
+    gap: 0.45rem;
+    align-items: start;
+  }
+
+  .wealth-flow__side-row {
+    padding: 0.3rem 0;
+  }
+
+  .wealth-flow__tooltip-label {
+    font-size: 0.68rem;
+  }
+
+  .wealth-flow__side-meta {
+    gap: 0.22rem;
+    font-size: 0.62rem;
+  }
+
+  .wealth-flow__side-meta--table strong {
+    font-size: 0.66rem;
+  }
+
+  .wealth-flow__chip {
+    padding: 0.46rem 0.65rem;
+    font-size: 0.74rem;
+  }
+
+  .wealth-flow__chip--small {
+    padding: 0.4rem 0.58rem;
+    font-size: 0.68rem;
+  }
+
+  .wealth-flow__side-summary {
+    gap: 0.5rem;
+  }
+
+  .wealth-flow__side-copy {
+    font-size: 0.74rem;
+  }
+
+  .wealth-flow__axis {
+    font-size: 10px;
   }
 }
 </style>

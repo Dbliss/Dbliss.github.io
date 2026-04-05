@@ -1628,5 +1628,24 @@ function estimatePurchasingPower(propertyKey, occupancyMode) {
   .wealth-workbook__allocation-controls {
     grid-template-columns: 1fr;
   }
+
+  .wealth-workbook__allocation-head,
+  .wealth-workbook__bootstrap-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .wealth-workbook__panel {
+    padding: 1rem;
+  }
+
+  .wealth-market__controls,
+  .wealth-market__power,
+  .wealth-property-section,
+  .wealth-property-path-card {
+    padding: 0.9rem;
+  }
 }
 </style>

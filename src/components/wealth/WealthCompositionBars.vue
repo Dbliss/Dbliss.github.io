@@ -189,4 +189,12 @@ const scaledRows = computed(() =>
     rgba(244, 63, 94, 0.88) 16px
   );
 }
+
+@media (max-width: 720px) {
+  .wealth-bars__row-head,
+  .wealth-bars__row-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
 </style>

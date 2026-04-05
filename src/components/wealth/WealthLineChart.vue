@@ -350,6 +350,8 @@ function onPointerMove(event) {
   background: linear-gradient(180deg, rgba(248, 251, 255, 0.96), rgba(241, 247, 255, 0.94));
   border-color: rgba(154, 174, 204, 0.22);
   color: #11233e;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .wealth-chart__header {
@@ -390,6 +392,7 @@ function onPointerMove(event) {
 
 .wealth-chart__layout {
   display: block;
+  min-width: 0;
 }
 
 .wealth-chart__body {
@@ -397,6 +400,8 @@ function onPointerMove(event) {
   aspect-ratio: 16 / 7.4;
   min-height: 390px;
   padding: 0.2rem 0 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .wealth-chart__svg {
@@ -404,6 +409,7 @@ function onPointerMove(event) {
   height: 100%;
   display: block;
   overflow: visible;
+  touch-action: pan-y;
 }
 
 .wealth-chart__plot-bg {
@@ -555,7 +561,7 @@ function onPointerMove(event) {
 @media (max-width: 720px) {
   .wealth-chart__body {
     aspect-ratio: 4 / 2.95;
-    min-height: 320px;
+    min-height: 248px;
   }
 
   .wealth-chart__svg {
@@ -563,9 +569,34 @@ function onPointerMove(event) {
   }
 
   .wealth-chart__hover-summary {
-    width: min(15rem, calc(100% - 1.3rem));
-    padding: 0.6rem 0.65rem;
-    font-size: 0.75rem;
+    top: 0.55rem;
+    width: min(10.75rem, calc(100% - 0.9rem));
+    padding: 0.45rem 0.5rem;
+    font-size: 0.66rem;
+    gap: 0.28rem;
+  }
+
+  .wealth-chart__hover-values {
+    padding-left: 0;
+    gap: 0.2rem 0.45rem;
+    font-size: 0.66rem;
+  }
+
+  .wealth-chart__hover-head {
+    gap: 0.4rem;
+  }
+
+  .wealth-chart__hover-head span {
+    font-size: 0.6rem;
+  }
+
+  .wealth-chart__hover-series-label {
+    gap: 0.3rem;
+  }
+
+  .wealth-chart__axis,
+  .wealth-chart__marker-label {
+    font-size: 10px;
   }
 }
 </style>

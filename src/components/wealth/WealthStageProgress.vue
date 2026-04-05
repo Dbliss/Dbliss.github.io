@@ -204,7 +204,7 @@ const substepHostIndex = computed(() =>
   }
 
   .wealth-progress__substeps-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: none;
   }
 
   .wealth-progress__step {
@@ -217,6 +217,11 @@ const substepHostIndex = computed(() =>
     flex-wrap: nowrap;
     width: 100%;
     min-width: 0;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
   }
 }
 </style>

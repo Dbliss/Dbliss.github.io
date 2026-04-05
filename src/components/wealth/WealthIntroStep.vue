@@ -1158,5 +1158,22 @@ watch(
   .wealth-break-plan__row {
     flex-wrap: wrap;
   }
+
+  .wealth-family-plan__row {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .wealth-family-plan__remove,
+  .wealth-break-plan__inline-toggle,
+  .wealth-family-plan__field {
+    width: 100%;
+  }
+
+  .wealth-break-plan__add {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
 }
 </style>

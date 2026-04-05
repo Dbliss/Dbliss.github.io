@@ -432,6 +432,7 @@ function formatPercentile(percentile) {
   display: block;
   overflow: visible;
   cursor: crosshair;
+  touch-action: pan-y;
 }
 
 .wealth-dist__plot-bg {
@@ -586,6 +587,12 @@ function formatPercentile(percentile) {
 
   .wealth-dist__svg {
     overflow: hidden;
+  }
+
+  .wealth-dist__side {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
   }
 }
 </style>

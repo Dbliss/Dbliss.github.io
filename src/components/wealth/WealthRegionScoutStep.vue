@@ -1502,6 +1502,7 @@ function yearLabel(year) {
 .wealth-scout__range-grid {
   display: grid;
   gap: 0.85rem;
+  min-width: 0;
 }
 
 .wealth-scout__panel {
@@ -1871,6 +1872,7 @@ function yearLabel(year) {
   border-radius: 22px;
   border: 1px solid rgba(154, 174, 204, 0.16);
   background: rgba(247, 250, 255, 0.88);
+  min-width: 0;
 }
 
 .wealth-scout__loading {
@@ -2169,6 +2171,7 @@ function yearLabel(year) {
 
 .wealth-scout__result-card {
   overflow: hidden;
+  min-width: 0;
 }
 
 .wealth-scout__result-main {
@@ -2176,6 +2179,7 @@ function yearLabel(year) {
   padding: 1rem;
   border: 0;
   background: transparent;
+  min-width: 0;
 }
 
 .wealth-scout__result-toggle {
@@ -2211,6 +2215,7 @@ function yearLabel(year) {
   display: grid;
   gap: 0.9rem;
   flex: 1 1 auto;
+  min-width: 0;
 }
 
 .wealth-scout__result-head strong {
@@ -2220,6 +2225,7 @@ function yearLabel(year) {
 
 .wealth-scout__result-metrics {
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .wealth-scout__result-metrics div {
@@ -2229,6 +2235,7 @@ function yearLabel(year) {
   padding: 0.85rem;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.9);
+  min-width: 0;
 }
 
 .wealth-scout__detail {
@@ -2362,6 +2369,65 @@ function yearLabel(year) {
 
   .wealth-scout__question-index {
     right: 1rem;
+  }
+
+  .wealth-scout__hero h2,
+  .wealth-scout__result-head strong {
+    white-space: normal;
+  }
+
+  .wealth-scout__result-card,
+  .wealth-scout__detail,
+  .wealth-scout__charts {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .wealth-scout__selection-detail,
+  .wealth-scout__results-filters,
+  .wealth-scout__results-search,
+  .wealth-scout__results-more {
+    width: 100%;
+  }
+
+  .wealth-scout__results-filters-head,
+  .wealth-scout__ranking-head,
+  .wealth-scout__result-main,
+  .wealth-scout__result-head,
+  .wealth-scout__footer {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .wealth-scout__result-toggle {
+    margin-left: 0;
+    justify-self: end;
+  }
+
+  .wealth-scout__result-copy,
+  .wealth-scout__result-head > div,
+  .wealth-scout__result-metrics div {
+    min-width: 0;
+  }
+
+  .wealth-scout__result-head h4,
+  .wealth-scout__result-head p {
+    overflow-wrap: anywhere;
+  }
+
+  .wealth-scout__price-field-box input,
+  .wealth-scout__price-field-value input,
+  .wealth-scout__price-field-value::before {
+    font-size: 1.05rem !important;
+  }
+
+  .wealth-scout :deep(.wealth-chart) {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .wealth-scout :deep(.wealth-chart__body) {
+    min-height: 220px;
   }
 }
 </style>

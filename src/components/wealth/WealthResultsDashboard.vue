@@ -284,6 +284,7 @@ function formatSignedCurrency(value) {
 .wealth-results {
   display: grid;
   gap: 1rem;
+  min-width: 0;
 }
 
 .wealth-results__toolbar,
@@ -407,17 +408,20 @@ function formatSignedCurrency(value) {
 .wealth-results__chart-block {
   display: grid;
   gap: 1.2rem;
+  min-width: 0;
 }
 
 .wealth-results__chart {
   width: 90%;
   margin: 0 auto;
+  min-width: 0;
 }
 
 .wealth-results__flow-stack {
   display: grid;
   gap: 1.2rem;
   padding: 1rem;
+  min-width: 0;
 }
 
 .wealth-results__flow-controls {
@@ -435,6 +439,7 @@ function formatSignedCurrency(value) {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
   align-items: start;
+  min-width: 0;
 }
 
 .wealth-results__hurdles {
@@ -497,6 +502,58 @@ function formatSignedCurrency(value) {
 
   .wealth-results__chart {
     width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .wealth-results {
+    gap: 0.85rem;
+  }
+
+  .wealth-results__toolbar {
+    align-items: stretch;
+  }
+
+  .wealth-results__select,
+  .wealth-results__select select {
+    width: 100%;
+  }
+
+  .wealth-results__flow-stack,
+  .wealth-results__readout,
+  .wealth-results__hurdles {
+    padding: 0.9rem;
+  }
+
+  .wealth-results__visibility {
+    gap: 0.5rem;
+    padding: 0.85rem;
+  }
+
+  .wealth-results__chip {
+    gap: 0.35rem;
+    padding: 0.48rem 0.68rem;
+    font-size: 0.74rem;
+    line-height: 1.15;
+  }
+
+  .wealth-results__chip-dot {
+    width: 0.58rem;
+    height: 0.58rem;
+  }
+
+  .wealth-results__kpi,
+  .wealth-results__item {
+    padding: 0.85rem;
+  }
+
+  .wealth-results__item-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .wealth-results__item-title {
+    min-width: 0;
   }
 }
 </style>

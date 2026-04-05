@@ -1165,5 +1165,16 @@ onBeforeUnmount(() => {
   .wealth-stage-footer {
     align-items: stretch;
   }
+
+  .wealth-stage-footer {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .wealth-primary-btn,
+  .wealth-secondary-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 </style>

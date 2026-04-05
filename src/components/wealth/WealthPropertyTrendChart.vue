@@ -302,6 +302,7 @@ function clearHoverYear() {
   width: 100%;
   height: auto;
   display: block;
+  touch-action: pan-y;
 }
 
 .wealth-trend__plot {
@@ -429,5 +430,8 @@ function clearHoverYear() {
     flex-direction: column;
   }
 
+  .wealth-trend {
+    padding: 0.9rem;
+  }
 }
 </style>

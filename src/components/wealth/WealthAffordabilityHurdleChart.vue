@@ -277,6 +277,8 @@ function formatPercent(value) {
   display: grid;
   gap: 1rem;
   padding: 1rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .wealth-hurdle__header,
@@ -343,6 +345,8 @@ function formatPercent(value) {
   border-radius: 22px;
   background: rgba(247, 250, 255, 0.9);
   border: 1px solid rgba(154, 174, 204, 0.16);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .wealth-hurdle__legend {
@@ -388,6 +392,7 @@ function formatPercent(value) {
   display: block;
   overflow: visible;
   cursor: crosshair;
+  touch-action: pan-y;
 }
 
 .wealth-hurdle__plot-bg {
@@ -507,6 +512,16 @@ function formatPercent(value) {
 
   .wealth-hurdle__status {
     white-space: normal;
+  }
+
+  .wealth-hurdle__panel,
+  .wealth-hurdle__readout {
+    padding: 0.9rem;
+  }
+
+  .wealth-hurdle__axis,
+  .wealth-hurdle__purchase-label {
+    font-size: 10px;
   }
 }
 </style>

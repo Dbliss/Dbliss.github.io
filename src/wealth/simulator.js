@@ -59,6 +59,7 @@ function createStrategyBuckets(horizonYears) {
     liquidAssets: [],
     homeEquity: [],
     debtRemaining: [],
+    helpDebtRemaining: [],
     annualSurplus: [],
     totalTax: [],
     taxDelta: [],
@@ -228,6 +229,7 @@ function yearPoint(year, metrics) {
   const liquidAssets = percentileSummary(metrics.liquidAssets)
   const homeEquity = percentileSummary(metrics.homeEquity)
   const debtRemaining = percentileSummary(metrics.debtRemaining)
+  const helpDebtRemaining = percentileSummary(metrics.helpDebtRemaining)
   const annualSurplus = percentileSummary(metrics.annualSurplus)
   const totalTax = percentileSummary(metrics.totalTax)
   const taxDelta = percentileSummary(metrics.taxDelta)
@@ -291,6 +293,9 @@ function yearPoint(year, metrics) {
     debtRemainingP10: roundCurrency(debtRemaining.p10),
     debtRemainingP50: roundCurrency(debtRemaining.p50),
     debtRemainingP90: roundCurrency(debtRemaining.p90),
+    helpDebtRemainingP10: roundCurrency(helpDebtRemaining.p10),
+    helpDebtRemainingP50: roundCurrency(helpDebtRemaining.p50),
+    helpDebtRemainingP90: roundCurrency(helpDebtRemaining.p90),
     annualSurplusP10: roundCurrency(annualSurplus.p10),
     annualSurplusP50: roundCurrency(annualSurplus.p50),
     annualSurplusP90: roundCurrency(annualSurplus.p90),
@@ -394,6 +399,7 @@ function addMetrics(bucket, snapshot) {
   bucket.liquidAssets.push(snapshot.liquidAssets)
   bucket.homeEquity.push(snapshot.homeEquity)
   bucket.debtRemaining.push(snapshot.debtRemaining)
+  bucket.helpDebtRemaining.push(snapshot.helpDebtRemaining)
   bucket.annualSurplus.push(snapshot.annualSurplus)
   bucket.totalTax.push(snapshot.totalTax)
   bucket.taxDelta.push(snapshot.taxDelta)
@@ -498,6 +504,41 @@ function getParentalLeavePaymentForYear(profile, yearIndex, paymentAmount = PARE
     total,
     allocations: earners.map((_, index) => (index === recipientIndex ? total : 0))
   }
+}
+
+function getRepresentativeWealthValue(snapshot) {
+  return (Number(snapshot?.netWorth) || 0) - (Number(snapshot?.helpDebtRemaining) || 0)
+}
+
+function attachRepresentativeWealthPaths(strategies, snapshotPathsByStrategy) {
+  Object.entries(strategies).forEach(([strategyKey, strategy]) => {
+    const paths = snapshotPathsByStrategy[strategyKey] || []
+    if (!paths.length) return
+
+    const finalValues = paths.map((path) => getRepresentativeWealthValue(path[path.length - 1]))
+    const targetFinalValue = percentileSummary(finalValues).p50
+    const representativePath = paths.reduce((bestPath, path) => {
+      if (!bestPath) return path
+      const candidateDistance = Math.abs(getRepresentativeWealthValue(path[path.length - 1]) - targetFinalValue)
+      const bestDistance = Math.abs(getRepresentativeWealthValue(bestPath[bestPath.length - 1]) - targetFinalValue)
+      return candidateDistance < bestDistance ? path : bestPath
+    }, null)
+
+    if (!representativePath) return
+
+    strategy.points = strategy.points.map((point, index) => {
+      const snapshot = representativePath[index]
+      if (!snapshot) return point
+
+      return {
+        ...point,
+        wealthLiquidAssetsRepresentative: roundCurrency(snapshot.liquidAssets),
+        wealthPropertyValueRepresentative: roundCurrency(Math.max(0, (Number(snapshot.homeEquity) || 0) + (Number(snapshot.debtRemaining) || 0))),
+        wealthMortgageDebtRepresentative: roundCurrency(snapshot.debtRemaining),
+        wealthHelpDebtRepresentative: roundCurrency(snapshot.helpDebtRemaining)
+      }
+    })
+  })
 }
 
 function allocateSupplementaryIncome(earners, amount) {
@@ -664,6 +705,7 @@ function createSnapshot({
   liquidAssets,
   propertyValue = 0,
   mortgageBalance = 0,
+  helpDebtRemaining = 0,
   annualSurplus = 0,
   totalTax = 0,
   taxDelta = 0,
@@ -679,6 +721,7 @@ function createSnapshot({
     liquidAssets,
     homeEquity,
     debtRemaining: mortgageBalance,
+    helpDebtRemaining: Math.max(0, Number(helpDebtRemaining) || 0),
     annualSurplus,
     totalTax,
     taxDelta,
@@ -1316,6 +1359,7 @@ function simulateRentInvestPath(request, marketPath) {
     liquidAssets: profile.startingSavings,
     propertyValue: existingPropertyValue,
     mortgageBalance: existingMortgageBalance,
+    helpDebtRemaining: helpDebtBalances.reduce((sum, balance) => sum + (Number(balance) || 0), 0),
     ...openingLiquidation
   })]
 
@@ -1385,6 +1429,7 @@ function simulateRentInvestPath(request, marketPath) {
       liquidAssets,
       propertyValue: existingPropertyValue,
       mortgageBalance: existingMortgageBalance,
+      helpDebtRemaining: helpDebtBalances.reduce((sum, balance) => sum + (Number(balance) || 0), 0),
       annualSurplus: helpCashflow.annualSurplusAfterHelp,
       totalTax: taxPosition.totalTax,
       taxDelta: taxPosition.deltaVsSalaryOnly,
@@ -1564,6 +1609,7 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
     liquidAssets,
     propertyValue: propertyValue + existingPropertyValue,
     mortgageBalance: mortgageBalance + existingMortgageBalance,
+    helpDebtRemaining: helpDebtBalances.reduce((sum, balance) => sum + (Number(balance) || 0), 0),
     ...openingLiquidation
   })]
 
@@ -1879,6 +1925,7 @@ function simulatePropertyPath(request, marketPath, occupancyMode, propertyKey) {
       liquidAssets,
       propertyValue: propertyValue + existingPropertyValue,
       mortgageBalance: mortgageBalance + existingMortgageBalance,
+      helpDebtRemaining: helpDebtBalances.reduce((sum, balance) => sum + (Number(balance) || 0), 0),
       annualSurplus: annualCashflow.annualSurplusAfterHelp,
       totalTax,
       taxDelta,
@@ -2143,6 +2190,9 @@ export function simulateWealthPathways(rawRequest) {
   const bucketsByStrategy = Object.fromEntries(
     selectedScenarioKeys.map(strategyKey => [strategyKey, createStrategyBuckets(horizonYears)])
   )
+  const snapshotPathsByStrategy = Object.fromEntries(
+    selectedScenarioKeys.map(strategyKey => [strategyKey, []])
+  )
 
   for (let iteration = 0; iteration < request.simulationSettings.iterations; iteration += 1) {
     const random = createMulberry32(request.simulationSettings.seed + iteration * 7919)
@@ -2176,6 +2226,7 @@ export function simulateWealthPathways(rawRequest) {
     }
 
     selectedScenarioKeys.forEach((strategyKey) => {
+      snapshotPathsByStrategy[strategyKey].push(strategySnapshots[strategyKey])
       strategySnapshots[strategyKey].forEach((snapshot, yearIndex) => {
         addMetrics(bucketsByStrategy[strategyKey][yearIndex], snapshot)
       })
@@ -2185,6 +2236,7 @@ export function simulateWealthPathways(rawRequest) {
   const strategies = Object.fromEntries(
     selectedScenarioKeys.map(strategyKey => [strategyKey, aggregateStrategy(strategyKey, bucketsByStrategy[strategyKey], strategyMeta)])
   )
+  attachRepresentativeWealthPaths(strategies, snapshotPathsByStrategy)
   const finalMetricSamplesByStrategy = Object.fromEntries(
     selectedScenarioKeys.map((strategyKey) => {
       const finalBucket = bucketsByStrategy[strategyKey]?.[horizonYears]

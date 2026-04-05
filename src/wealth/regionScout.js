@@ -581,9 +581,9 @@ function getFallbackRentYield(property) {
 }
 
 function getRiskPenaltyMultiplier(riskAppetite = 'medium') {
-  if (riskAppetite === 'small') return 0.75
-  if (riskAppetite === 'large') return 0.2
-  return 0.45
+  if (riskAppetite === 'small') return 0.5
+  if (riskAppetite === 'large') return 0.1
+  return 0.3
 }
 
 function calculateStandardDeviation(values = []) {

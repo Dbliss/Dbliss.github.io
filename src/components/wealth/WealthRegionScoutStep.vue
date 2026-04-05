@@ -507,26 +507,44 @@
                 <div class="wealth-scout__price-input-grid">
                   <label class="wealth-scout__price-field-box">
                     <span>Min price</span>
-                    <div class="wealth-scout__price-field-value">
-                      <strong>$</strong>
-                      <input v-model.number="draftMinPrice" type="number" :min="resultPriceBounds.min" :max="draftMaxPrice" :step="resultPriceBounds.step" />
+                    <div class="wealth-scout__price-field-value" data-prefix="$">
+                      <input
+                        :value="formattedDraftMinPrice"
+                        type="text"
+                        inputmode="numeric"
+                        autocomplete="off"
+                        @input="handlePriceTextInput('min', $event)"
+                      />
                     </div>
                   </label>
                   <label class="wealth-scout__price-field-box">
                     <span>Max price</span>
-                    <div class="wealth-scout__price-field-value">
-                      <strong>$</strong>
-                      <input v-model.number="draftMaxPrice" type="number" :min="draftMinPrice" :max="resultPriceBounds.max" :step="resultPriceBounds.step" />
+                    <div class="wealth-scout__price-field-value" data-prefix="$">
+                      <input
+                        :value="formattedDraftMaxPrice"
+                        type="text"
+                        inputmode="numeric"
+                        autocomplete="off"
+                        @input="handlePriceTextInput('max', $event)"
+                      />
                     </div>
                   </label>
                 </div>
               </div>
             </div>
 
+            <label class="wealth-scout__results-search">
+              <input
+                v-model.trim="resultFilters.searchQuery"
+                type="search"
+                placeholder="Search a suburb or region name"
+              />
+            </label>
+
             <div v-if="filteredResultsModel.hasRecommendations" class="wealth-scout__results">
-              <article v-for="(recommendation, index) in filteredResultsModel.recommendations" :key="recommendation.key" class="wealth-scout__result-card" :class="{ 'is-expanded': activeResultKey === recommendation.key }">
+              <article v-for="recommendation in visibleRecommendations" :key="recommendation.key" class="wealth-scout__result-card" :class="{ 'is-expanded': activeResultKey === recommendation.key }">
               <button type="button" class="wealth-scout__result-main" @click="toggleResult(recommendation.key)">
-                <div class="wealth-scout__result-rank">#{{ index + 1 }}</div>
+                <div class="wealth-scout__result-rank">#{{ recommendation.rank }}</div>
                 <div class="wealth-scout__result-copy">
                   <div class="wealth-scout__result-head">
                     <div>
@@ -559,6 +577,7 @@
                     </div>
                   </div>
                 </div>
+                <span class="wealth-scout__result-toggle" :class="{ 'is-open': activeResultKey === recommendation.key }" aria-hidden="true"></span>
               </button>
 
               <Transition name="wealth-scout-reveal">
@@ -586,7 +605,13 @@
               </article>
             </div>
 
-            <div v-else class="wealth-scout__empty">
+            <div v-if="filteredResultsModel.hasRecommendations && canLoadMoreResults" class="wealth-scout__results-more">
+              <button type="button" class="wealth-scout__load-more-btn" @click="loadMoreResults">
+                Show 10 more
+              </button>
+            </div>
+
+            <div v-if="!filteredResultsModel.hasRecommendations" class="wealth-scout__empty">
               <h4>No results match those settings</h4>
               <p>Widen the price range, switch between regions and suburbs, or change the buy timing.</p>
             </div>
@@ -653,12 +678,14 @@ const resultsModel = ref(createEmptyResultsModel(appliedConfig.value))
 const resultFilters = reactive({
   mode: 'affordable',
   minPrice: 0,
-  maxPrice: 0
+  maxPrice: 0,
+  searchQuery: ''
 })
 const scoutPortfolioDraft = reactive(createPortfolioConfigDraft(props.form.portfolioConfig))
 const committedScoutPortfolio = reactive(createPortfolioConfigDraft(props.form.portfolioConfig))
 const draftMinPrice = ref(0)
 const draftMaxPrice = ref(0)
+const resultsVisibleCount = ref(10)
 let priceCommitTimer = null
 let targetYearsCommitTimer = null
 let portfolioCommitTimer = null
@@ -728,6 +755,10 @@ const filteredPriceRangeLabel = computed(() => formatPriceRange({
   maxPrice: resultFilters.mode === 'all' ? resultFilters.maxPrice : resultPriceBounds.value.max
 }))
 const filteredResultsModel = computed(() => buildFilteredResultsModel(resultsModel.value, resultFilters))
+const formattedDraftMinPrice = computed(() => formatGroupedNumber(draftMinPrice.value))
+const formattedDraftMaxPrice = computed(() => formatGroupedNumber(draftMaxPrice.value))
+const visibleRecommendations = computed(() => filteredResultsModel.value.recommendations.slice(0, resultsVisibleCount.value))
+const canLoadMoreResults = computed(() => visibleRecommendations.value.length < filteredResultsModel.value.totalMatches)
 const priceHistogramBins = computed(() => buildPriceHistogramBins(resultsModel.value.allRecommendations, resultPriceBounds.value))
 const priceSelectionStyle = computed(() => buildPriceSelectionStyle({
   minPrice: draftMinPrice.value,
@@ -817,12 +848,21 @@ watch(isCalculating, (value) => {
   emit('loading-change', value)
 }, { immediate: true })
 
-watch(filteredResultsModel, (nextModel) => {
-  const firstKey = nextModel.recommendations[0]?.key || null
-  if (!nextModel.recommendations.some((item) => item.key === activeResultKey.value)) {
-    activeResultKey.value = firstKey
+watch(visibleRecommendations, (nextRecommendations) => {
+  if (!nextRecommendations.some((item) => item.key === activeResultKey.value)) {
+    activeResultKey.value = null
   }
 }, { immediate: true, deep: true })
+
+watch(() => [
+  resultFilters.mode,
+  resultFilters.minPrice,
+  resultFilters.maxPrice,
+  resultFilters.searchQuery,
+  resultsModel.value.allRecommendations.length
+], () => {
+  resultsVisibleCount.value = 10
+}, { immediate: true })
 
 watch(() => draftConfig.savingsMode, (mode) => {
   props.form.propertyConfig.investWhileSavingForDeposit = mode === 'defaultPortfolio'
@@ -958,6 +998,23 @@ function handleTargetYearsInput() {
 
 function toggleResult(resultKey) {
   activeResultKey.value = activeResultKey.value === resultKey ? null : resultKey
+}
+
+function loadMoreResults() {
+  resultsVisibleCount.value += 10
+}
+
+function handlePriceTextInput(boundary, event) {
+  const rawValue = String(event?.target?.value || '')
+  const digitsOnly = rawValue.replace(/[^\d]/g, '')
+  const parsedValue = digitsOnly ? Number(digitsOnly) : 0
+
+  if (boundary === 'min') {
+    draftMinPrice.value = clampToRange(parsedValue, resultPriceBounds.value.min, draftMaxPrice.value)
+    return
+  }
+
+  draftMaxPrice.value = clampToRange(parsedValue, draftMinPrice.value, resultPriceBounds.value.max)
 }
 
 function handleAllocationInput(key, event) {
@@ -1172,11 +1229,15 @@ function buildRelativeScoreBounds(recommendations = []) {
 }
 
 function buildFilteredResultsModel(model, filters) {
-  const recommendations = (model?.allRecommendations || []).filter((recommendation) => {
+  const rankedRecommendations = (model?.allRecommendations || []).filter((recommendation) => {
     if (filters.mode === 'all' && !matchesPriceRange(recommendation, filters)) return false
     if (filters.mode === 'affordable' && !matchesAffordableMode(recommendation, appliedConfig.value)) return false
     return true
-  })
+  }).map((recommendation, index) => ({
+    ...recommendation,
+    rank: index + 1
+  }))
+  const recommendations = rankedRecommendations.filter((recommendation) => matchesSearchQuery(recommendation, filters.searchQuery))
 
   const bestTiming = recommendations
     .map((candidate) => candidate.selectedYear)
@@ -1185,7 +1246,7 @@ function buildFilteredResultsModel(model, filters) {
 
   return {
     ...model,
-    recommendations: recommendations.slice(0, 12),
+    recommendations,
     totalMatches: recommendations.length,
     hasRecommendations: recommendations.length > 0,
     bestTiming
@@ -1246,6 +1307,22 @@ function matchesPriceRange(recommendation, filters) {
   return priceToday >= filters.minPrice && priceToday <= filters.maxPrice
 }
 
+function matchesSearchQuery(recommendation, query) {
+  const normalizedQuery = String(query || '').trim().toLowerCase()
+  if (!normalizedQuery) return true
+
+  const haystack = [
+    recommendation?.label,
+    recommendation?.regionLabel,
+    recommendation?.type
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+
+  return haystack.includes(normalizedQuery)
+}
+
 function isAffordableWithinHorizon(recommendation, horizon) {
   if (!recommendation) return false
   const limit = Math.max(0, Math.min(30, Number(horizon) || 0))
@@ -1285,15 +1362,21 @@ function buildPriceSelectionStyle(filters, bounds) {
   const start = (((filters.minPrice || 0) - bounds.min) / span) * 100
   const end = (((filters.maxPrice || 0) - bounds.min) / span) * 100
   const safeStart = Math.max(0, Math.min(100, start))
-  const safeWidth = Math.max(0, Math.min(100, end) - safeStart)
+  const safeEnd = Math.max(0, Math.min(100, end))
+  const safeWidth = Math.max(0, safeEnd - safeStart)
   return {
-    '--range-left': `${safeStart}%`,
-    '--range-width': `${safeWidth}%`
+    '--range-start-ratio': `${safeStart / 100}`,
+    '--range-end-ratio': `${safeEnd / 100}`,
+    '--range-width-ratio': `${safeWidth / 100}`
   }
 }
 
 function clampToRange(value, min, max) {
   return Math.min(max, Math.max(min, Number(value) || 0))
+}
+
+function formatGroupedNumber(value) {
+  return new Intl.NumberFormat('en-AU', { maximumFractionDigits: 0 }).format(Number(value) || 0)
 }
 
 function formatCurrency(value) {
@@ -1554,6 +1637,36 @@ function yearLabel(year) {
   gap: 0.6rem;
 }
 
+.wealth-scout__results-search {
+  display: grid;
+  gap: 0.4rem;
+  width: min(100%, 70rem);
+  margin: 0.35rem auto 0;
+}
+
+.wealth-scout__results-search span {
+  color: #6481a6;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.wealth-scout__results-search input {
+  min-height: 3.5rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(154, 174, 204, 0.22);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  color: #173050;
+  font: inherit;
+  box-shadow: none;
+}
+
+.wealth-scout__results-search input:focus {
+  outline: none;
+  border-color: rgba(23, 48, 80, 0.42);
+}
+
 .wealth-scout__price-slider-shell {
   position: relative;
   display: grid;
@@ -1563,8 +1676,10 @@ function yearLabel(year) {
 
 .wealth-scout__histogram {
   position: relative;
-  height: 4.5rem;
+  z-index: 1;
+  height: 4.08rem;
   padding: 0 0.35rem;
+  overflow: hidden;
 }
 
 .wealth-scout__histogram::before {
@@ -1579,6 +1694,7 @@ function yearLabel(year) {
   align-items: end;
   gap: 2px;
   height: 100%;
+  transform: translateY(0.44rem);
 }
 
 .wealth-scout__histogram-bar {
@@ -1590,10 +1706,14 @@ function yearLabel(year) {
 }
 
 .wealth-scout__range-track {
+  --range-pad: 0.35rem;
+  --range-thumb-size: 1.2rem;
+  --range-usable-width: calc(100% - (var(--range-pad) * 2) - var(--range-thumb-size));
   position: relative;
+  z-index: 2;
   height: 1.6rem;
-  margin-top: -0.45rem;
-  padding: 0 0.35rem;
+  margin-top: -0.58rem;
+  padding: 0 var(--range-pad);
 }
 
 .wealth-scout__range-track-base,
@@ -1606,15 +1726,15 @@ function yearLabel(year) {
 }
 
 .wealth-scout__range-track-base {
-  left: 0.35rem;
-  right: 0.35rem;
-  background: rgba(154, 174, 204, 0.3);
+  left: var(--range-pad);
+  right: var(--range-pad);
+  background: rgba(154, 174, 204, 0.7);
 }
 
 .wealth-scout__range-track-active {
   background: #173050;
-  left: calc(0.35rem + var(--range-left, 0%));
-  width: var(--range-width, 100%);
+  left: calc(var(--range-pad) + (var(--range-thumb-size) / 2) + (var(--range-start-ratio, 0) * var(--range-usable-width)));
+  width: calc(var(--range-width-ratio, 1) * var(--range-usable-width));
 }
 
 .wealth-scout__range-input {
@@ -1641,9 +1761,9 @@ function yearLabel(year) {
 .wealth-scout__range-input::-webkit-slider-thumb {
   pointer-events: auto;
   -webkit-appearance: none;
-  width: 2.3rem;
-  height: 2.3rem;
-  margin-top: -0.95rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-top: -0.4rem;
   border-radius: 999px;
   border: 2px solid #fff;
   background: #173050;
@@ -1652,8 +1772,8 @@ function yearLabel(year) {
 
 .wealth-scout__range-input::-moz-range-thumb {
   pointer-events: auto;
-  width: 2.3rem;
-  height: 2.3rem;
+  width: 1.2rem;
+  height: 1.2rem;
   border-radius: 999px;
   border: 2px solid #fff;
   background: #173050;
@@ -1662,9 +1782,9 @@ function yearLabel(year) {
 
 .wealth-scout__price-field-box {
   display: grid;
-  gap: 0.3rem;
-  min-height: 5.2rem;
-  padding: 0.75rem 0.9rem;
+  gap: 0;
+  min-height: 4.2rem;
+  padding: 0.38rem 0.8rem 0.32rem;
   border-radius: 12px;
   border: 1px solid rgba(154, 174, 204, 0.22);
   background: rgba(255, 255, 255, 0.98);
@@ -1672,18 +1792,25 @@ function yearLabel(year) {
 
 .wealth-scout__price-field-box span {
   color: #6a819f;
-  font-size: 0.82rem;
+  font-size: 0.74rem;
+  line-height: 1;
+  margin: 0 0 -0.34rem;
 }
 
-.wealth-scout__price-field-box input {
+.wealth-scout__price-field-box input,
+.wealth-scout__price-field-value input {
   min-height: 0;
   padding: 0;
-  border: 0;
-  background: transparent;
+  border: 0 !important;
+  border-radius: 0;
+  background: transparent !important;
   color: #173050;
   font: inherit;
-  font-size: 1.15rem;
+  font-size: 1.2rem !important;
+  font-weight: 700;
+  line-height: 1;
   box-shadow: none;
+  appearance: none;
 }
 
 .wealth-scout__price-field-box input:focus {
@@ -1691,14 +1818,36 @@ function yearLabel(year) {
 }
 
 .wealth-scout__price-field-value {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.2rem;
+  margin-top: -0.22rem;
 }
 
-.wealth-scout__price-field-value strong {
+.wealth-scout__price-field-value::before {
+  content: attr(data-prefix);
   color: #173050;
-  font-size: 1.15rem;
+  font-size: 1.3rem;
+  line-height: 1;
+  margin-right: 0.12rem;
+}
+
+.wealth-scout__results-more {
+  display: flex;
+  justify-content: center;
+  width: min(100%, 70rem);
+  margin: 0 auto;
+}
+
+.wealth-scout__load-more-btn {
+  min-height: 3.4rem;
+  padding: 0.85rem 1.2rem;
+  border: 1px solid rgba(23, 48, 80, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #173050;
+  font: inherit;
+  cursor: pointer;
 }
 
 .wealth-scout__selection-detail {
@@ -2024,6 +2173,23 @@ function yearLabel(year) {
   padding: 1rem;
   border: 0;
   background: transparent;
+}
+
+.wealth-scout__result-toggle {
+  align-self: center;
+  width: 0.8rem;
+  min-width: 0.8rem;
+  height: 0.8rem;
+  margin-left: 0.75rem;
+  border-right: 2px solid rgba(23, 48, 80, 0.58);
+  border-bottom: 2px solid rgba(23, 48, 80, 0.58);
+  transform: rotate(45deg);
+  transition: transform 160ms ease, border-color 160ms ease;
+}
+
+.wealth-scout__result-toggle.is-open {
+  transform: rotate(225deg);
+  border-color: #173050;
 }
 
 .wealth-scout__result-rank {

@@ -243,4 +243,28 @@ describe('wealth simulator', () => {
 
     expect(withHelpPurchaseYear).toBeGreaterThanOrEqual(noHelpPurchaseYear)
   })
+
+  it('keeps representative wealth chart components on a single purchase path', () => {
+    const request = cloneSimulationRequest()
+    request.simulationSettings.iterations = 120
+
+    const result = simulateWealthPathways(request)
+    const points = result.strategies.buyHouseHome.points
+    const firstRepresentativePropertyYear = points.findIndex((point) =>
+      (Number(point.wealthPropertyValueRepresentative) || 0) > 0
+    )
+
+    points.forEach((point, index) => {
+      const propertyValue = Number(point.wealthPropertyValueRepresentative) || 0
+      const mortgageDebt = Number(point.wealthMortgageDebtRepresentative) || 0
+
+      if (propertyValue <= 0) {
+        expect(mortgageDebt).toBe(0)
+      }
+
+      if (firstRepresentativePropertyYear !== -1 && index >= firstRepresentativePropertyYear) {
+        expect(propertyValue).toBeGreaterThan(0)
+      }
+    })
+  })
 })

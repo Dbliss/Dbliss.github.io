@@ -22,7 +22,7 @@
           ref="svgRef"
           class="wealth-chart__svg"
           :viewBox="`0 0 ${viewWidth} ${viewHeight}`"
-          preserveAspectRatio="xMidYMid meet"
+          preserveAspectRatio="none"
           role="img"
           :aria-label="title"
           @pointermove="onPointerMove"
@@ -131,7 +131,23 @@
         <p v-else-if="!series.length" class="wealth-chart__empty">Simulation results will appear here once the calculator runs.</p>
 
         <div v-if="hoverSummary" class="wealth-chart__hover-summary">
-          Year {{ hoverSummary.year }}, {{ formatShortCurrency(hoverSummary.value) }}
+          <div class="wealth-chart__hover-head">
+            <strong>Year {{ hoverSummary.year }}</strong>
+            <span>{{ hoverSummary.label }}</span>
+          </div>
+          <div class="wealth-chart__hover-list">
+            <div
+              v-for="point in displayPoints"
+              :key="`${point.id}-summary-${hoverSummary.year}`"
+              class="wealth-chart__hover-row"
+            >
+              <div class="wealth-chart__hover-series">
+                <span class="wealth-chart__hover-dot-key" :style="{ background: point.color }"></span>
+                <span>{{ point.label }}</span>
+              </div>
+              <strong>{{ formatShortCurrency(point.mid) }}</strong>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -226,10 +242,9 @@ const displayPoints = computed(() => {
 
 const hoverSummary = computed(() => {
   if (displayYear.value === null || !displayPoints.value.length) return null
-  const primaryPoint = displayPoints.value[0]
   return {
     year: displayYear.value,
-    value: primaryPoint.mid
+    label: 'Expected outcome'
   }
 })
 
@@ -240,8 +255,15 @@ const crossesZero = computed(() =>
 const yearTicks = computed(() => {
   const { max } = yearDomain.value
   if (max <= 5) return Array.from({ length: max + 1 }, (_, index) => index)
-  const roughSteps = [0, Math.round(max * 0.25), Math.round(max * 0.5), Math.round(max * 0.75), max]
-  return [...new Set(roughSteps)]
+
+  const ticks = [0]
+  for (let year = 5; year < max; year += 5) {
+    ticks.push(year)
+  }
+  if (ticks[ticks.length - 1] !== max) {
+    ticks.push(max)
+  }
+  return ticks
 })
 
 const yTicks = computed(() => {
@@ -366,8 +388,8 @@ function onPointerMove(event) {
 
 .wealth-chart__body {
   position: relative;
-  aspect-ratio: 16 / 10;
-  min-height: 560px;
+  aspect-ratio: 16 / 7.4;
+  min-height: 390px;
   padding: 0.2rem 0 0;
 }
 
@@ -444,23 +466,71 @@ function onPointerMove(event) {
 .wealth-chart__hover-summary {
   position: absolute;
   top: 0.9rem;
-  right: 0.9rem;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 2;
-  max-width: calc(100% - 1.8rem);
-  padding: 0.45rem 0.65rem;
-  border-radius: 999px;
+  width: min(18rem, calc(100% - 2.4rem));
+  padding: 0.7rem 0.8rem;
+  border-radius: 16px;
   background: rgba(15, 40, 72, 0.88);
   color: #ffffff;
   font-size: 0.8rem;
-  line-height: 1;
+  line-height: 1.2;
   pointer-events: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.wealth-chart__hover-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.wealth-chart__hover-head span {
+  color: rgba(226, 236, 249, 0.82);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.wealth-chart__hover-list {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.wealth-chart__hover-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.wealth-chart__hover-series {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.wealth-chart__hover-series span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.wealth-chart__hover-dot-key {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  flex: 0 0 auto;
 }
 
 @media (max-width: 720px) {
   .wealth-chart__body {
-    aspect-ratio: 4 / 3;
-    min-height: 420px;
+    aspect-ratio: 4 / 2.95;
+    min-height: 320px;
   }
 
   .wealth-chart__svg {
@@ -468,8 +538,8 @@ function onPointerMove(event) {
   }
 
   .wealth-chart__hover-summary {
-    top: 0.65rem;
-    right: 0.65rem;
+    width: min(15rem, calc(100% - 1.3rem));
+    padding: 0.6rem 0.65rem;
     font-size: 0.75rem;
   }
 }

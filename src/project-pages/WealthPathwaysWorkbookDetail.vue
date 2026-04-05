@@ -38,13 +38,7 @@
       <Transition name="wealth-stage-slide" mode="out-in">
         <section :key="currentStage" class="wealth-stage">
         <template v-if="currentStage === 'introduction'">
-          <WealthIntroStep
-            :form="form"
-            :suburb-search-context="suburbSearchContext"
-            :selected-existing-property-area-selection="selectedExistingPropertyAreaSelection"
-            :selected-existing-property-area-record="selectedExistingPropertyAreaRecord"
-            @select-existing-property-area="handleExistingPropertyAreaSelect"
-          />
+          <WealthIntroStep :form="form" />
           <div class="wealth-stage-footer">
             <button type="button" class="wealth-secondary-btn" disabled>Back</button>
             <p v-if="introductionStageMessage" class="wealth-stage-hint">{{ introductionStageMessage }}</p>
@@ -196,7 +190,6 @@ const groupFilter = ref('all')
 const resultMetric = ref('sellDown')
 const selectedApartmentAreaSelection = ref(null)
 const selectedHouseAreaSelection = ref(null)
-const selectedExistingPropertyAreaSelection = ref(null)
 const areaMarketPayload = ref(wealthPsiRegionMarketPayload)
 const regionScoutConfig = reactive({
   targetYears: 5,
@@ -243,10 +236,6 @@ const selectedHouseAreaPreview = computed(() => createPropertyConfigPatchFromAre
   subregionKey: null,
   houseGrowthYears: 0,
   apartmentGrowthYears: 0
-})
-const selectedExistingPropertyAreaRecord = computed(() => {
-  const key = selectedExistingPropertyAreaSelection.value?.key
-  return key ? suburbSearchContext.value.areasByKey[key] || null : null
 })
 
 const availableInputSheetKeys = computed(() => {
@@ -420,15 +409,7 @@ const nextInputSheetLabel = computed(() => getSheetLabel(nextInputSheet.value))
 const inputPrimaryActionLabel = computed(() =>
   isLastInputSheet.value ? 'Generate results' : `Next: ${nextInputSheetLabel.value}`
 )
-const introductionStageState = computed(() => {
-  if (!form.existingProperty?.enabled) {
-    return { complete: true, message: '' }
-  }
-
-  return selectedExistingPropertyAreaSelection.value?.key
-    ? { complete: true, message: '' }
-    : { complete: false, message: 'Select the postcode/suburb for the existing property before continuing.' }
-})
+const introductionStageState = computed(() => ({ complete: true, message: '' }))
 const canProceedToInterests = computed(() => introductionStageState.value.complete)
 const introductionStageMessage = computed(() => introductionStageState.value.message)
 const disabledStageKeys = computed(() => {
@@ -652,44 +633,6 @@ function handlePropertyAreaSelect({ propertyType, selection }) {
 
   applyAreaPatchToProperty(propertyType, selection)
   syncJointGrowthBlocks()
-}
-
-function handleExistingPropertyAreaSelect(selection) {
-  selectedExistingPropertyAreaSelection.value = selection || null
-  const area = selection?.key ? suburbSearchContext.value.areasByKey[selection.key] : null
-  const patch = createPropertyConfigPatchFromArea(area)
-  const propertyType = form.existingProperty.propertyType === 'apartment' ? 'apartment' : 'house'
-  const propertyPatch = patch?.[propertyType]
-
-  form.existingProperty.areaKey = selection?.key || null
-  form.existingProperty.areaLabel = area?.label || ''
-
-  if (!propertyPatch) {
-    form.existingProperty.yieldModel = null
-    form.existingProperty.historicalAnnualGrowthRates = []
-    return
-  }
-
-  form.existingProperty.currentValue = Math.max(0, Number(propertyPatch.purchasePrice) || 0)
-  form.existingProperty.purchasePrice = form.existingProperty.currentValue
-  form.existingProperty.growthMean = Number(propertyPatch.growthMean) || form.existingProperty.growthMean
-  form.existingProperty.growthVolatility = Number(propertyPatch.growthVolatility) || form.existingProperty.growthVolatility
-  form.existingProperty.rentYield = Number(propertyPatch.rentYield) || form.existingProperty.rentYield
-  form.existingProperty.yieldModel = propertyPatch.yieldModel ? JSON.parse(JSON.stringify(propertyPatch.yieldModel)) : null
-  form.existingProperty.historicalAnnualGrowthRates = Array.isArray(propertyPatch.historicalAnnualGrowthRates)
-    ? [...propertyPatch.historicalAnnualGrowthRates]
-    : []
-  form.existingProperty.councilRates = estimatePropertyCostFromPrice(propertyType, 'councilRates', form.existingProperty.currentValue)
-  form.existingProperty.waterRates = estimatePropertyCostFromPrice(propertyType, 'waterRates', form.existingProperty.currentValue)
-  form.existingProperty.insurance = estimatePropertyCostFromPrice(propertyType, 'insurance', form.existingProperty.currentValue)
-  form.existingProperty.maintenance = estimatePropertyCostFromPrice(propertyType, 'maintenance', form.existingProperty.currentValue)
-  form.existingProperty.strata = propertyType === 'apartment'
-    ? estimatePropertyCostFromPrice(propertyType, 'strata', form.existingProperty.currentValue)
-    : 0
-  form.existingProperty.landTax = form.existingProperty.occupancyMode === 'investment'
-    ? estimatePropertyCostFromPrice(propertyType, 'landTax', form.existingProperty.currentValue)
-    : 0
-  form.existingProperty.otherDeductibleExpensesAnnual = estimatePropertyCostFromPrice(propertyType, 'otherDeductibleExpensesAnnual', form.existingProperty.currentValue)
 }
 
 function cloneRequest() {

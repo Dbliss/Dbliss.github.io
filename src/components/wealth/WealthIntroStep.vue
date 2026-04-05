@@ -38,10 +38,9 @@
           <select v-model="currentHousingStatus">
             <option value="renting">Renting</option>
             <option value="livingAtHome">Living at home</option>
-            <option value="owningExistingProperty">Already own current home</option>
           </select>
         </label>
-        <label v-if="currentHousingStatus !== 'owningExistingProperty'">
+        <label>
           <span>Rent cost + Utilities</span>
           <input v-model.number="form.housingCosts.weeklyRent" type="number" min="0" step="10" />
         </label>
@@ -268,82 +267,6 @@
         </article>
       </div>
     </section>
-
-    <section class="wealth-sheet__subsection">
-      <div class="wealth-sheet__subsection-head">
-        <h3>Current property position</h3>
-      </div>
-
-      <label class="wealth-break-plan__toggle">
-        <input v-model="form.existingProperty.enabled" type="checkbox" />
-        <span>I already own a property</span>
-      </label>
-
-      <div v-if="form.existingProperty.enabled" class="wealth-sheet__subsection">
-        <div class="wealth-sheet__subsection-grid">
-          <label>
-            <span>Property use</span>
-            <select v-model="form.existingProperty.occupancyMode">
-              <option value="owner">Living in it</option>
-              <option value="investment">Investment property</option>
-            </select>
-          </label>
-          <label>
-            <span>Property type</span>
-            <select v-model="form.existingProperty.propertyType">
-              <option value="house">House</option>
-              <option value="apartment">Apartment</option>
-            </select>
-          </label>
-          <label>
-            <span>Current value</span>
-            <input v-model.number="form.existingProperty.currentValue" type="number" min="0" step="1000" />
-          </label>
-          <label>
-            <span>Mortgage left</span>
-            <input v-model.number="form.existingProperty.mortgageBalance" type="number" min="0" step="1000" />
-          </label>
-          <label>
-            <span>Years left on loan</span>
-            <input v-model.number="form.existingProperty.mortgageYears" type="number" min="1" max="40" step="1" />
-          </label>
-          <label>
-            <span>Current interest %</span>
-            <input
-              :value="((form.existingProperty.occupancyMode === 'investment' ? form.existingProperty.investmentInterestRate : form.existingProperty.ownerInterestRate) * 100).toFixed(2)"
-              type="number"
-              min="0"
-              max="15"
-              step="0.05"
-              @input="
-                form.existingProperty.occupancyMode === 'investment'
-                  ? form.existingProperty.investmentInterestRate = (Number($event.target.value) || 0) / 100
-                  : form.existingProperty.ownerInterestRate = (Number($event.target.value) || 0) / 100
-              "
-            />
-          </label>
-          <label v-if="form.existingProperty.occupancyMode === 'investment'">
-            <span>Gross yield %</span>
-            <input :value="(form.existingProperty.rentYield * 100).toFixed(2)" type="number" min="0" max="15" step="0.1" @input="form.existingProperty.rentYield = (Number($event.target.value) || 0) / 100" />
-          </label>
-        </div>
-
-        <p class="wealth-sheet__subsection-copy">
-          Repayments are estimated automatically from the remaining mortgage, years left, and current interest rate.
-        </p>
-
-        <SuburbSearchSelector
-          :current-selection="selectedExistingPropertyAreaSelection"
-          :suburb-options="suburbSearchContext.suburbOptions"
-          @select-suburb="emit('select-existing-property-area', $event)"
-        />
-
-        <p v-if="selectedExistingPropertyAreaRecord" class="wealth-sheet__subsection-copy">
-          Using {{ selectedExistingPropertyAreaRecord.label }} market history to project future valuation for your current {{ form.existingProperty.propertyType }}.
-        </p>
-      </div>
-    </section>
-
   </section>
   <Teleport to="body">
     <div v-if="modalState.open" class="wealth-modal-backdrop" @click="handleModalBackdrop">
@@ -371,7 +294,6 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
-import SuburbSearchSelector from './SuburbSearchSelector.vue'
 import WealthIncomeGrowthEditor from './WealthIncomeGrowthEditor.vue'
 import {
   getEarnerAnnualIncomeForYear,
@@ -432,12 +354,8 @@ const DEFAULT_EARNERS = [
 ]
 
 const props = defineProps({
-  form: { type: Object, required: true },
-  suburbSearchContext: { type: Object, default: () => ({ suburbOptions: [] }) },
-  selectedExistingPropertyAreaSelection: { type: Object, default: null },
-  selectedExistingPropertyAreaRecord: { type: Object, default: null }
+  form: { type: Object, required: true }
 })
-const emit = defineEmits(['select-existing-property-area'])
 const modalState = reactive({
   open: false,
   mode: 'confirm',
@@ -464,22 +382,10 @@ const plannedChildren = computed(() => props.form.profile.familyPlan?.plannedChi
 
 const currentHousingStatus = computed({
   get: () => {
-    if (props.form.existingProperty?.enabled && props.form.existingProperty?.occupancyMode === 'owner') return 'owningExistingProperty'
     return props.form.housingCosts.liveAtHome ? 'livingAtHome' : 'renting'
   },
   set: (value) => {
     props.form.housingCosts.liveAtHome = value === 'livingAtHome'
-    if (value === 'owningExistingProperty') {
-      props.form.existingProperty.enabled = true
-      props.form.existingProperty.occupancyMode = 'owner'
-      props.form.housingCosts.liveAtHome = false
-      props.form.housingCosts.liveAtHomeYears = 0
-      return
-    }
-
-    if (props.form.existingProperty?.occupancyMode === 'owner') {
-      props.form.existingProperty.enabled = false
-    }
 
     if (!props.form.housingCosts.liveAtHome) {
       props.form.housingCosts.liveAtHomeYears = 0
@@ -808,15 +714,12 @@ function getDurationLabel(value) {
   return Number(value) === 0.5 ? '6 months' : `${Math.round(Number(value) || 1)} year${Number(value) === 1 ? '' : 's'}`
 }
 
-function syncExistingPropertyType() {
-  const propertyType = props.form.existingProperty.propertyType === 'apartment' ? 'apartment' : 'house'
-  props.form.existingProperty.propertyType = propertyType
-  if (propertyType === 'house') {
-    props.form.existingProperty.strata = 0
-  }
-  if (props.selectedExistingPropertyAreaSelection?.key) {
-    emit('select-existing-property-area', props.selectedExistingPropertyAreaSelection)
-  }
+function disableExistingPropertyFlow() {
+  if (!props.form?.existingProperty) return
+  props.form.existingProperty.enabled = false
+  props.form.existingProperty.occupancyMode = 'owner'
+  props.form.existingProperty.areaKey = null
+  props.form.existingProperty.areaLabel = ''
 }
 
 function createDefaultEarner(index) {
@@ -952,10 +855,11 @@ watch(
 )
 
 watch(
-  () => props.form.existingProperty.propertyType,
+  () => props.form.existingProperty?.enabled,
   () => {
-    syncExistingPropertyType()
-  }
+    disableExistingPropertyFlow()
+  },
+  { immediate: true }
 )
 </script>
 

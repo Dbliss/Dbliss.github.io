@@ -8,7 +8,7 @@
       </div>
     </div>
 
-    <div v-if="props.variant !== 'guidance'" class="wealth-flow__controls">
+    <div v-if="showModeControls" class="wealth-flow__controls">
       <button
         v-for="mode in modeOptions"
         :key="mode.key"
@@ -367,6 +367,15 @@ const guidanceMeta = {
   percentLabelSuffix: 'of budget'
 }
 
+const wealthMeta = {
+  kicker: 'Cumulative Net Worth',
+  title: 'Assets built and liabilities remaining by year',
+  subtitle: 'Shows net worth as a balance sheet: liquid assets and gross property value on one side, with mortgage and remaining HELP/HECS debt reducing the total.',
+  positiveLabel: 'Assets',
+  negativeLabel: 'Liabilities',
+  percentLabelSuffix: 'of balance sheet'
+}
+
 const localSelectedYear = ref(null)
 const hoveredColumnYear = ref(null)
 const hoveredSegment = ref(null)
@@ -382,7 +391,10 @@ const activeStrategy = computed(() =>
   strategyOptions.value.find((strategy) => strategy.key === currentStrategyKey.value) || strategyOptions.value[0] || null
 )
 
+const showModeControls = computed(() => props.variant === 'outcome')
+
 const activeModeMeta = computed(() => {
+  if (props.variant === 'wealth') return wealthMeta
   if (props.variant === 'guidance') return guidanceMeta
   return modeMeta[activeModeKey.value] || modeMeta.cashflow
 })
@@ -576,7 +588,25 @@ function buildNetWorthChangeSegments(point, previousPoint) {
   ]
 }
 
+function buildWealthSegments(point) {
+  const liquidAssets = Number(point?.wealthLiquidAssetsRepresentative) || 0
+  const mortgageDebt = Number(point?.wealthMortgageDebtRepresentative) || 0
+  const helpDebt = Number(point?.wealthHelpDebtRepresentative) || 0
+  const propertyValue = Math.max(0, Number(point?.wealthPropertyValueRepresentative) || 0)
+
+  return [
+    { key: 'liquidAssets', label: 'Liquid assets and portfolio', value: liquidAssets, color: '#2563eb', directionLabel: 'Asset' },
+    { key: 'propertyValue', label: 'Property value', value: propertyValue, color: '#16a34a', directionLabel: 'Asset' },
+    { key: 'mortgageDebt', label: 'Mortgage debt', value: -mortgageDebt, color: '#ef4444', directionLabel: 'Liability' },
+    { key: 'helpDebt', label: 'HELP/HECS debt', value: -helpDebt, color: '#f97316', directionLabel: 'Liability' }
+  ]
+}
+
 function getSegmentDefinitions(point, previousPoint) {
+  if (props.variant === 'wealth') {
+    return buildWealthSegments(point)
+  }
+
   if (props.variant === 'guidance') {
     return buildGuidanceSegments(point)
   }

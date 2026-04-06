@@ -39,302 +39,534 @@
 			:aria-hidden="(!contentDomVisible).toString()"
 		>
 			<div class="content-shell">
-				
+				<aside class="content-rail">
+					<div class="rail-card">
+						<div class="rail-label mono">Case Study Notebook</div>
+						<div class="rail-current">
+							<span class="rail-current-label mono">Current section</span>
+							<strong>{{ activeSectionLabel }}</strong>
+						</div>
+						<nav class="rail-nav" aria-label="Chess engine documentation sections">
+							<button
+								v-for="section in CONTENT_SECTIONS"
+								:key="section.id"
+								type="button"
+								class="rail-link"
+								:class="{ 'is-active': activeSection === section.id }"
+								@click="scrollToContentSection(section.id)"
+							>
+								<span class="rail-index mono">{{ section.index }}</span>
+								<span>{{ section.label }}</span>
+							</button>
+						</nav>
+					</div>
+				</aside>
 
 				<main class="content-main">
 					<section class="notebook-cell notebook-hero" data-section="overview" id="overview">
-						<div class="cell-meta mono">Notebook 01 - Backend Case Study</div>
-						<h1 class="content-title">Chess Engine in C++</h1>
-						<p class="hero-dek">
-							A from-scratch engine focused on the hard parts of systems work: legal move generation, deep search,
-							cache-aware optimisation, and turning a command-line prototype into something people can actually play.
-						</p>
-
-						<div class="hero-chip-row mono">
-							<span class="hero-chip">C++</span>
-							<span class="hero-chip">Alpha-beta search</span>
-							<span class="hero-chip">Zobrist hashing</span>
-							<span class="hero-chip">Perft validation</span>
-							<span class="hero-chip">Engine UI</span>
+						<div class="cell-meta mono">Notebook 01 - Systems Case Study</div>
+						<div class="hero-layout">
+							<div class="hero-copy">
+								<h1 class="content-title">C++ Systems Case Study: Building a Chess Engine, UI, and Online Play Pipeline</h1>
+								<p class="hero-dek">
+									A from-scratch project focused on correctness, search optimisation, interface design, and measurable performance improvement.
+								</p>
+								<div class="hero-chip-row mono">
+									<span class="hero-chip">C++</span>
+									<span class="hero-chip">Systems Design</span>
+									<span class="hero-chip">Search Algorithms</span>
+									<span class="hero-chip">Performance Optimisation</span>
+									<span class="hero-chip">Testing &amp; Validation</span>
+									<span class="hero-chip">UI Integration</span>
+								</div>
+								<p class="hero-summary">
+									The project started as a backend-heavy engine exercise and grew into a full product loop: legal move generation,
+									search, evaluation, testing harnesses, interface work, and live proof through online rated play.
+								</p>
+								<div class="hero-actions">
+									<a class="hero-action hero-action-primary mono" href="https://github.com/Dbliss/Chess-Engine-cpp" target="_blank" rel="noreferrer">View repository</a>
+									<button type="button" class="hero-action hero-action-secondary mono" @click="scrollToContentSection('architecture')">System architecture</button>
+									<button type="button" class="hero-action hero-action-secondary mono" @click="scrollToContentSection('results')">Proof &amp; outcomes</button>
+								</div>
+							</div>
+							<div class="hero-visual">
+								<figure class="hero-visual-frame">
+									<img class="media-img media-img-wide" :src="chessBoardImg" alt="Chess engine interface showing the board and controls" loading="lazy" />
+									<div class="hero-overlay-lines" aria-hidden="true">
+										<span></span>
+										<span></span>
+										<span></span>
+									</div>
+									<div class="hero-console mono" aria-hidden="true">
+										<div class="hero-console-row"><span>depth</span><strong>11</strong></div>
+										<div class="hero-console-row"><span>nps</span><strong>~130k</strong></div>
+										<div class="hero-console-row"><span>pv</span><strong>... Nc6 Be3 Qf6</strong></div>
+									</div>
+								</figure>
+								<div class="hero-sidecars">
+									<div class="analysis-card">
+										<div class="analysis-label mono">Search signal</div>
+										<div class="analysis-bar"><span class="analysis-fill"></span></div>
+										<p>Iterative deepening, alpha-beta pruning, and TT hits turn raw branching factor into tractable search.</p>
+									</div>
+									<div class="analysis-card analysis-card-log">
+										<div class="analysis-label mono">Engine console</div>
+										<img class="media-img media-img-log" :src="engineLogImg" alt="Search log from the chess engine while evaluating positions" loading="lazy" />
+									</div>
+								</div>
+							</div>
 						</div>
-
-						<div class="metrics-grid">
-							<div class="metric-card">
-								<div class="metric-label mono">Strength proxy</div>
-								<div class="metric-value">2000+ Elo</div>
-								<p>Rated play online against bots and human opponents.</p>
-							</div>
-							<div class="metric-card">
-								<div class="metric-label mono">Validation</div>
-								<div class="metric-value">12 perft suites</div>
-								<p>Used as the correctness gate before pushing performance work.</p>
-							</div>
-							<div class="metric-card">
-								<div class="metric-label mono">Search profile</div>
-								<div class="metric-value">~99.98% pruned</div>
-								<p>Typical branch reduction once move ordering and pruning are active.</p>
-							</div>
-							<div class="metric-card">
-								<div class="metric-label mono">Throughput</div>
-								<div class="metric-value">~130k pos/s</div>
-								<p>Representative figure from the current engine build and search settings.</p>
-							</div>
-						</div>
-
-						<div class="jump-row mono" aria-label="Documentation sections">
-							<button type="button" class="jump-link" @click="scrollToContentSection('why')">Why</button>
-							<button type="button" class="jump-link" @click="scrollToContentSection('architecture')">Architecture</button>
-							<button type="button" class="jump-link" @click="scrollToContentSection('board-state')">Board State</button>
-							<button type="button" class="jump-link" @click="scrollToContentSection('search-stack')">Search</button>
-							<button type="button" class="jump-link" @click="scrollToContentSection('evaluation')">Evaluation</button>
-							<button type="button" class="jump-link" @click="scrollToContentSection('testing')">Testing</button>
-							<button type="button" class="jump-link" @click="scrollToContentSection('optimisation')">Optimisation</button>
-							<button type="button" class="jump-link" @click="scrollToContentSection('interface')">Interface</button>
-							<button type="button" class="jump-link" @click="scrollToContentSection('results')">Results</button>
-						</div>
-
-						<figure class="feature-frame">
-							<img class="media-img media-img-wide" :src="chessBoardImg" alt="Chess engine interface showing the board and controls" loading="lazy" />
-							<figcaption class="media-cap">
-								The project outcome was not just an engine binary. It became a playable, inspectable product with a board UI, move feedback, and room to iterate.
-							</figcaption>
-						</figure>
 					</section>
 
-					<section class="notebook-cell" data-section="why" id="why">
-						<div class="section-badge mono">02 - Why this project mattered</div>
-						<h2 class="section-title">A systems problem with objective feedback</h2>
-						<p>
-							I wanted a project where optimisation was not decorative. Chess forces hard tradeoffs between correctness,
-							speed, memory, and search quality. The rules are rigid enough to validate precisely, but the branching factor is
-							large enough that weak engineering choices show up immediately in performance and playing strength.
-						</p>
-						<p>
-							That made the project a useful proving ground for modern C++ habits: clear data ownership, incremental state updates,
-							hot-path awareness, and measurable iteration rather than vague "cleanup". It also let me build something with a
-							recognisable benchmark culture, where move generation, search depth, and Elo all give concrete signals about progress.
-						</p>
+					<section class="metrics-strip" aria-label="Project metrics">
+						<div class="metric-strip-card">
+							<div class="metric-strip-value mono">12 perft suites</div>
+							<div class="metric-strip-label">reference validation before optimisation</div>
+						</div>
+						<div class="metric-strip-card">
+							<div class="metric-strip-value mono">~130k pos/s</div>
+							<div class="metric-strip-label">representative throughput in the current build</div>
+						</div>
+						<div class="metric-strip-card">
+							<div class="metric-strip-value mono">alpha-beta + TT</div>
+							<div class="metric-strip-label">search stack centred on reuse and aggressive pruning</div>
+						</div>
+						<div class="metric-strip-card">
+							<div class="metric-strip-value mono">online rated play</div>
+							<div class="metric-strip-label">practical proof beyond isolated local benchmarks</div>
+						</div>
+						<div class="metric-strip-card">
+							<div class="metric-strip-value mono">end-to-end ownership</div>
+							<div class="metric-strip-label">engine core, tooling, UI, and external integration</div>
+						</div>
+					</section>
+
+					<section class="notebook-cell" data-section="executive-summary" id="executive-summary">
+						<div class="section-badge mono">02 - Executive summary</div>
+						<h2 class="section-title">A recruiter-readable summary of the build, the difficulty, and the engineering value</h2>
+						<div class="summary-grid">
+							<div class="summary-card">
+								<div class="summary-label mono">What I built</div>
+								<p>A from-scratch chess engine in C++ with move generation, legality filtering, search, evaluation, UI work, and online play support.</p>
+							</div>
+							<div class="summary-card">
+								<div class="summary-label mono">What made it difficult</div>
+								<p>It combines edge-case-heavy rule correctness with performance pressure, making every optimisation contingent on trustworthy state transitions.</p>
+							</div>
+							<div class="summary-card">
+								<div class="summary-label mono">What it demonstrates</div>
+								<p>Structured architecture, measurable optimisation, disciplined validation, and the ability to productise a backend-heavy system.</p>
+							</div>
+						</div>
+					</section>
+
+					<section class="notebook-cell" data-section="problem-framing" id="problem-framing">
+						<div class="section-badge mono">03 - Why this project mattered</div>
+						<h2 class="section-title">The value of the project was not chess itself, but the engineering pressure it created</h2>
 						<div class="callout-note">
-							<strong>Speak about here:</strong> why chess was a better fit than a generic algorithm project, what parts most accelerated C++ fluency,
-							and which optimisation ideas transferred cleanly to other backend work.
+							Chess was useful because it forced correctness under strict rules, algorithmic tradeoffs under time pressure, and evidence-driven optimisation.
+						</div>
+						<div class="three-col-grid">
+							<div class="decision-card">
+								<div class="decision-kicker mono">Why chess was a good systems problem</div>
+								<p>The state space is large, the rules are unforgiving, and the search tree punishes weak data structures or sloppy legality handling immediately.</p>
+							</div>
+							<div class="decision-card">
+								<div class="decision-kicker mono">What engineering skills it forced</div>
+								<p>Incremental state updates, hot-path awareness, careful debugging of pinned-piece and king-safety logic, and a testing-first workflow for special rules.</p>
+							</div>
+							<div class="decision-card">
+								<div class="decision-kicker mono">What transferred beyond chess</div>
+								<p>Breaking a complex system into independently testable subsystems, measuring optimisation impact, and shipping an inspectable interface around a technical core.</p>
+							</div>
 						</div>
 					</section>
 
 					<section class="notebook-cell" data-section="architecture" id="architecture">
-						<div class="section-badge mono">03 - Engine architecture</div>
-						<h2 class="section-title">The runtime loop is simple on paper and brutal in practice</h2>
-						<p class="mono pipeline-line">Board State -> Legal Moves -> Ordered Search -> Evaluation -> Best Move</p>
-						<div class="two-col-grid">
-							<div>
-								<h3 class="subhead">Core backend flow</h3>
-								<ul class="note-list">
-									<li>The board is represented in a format designed for cheap updates and fast legal-move queries.</li>
-									<li>Move generation produces candidate positions, then legality filters remove states that leave the king exposed.</li>
-									<li>The search stack traverses those positions under a time or depth budget.</li>
-									<li>The evaluation layer scores quieter leaf positions using hand-tuned heuristics.</li>
-									<li>Transposition hits and move ordering feed back into the search to avoid wasted work.</li>
-								</ul>
+						<div class="section-badge mono">04 - System architecture</div>
+						<h2 class="section-title">The engine is organised as a pipeline with explicit correctness and performance responsibilities</h2>
+						<div class="architecture-diagram">
+							<div class="arch-node">
+								<span class="mono">01</span>
+								<strong>Input / Position State</strong>
 							</div>
-							<div>
-								<h3 class="subhead">What to expand later</h3>
-								<ul class="prompt-list">
-									<li>Describe the exact board representation and why it won over simpler array-based layouts.</li>
-									<li>Call out where incremental updates save time during search unwind and replay.</li>
-									<li>Explain how engine state is separated from UI state and command handling.</li>
-								</ul>
+							<div class="arch-arrow mono">-&gt;</div>
+							<div class="arch-node">
+								<span class="mono">02</span>
+								<strong>Board Representation</strong>
+							</div>
+							<div class="arch-arrow mono">-&gt;</div>
+							<div class="arch-node">
+								<span class="mono">03</span>
+								<strong>Move Generation</strong>
+							</div>
+							<div class="arch-arrow mono">-&gt;</div>
+							<div class="arch-node">
+								<span class="mono">04</span>
+								<strong>Legality Filtering</strong>
+							</div>
+							<div class="arch-arrow mono">-&gt;</div>
+							<div class="arch-node">
+								<span class="mono">05</span>
+								<strong>Search + Pruning</strong>
+							</div>
+							<div class="arch-arrow mono">-&gt;</div>
+							<div class="arch-node">
+								<span class="mono">06</span>
+								<strong>Evaluation</strong>
+							</div>
+							<div class="arch-arrow mono">-&gt;</div>
+							<div class="arch-node">
+								<span class="mono">07</span>
+								<strong>Best Move Output</strong>
+							</div>
+							<div class="arch-arrow mono">-&gt;</div>
+							<div class="arch-node arch-node-final">
+								<span class="mono">08</span>
+								<strong>UI / Lichess / Interaction Layer</strong>
 							</div>
 						</div>
 
-						<figure class="feature-frame">
-							<img class="media-img media-img-log" :src="engineLogImg" alt="Search log from the chess engine while evaluating positions" loading="lazy" />
-							<figcaption class="media-cap">
-								Search output while iterative deepening, scoring candidate lines, and surfacing the current best move.
-							</figcaption>
-						</figure>
+						<div class="subsystem-grid">
+							<div class="subsystem-card">
+								<div class="subsystem-title">Board state representation</div>
+								<p><strong>Role:</strong> keep state updates cheap enough for deep search.</p>
+								<p><strong>Design choice:</strong> a representation geared toward fast updates rather than beginner readability.</p>
+								<p><strong>Reason:</strong> search cost compounds over millions of positions.</p>
+								<p><strong>Engineering lesson:</strong> hot-path structure decisions should be made before micro-optimisation.</p>
+							</div>
+							<div class="subsystem-card">
+								<div class="subsystem-title">Move generation &amp; legality</div>
+								<p><strong>Role:</strong> generate pseudo-legal candidates, then filter down to trusted legal positions.</p>
+								<p><strong>Design choice:</strong> correctness-first handling of checks, pins, castling, en passant, and promotions.</p>
+								<p><strong>Reason:</strong> bugs here poison every higher-level subsystem.</p>
+								<p><strong>Engineering lesson:</strong> correctness is an architectural dependency, not a QA afterthought.</p>
+							</div>
+							<div class="subsystem-card">
+								<div class="subsystem-title">Search pipeline</div>
+								<p><strong>Role:</strong> find strong moves within depth and time budgets.</p>
+								<p><strong>Design choice:</strong> alpha-beta, iterative deepening, ordering, quiescence, and TT reuse.</p>
+								<p><strong>Reason:</strong> useful strength comes from cutting waste, not brute-force optimism.</p>
+								<p><strong>Engineering lesson:</strong> pipeline-level cooperation beats isolated algorithm additions.</p>
+							</div>
+							<div class="subsystem-card">
+								<div class="subsystem-title">Evaluation layer</div>
+								<p><strong>Role:</strong> score quiet positions in a way that is debuggable and tunable.</p>
+								<p><strong>Design choice:</strong> interpretable heuristics over opaque modelling.</p>
+								<p><strong>Reason:</strong> this project was as much about engineering insight as raw strength.</p>
+								<p><strong>Engineering lesson:</strong> transparent systems are easier to iterate on under pressure.</p>
+							</div>
+							<div class="subsystem-card">
+								<div class="subsystem-title">Testing harness</div>
+								<p><strong>Role:</strong> prevent regressions while optimisation work moves quickly.</p>
+								<p><strong>Design choice:</strong> perft references as the correctness contract before performance claims.</p>
+								<p><strong>Reason:</strong> benchmark wins are meaningless if move legality is broken.</p>
+								<p><strong>Engineering lesson:</strong> validation infrastructure increases iteration speed.</p>
+							</div>
+							<div class="subsystem-card">
+								<div class="subsystem-title">UI / external integration</div>
+								<p><strong>Role:</strong> make the engine playable, inspectable, and demonstrably useful.</p>
+								<p><strong>Design choice:</strong> keep engine logic separate from presentation and online execution context.</p>
+								<p><strong>Reason:</strong> the project needed to read as a shipped system, not only a solver.</p>
+								<p><strong>Engineering lesson:</strong> product surface area changes how technical work is perceived and validated.</p>
+							</div>
+						</div>
 					</section>
 
 					<section class="notebook-cell" data-section="board-state" id="board-state">
-						<div class="section-badge mono">04 - Board state and move generation</div>
-						<h2 class="section-title">Correctness came before speed, because bad move generation poisons everything above it</h2>
-						<p>
-							The move generator had to handle the complete ruleset, not just the common path. Castling, promotions, en passant,
-							pins, check evasions, and discovered attacks all push against naive implementations. That meant the early work was less
-							about "playing chess" and more about building confidence in the legality model one edge case at a time.
-						</p>
-						<p>
-							Once that base layer was stable, it became much easier to optimise with intent. A fast engine built on incorrect state
-							transitions is useless; a slower but trusted engine gives you somewhere solid to measure from.
-						</p>
+						<div class="section-badge mono">05 - Board state &amp; move generation</div>
+						<h2 class="section-title">Core engine design started with correctness under edge-case-heavy rules</h2>
+						<div class="deep-dive-panel">
+							<div class="panel-heading">
+								<div class="panel-title">Subsystem</div>
+								<p>Board state and legal move generation</p>
+							</div>
+							<div class="panel-grid">
+								<div>
+									<div class="panel-label mono">Problem</div>
+									<p>Naive move generation is easy to write and easy to trust incorrectly. Special moves, king exposure, pins, and discovered attacks create failure modes that are hard to see without structured validation.</p>
+								</div>
+								<div>
+									<div class="panel-label mono">Implementation</div>
+									<p>The engine generates candidate moves, then filters them through legality rules that preserve king safety and consistent state transitions across make/unmake cycles.</p>
+								</div>
+								<div>
+									<div class="panel-label mono">Tradeoff</div>
+									<p>Correctness-first structure can feel slower early on, but it creates a stable base for later search and evaluation work.</p>
+								</div>
+								<div>
+									<div class="panel-label mono">Outcome</div>
+									<p>Once the legality layer became trustworthy, optimisation stopped being guesswork and became measurable engineering.</p>
+								</div>
+							</div>
+						</div>
 
 						<div class="image-grid image-grid-dual">
 							<figure class="feature-frame">
 								<img class="media-img" :src="gameplayImg" alt="Live gameplay view from the chess engine interface" loading="lazy" />
 								<figcaption class="media-cap">Gameplay view showing the engine as an interactive system rather than a console-only prototype.</figcaption>
 							</figure>
-							<div class="annotation-panel">
-								<h3 class="subhead">Add detail here</h3>
-								<ul class="prompt-list">
-									<li>Speak about pinned-piece logic and how legal move filtering differs from pseudo-legal move generation.</li>
-									<li>Speak about castling legality, attack maps, and how king safety checks were structured.</li>
-									<li>Speak about en passant and promotion handling, especially any bugs or edge cases caught by perft.</li>
-								</ul>
-							</div>
-						</div>
-					</section>
-
-					<section class="notebook-cell" data-section="search-stack" id="search-stack">
-						<div class="section-badge mono">05 - Search stack</div>
-						<h2 class="section-title">Most of the engine's strength comes from refusing to search obviously bad branches</h2>
-						<p>
-							The core search uses alpha-beta pruning with strong move ordering, so the engine spends more time on lines that are
-							likely to matter and cuts large portions of the tree once bounds become clear. Iterative deepening makes the engine
-							practical under time limits and improves ordering information as each deeper pass begins.
-						</p>
-						<p>
-							Transposition tables turn repeated work into table lookups, while quiescence search avoids evaluating volatile positions
-							as if they were settled. Together those ideas shift the engine away from brute force and toward a search that is both
-							faster and more stable.
-						</p>
-						<div class="two-col-grid">
-							<div class="notebook-subcell">
-								<h3 class="subhead">Implemented ideas</h3>
-								<ul class="note-list">
-									<li>Alpha-beta pruning</li>
-									<li>Move ordering</li>
-									<li>Iterative deepening</li>
-									<li>Quiescence search</li>
-									<li>Transposition table probes</li>
-									<li>Zobrist position hashing</li>
-								</ul>
-							</div>
-							<div class="notebook-subcell">
-								<h3 class="subhead">Expand this section later</h3>
-								<ul class="prompt-list">
-									<li>Speak about the exact move-ordering heuristics and how much they changed node counts.</li>
-									<li>Speak about TT entry format: hash, depth, score, bound type, and stored best move.</li>
-									<li>Speak about where null-move pruning or other selective pruning is safe versus risky.</li>
-								</ul>
-							</div>
-						</div>
-					</section>
-
-					<section class="notebook-cell" data-section="evaluation" id="evaluation">
-						<div class="section-badge mono">06 - Position evaluation</div>
-						<h2 class="section-title">The evaluation function stayed interpretable on purpose</h2>
-						<p>
-							I kept the scoring layer readable rather than treating it like a black box. For this project the goal was engineering
-							insight: when the engine prefers one line, I want to understand whether that came from material balance, mobility,
-							king safety, development, pawn structure, or endgame simplification. That makes tuning slower than dropping in a model,
-							but much faster when debugging behaviour.
-						</p>
-						<div class="callout-note">
-							<strong>Speak about here:</strong> material weighting, piece-square tables, mobility scoring, king safety, passed pawns,
-							endgame adjustments, and which terms were easiest or hardest to tune without causing unstable play.
-						</div>
-					</section>
-
-					<section class="notebook-cell" data-section="testing" id="testing">
-						<div class="section-badge mono">07 - Correctness and testing</div>
-						<h2 class="section-title">Perft was the contract that kept optimisation honest</h2>
-						<p>
-							Every optimisation pass had to preserve correctness. Perft testing provided that foundation by comparing generated node
-							counts against known reference positions across multiple depths. It is one of the fastest ways to expose subtle move
-							generation bugs, especially around special rules and check resolution.
-						</p>
-						<div class="image-grid image-grid-dual">
-							<figure class="feature-frame">
-								<img class="media-img media-img-perft" :src="perftImg" alt="Perft validation output used to test chess move generation" loading="lazy" />
-								<figcaption class="media-cap">Perft output used as the first line of defence against illegal move generation and state corruption.</figcaption>
-							</figure>
-							<div class="annotation-panel">
-								<h3 class="subhead">Add detail here</h3>
-								<ul class="prompt-list">
-									<li>Speak about the 12 reference positions and the kinds of edge cases each one covers.</li>
-									<li>Speak about any regression harnesses, self-play checks, or before/after benchmarks used after code changes.</li>
-									<li>Speak about specific bugs caught by testing, not just that testing existed.</li>
-								</ul>
-							</div>
-						</div>
-					</section>
-
-					<section class="notebook-cell" data-section="optimisation" id="optimisation">
-						<div class="section-badge mono">08 - Performance and optimisation</div>
-						<h2 class="section-title">Once the rules were trusted, optimisation became a compounding game</h2>
-						<p>
-							The backend work shifted toward reducing pointless computation. Hashing made repeated states cheap to recognise, move
-							ordering made pruning more aggressive, and incremental state updates kept the hot path lean. The project became a practical
-							lesson in how small wins stack inside a search-heavy system.
-						</p>
-						<div class="results-grid">
-							<div class="result-tile">
-								<div class="metric-label mono">Hot path themes</div>
-								<p>State mutation cost, cache reuse, branch pruning, and keeping inner loops predictable.</p>
-							</div>
-							<div class="result-tile">
-								<div class="metric-label mono">Measured outcomes</div>
-								<p>Typical branch reduction near 99.98% with representative throughput around 130k evaluated positions per second.</p>
-							</div>
-							<div class="result-tile">
-								<div class="metric-label mono">Topics to add</div>
-								<p>Speak about profiling method, memory layout, hash collision strategy, and which changes gave the biggest real-world gains.</p>
-							</div>
-						</div>
-					</section>
-
-					<section class="notebook-cell" data-section="interface" id="interface">
-						<div class="section-badge mono">09 - Interface and playability</div>
-						<h2 class="section-title">The UI mattered because it made the engine legible</h2>
-						<p>
-							Shipping only a terminal build would have hidden much of the project's value. The interface makes the engine inspectable:
-							board state is visible, move feedback is immediate, and the project reads as a complete tool instead of an isolated algorithm.
-							That matters when showing work to other engineers, hiring managers, or non-specialists.
-						</p>
-						<div class="image-grid image-grid-triple">
-							<figure class="feature-frame">
-								<img class="media-img" :src="lichessImg" alt="Online chess rating or match result screenshot for the engine" loading="lazy" />
-								<figcaption class="media-cap">External play evidence that the engine reached a meaningful level of practical strength.</figcaption>
-							</figure>
-							<figure class="feature-frame">
-								<img class="media-img" :src="lichessAltImg" alt="Additional online chess match or rating screenshot for the engine" loading="lazy" />
-								<figcaption class="media-cap">A second result view that helps frame rating progress and live-game behaviour.</figcaption>
-							</figure>
-							<figure class="feature-frame">
-								<img class="media-img" :src="gameplayImg" alt="Chess engine gameplay screen showing pieces and move interface" loading="lazy" />
-								<figcaption class="media-cap">The engine presented as a usable product with visual feedback and a more polished interaction loop.</figcaption>
-							</figure>
-						</div>
-					</section>
-
-					<section class="notebook-cell" data-section="results" id="results">
-						<div class="section-badge mono">10 - Results and takeaways</div>
-						<h2 class="section-title">What this project proves</h2>
-						<div class="two-col-grid">
-							<div>
-								<ul class="note-list">
-									<li>I can break a dense technical problem into testable backend subsystems.</li>
-									<li>I can write performance-conscious C++ and keep it explainable.</li>
-									<li>I can validate correctness under edge-case-heavy rules rather than assuming the implementation is fine.</li>
-									<li>I can turn a backend-heavy system into something legible for users and reviewers.</li>
-								</ul>
-							</div>
-							<div>
-								<div class="callout-note">
-									<strong>Speak about here:</strong> exact Elo comparison, benchmark methodology, strongest engineering decision,
-									and which subsystem would be rebuilt first if starting the engine again today.
+							<div class="stacked-notes">
+								<div class="notebook-subcell">
+									<div class="decision-kicker mono">System</div>
+									<p>Pseudo-legal generation is separated from legality checks so pinned pieces, castling rights, and king exposure can be handled deliberately.</p>
+								</div>
+								<div class="notebook-subcell">
+									<div class="decision-kicker mono">Tradeoff</div>
+									<p>Some logic becomes more verbose, but the rules become easier to reason about and easier to validate against perft references.</p>
+								</div>
+								<div class="notebook-subcell">
+									<div class="decision-kicker mono">Impact</div>
+									<p>The engine avoids the trap of appearing fast while silently accepting illegal positions into the search tree.</p>
 								</div>
 							</div>
 						</div>
 					</section>
 
-					<section class="notebook-cell notebook-cell-end" data-section="future" id="future">
-						<div class="section-badge mono">11 - Future work</div>
-						<h2 class="section-title">Next research directions</h2>
-						<ul class="note-list">
-							<li>Improve move ordering so the engine reaches more tactical depth at the same time budget.</li>
-							<li>Explore faster sliding-piece generation such as magic bitboards.</li>
-							<li>Test richer evaluation terms or a lightweight learned evaluator without losing interpretability.</li>
-							<li>Document portability work for macOS and non-Windows users.</li>
-						</ul>
+					<section class="notebook-cell notebook-cell-dark" data-section="search-optimisation" id="search-optimisation">
+						<div class="section-badge mono">06 - Search &amp; optimisation</div>
+						<h2 class="section-title">Performance improvements were framed as reducing wasted computation while preserving correctness</h2>
+						<div class="deep-dive-panel deep-dive-panel-dark">
+							<div class="panel-heading">
+								<div class="panel-title">Subsystem</div>
+								<p>Search stack and evidence-driven optimisation</p>
+							</div>
+							<div class="panel-grid">
+								<div>
+									<div class="panel-label mono">Problem</div>
+									<p>Brute-force search collapses quickly under chess branching factor, especially when time controls require useful moves rather than perfect search.</p>
+								</div>
+								<div>
+									<div class="panel-label mono">Implementation</div>
+									<p>Alpha-beta pruning, iterative deepening, move ordering, transposition tables, and quiescence search cooperate to prioritise relevant lines and collapse repeated work.</p>
+								</div>
+								<div>
+									<div class="panel-label mono">Tradeoff</div>
+									<p>Selective pruning and reuse mechanisms improve speed, but only when they are backed by reliable state handling and clear TT semantics.</p>
+								</div>
+								<div>
+									<div class="panel-label mono">Outcome</div>
+									<p>The engine reaches materially stronger search within the same budget, with representative pruning near 99.98% and throughput around 130k positions per second.</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="performance-band">
+							<div class="benchmark-card">
+								<div class="metric-label mono">Node throughput</div>
+								<div class="metric-value">~130k pos/s</div>
+								<p>Throughput framed as useful search efficiency, not an isolated vanity metric.</p>
+							</div>
+							<div class="benchmark-card">
+								<div class="metric-label mono">Pruning profile</div>
+								<div class="metric-value">~99.98%</div>
+								<p>Large tree reduction once ordering and cutoffs are working together.</p>
+							</div>
+							<div class="benchmark-card">
+								<div class="metric-label mono">Search stack</div>
+								<div class="metric-value">AB + TT + QSearch</div>
+								<p>The key gain came from subsystem cooperation rather than one heroic optimisation.</p>
+							</div>
+						</div>
+
+						<div class="two-col-grid">
+							<div class="notebook-subcell">
+								<h3 class="subhead">Optimisations that moved the needle</h3>
+								<ul class="note-list">
+									<li>Move ordering that made alpha-beta cutoffs occur earlier.</li>
+									<li>Transposition table reuse that converted repeated search into lookups.</li>
+									<li>Incremental state updates that kept the hot path lean during make/unmake cycles.</li>
+									<li>Quiescence handling that avoided evaluating tactically noisy leaf nodes as if they were settled.</li>
+								</ul>
+							</div>
+							<div class="notebook-subcell">
+								<h3 class="subhead">Optimisation judgement</h3>
+								<ul class="note-list">
+									<li>Fast-looking changes were only kept when they preserved perft results.</li>
+									<li>The project reinforced that micro-optimisations matter less than structure, ordering, and reuse.</li>
+									<li>Evidence-driven iteration was more reliable than subjective "this feels cleaner" refactors.</li>
+								</ul>
+							</div>
+						</div>
+					</section>
+
+					<section class="notebook-cell" data-section="evaluation-design" id="evaluation-design">
+						<div class="section-badge mono">07 - Evaluation design</div>
+						<h2 class="section-title">The evaluation layer stayed interpretable so engine behaviour could be debugged and tuned deliberately</h2>
+						<div class="deep-dive-panel">
+							<div class="panel-heading">
+								<div class="panel-title">Subsystem</div>
+								<p>Heuristic evaluation design</p>
+							</div>
+							<div class="panel-grid">
+								<div>
+									<div class="panel-label mono">Problem</div>
+									<p>When an engine chooses a poor plan, opaque scoring makes it difficult to understand whether the issue came from mobility, king safety, material assumptions, or endgame handling.</p>
+								</div>
+								<div>
+									<div class="panel-label mono">Implementation</div>
+									<p>The project kept evaluation readable and decomposable, using interpretable terms instead of hiding behaviour behind a black-box model.</p>
+								</div>
+								<div>
+									<div class="panel-label mono">Tradeoff</div>
+									<p>Heuristic tuning can be slower than dropping in a learned scorer, but it preserves engineering visibility and makes bugs easier to localise.</p>
+								</div>
+								<div>
+									<div class="panel-label mono">Outcome</div>
+									<p>Tuning becomes an explicit design exercise: adjust a term, inspect behaviour, validate search impact, and iterate with confidence.</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="three-col-grid">
+							<div class="decision-card">
+								<div class="decision-kicker mono">Decision</div>
+								<p>Keep evaluation terms explainable enough to inspect move preferences line by line.</p>
+							</div>
+							<div class="decision-card">
+								<div class="decision-kicker mono">Constraint</div>
+								<p>Search quality depends on evaluation being stable enough to cooperate with pruning and quiescence logic.</p>
+							</div>
+							<div class="decision-card">
+								<div class="decision-kicker mono">Impact</div>
+								<p>Debugging remains grounded in engineering reasoning rather than guesswork about an opaque scorer.</p>
+							</div>
+						</div>
+					</section>
+
+					<section class="notebook-cell" data-section="testing-validation" id="testing-validation">
+						<div class="section-badge mono">08 - Testing &amp; validation</div>
+						<h2 class="section-title">Correctness was treated as the foundation, with performance work gated by reference validation</h2>
+						<div class="validation-grid">
+							<div class="validation-copy">
+								<p>
+									Perft was the contract that kept optimisation honest. Before claiming a speed improvement, the engine had to
+									produce trusted node counts across reference positions designed to stress special rules and edge conditions.
+								</p>
+								<div class="notebook-subcell">
+									<div class="decision-kicker mono">Validation philosophy</div>
+									<p>Measure correctness first, then benchmark. The order matters because invalid state makes every performance result suspect.</p>
+								</div>
+							</div>
+							<div class="validation-dashboard">
+								<div class="dashboard-card">
+									<div class="metric-label mono">Reference suites</div>
+									<div class="metric-value">12</div>
+									<p>Used to verify legal move generation across non-trivial positions.</p>
+								</div>
+								<div class="dashboard-card">
+									<div class="metric-label mono">Regression focus</div>
+									<p>Move legality, state restoration, and pre/post optimisation consistency checks.</p>
+								</div>
+								<div class="dashboard-card dashboard-card-bugs">
+									<div class="metric-label mono">Bug classes caught</div>
+									<ul class="note-list">
+										<li>Castling legality edge cases.</li>
+										<li>En passant state corruption risks.</li>
+										<li>Pinned-piece filtering mistakes.</li>
+										<li>Incorrect king exposure handling.</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+
+						<div class="image-grid image-grid-dual">
+							<figure class="feature-frame">
+								<img class="media-img media-img-perft" :src="perftImg" alt="Perft validation output used to test chess move generation" loading="lazy" />
+								<figcaption class="media-cap">Perft output used as the first line of defence against illegal move generation and state corruption.</figcaption>
+							</figure>
+							<div class="terminal-note mono">
+								<div>&gt; run perft_suite --depth 5</div>
+								<div>[ok] reference positions aligned</div>
+								<div>[ok] no regression in legal move counts</div>
+								<div>[ok] optimisation branch preserved correctness</div>
+							</div>
+						</div>
+					</section>
+
+					<section class="notebook-cell" data-section="ui-integration" id="ui-integration">
+						<div class="section-badge mono">09 - UI &amp; lichess integration</div>
+						<h2 class="section-title">The project was productised so the engine could be inspected, played, and validated in real execution contexts</h2>
+						<div class="three-col-grid">
+							<div class="decision-card">
+								<div class="decision-kicker mono">Local UI</div>
+								<p>The board view turned an algorithm into an inspectable system with visible move feedback, position state, and iteration room.</p>
+							</div>
+							<div class="decision-card">
+								<div class="decision-kicker mono">Engine interaction model</div>
+								<p>Separating engine state from presentation state made it easier to reason about correctness, replay moves, and expose useful feedback cleanly.</p>
+							</div>
+							<div class="decision-card">
+								<div class="decision-kicker mono">Online / Lichess support</div>
+								<p>External play provided practical proof that the engine could leave the lab and perform under real game constraints.</p>
+							</div>
+						</div>
+
+						<div class="image-grid image-grid-triple">
+							<figure class="feature-frame">
+								<img class="media-img" :src="gameplayImg" alt="Chess engine gameplay screen showing pieces and move interface" loading="lazy" />
+								<figcaption class="media-cap">The local interface makes the system legible instead of hiding it behind a console boundary.</figcaption>
+							</figure>
+							<figure class="feature-frame">
+								<img class="media-img" :src="lichessImg" alt="Online chess rating or match result screenshot for the engine" loading="lazy" />
+								<figcaption class="media-cap">External play evidence used as practical proof, not just celebration.</figcaption>
+							</figure>
+							<figure class="feature-frame">
+								<img class="media-img" :src="lichessAltImg" alt="Additional online chess match or rating screenshot for the engine" loading="lazy" />
+								<figcaption class="media-cap">A second result view helps show repeatability and live-game behaviour.</figcaption>
+							</figure>
+						</div>
+					</section>
+
+					<section class="notebook-cell" data-section="results" id="results">
+						<div class="section-badge mono">10 - Results</div>
+						<h2 class="section-title">The project shows correctness proof, performance proof, and practical proof</h2>
+						<div class="proof-grid">
+							<div class="proof-card">
+								<div class="proof-title">Correctness proof</div>
+								<p>Perft suites provided a stable reference point before and after optimisation passes, keeping legality work trustworthy.</p>
+							</div>
+							<div class="proof-card">
+								<div class="proof-title">Performance proof</div>
+								<p>Throughput around 130k positions per second and aggressive pruning show that the search stack is doing meaningful work efficiently.</p>
+							</div>
+							<div class="proof-card">
+								<div class="proof-title">Practical proof</div>
+								<p>Usable UI and online rated play demonstrate that the build functions as a shipped system, not only a local algorithm experiment.</p>
+							</div>
+						</div>
+					</section>
+
+					<section class="notebook-cell" data-section="engineering-lessons" id="engineering-lessons">
+						<div class="section-badge mono">11 - What this demonstrates</div>
+						<h2 class="section-title">The strongest professional signal is how the project was structured, validated, and iterated</h2>
+						<div class="lessons-grid">
+							<div class="lesson-card">Breaking a complex system into independently testable subsystems.</div>
+							<div class="lesson-card">Writing performance-conscious modern C++ around hot paths and repeated state updates.</div>
+							<div class="lesson-card">Validating correctness under edge-case-heavy rules instead of assuming the implementation is fine.</div>
+							<div class="lesson-card">Using benchmarks and reference checks to guide optimisation decisions.</div>
+							<div class="lesson-card">Building usable tooling and UI around a backend-heavy technical core.</div>
+							<div class="lesson-card">Iterating from prototype to product with evidence rather than intuition alone.</div>
+						</div>
+					</section>
+
+					<section class="notebook-cell notebook-cell-end" data-section="future-work" id="future-work">
+						<div class="section-badge mono">12 - Future work</div>
+						<h2 class="section-title">The next steps are technical roadmap items, not hobby wish-list ideas</h2>
+						<div class="future-grid">
+							<div class="future-card">
+								<div class="decision-kicker mono">Optimisation opportunities</div>
+								<p>Improve move ordering and explore faster sliding-piece generation so more tactical depth fits inside the same budget.</p>
+							</div>
+							<div class="future-card">
+								<div class="decision-kicker mono">Architecture upgrades</div>
+								<p>Keep tightening subsystem boundaries, benchmarking hooks, and portability paths so future iteration remains disciplined.</p>
+							</div>
+							<div class="future-card">
+								<div class="decision-kicker mono">Evaluation experimentation</div>
+								<p>Test richer heuristics or lightweight learned assistance without losing interpretability or validation discipline.</p>
+							</div>
+						</div>
 					</section>
 				</main>
 			</div>
@@ -360,6 +592,30 @@ import perftImg from "../assets/chess-engine/perft_tests.PNG";
 
 import { createChessGame, fileRankToSquare, squareToFileRank } from "../chess/chessGame.js";
 import { StockfishClient, parseUciMove } from "../chess/stockfishClient.js";
+import {
+	DRAG,
+	GRID,
+	HOVER_GLOW,
+	HOVER_SHAKE,
+	MOVE_ANIM,
+	TEMPLATE_NAMES,
+} from "../chess/detail/constants.js";
+import {
+	buildBoardTopPlane,
+	clonePieceWithTint,
+	computeBoardGrid,
+	findBoardMesh,
+	getBaseCenterXZWorld,
+	getBoxExtremeAlongNormal,
+	getSquareCenterWorld,
+	normalizePieceUprightAndScale,
+	placeOnSquare,
+	projectPointToPlane,
+	recolorBoard,
+	snapToBoardTopInPlace,
+	squareFromWorldPoint,
+} from "../chess/detail/boardGeometry.js";
+import { disposeObject3D, easeInOutCubic, sleep, smoothstep } from "../chess/detail/helpers.js";
 
 const canvasRef = ref(null);
 const contentRef = ref(null);
@@ -426,14 +682,10 @@ const tmpSize = new THREE.Vector3();
 const tmpCenter = new THREE.Vector3();
 const tmpAxisX = new THREE.Vector3();
 const tmpAxisY = new THREE.Vector3();
-const tmpAxisZ = new THREE.Vector3();
-const tmpNormal = new THREE.Vector3();
-const tmpCorner = new THREE.Vector3();
 const tmpTarget = new THREE.Vector3();
 const tmpV = new THREE.Vector3();
 const tmpM = new THREE.Matrix4();
 
-const colorBase = new THREE.Color(0xffffff);
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
 
 const CAM_LOCAL_UP = new THREE.Vector3(0, 1, 0);
@@ -448,55 +700,6 @@ function getCameraScreenDownWorld(out) {
 	return getCameraUpWorld(out).multiplyScalar(-1);
 }
 
-const BOARD_COLORS = {
-	dark: "#769656",
-	light: "#eeeed2",
-	border: "#3b342e",
-};
-
-const GRID = {
-	spacing: 0.92,
-	offsetFile: 0.0,
-	offsetRank: 0.0,
-};
-
-const PIECE = {
-	footprintRatio: 0.55,
-	liftEps: 0.001,
-};
-
-const WHITE_TINT = new THREE.Color(0xd2c7b6);
-const BLACK_TINT = new THREE.Color(0x151515);
-const HOVER_GLOW = 0x2f6bff;
-
-// Hover jiggle envelope: 2s total, 1s steady then 1s ease-out
-const HOVER_SHAKE = {
-	rotAmp: 0.03, // radians (light)
-	posAmp: 0.006, // world units (light)
-	freq: 16.0,
-	holdSec: 1.0,
-	totalSec: 2.0,
-};
-
-// Move animation (slightly slower by request)
-const MOVE_ANIM = {
-	durationSec: 0.38, // was 0.28
-	jumpHeightRatio: 0.32, // relative to square size
-
-	// Drag & drop settle: a touch snappier, and no extra "jump" (you're already lifted)
-	dragDropDurationSec: 0.22,
-	dragDropJumpHeightRatio: 0.0,
-
-	// When cancelling an invalid drag (return to origin)
-	dragCancelDurationSec: 0.18,
-};
-
-// Drag & drop config
-const DRAG = {
-	thresholdPx: 7,
-	liftRatio: 0.20, // relative to square size
-};
-
 let dragCandidate = null; // { pieceRoot, fromSquare, startX, startY }
 let draggingPiece = null;
 let dragFromSquare = null;
@@ -509,15 +712,6 @@ let dragPrevControlsEnabled = false;
 
 // Active piece move animations
 let moveAnims = []; // { piece, startPos, endPos, startQuat, endQuat, startT, dur, jumpH, onComplete? }
-
-const TEMPLATE_NAMES = {
-	pawn: "Pawn_White_0",
-	rook: "Rook_Black_0",
-	knight: "Knight_White_0",
-	bishop: "Bishop_Black_0",
-	queen: "Queen_White_0",
-	king: "King_Black_0",
-};
 
 // ------------------------------------------------------------
 // Cinematic scroll config
@@ -704,17 +898,21 @@ const pageTheme = computed(() => {
 // Content UX (guided reveal so text doesn't dump all at once)
 // ------------------------------------------------------------
 const CONTENT_SECTIONS = [
-	{ id: "context", label: "Context" },
-	{ id: "approach", label: "Approach" },
-	{ id: "features", label: "Features" },
-	{ id: "process", label: "Process" },
-	{ id: "results", label: "Results" },
-	{ id: "learnings", label: "Key learnings" },
-	{ id: "tradeoffs", label: "Future improvements" },
+	{ id: "overview", label: "Overview", index: "01" },
+	{ id: "executive-summary", label: "Executive Summary", index: "02" },
+	{ id: "problem-framing", label: "Problem Framing", index: "03" },
+	{ id: "architecture", label: "System Architecture", index: "04" },
+	{ id: "board-state", label: "Core Engine Design", index: "05" },
+	{ id: "search-optimisation", label: "Search & Optimisation", index: "06" },
+	{ id: "evaluation-design", label: "Evaluation Design", index: "07" },
+	{ id: "testing-validation", label: "Testing & Validation", index: "08" },
+	{ id: "ui-integration", label: "UI & Productisation", index: "09" },
+	{ id: "results", label: "Results", index: "10" },
+	{ id: "engineering-lessons", label: "Engineering Lessons", index: "11" },
+	{ id: "future-work", label: "Future Work", index: "12" },
 ];
 
-const contentView = ref("guided"); // "guided" | "all"
-const activeSection = ref("context");
+const activeSection = ref("overview");
 
 const activeIndex = computed(() => {
 	const i = CONTENT_SECTIONS.findIndex((s) => s.id === activeSection.value);
@@ -722,7 +920,7 @@ const activeIndex = computed(() => {
 });
 
 const activeSectionLabel = computed(() => {
-	return CONTENT_SECTIONS[activeIndex.value]?.label ?? "Context";
+	return CONTENT_SECTIONS[activeIndex.value]?.label ?? "Overview";
 });
 
 function scrollContentIntoView() {
@@ -774,28 +972,25 @@ function scrollSectionIntoView(id) {
 	window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
 }
 
-function setActiveSection(id) {
-	activeSection.value = id;
-	nextTick(() => scrollSectionIntoView(id));
-}
+function updateActiveSectionFromScroll() {
+	const root = contentRef.value;
+	if (!root) return;
 
-function nextSection() {
-	const i = activeIndex.value;
-	if (i >= CONTENT_SECTIONS.length - 1) return;
-	activeSection.value = CONTENT_SECTIONS[i + 1].id;
-	nextTick(() => scrollSectionIntoView(activeSection.value));
-}
+	const threshold = window.innerHeight * 0.26;
+	let current = CONTENT_SECTIONS[0]?.id ?? "overview";
 
-function prevSection() {
-	const i = activeIndex.value;
-	if (i <= 0) return;
-	activeSection.value = CONTENT_SECTIONS[i - 1].id;
-	nextTick(() => scrollSectionIntoView(activeSection.value));
-}
+	for (const section of CONTENT_SECTIONS) {
+		const el = root.querySelector(`#${section.id}`);
+		if (!el) continue;
+		const top = el.getBoundingClientRect().top;
+		if (top - threshold <= 0) {
+			current = section.id;
+		} else {
+			break;
+		}
+	}
 
-function toggleContentView() {
-	contentView.value = contentView.value === "guided" ? "all" : "guided";
-	nextTick(() => scrollSectionIntoView(activeSection.value));
+	activeSection.value = current;
 }
 
 // ------------------------------------------------------------
@@ -855,6 +1050,11 @@ const skipPromptVisible = computed(() => {
 
 const contentDomVisible = computed(() => {
 	return !!endScene.value && scrollT.value >= 2.85;
+});
+
+watch(contentDomVisible, (visible) => {
+	if (!visible) return;
+	nextTick(() => updateActiveSectionFromScroll());
 });
 
 function skipToContent() {
@@ -979,8 +1179,7 @@ function initThree() {
 	renderer.setSize(window.innerWidth, window.innerHeight);
 
 	// Color management (support both newer and older three builds)
-	if ("outputColorSpace" in renderer) renderer.outputColorSpace = THREE.SRGBColorSpace;
-	else renderer.outputEncoding = THREE.sRGBEncoding;
+	renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 	// Scene
 	scene = new THREE.Scene();
@@ -1151,6 +1350,10 @@ function onScroll() {
 	// Cinematic should be driven by a clamped scrollY, but the page can keep scrolling past it.
 	const yForCinematic = Math.min(window.scrollY, maxY);
 	scrollTargetT = THREE.MathUtils.clamp(yForCinematic / lenPx, 0, maxT);
+
+	if (contentDomVisible.value) {
+		updateActiveSectionFromScroll();
+	}
 }
 
 
@@ -1224,7 +1427,7 @@ function loadModel() {
 				boardPickMeshes.push(o);
 			});
 
-			const boardInfo = computeBoardGrid(boardMesh);
+			const boardInfo = computeBoardGrid(boardMesh, WORLD_UP);
 			boardInfoGlobal = boardInfo;
 
 			recolorBoard(boardRoot, boardInfo.squareSize);
@@ -1642,23 +1845,6 @@ function updateRayFromEvent(ev) {
 	pointer.y = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
 
 	raycaster.setFromCamera(pointer, camera);
-}
-
-function buildBoardTopPlane(boardInfo) {
-	// Point on the board top plane
-	tmpTarget.copy(boardInfo.center);
-	const d = boardInfo.boardTop - tmpTarget.dot(boardInfo.normal);
-	tmpTarget.addScaledVector(boardInfo.normal, d);
-
-	const pl = new THREE.Plane();
-	pl.setFromNormalAndCoplanarPoint(boardInfo.normal, tmpTarget);
-	return pl;
-}
-
-function projectPointToPlane(point, plane, out) {
-	// projection = p - n * distanceToPoint(p)
-	const dist = plane.distanceToPoint(point);
-	return out.copy(point).addScaledVector(plane.normal, -dist);
 }
 
 function setCursor(c) {
@@ -2231,42 +2417,6 @@ function replacePieceWithType(oldPiece, newType, square) {
 	piecesGroup.add(newPiece);
 }
 
-// ------------------------------------------------------------
-// Square math (world <-> file/rank)
-// ------------------------------------------------------------
-function getSquareCenterWorld(file, rank, boardInfo) {
-	const { center, squareSize, fileAxis, rankAxis } = boardInfo;
-
-	const fx = (file - 3.5) * GRID.spacing + GRID.offsetFile;
-	const rz = (rank - 3.5) * GRID.spacing + GRID.offsetRank;
-
-	return tmpTarget.copy(center)
-		.addScaledVector(fileAxis, fx * squareSize)
-		.addScaledVector(rankAxis, rz * squareSize)
-		.clone();
-}
-
-function snapToBoardTopInPlace(pos, boardInfo, lift = 0.0) {
-	const d = boardInfo.boardTop - pos.dot(boardInfo.normal);
-	pos.addScaledVector(boardInfo.normal, d + lift);
-	return pos;
-}
-
-function squareFromWorldPoint(point, boardInfo) {
-	const v = tmpV.copy(point).sub(boardInfo.center);
-
-	const denom = Math.max(1e-6, boardInfo.squareSize * GRID.spacing);
-	const u = v.dot(boardInfo.fileAxis) / denom + 3.5;
-	const w = v.dot(boardInfo.rankAxis) / denom + 3.5;
-
-	const file = Math.round(u);
-	const rank = Math.round(w);
-
-	if (file < 0 || file > 7 || rank < 0 || rank > 7) return null;
-
-	return fileRankToSquare(file, rank);
-}
-
 function indexPiecesBySquare() {
 	squareToPiece.clear();
 	if (!piecesGroup) return;
@@ -2437,7 +2587,7 @@ function buildFullSetFromTemplates(templates, board) {
 
 	meshToPiece = new WeakMap();
 
-	const boardInfo = computeBoardGrid(board);
+	const boardInfo = computeBoardGrid(board, WORLD_UP);
 
 	const addPiece = (type, color, file, rank) => {
 		const piece = clonePieceWithTint(templates[type], color);
@@ -2483,286 +2633,6 @@ function buildFullSetFromTemplates(templates, board) {
 	for (let f = 0; f < 8; f++) addPiece("pawn", "black", f, 6);
 
 	piecesGroup.updateMatrixWorld(true);
-}
-
-function clonePieceWithTint(template, color) {
-	const clone = template.clone(true);
-	clone.visible = true;
-	clone.traverse((o) => {
-		o.visible = true;
-	});
-
-	const target = color === "white" ? WHITE_TINT : BLACK_TINT;
-
-	clone.traverse((o) => {
-		if (!o.isMesh || !o.material) return;
-
-		const apply = (m) => {
-			const nm = m.clone();
-
-			// Force a uniform base color per side.
-			if (nm.color) nm.color.copy(target);
-
-			// Make shape readable with highlights instead of relying on albedo differences
-			if (typeof nm.roughness === "number") nm.roughness = (color === "white") ? 0.10 : 0.30;
-			if (typeof nm.metalness === "number") nm.metalness = (color === "white") ? 0.30 : 0.90;
-			if ("envMapIntensity" in nm) nm.envMapIntensity = (color === "white") ? 1.45 : 0.55;
-
-			// Small contrast help
-			if (nm.color) nm.color.offsetHSL(0, 0, (color === "white") ? -0.06 : 0.03);
-
-			if (nm.emissive) nm.emissive.setHex(0x000000);
-
-			nm.needsUpdate = true;
-			return nm;
-		};
-
-		o.material = Array.isArray(o.material) ? o.material.map(apply) : apply(o.material);
-	});
-
-	return clone;
-}
-
-function recolorBoard(boardRoot, squareSize) {
-	if (!boardRoot) return;
-
-	boardRoot.traverse((o) => {
-		if (!o.isMesh || !o.material) return;
-		if (/pawn|rook|knight|bishop|queen|king/i.test(o.name || "")) return;
-
-		tmpBox.setFromObject(o);
-		tmpBox.getSize(tmpSize);
-		const isBorderByThickness = tmpSize.y > squareSize * 0.18;
-
-		const objName = (o.name || "").toLowerCase();
-
-		const apply = (m) => {
-			const nm = m.clone();
-			if (!nm.color) return nm;
-
-			const matName = (nm.name || "").toLowerCase();
-
-			const isBorderByName =
-				/frame|border|rim|edge|base|wood/.test(matName) ||
-				/frame|border|rim|edge|base|wood/.test(objName);
-
-			const isLight =
-				/light|white|tan|beige/.test(matName) ||
-				/light|white|tan|beige/.test(objName);
-
-			const isDark =
-				/dark|black|green/.test(matName) ||
-				/dark|black|green/.test(objName);
-
-			let role = "dark";
-			if (isBorderByThickness || isBorderByName) role = "border";
-			else if (isLight && !isDark) role = "light";
-			else if (isDark && !isLight) role = "dark";
-			else {
-				const c = m.color || nm.color;
-				const l = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
-				role = l > 0.55 ? "light" : "dark";
-			}
-
-			nm.color.set(BOARD_COLORS[role]);
-			nm.needsUpdate = true;
-			return nm;
-		};
-
-		o.material = Array.isArray(o.material) ? o.material.map(apply) : apply(o.material);
-	});
-}
-
-// ------------------------------------------------------------
-// Board/grid math
-// ------------------------------------------------------------
-function findBoardMesh(rootObj) {
-	let best = null;
-	let bestScore = -Infinity;
-
-	const box = new THREE.Box3();
-	const size = new THREE.Vector3();
-
-	rootObj.traverse((o) => {
-		if (!o.isMesh) return;
-
-		box.setFromObject(o);
-		box.getSize(size);
-
-		const flatness = size.y / Math.max(size.x, size.z, 1e-6);
-		const area = size.x * size.z;
-
-		let score = area * (flatness < 0.12 ? 1 : 0);
-		if (/board/i.test(o.name || "")) score *= 4;
-
-		if (score > bestScore) {
-			bestScore = score;
-			best = o;
-		}
-	});
-
-	return best;
-}
-
-function computeBoardGrid(board) {
-	tmpBox.setFromObject(board);
-	tmpBox.getSize(tmpSize);
-	tmpBox.getCenter(tmpCenter);
-
-	const squareSize = Math.min(tmpSize.x, tmpSize.z) / 8;
-
-	board.getWorldQuaternion(tmpQuat);
-	tmpAxisX.set(1, 0, 0).applyQuaternion(tmpQuat).normalize();
-	tmpAxisY.set(0, 1, 0).applyQuaternion(tmpQuat).normalize();
-	tmpAxisZ.set(0, 0, 1).applyQuaternion(tmpQuat).normalize();
-
-	let normal = tmpAxisY;
-	let best = Math.abs(tmpAxisY.dot(WORLD_UP));
-
-	const xScore = Math.abs(tmpAxisX.dot(WORLD_UP));
-	if (xScore > best) {
-		best = xScore;
-		normal = tmpAxisX;
-	}
-
-	const zScore = Math.abs(tmpAxisZ.dot(WORLD_UP));
-	if (zScore > best) {
-		best = zScore;
-		normal = tmpAxisZ;
-	}
-
-	tmpNormal.copy(normal).normalize();
-	if (tmpNormal.dot(WORLD_UP) < 0) tmpNormal.multiplyScalar(-1);
-
-	const fileAxis = tmpAxisX.clone().sub(tmpNormal.clone().multiplyScalar(tmpAxisX.dot(tmpNormal)));
-	if (fileAxis.lengthSq() < 1e-10) throw new Error("Board file axis is degenerate after projection.");
-	fileAxis.normalize();
-
-	const rankAxis = tmpNormal.clone().cross(fileAxis).normalize();
-
-	const boardTop = getBoxExtremeAlongNormal(tmpBox, tmpNormal, true);
-
-	return {
-		center: tmpCenter.clone(),
-		squareSize,
-		normal: tmpNormal.clone(),
-		fileAxis,
-		rankAxis,
-		boardTop,
-	};
-}
-
-function getBoxExtremeAlongNormal(box, normal, max) {
-	const x0 = box.min.x, y0 = box.min.y, z0 = box.min.z;
-	const x1 = box.max.x, y1 = box.max.y, z1 = box.max.z;
-
-	let extreme = max ? -Infinity : Infinity;
-
-	const test = (x, y, z) => {
-		tmpCorner.set(x, y, z);
-		const d = tmpCorner.dot(normal);
-		if (max) extreme = Math.max(extreme, d);
-		else extreme = Math.min(extreme, d);
-	};
-
-	test(x0, y0, z0);
-	test(x0, y0, z1);
-	test(x0, y1, z0);
-	test(x0, y1, z1);
-	test(x1, y0, z0);
-	test(x1, y0, z1);
-	test(x1, y1, z0);
-	test(x1, y1, z1);
-
-	return extreme;
-}
-
-// ------------------------------------------------------------
-// Piece placement
-// ------------------------------------------------------------
-function normalizePieceUprightAndScale(piece, squareSize, color) {
-	piece.position.set(0, 0, 0);
-	piece.rotation.set(0, 0, 0);
-	piece.updateWorldMatrix(true, true);
-
-	piece.rotation.x = -Math.PI / 2;
-	piece.rotation.z = Math.PI / 2;
-	piece.updateWorldMatrix(true, true);
-
-	tmpBox.setFromObject(piece);
-	tmpBox.getSize(tmpSize);
-
-	const footprint = Math.max(tmpSize.x, tmpSize.z);
-	if (footprint > 1e-6 && squareSize > 1e-6) {
-		const desired = squareSize * PIECE.footprintRatio;
-		const s = THREE.MathUtils.clamp(desired / footprint, 0.001, 1000);
-		piece.scale.multiplyScalar(s);
-		piece.updateWorldMatrix(true, true);
-	}
-}
-
-function placeOnSquare(piece, boardInfo, file, rank, color) {
-	const { center, squareSize, normal, fileAxis, rankAxis, boardTop } = boardInfo;
-
-	const fx = (file - 3.5) * GRID.spacing + GRID.offsetFile;
-	const rz = (rank - 3.5) * GRID.spacing + GRID.offsetRank;
-
-	tmpTarget.copy(center).addScaledVector(fileAxis, fx * squareSize).addScaledVector(rankAxis, rz * squareSize);
-
-	piece.position.copy(tmpTarget);
-
-	const boardRoll = Math.atan2(fileAxis.z, fileAxis.x);
-	piece.rotation.z = boardRoll + (color === "black" ? -0.5 * Math.PI : 0.5 * Math.PI);
-
-	piece.updateWorldMatrix(true, true);
-
-	const base = getBaseCenterXZWorld(piece);
-	piece.position.x += tmpTarget.x - base.x;
-	piece.position.z += tmpTarget.z - base.z;
-
-	piece.updateWorldMatrix(true, true);
-
-	tmpBox.setFromObject(piece);
-	const pieceBottom = getBoxExtremeAlongNormal(tmpBox, normal, false);
-	const lift = boardTop - pieceBottom + PIECE.liftEps;
-
-	piece.position.addScaledVector(normal, lift);
-	piece.updateWorldMatrix(true, true);
-}
-
-function getBaseCenterXZWorld(obj) {
-	tmpBox.setFromObject(obj);
-	const minY = tmpBox.min.y;
-	const maxY = tmpBox.max.y;
-
-	const yThresh = minY + (maxY - minY) * 0.08;
-
-	let sx = 0;
-	let sz = 0;
-	let n = 0;
-
-	obj.traverse((o) => {
-		if (!o.isMesh || !o.geometry?.attributes?.position) return;
-
-		const pos = o.geometry.attributes.position;
-		o.updateWorldMatrix(true, false);
-		const mat = o.matrixWorld;
-
-		const step = Math.max(1, Math.floor(pos.count / 1500));
-		for (let i = 0; i < pos.count; i += step) {
-			tmpV.fromBufferAttribute(pos, i).applyMatrix4(mat);
-			if (tmpV.y <= yThresh) {
-				sx += tmpV.x;
-				sz += tmpV.z;
-				n++;
-			}
-		}
-	});
-
-	if (n > 0) return new THREE.Vector3(sx / n, 0, sz / n);
-
-	tmpBox.getCenter(tmpCenter);
-	return new THREE.Vector3(tmpCenter.x, 0, tmpCenter.z);
 }
 
 // ------------------------------------------------------------
@@ -3333,47 +3203,14 @@ function disposeAll() {
 	camera = null;
 }
 
-function disposeObject3D(obj) {
-	obj.traverse((o) => {
-		if (!o.isMesh) return;
-
-		o.geometry?.dispose?.();
-
-		const mats = Array.isArray(o.material) ? o.material : [o.material];
-		for (const m of mats) {
-			if (!m) continue;
-
-			for (const k of Object.keys(m)) {
-				const v = m[k];
-				if (v && v.isTexture) v.dispose();
-			}
-
-			m.dispose?.();
-		}
-	});
-}
-
-// ------------------------------------------------------------
-// Helpers
-// ------------------------------------------------------------
-function smoothstep(edge0, edge1, x) {
-	const t = THREE.MathUtils.clamp((x - edge0) / Math.max(1e-6, edge1 - edge0), 0, 1);
-	return t * t * (3 - 2 * t);
-}
-
-function easeInOutCubic(x) {
-	const t = THREE.MathUtils.clamp(x, 0, 1);
-	return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
-
-function sleep(ms) {
-	return new Promise((r) => setTimeout(r, ms));
-}
 </script>
 
 <style scoped>
 .page {
 	min-height: 100vh;
+	background:
+		radial-gradient(circle at 50% 34%, rgba(36, 49, 108, 0.58), rgba(9, 10, 26, 0) 42%),
+		linear-gradient(180deg, #090b1c 0%, #04050f 100%);
 
 	/* theme tokens */
 	--accent: 80, 140, 255;         /* default blue */
@@ -3405,6 +3242,9 @@ function sleep(ms) {
 	width: 100vw;
 	height: 100vh;
 	overflow: hidden;
+	background:
+		radial-gradient(circle at 50% 32%, rgba(var(--accent), 0.22), rgba(6, 8, 18, 0) 40%),
+		linear-gradient(180deg, rgba(10, 12, 28, 0.96) 0%, rgba(4, 5, 15, 0.98) 100%);
 }
 
 .chess-canvas {
@@ -3560,7 +3400,7 @@ function sleep(ms) {
 	position: relative;
 	z-index: 5;
 	padding: 18px;
-	width: min(1240px, calc(100vw - 32px));
+	width: min(1380px, calc(100vw - 32px));
 	margin: 0 auto;
 	max-width: 100%;
 	box-sizing: border-box;
@@ -3579,21 +3419,119 @@ function sleep(ms) {
 }
 
 .content-shell {
-	display: flex;
-	justify-content: center;
+	display: grid;
+	grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+	gap: 18px;
+	align-items: start;
 }
 
 .content-main {
-	width: min(920px, 100%);
+	width: min(1000px, 100%);
 	display: flex;
 	flex-direction: column;
 	gap: 18px;
 }
 
+.content-rail {
+	position: sticky;
+	top: 18px;
+	align-self: start;
+}
+
+.rail-card {
+	position: relative;
+	padding: 18px;
+	border-radius: 20px;
+	background: linear-gradient(180deg, rgba(13, 16, 25, 0.92), rgba(8, 10, 16, 0.96));
+	border: 1px solid rgba(204, 216, 235, 0.12);
+	box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+	backdrop-filter: blur(12px);
+	overflow: hidden;
+}
+
+.rail-card::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background:
+		linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+		linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+	background-size: 36px 36px;
+	opacity: 0.18;
+	pointer-events: none;
+}
+
+.rail-card > * {
+	position: relative;
+	z-index: 1;
+}
+
+.rail-label,
+.rail-current-label {
+	font-size: 0.72rem;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: rgba(var(--sub), 0.62);
+}
+
+.rail-current {
+	display: grid;
+	gap: 4px;
+	margin: 18px 0 14px;
+}
+
+.rail-current strong {
+	font-size: 1rem;
+	font-weight: 700;
+	color: rgba(var(--title), 0.95);
+}
+
+.rail-nav {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.rail-link {
+	display: grid;
+	grid-template-columns: 36px minmax(0, 1fr);
+	gap: 10px;
+	align-items: center;
+	padding: 11px 12px;
+	border-radius: 14px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: rgba(var(--sub), 0.82);
+	text-align: left;
+	cursor: pointer;
+	font: inherit;
+	transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.rail-link:hover {
+	transform: translateX(2px);
+	background: rgba(255, 255, 255, 0.03);
+	border-color: rgba(var(--accent), 0.18);
+	color: rgba(var(--title), 0.94);
+}
+
+.rail-link.is-active {
+	background: linear-gradient(90deg, rgba(var(--accent), 0.16), rgba(255, 255, 255, 0.03));
+	border-color: rgba(var(--accent), 0.32);
+	color: rgba(var(--title), 0.98);
+	box-shadow: inset 3px 0 0 rgba(214, 186, 110, 0.75);
+}
+
+.rail-index {
+	color: rgba(214, 186, 110, 0.88);
+	font-size: 0.75rem;
+}
+
 .content-title {
+	font-family: Georgia, "Times New Roman", serif;
 	font-weight: 900;
 	letter-spacing: 0.01em;
-	line-height: 0.98;
+	line-height: 0.95;
 	font-size: clamp(34px, 5.2vw, 68px);
 	color: rgba(var(--title), 0.98);
 	margin: 0;
@@ -3638,11 +3576,11 @@ function sleep(ms) {
 	flex-direction: column;
 	gap: 18px;
 	padding: clamp(22px, 3vw, 34px);
-	border-radius: 20px;
+	border-radius: 24px;
 	background:
-		linear-gradient(180deg, rgba(14, 18, 28, 0.92), rgba(9, 12, 20, 0.94)),
-		radial-gradient(circle at top right, rgba(var(--accent), 0.12), rgba(0, 0, 0, 0) 42%);
-	border: 1px solid rgba(222, 228, 243, 0.14);
+		linear-gradient(180deg, rgba(14, 18, 27, 0.92), rgba(9, 12, 18, 0.95)),
+		radial-gradient(circle at top right, rgba(var(--accent), 0.1), rgba(0, 0, 0, 0) 42%);
+	border: 1px solid rgba(222, 228, 243, 0.12);
 	box-shadow:
 		0 24px 70px rgba(0, 0, 0, 0.34),
 		inset 0 1px 0 rgba(255, 255, 255, 0.04);
@@ -3669,12 +3607,18 @@ function sleep(ms) {
 }
 
 .notebook-hero {
-	gap: 22px;
+	gap: 26px;
 	padding-top: clamp(28px, 4vw, 40px);
 }
 
 .notebook-cell-end {
 	margin-bottom: min(18vh, 180px);
+}
+
+.notebook-cell-dark {
+	background:
+		linear-gradient(180deg, rgba(10, 13, 20, 0.96), rgba(5, 7, 12, 0.98)),
+		radial-gradient(circle at top left, rgba(74, 110, 156, 0.22), rgba(0, 0, 0, 0) 52%);
 }
 
 .cell-meta,
@@ -3687,26 +3631,148 @@ function sleep(ms) {
 
 .section-title {
 	margin: 0;
-	font-size: clamp(1.35rem, 2vw, 2rem);
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: clamp(1.5rem, 2.2vw, 2.25rem);
 	line-height: 1.12;
 	color: rgba(var(--title), 0.96);
 }
 
 .hero-dek {
-	max-width: 64ch;
-	font-size: clamp(1rem, 1.8vw, 1.16rem);
+	max-width: 30ch;
+	font-size: clamp(1.05rem, 1.8vw, 1.18rem);
 	color: rgba(var(--sub), 0.9);
 }
 
-.hero-chip-row,
-.jump-row {
+.hero-layout,
+.summary-grid,
+.three-col-grid,
+.subsystem-grid,
+.proof-grid,
+.future-grid,
+.lessons-grid,
+.validation-grid,
+.image-grid,
+.two-col-grid {
+	display: grid;
+	gap: 16px;
+}
+
+.hero-layout {
+	grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+	align-items: start;
+}
+
+.hero-copy,
+.hero-visual,
+.hero-sidecars,
+.stacked-notes,
+.validation-copy,
+.validation-dashboard {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.hero-summary {
+	max-width: 60ch;
+	font-size: 0.98rem;
+}
+
+.hero-actions {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 10px;
 }
 
-.hero-chip,
-.jump-link {
+.hero-action {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 42px;
+	padding: 0 16px;
+	border-radius: 999px;
+	border: 1px solid rgba(215, 223, 237, 0.14);
+	text-decoration: none;
+	cursor: pointer;
+	font: inherit;
+	letter-spacing: 0.08em;
+}
+
+.hero-action-primary {
+	background: linear-gradient(135deg, rgba(var(--accent), 0.26), rgba(214, 186, 110, 0.24));
+	color: rgba(var(--title), 0.98);
+}
+
+.hero-action-secondary {
+	background: rgba(255, 255, 255, 0.03);
+	color: rgba(var(--title), 0.9);
+}
+
+.hero-visual-frame {
+	position: relative;
+	margin: 0;
+	padding: 14px;
+	border-radius: 22px;
+	background: linear-gradient(180deg, rgba(12, 16, 24, 0.96), rgba(8, 10, 16, 0.98));
+	border: 1px solid rgba(221, 227, 242, 0.12);
+	box-shadow: 0 28px 80px rgba(0, 0, 0, 0.36);
+	overflow: hidden;
+}
+
+.hero-overlay-lines {
+	position: absolute;
+	inset: 18px;
+	pointer-events: none;
+}
+
+.hero-overlay-lines span {
+	position: absolute;
+	background: linear-gradient(90deg, rgba(var(--accent), 0), rgba(var(--accent), 0.35), rgba(var(--accent), 0));
+	height: 1px;
+	left: 5%;
+	right: 5%;
+}
+
+.hero-overlay-lines span:nth-child(1) { top: 24%; }
+.hero-overlay-lines span:nth-child(2) { top: 52%; }
+.hero-overlay-lines span:nth-child(3) { top: 78%; }
+
+.hero-console {
+	position: absolute;
+	right: 28px;
+	bottom: 28px;
+	min-width: 190px;
+	padding: 12px 14px;
+	border-radius: 16px;
+	background: rgba(5, 8, 14, 0.76);
+	border: 1px solid rgba(182, 197, 225, 0.18);
+	box-shadow: 0 16px 34px rgba(0, 0, 0, 0.34);
+}
+
+.hero-console-row {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	font-size: 0.74rem;
+	color: rgba(var(--sub), 0.8);
+}
+
+.hero-console-row + .hero-console-row {
+	margin-top: 6px;
+}
+
+.hero-console strong {
+	color: rgba(214, 186, 110, 0.9);
+	font-weight: 700;
+}
+
+.hero-chip-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.hero-chip {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -3721,51 +3787,237 @@ function sleep(ms) {
 	letter-spacing: 0.06em;
 }
 
-.jump-link {
-	cursor: pointer;
-	font: inherit;
-	appearance: none;
-}
-
-.jump-link:hover,
 .hero-chip:hover {
 	border-color: rgba(var(--accent), 0.4);
 	background: rgba(var(--accent), 0.1);
 }
 
-.metrics-grid,
-.results-grid,
-.two-col-grid,
-.image-grid {
+.metrics-strip {
 	display: grid;
-	gap: 14px;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	gap: 12px;
 }
 
-.metrics-grid {
-	grid-template-columns: repeat(4, minmax(0, 1fr));
+.metric-strip-card,
+.summary-card,
+.decision-card,
+.subsystem-card,
+.proof-card,
+.future-card,
+.lesson-card,
+.dashboard-card,
+.analysis-card,
+.benchmark-card,
+.notebook-subcell {
+	padding: 16px;
+	border-radius: 18px;
+	background: rgba(255, 255, 255, 0.03);
+	border: 1px solid rgba(221, 227, 242, 0.1);
 }
 
-.results-grid {
+.metric-strip-card {
+	padding: 18px 16px;
+	background: linear-gradient(180deg, rgba(12, 16, 24, 0.92), rgba(8, 10, 16, 0.96));
+}
+
+.metric-strip-value,
+.summary-label,
+.decision-kicker,
+.proof-title,
+.subsystem-title,
+.panel-title,
+.analysis-label {
+	color: rgba(var(--title), 0.95);
+}
+
+.metric-strip-value {
+	font-size: 0.82rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	margin-bottom: 8px;
+}
+
+.metric-strip-label {
+	color: rgba(var(--sub), 0.78);
+	font-size: 0.92rem;
+	line-height: 1.45;
+}
+
+.summary-grid,
+.three-col-grid,
+.proof-grid {
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.two-col-grid,
-.image-grid-dual {
+.subsystem-grid {
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.lessons-grid {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.future-grid,
 .image-grid-triple {
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.metric-card,
-.result-tile,
-.annotation-panel,
-.notebook-subcell {
-	padding: 16px;
-	border-radius: 16px;
+.two-col-grid,
+.image-grid-dual,
+.validation-grid {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.subsystem-card,
+.proof-card,
+.future-card,
+.lesson-card {
+	display: grid;
+	gap: 8px;
+}
+
+.subsystem-title,
+.proof-title {
+	font-size: 1rem;
+	font-weight: 800;
+}
+
+.deep-dive-panel {
+	display: grid;
+	gap: 16px;
+	padding: 18px;
+	border-radius: 20px;
 	background: rgba(255, 255, 255, 0.028);
 	border: 1px solid rgba(221, 227, 242, 0.1);
+}
+
+.deep-dive-panel-dark {
+	background: linear-gradient(180deg, rgba(14, 18, 27, 0.74), rgba(9, 12, 18, 0.82));
+}
+
+.panel-heading {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.panel-grid,
+.architecture-diagram {
+	display: grid;
+	gap: 12px;
+}
+
+.panel-grid {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.panel-label {
+	margin-bottom: 6px;
+	font-size: 0.72rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: rgba(214, 186, 110, 0.86);
+}
+
+.architecture-diagram {
+	grid-template-columns: repeat(15, minmax(0, 1fr));
+	align-items: center;
+}
+
+.arch-node {
+	grid-column: span 1;
+	display: grid;
+	gap: 8px;
+	padding: 14px 12px;
+	border-radius: 18px;
+	background: rgba(255, 255, 255, 0.03);
+	border: 1px solid rgba(221, 227, 242, 0.1);
+	text-align: center;
+}
+
+.arch-node span {
+	color: rgba(214, 186, 110, 0.88);
+	font-size: 0.72rem;
+}
+
+.arch-node strong {
+	font-size: 0.9rem;
+	line-height: 1.35;
+	color: rgba(var(--title), 0.94);
+}
+
+.arch-arrow {
+	text-align: center;
+	color: rgba(var(--accent), 0.75);
+	font-size: 0.8rem;
+}
+
+.arch-node,
+.arch-arrow {
+	grid-column: span 1;
+}
+
+.arch-node-final {
+	grid-column: span 2;
+}
+
+.performance-band {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 14px;
+	padding: 18px;
+	border-radius: 20px;
+	background: linear-gradient(180deg, rgba(5, 8, 14, 0.88), rgba(3, 5, 8, 0.96));
+	border: 1px solid rgba(143, 164, 203, 0.18);
+}
+
+.benchmark-card {
+	background: rgba(255, 255, 255, 0.02);
+}
+
+.analysis-card {
+	background: linear-gradient(180deg, rgba(12, 16, 24, 0.96), rgba(8, 10, 16, 0.96));
+}
+
+.analysis-bar {
+	height: 10px;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.06);
+	overflow: hidden;
+}
+
+.analysis-fill {
+	display: block;
+	width: 78%;
+	height: 100%;
+	border-radius: inherit;
+	background: linear-gradient(90deg, rgba(214, 186, 110, 0.9), rgba(var(--accent), 0.85));
+}
+
+.validation-dashboard {
+	display: grid;
+	grid-template-columns: 1fr;
+}
+
+.dashboard-card-bugs {
+	background: linear-gradient(180deg, rgba(15, 24, 17, 0.72), rgba(9, 16, 12, 0.78));
+}
+
+.terminal-note {
+	display: grid;
+	gap: 8px;
+	padding: 18px;
+	border-radius: 18px;
+	background: linear-gradient(180deg, rgba(8, 12, 10, 0.96), rgba(4, 7, 5, 0.98));
+	border: 1px solid rgba(120, 202, 144, 0.22);
+	color: rgba(183, 243, 196, 0.92);
+}
+
+.feature-frame {
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
 }
 
 .metric-label {
@@ -3822,25 +4074,10 @@ function sleep(ms) {
 	line-height: 1.55;
 }
 
-.pipeline-line {
-	padding: 12px 14px;
-	border-radius: 14px;
-	background: rgba(255, 255, 255, 0.03);
-	border: 1px solid rgba(221, 227, 242, 0.12);
-	color: rgba(var(--title), 0.9);
-	font-size: 0.86rem;
-	letter-spacing: 0.06em;
-}
-
-.note-list,
-.prompt-list {
+.note-list {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
-}
-
-.prompt-list {
-	color: rgba(var(--sub), 0.78);
 }
 
 .callout-note {
@@ -3857,12 +4094,36 @@ function sleep(ms) {
 		width: min(100vw, calc(100vw - 16px));
 	}
 
-	.metrics-grid,
-	.results-grid,
+	.content-shell,
+	.hero-layout,
+	.summary-grid,
+	.three-col-grid,
+	.subsystem-grid,
+	.proof-grid,
+	.future-grid,
+	.lessons-grid,
+	.panel-grid,
+	.validation-grid,
+	.performance-band,
+	.metrics-strip,
 	.two-col-grid,
 	.image-grid-dual,
 	.image-grid-triple {
 		grid-template-columns: 1fr;
+	}
+
+	.content-rail {
+		position: static;
+	}
+
+	.architecture-diagram {
+		grid-template-columns: 1fr;
+	}
+
+	.arch-node,
+	.arch-node-final,
+	.arch-arrow {
+		grid-column: auto;
 	}
 }
 
@@ -3878,9 +4139,15 @@ function sleep(ms) {
 	}
 
 	.hero-chip,
-	.jump-link {
+	.hero-action,
+	.rail-link {
 		font-size: 0.76rem;
 		padding: 0 12px;
+	}
+
+	.hero-console {
+		position: static;
+		margin-top: 12px;
 	}
 }
 

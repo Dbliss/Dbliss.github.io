@@ -32,6 +32,25 @@
 
 		<div class="scroll-spacer" :style="{ height: scrollSpacerHeight }" aria-hidden="true"></div>
 
+		<aside class="content-rail" :class="{ 'is-visible': contentDomVisible }" :aria-hidden="(!contentDomVisible).toString()">
+			<div class="rail-card">
+				<div class="rail-label mono">Case Study Notebook</div>
+				<nav class="rail-nav" aria-label="Chess engine documentation sections">
+					<button
+						v-for="section in CONTENT_SECTIONS"
+						:key="section.id"
+						type="button"
+						class="rail-link"
+						:class="{ 'is-active': activeSection === section.id }"
+						@click="scrollToContentSection(section.id)"
+					>
+						<span class="rail-index mono">{{ section.index }}</span>
+						<span>{{ section.label }}</span>
+					</button>
+				</nav>
+			</div>
+		</aside>
+
 		<article
 			ref="contentRef"
 			class="content prose"
@@ -39,146 +58,113 @@
 			:aria-hidden="(!contentDomVisible).toString()"
 		>
 			<div class="content-shell">
-				<aside class="content-rail">
-					<div class="rail-card">
-						<div class="rail-label mono">Case Study Notebook</div>
-						<div class="rail-current">
-							<span class="rail-current-label mono">Current section</span>
-							<strong>{{ activeSectionLabel }}</strong>
-						</div>
-						<nav class="rail-nav" aria-label="Chess engine documentation sections">
-							<button
-								v-for="section in CONTENT_SECTIONS"
-								:key="section.id"
-								type="button"
-								class="rail-link"
-								:class="{ 'is-active': activeSection === section.id }"
-								@click="scrollToContentSection(section.id)"
-							>
-								<span class="rail-index mono">{{ section.index }}</span>
-								<span>{{ section.label }}</span>
-							</button>
-						</nav>
-					</div>
-				</aside>
-
 				<main class="content-main">
 					<section class="notebook-cell notebook-hero" data-section="overview" id="overview">
-						<div class="cell-meta mono">Notebook 01 - Systems Case Study</div>
 						<div class="hero-layout">
-							<div class="hero-copy">
-								<h1 class="content-title">C++ Systems Case Study: Building a Chess Engine, UI, and Online Play Pipeline</h1>
+							<div class="hero-copy hero-copy-intro">
+								<h1 class="content-title">Full Stack Chess Engine</h1>
 								<p class="hero-dek">
-									A from-scratch project focused on correctness, search optimisation, interface design, and measurable performance improvement.
+									A C++ engine with a lightweight UI, local play, self-testing, and online integration.
 								</p>
-								<div class="hero-chip-row mono">
-									<span class="hero-chip">C++</span>
-									<span class="hero-chip">Systems Design</span>
-									<span class="hero-chip">Search Algorithms</span>
-									<span class="hero-chip">Performance Optimisation</span>
-									<span class="hero-chip">Testing &amp; Validation</span>
-									<span class="hero-chip">UI Integration</span>
-								</div>
-								<p class="hero-summary">
-									The project started as a backend-heavy engine exercise and grew into a full product loop: legal move generation,
-									search, evaluation, testing harnesses, interface work, and live proof through online rated play.
-								</p>
-								<div class="hero-actions">
-									<a class="hero-action hero-action-primary mono" href="https://github.com/Dbliss/Chess-Engine-cpp" target="_blank" rel="noreferrer">View repository</a>
-									<button type="button" class="hero-action hero-action-secondary mono" @click="scrollToContentSection('architecture')">System architecture</button>
-									<button type="button" class="hero-action hero-action-secondary mono" @click="scrollToContentSection('results')">Proof &amp; outcomes</button>
-								</div>
 							</div>
-							<div class="hero-visual">
-								<figure class="hero-visual-frame">
-									<img class="media-img media-img-wide" :src="chessBoardImg" alt="Chess engine interface showing the board and controls" loading="lazy" />
-									<div class="hero-overlay-lines" aria-hidden="true">
-										<span></span>
-										<span></span>
-										<span></span>
-									</div>
-									<div class="hero-console mono" aria-hidden="true">
-										<div class="hero-console-row"><span>depth</span><strong>11</strong></div>
-										<div class="hero-console-row"><span>nps</span><strong>~130k</strong></div>
-										<div class="hero-console-row"><span>pv</span><strong>... Nc6 Be3 Qf6</strong></div>
-									</div>
-								</figure>
-								<div class="hero-sidecars">
-									<div class="analysis-card">
-										<div class="analysis-label mono">Search signal</div>
-										<div class="analysis-bar"><span class="analysis-fill"></span></div>
-										<p>Iterative deepening, alpha-beta pruning, and TT hits turn raw branching factor into tractable search.</p>
-									</div>
-									<div class="analysis-card analysis-card-log">
-										<div class="analysis-label mono">Engine console</div>
-										<img class="media-img media-img-log" :src="engineLogImg" alt="Search log from the chess engine while evaluating positions" loading="lazy" />
+							<div class="hero-chip-row mono">
+								<span class="hero-chip">C++</span>
+								<span class="hero-chip">Engine Development</span>
+								<span class="hero-chip">Search Algorithms</span>
+								<span class="hero-chip">Performance Optimisation</span>
+								<span class="hero-chip">Test Suites & Benchmarking</span>
+							</div>
+							<div class="hero-body">
+								<div class="hero-copy hero-copy-details">
+									<div class="hero-summary">
+										<p>
+											This project started as a complex C++ learning opportunity, with a simple console UI and a simple objective of building something that was better than me.
+										</p>
+										<p>
+											Over time, I created a more extensive test suite, built a better UI for me to watch engine selfplay, eventually creating a system where improvements were easily measurable, with calculable confidence.
+										</p>
+										<p>
+											This was then extended further with support for player vs computer local play through an executable file, with a UI that supports sound and move feedback.
+										</p>
+										<p>
+											I closed the project by integrating it with Lichess, an online platform where it can go against other humans and engines, finally proving its 20 wins in a row against me wasn't just a fluke.
+										</p>
 									</div>
 								</div>
+								<figure class="feature-frame hero-feature">
+									<video
+										class="media-video"
+										:src="trainingEngineVideo"
+										muted
+										autoplay
+										loop
+										playsinline
+										preload="metadata"
+									></video>
+									<figcaption class="media-cap">Engine vs engine self-play</figcaption>
+								</figure>
 							</div>
 						</div>
 					</section>
 
 					<section class="metrics-strip" aria-label="Project metrics">
 						<div class="metric-strip-card">
-							<div class="metric-strip-value mono">12 perft suites</div>
-							<div class="metric-strip-label">reference validation before optimisation</div>
+							<div class="metric-strip-value mono">22 perft suites</div>
+							<div class="metric-strip-label">Millions of moves tested to ensure correctness</div>
 						</div>
 						<div class="metric-strip-card">
-							<div class="metric-strip-value mono">~130k pos/s</div>
-							<div class="metric-strip-label">representative throughput in the current build</div>
+							<div class="metric-strip-value mono">~1.3m pos/s</div>
+							<div class="metric-strip-label">Typical board positions evaluated per second</div>
 						</div>
 						<div class="metric-strip-card">
-							<div class="metric-strip-value mono">alpha-beta + TT</div>
-							<div class="metric-strip-label">search stack centred on reuse and aggressive pruning</div>
+							<div class="metric-strip-value mono">2500+ Player Elo</div>
+							<div class="metric-strip-label">At grandmaster level against humans</div>
 						</div>
 						<div class="metric-strip-card">
-							<div class="metric-strip-value mono">online rated play</div>
-							<div class="metric-strip-label">practical proof beyond isolated local benchmarks</div>
+							<div class="metric-strip-value mono">Executable Code</div>
+							<div class="metric-strip-label">A desktop application executable for local play</div>
 						</div>
 						<div class="metric-strip-card">
-							<div class="metric-strip-value mono">end-to-end ownership</div>
-							<div class="metric-strip-label">engine core, tooling, UI, and external integration</div>
-						</div>
-					</section>
-
-					<section class="notebook-cell" data-section="executive-summary" id="executive-summary">
-						<div class="section-badge mono">02 - Executive summary</div>
-						<h2 class="section-title">A recruiter-readable summary of the build, the difficulty, and the engineering value</h2>
-						<div class="summary-grid">
-							<div class="summary-card">
-								<div class="summary-label mono">What I built</div>
-								<p>A from-scratch chess engine in C++ with move generation, legality filtering, search, evaluation, UI work, and online play support.</p>
-							</div>
-							<div class="summary-card">
-								<div class="summary-label mono">What made it difficult</div>
-								<p>It combines edge-case-heavy rule correctness with performance pressure, making every optimisation contingent on trustworthy state transitions.</p>
-							</div>
-							<div class="summary-card">
-								<div class="summary-label mono">What it demonstrates</div>
-								<p>Structured architecture, measurable optimisation, disciplined validation, and the ability to productise a backend-heavy system.</p>
-							</div>
+							<div class="metric-strip-value mono">Simple GUI</div>
+							<div class="metric-strip-label">Interactable with game mode selection.</div>
 						</div>
 					</section>
 
 					<section class="notebook-cell" data-section="problem-framing" id="problem-framing">
-						<div class="section-badge mono">03 - Why this project mattered</div>
-						<h2 class="section-title">The value of the project was not chess itself, but the engineering pressure it created</h2>
+						<div class="section-badge mono">01 - Why Chess?</div>
+						<h2 class="section-title">Chess as a solvable engineering problem</h2>
+
 						<div class="callout-note">
-							Chess was useful because it forced correctness under strict rules, algorithmic tradeoffs under time pressure, and evidence-driven optimisation.
+							Chess originated in India around the 6th century, slowly evolving into one of the most studied and competitive games in history. For centuries, it was seen as a purely human domain, seen as too complex for machines to master.  
+							<br><br>
+							In 1997, everybodies perception changed, when 'Deep Blue' defeated world champion Garry Kasparov. Just a few decades after the invention of the modern computer, it had surpassed the best human players, not through intuition, study, or experience, but through intelligent brute-force search. It was this moment that marked a turning point in the history of artificial intelligence.
+							<br><br>
+							But what makes chess such a compelling problem for engineers? It's not just a game; it's a microcosm of complex decision-making, strategic planning, and algorithmic efficiency. The rules are simple, but the possibilities are infinite. It challenges us to think deeply about how we represent knowledge, how we search through possibilities, and how we make decisions under constraints.
 						</div>
+
 						<div class="three-col-grid">
+
 							<div class="decision-card">
-								<div class="decision-kicker mono">Why chess was a good systems problem</div>
-								<p>The state space is large, the rules are unforgiving, and the search tree punishes weak data structures or sloppy legality handling immediately.</p>
+								<div class="decision-kicker mono">Strict Rules</div>
+								<p>
+									Every position in chess follows a fixed and deterministic rule set. There is no randomness, no hidden information — only a fully observable system with clearly defined transitions. This makes it an ideal environment for modelling state, generating legal moves, and validating correctness.
+								</p>
 							</div>
+
 							<div class="decision-card">
-								<div class="decision-kicker mono">What engineering skills it forced</div>
-								<p>Incremental state updates, hot-path awareness, careful debugging of pinned-piece and king-safety logic, and a testing-first workflow for special rules.</p>
+								<div class="decision-kicker mono">Algorithmic Tradeoffs</div>
+								<p>
+									Despite its simple rules, chess explodes in complexity. With a branching factor of ~35 and a game tree on the order of 10<sup>120</sup>, exhaustive search is impossible. Strong play emerges from carefully balancing depth, pruning, and heuristics — turning an intractable problem into a tractable one through algorithm design.
+								</p>
 							</div>
+
 							<div class="decision-card">
-								<div class="decision-kicker mono">What transferred beyond chess</div>
-								<p>Breaking a complex system into independently testable subsystems, measuring optimisation impact, and shipping an inspectable interface around a technical core.</p>
+								<div class="decision-kicker mono">Evidence-Driven Optimisation</div>
+								<p>
+									Performance is measurable and unforgiving. Every improvement — from move ordering to evaluation tuning — is validated through benchmarks, self-play, and empirical testing. Strength is not subjective; it is earned through iteration, profiling, and data-driven refinement.
+								</p>
 							</div>
+
 						</div>
 					</section>
 
@@ -502,6 +488,28 @@
 							</div>
 						</div>
 
+							<div class="image-grid image-grid-dual">
+								<figure class="feature-frame">
+									<img
+										class="media-img media-img-log"
+										:src="engineLogImg"
+										alt="Search log from the chess engine while evaluating positions"
+										loading="lazy"
+									/>
+									<figcaption class="media-cap">Search log from the chess engine while evaluating positions, showing the real-time build output used to monitor progress.</figcaption>
+								</figure>
+							<div class="stacked-notes">
+								<div class="notebook-subcell">
+									<div class="decision-kicker mono">Training setup</div>
+									<p>This setup was used to iterate on engine behaviour in a live environment, making it easier to inspect move quality, tune heuristics, and observe the system under repeated play conditions.</p>
+								</div>
+								<div class="notebook-subcell">
+									<div class="decision-kicker mono">Why it mattered</div>
+									<p>Having a visible runtime loop meant improvements could be judged as system behaviour, not just isolated code changes or synthetic metrics.</p>
+								</div>
+							</div>
+						</div>
+
 						<div class="image-grid image-grid-triple">
 							<figure class="feature-frame">
 								<img class="media-img" :src="gameplayImg" alt="Chess engine gameplay screen showing pieces and move interface" loading="lazy" />
@@ -515,6 +523,14 @@
 								<img class="media-img" :src="lichessAltImg" alt="Additional online chess match or rating screenshot for the engine" loading="lazy" />
 								<figcaption class="media-cap">A second result view helps show repeatability and live-game behaviour.</figcaption>
 							</figure>
+						</div>
+					</section>
+
+					<section class="queen-interlude" aria-label="Decorative chess queen display">
+						<div class="queen-stage">
+							<div class="queen-aura" aria-hidden="true"></div>
+							<canvas ref="queenCanvasRef" class="queen-canvas" aria-hidden="true"></canvas>
+							<div class="queen-shadow" aria-hidden="true"></div>
 						</div>
 					</section>
 
@@ -589,6 +605,7 @@ import lichessImg from "../assets/chess-engine/lichess.png";
 import lichessAltImg from "../assets/chess-engine/lichess2.PNG";
 import engineLogImg from "../assets/chess-engine/log.PNG";
 import perftImg from "../assets/chess-engine/perft_tests.PNG";
+import trainingEngineVideo from "../assets/chess-engine/training_engine.mp4";
 
 import { createChessGame, fileRankToSquare, squareToFileRank } from "../chess/chessGame.js";
 import { StockfishClient, parseUciMove } from "../chess/stockfishClient.js";
@@ -619,6 +636,7 @@ import { disposeObject3D, easeInOutCubic, sleep, smoothstep } from "../chess/det
 
 const canvasRef = ref(null);
 const contentRef = ref(null);
+const queenCanvasRef = ref(null);
 
 const loading = ref(true);
 const progress = ref(0);
@@ -627,6 +645,13 @@ let renderer = null;
 let scene = null;
 let camera = null;
 let controls = null;
+
+let queenRenderer = null;
+let queenScene = null;
+let queenCamera = null;
+let queenPieceDisplay = null;
+let queenPmrem = null;
+let queenEnvTex = null;
 
 let pmrem = null;
 let envTex = null;
@@ -917,10 +942,6 @@ const activeSection = ref("overview");
 const activeIndex = computed(() => {
 	const i = CONTENT_SECTIONS.findIndex((s) => s.id === activeSection.value);
 	return Math.max(0, i);
-});
-
-const activeSectionLabel = computed(() => {
-	return CONTENT_SECTIONS[activeIndex.value]?.label ?? "Overview";
 });
 
 function scrollContentIntoView() {
@@ -1229,8 +1250,80 @@ function initThree() {
 	cinematicReady = false;
 }
 
+function initQueenShowcase() {
+	if (!queenCanvasRef.value || queenRenderer) return;
+
+	queenRenderer = new THREE.WebGLRenderer({
+		canvas: queenCanvasRef.value,
+		antialias: true,
+		alpha: true,
+		powerPreference: "high-performance",
+	});
+	queenRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+	queenRenderer.outputColorSpace = THREE.SRGBColorSpace;
+
+	const rect = queenCanvasRef.value.getBoundingClientRect();
+	const width = Math.max(1, Math.round(rect.width));
+	const height = Math.max(1, Math.round(rect.height));
+	queenRenderer.setSize(width, height, false);
+
+	queenScene = new THREE.Scene();
+
+	queenCamera = new THREE.PerspectiveCamera(30, width / height, 0.01, 100);
+	queenCamera.position.set(0, 0.96, 8.9);
+	queenCamera.lookAt(0, 1.2, 0);
+
+	queenPmrem = new THREE.PMREMGenerator(queenRenderer);
+	queenEnvTex = queenPmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+	queenScene.environment = queenEnvTex;
+
+	const hemi = new THREE.HemisphereLight(0xdde7ff, 0x141821, 1.8);
+	hemi.position.set(0, 1, 0);
+	queenScene.add(hemi);
+
+	const key = new THREE.DirectionalLight(0xfff0d4, 2.2);
+	key.position.set(2.4, 3.2, 3.8);
+	queenScene.add(key);
+
+	const rim = new THREE.DirectionalLight(0x7ea7ff, 1.05);
+	rim.position.set(-3.4, 1.8, -2.6);
+	queenScene.add(rim);
+
+	rebuildQueenShowcase();
+}
+
+function rebuildQueenShowcase() {
+	if (!queenScene || !templatesGlobal) return;
+
+	if (queenPieceDisplay) {
+		queenScene.remove(queenPieceDisplay);
+		disposeObject3D(queenPieceDisplay);
+		queenPieceDisplay = null;
+	}
+
+	const queenRoot = new THREE.Group();
+	const queenPiece = clonePieceWithTint(templatesGlobal.queen, "white");
+	normalizePieceUprightAndScale(queenPiece, 2.8);
+	queenRoot.add(queenPiece);
+
+	const bounds = new THREE.Box3();
+	const center = new THREE.Vector3();
+
+	bounds.setFromObject(queenRoot);
+	bounds.getCenter(center);
+	queenRoot.position.x -= center.x;
+	queenRoot.position.z -= center.z;
+
+	bounds.setFromObject(queenRoot);
+	queenRoot.position.y -= bounds.min.y - 0.12;
+
+	queenScene.add(queenRoot);
+	queenPieceDisplay = queenRoot;
+}
+
 onMounted(() => {
 	initThree();
+	initQueenShowcase();
 	loadModel();
 	startLoop();
 
@@ -1415,6 +1508,7 @@ function loadModel() {
 
 			const templates = getTemplatesStrict(root);
 			templatesGlobal = templates;
+			rebuildQueenShowcase();
 
 			hideTemplates(templates);
 
@@ -3102,6 +3196,27 @@ function roundedRect(ctx, x, y, w, h, r) {
 	ctx.closePath();
 }
 
+function renderQueenShowcase(timeSec) {
+	if (!queenRenderer || !queenScene || !queenCamera || !queenPieceDisplay) return;
+
+	queenPieceDisplay.rotation.y = timeSec * 0.72;
+	queenPieceDisplay.position.y = 0.18 + Math.sin(timeSec * 1.15) * 0.08;
+
+	queenRenderer.render(queenScene, queenCamera);
+}
+
+function resizeQueenShowcase() {
+	if (!queenRenderer || !queenCamera || !queenCanvasRef.value) return;
+
+	const rect = queenCanvasRef.value.getBoundingClientRect();
+	const width = Math.max(1, Math.round(rect.width));
+	const height = Math.max(1, Math.round(rect.height));
+
+	queenRenderer.setSize(width, height, false);
+	queenCamera.aspect = width / height;
+	queenCamera.updateProjectionMatrix();
+}
+
 
 // ------------------------------------------------------------
 // Loop + resize + dispose
@@ -3133,6 +3248,7 @@ function startLoop() {
 		applyIdleShake(elapsed);
 
 		renderer.render(scene, camera);
+		renderQueenShowcase(elapsed);
 	};
 	tick();
 }
@@ -3148,6 +3264,8 @@ function onResize() {
 	renderer.setSize(window.innerWidth, window.innerHeight);
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
+
+	resizeQueenShowcase();
 
 	if (contentLockActive) {
 		contentLockMinY = computeContentLockMinY();
@@ -3198,6 +3316,24 @@ function disposeAll() {
 
 	renderer?.dispose();
 	renderer = null;
+
+	if (queenPieceDisplay) {
+		queenScene?.remove(queenPieceDisplay);
+		disposeObject3D(queenPieceDisplay);
+		queenPieceDisplay = null;
+	}
+
+	queenEnvTex?.dispose?.();
+	queenEnvTex = null;
+
+	queenPmrem?.dispose?.();
+	queenPmrem = null;
+
+	queenRenderer?.dispose();
+	queenRenderer = null;
+
+	queenScene = null;
+	queenCamera = null;
 
 	scene = null;
 	camera = null;
@@ -3400,7 +3536,7 @@ function disposeAll() {
 	position: relative;
 	z-index: 5;
 	padding: 18px;
-	width: min(1380px, calc(100vw - 32px));
+	width: min(1880px, calc(120vw - 32px));
 	margin: 0 auto;
 	max-width: 100%;
 	box-sizing: border-box;
@@ -3419,34 +3555,60 @@ function disposeAll() {
 }
 
 .content-shell {
-	display: grid;
-	grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
-	gap: 18px;
-	align-items: start;
+	position: relative;
+	display: block;
+	overflow: visible;
 }
 
 .content-main {
-	width: min(1000px, 100%);
+	width: min(1780px, 100%);
+	margin: 0 auto;
 	display: flex;
 	flex-direction: column;
 	gap: 18px;
 }
 
 .content-rail {
-	position: sticky;
-	top: 18px;
-	align-self: start;
+	--rail-peek: clamp(40px, 1.5vw, 60px);
+	--rail-width: min(clamp(200px, 20vw, 300px), calc(100vw - 24px));
+	--rail-hover-offset: clamp(48px, 0.7vw, 44px);
+	position: fixed;
+	top: 112px;
+	left: -40px;
+	z-index: 40;
+	width: var(--rail-peek);
+	height: 1px;
+	overflow: visible;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 180ms ease;
+}
+
+.content-rail.is-visible {
+	opacity: 1;
+	pointer-events: auto;
 }
 
 .rail-card {
-	position: relative;
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: var(--rail-width);
 	padding: 18px;
 	border-radius: 20px;
 	background: linear-gradient(180deg, rgba(13, 16, 25, 0.92), rgba(8, 10, 16, 0.96));
 	border: 1px solid rgba(204, 216, 235, 0.12);
 	box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
 	backdrop-filter: blur(12px);
-	overflow: hidden;
+	overflow: visible;
+	transform: translateX(calc(-100% + var(--rail-peek)));
+	transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.content-rail:hover .rail-card,
+.content-rail:focus-within .rail-card {
+	transform: translateX(var(--rail-hover-offset));
+	box-shadow: 0 28px 70px rgba(0, 0, 0, 0.34);
 }
 
 .rail-card::before {
@@ -3461,35 +3623,44 @@ function disposeAll() {
 	pointer-events: none;
 }
 
+.rail-card::after {
+	content: "Sections";
+	position: absolute;
+	top: 18px;
+	right: calc(-1 * var(--rail-peek));
+	display: grid;
+	place-items: center;
+	width: var(--rail-peek);
+	height: clamp(112px, 12vw, 136px);
+	border-radius: 0 14px 14px 0;
+	background: linear-gradient(180deg, rgba(13, 16, 25, 0.96), rgba(8, 10, 16, 0.98));
+	border: 1px solid rgba(204, 216, 235, 0.14);
+	border-left: none;
+	box-shadow: 0 18px 36px rgba(0, 0, 0, 0.24);
+	color: rgba(var(--sub), 0.78);
+	font-size: 0.68rem;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	writing-mode: vertical-rl;
+}
+
 .rail-card > * {
 	position: relative;
 	z-index: 1;
 }
 
-.rail-label,
-.rail-current-label {
+.rail-label {
 	font-size: 0.72rem;
 	letter-spacing: 0.14em;
 	text-transform: uppercase;
 	color: rgba(var(--sub), 0.62);
 }
 
-.rail-current {
-	display: grid;
-	gap: 4px;
-	margin: 18px 0 14px;
-}
-
-.rail-current strong {
-	font-size: 1rem;
-	font-weight: 700;
-	color: rgba(var(--title), 0.95);
-}
-
 .rail-nav {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
+	margin-top: 18px;
 }
 
 .rail-link {
@@ -3638,8 +3809,8 @@ function disposeAll() {
 }
 
 .hero-dek {
-	max-width: 30ch;
-	font-size: clamp(1.05rem, 1.8vw, 1.18rem);
+	max-width: 70ch;
+	font-size: clamp(1rem, 1.8vw, 1.08rem);
 	color: rgba(var(--sub), 0.9);
 }
 
@@ -3658,9 +3829,17 @@ function disposeAll() {
 }
 
 .hero-layout {
-	grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
-	align-items: start;
+	grid-template-columns: minmax(0, 1fr);
+	justify-items: center;
 }
+
+	.hero-body {
+		width: 100%;
+		display: grid;
+		grid-template-columns: minmax(0, 0.6fr) minmax(0, 0.6fr);
+		gap: 24px;
+		align-items: start;
+	}
 
 .hero-copy,
 .hero-visual,
@@ -3673,15 +3852,35 @@ function disposeAll() {
 	gap: 16px;
 }
 
+.hero-copy {
+	align-items: center;
+	text-align: center;
+}
+
+.hero-copy-details {
+	align-items: flex-start;
+	text-align: left;
+}
+
+.hero-copy-details .hero-chip-row,
+.hero-copy-details .hero-actions {
+	justify-content: flex-start;
+}
+
 .hero-summary {
 	max-width: 60ch;
 	font-size: 0.98rem;
+}
+
+.hero-summary p + p {
+	margin-top: 0.75rem;
 }
 
 .hero-actions {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 10px;
+	justify-content: center;
 }
 
 .hero-action {
@@ -3770,6 +3969,7 @@ function disposeAll() {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 10px;
+	justify-content: center;
 }
 
 .hero-chip {
@@ -3859,13 +4059,13 @@ function disposeAll() {
 
 .future-grid,
 .image-grid-triple {
-	grid-template-columns: repeat(3, minmax(0, 1fr));
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .two-col-grid,
 .image-grid-dual,
 .validation-grid {
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.8fr);
 }
 
 .subsystem-card,
@@ -4020,6 +4220,11 @@ function disposeAll() {
 	gap: 10px;
 }
 
+.hero-feature {
+	width: 100%;
+	margin-top: 0;
+}
+
 .metric-label {
 	font-size: 0.72rem;
 	letter-spacing: 0.12em;
@@ -4043,28 +4248,35 @@ function disposeAll() {
 }
 
 .feature-frame img,
-.media-img {
+.feature-frame video,
+.media-img,
+.media-video {
 	width: 100%;
 	height: auto;
 	display: block;
 	border-radius: 16px;
 }
 
-.media-img {
+.media-img,
+.media-video {
 	margin: 0 auto;
-	max-width: 100%;
+	max-width: none;
 }
 
 .media-img-wide {
-	max-width: 100%;
+	max-width: none;
 }
 
 .media-img-log {
-	max-width: 720px;
+	max-width: none;
 }
 
 .media-img-perft {
-	max-width: 760px;
+	max-width: none;
+}
+
+.image-grid-triple > .feature-frame:first-child {
+	grid-column: 1 / -1;
 }
 
 .media-cap {
@@ -4072,6 +4284,73 @@ function disposeAll() {
 	color: rgba(var(--sub), 0.76);
 	font-size: 0.92rem;
 	line-height: 1.55;
+	text-align: center;
+}
+
+.analysis-label {
+	width: 100%;
+	text-align: center;
+}
+
+.queen-interlude {
+	position: relative;
+	display: grid;
+	place-items: center;
+	min-height: 420px;
+	padding: 34px 0 28px;
+	overflow: hidden;
+}
+
+.queen-stage {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: min(100%, 1180px);
+	min-height: 420px;
+}
+
+.queen-aura {
+	position: absolute;
+	inset: 10% 24%;
+	border-radius: 50%;
+	background:
+		radial-gradient(circle, rgba(214, 186, 110, 0.24) 0%, rgba(214, 186, 110, 0.08) 34%, rgba(0, 0, 0, 0) 68%),
+		radial-gradient(circle at 50% 42%, rgba(var(--accent), 0.28), rgba(0, 0, 0, 0) 58%);
+	filter: blur(18px);
+}
+
+.queen-shadow {
+	position: absolute;
+	z-index: 1;
+	bottom: 68px;
+	width: clamp(220px, 28vw, 360px);
+	height: 48px;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.08) 72%, rgba(0, 0, 0, 0) 100%);
+	filter: blur(12px);
+	animation: queen-shadow 5.6s ease-in-out infinite;
+}
+
+.queen-canvas {
+	position: relative;
+	z-index: 2;
+	width: min(100%, 760px);
+	height: 420px;
+	display: block;
+	filter: drop-shadow(0 18px 42px rgba(0, 0, 0, 0.38));
+}
+
+@keyframes queen-shadow {
+	0%,
+	100% {
+		transform: scale(1);
+		opacity: 0.82;
+	}
+
+	50% {
+		transform: scale(0.88);
+		opacity: 0.56;
+	}
 }
 
 .note-list {
@@ -4094,8 +4373,8 @@ function disposeAll() {
 		width: min(100vw, calc(100vw - 16px));
 	}
 
-	.content-shell,
 	.hero-layout,
+	.hero-body,
 	.summary-grid,
 	.three-col-grid,
 	.subsystem-grid,
@@ -4114,6 +4393,18 @@ function disposeAll() {
 
 	.content-rail {
 		position: static;
+		width: 100%;
+		height: auto;
+		margin-bottom: 16px;
+	}
+
+	.rail-card {
+		width: 100%;
+		transform: none;
+	}
+
+	.rail-card::after {
+		display: none;
 	}
 
 	.architecture-diagram {
@@ -4124,6 +4415,11 @@ function disposeAll() {
 	.arch-node-final,
 	.arch-arrow {
 		grid-column: auto;
+	}
+
+	.queen-stage,
+	.queen-canvas {
+		width: 100%;
 	}
 }
 

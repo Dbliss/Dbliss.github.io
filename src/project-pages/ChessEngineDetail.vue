@@ -139,29 +139,28 @@
 							<br><br>
 							In 1997, everybodies perception changed, when 'Deep Blue' defeated world champion Garry Kasparov. Just a few decades after the invention of the modern computer, it had surpassed the best human players, not through intuition, study, or experience, but through intelligent brute-force search. It was this moment that marked a turning point in the history of artificial intelligence.
 							<br><br>
-							But what makes chess such a compelling problem for engineers? It's not just a game; it's a microcosm of complex decision-making, strategic planning, and algorithmic efficiency. The rules are simple, but the possibilities are infinite. It challenges us to think deeply about how we represent knowledge, how we search through possibilities, and how we make decisions under constraints.
+							But what makes chess such a luring problem for engineers? It's not just a game; it's a system of complex decision-making and feedback-driven learning. The rules are simple, but the possibilities are effectively infinite. It challenges us to think about how we search through vast possibilities and evaluate decisions under pressure. It is a brutally honest environment where mistakes are punished and improvement is rewarded. But why does chess work so well for computers?
 						</div>
-
 						<div class="three-col-grid">
 
 							<div class="decision-card">
 								<div class="decision-kicker mono">Strict Rules</div>
 								<p>
-									Every position in chess follows a fixed and deterministic rule set. There is no randomness, no hidden information — only a fully observable system with clearly defined transitions. This makes it an ideal environment for modelling state, generating legal moves, and validating correctness.
+									Chess follows a fixed and deterministic rule set. There is no randomness and luck every outcome is repeatable and tracable back to the decisions made by the user. This makes it an ideal environment for a computer, where every game is a deterministic outcome of the players' choices.
 								</p>
 							</div>
 
 							<div class="decision-card">
 								<div class="decision-kicker mono">Algorithmic Tradeoffs</div>
 								<p>
-									Despite its simple rules, chess explodes in complexity. With a branching factor of ~35 and a game tree on the order of 10<sup>120</sup>, exhaustive search is impossible. Strong play emerges from carefully balancing depth, pruning, and heuristics — turning an intractable problem into a tractable one through algorithm design.
+									Despite its simple rules, chess's game tree can very quickly explode in complexity. With a branching factor of ~35, the typical possibilities are on the order of 10<sup>120</sup>, making exhaustive search is impossible. Strong play instead emerges from balancing search depth among candidate moves and intelligently the search tree.
 								</p>
 							</div>
 
 							<div class="decision-card">
 								<div class="decision-kicker mono">Evidence-Driven Optimisation</div>
 								<p>
-									Performance is measurable and unforgiving. Every improvement — from move ordering to evaluation tuning — is validated through benchmarks, self-play, and empirical testing. Strength is not subjective; it is earned through iteration, profiling, and data-driven refinement.
+									In chess, performance is easily measurable. How many times did one variant of an engine beat the other over thousands of games? Every minor improvement, from move ordering to tuning a single constant, can be precisely measured for its impact. Strength is not subjective; it is measured through iterations of profiling and data-driven refinement.
 								</p>
 							</div>
 
@@ -4041,6 +4040,15 @@ function disposeAll() {
 	color: rgba(var(--sub), 0.78);
 	font-size: 0.92rem;
 	line-height: 1.45;
+}
+
+.decision-kicker {
+	display: inline-block;
+	margin-bottom: 10px;
+	font-size: 0.92rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
 }
 
 .summary-grid,

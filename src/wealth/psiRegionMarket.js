@@ -294,6 +294,7 @@ function hasRequiredRecentHistory(points) {
 
 function excludeCalculationOutliers(actualPoints) {
   const candidatePoints = actualPoints.filter((point) => (Number(point.salesCount) || 0) >= minimumAnnualSalesForCalculations)
+  const candidatePointByYear = new Map(candidatePoints.map((point) => [point.year, point]))
 
   return candidatePoints.filter((point, index) => {
     const previousPoint = candidatePoints[index - 1] || null
@@ -316,6 +317,17 @@ function excludeCalculationOutliers(actualPoints) {
 
     if (isMuchHigherThanPrevious && isMuchHigherThanNext) return false
     if (isMuchLowerThanPrevious && isMuchLowerThanNext) return false
+
+    const priorTwoYearPoint = candidatePointByYear.get(point.year - 2) || null
+    const nextTwoYearPoint = candidatePointByYear.get(point.year + 2) || null
+    if (priorTwoYearPoint && nextTwoYearPoint) {
+      const surroundingAverage = (priorTwoYearPoint.value + nextTwoYearPoint.value) / 2
+      if (surroundingAverage > 0) {
+        const relativeToAverage = point.value / surroundingAverage
+        if (relativeToAverage >= 2 || relativeToAverage <= 0.2) return false
+      }
+    }
+
     return true
   })
 }

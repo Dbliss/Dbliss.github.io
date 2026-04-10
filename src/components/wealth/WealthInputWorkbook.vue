@@ -781,12 +781,12 @@ function hasUnlockedPeers(key) {
 
 const vacancyRatePct = percentProxy(() => props.form.propertyConfig.vacancyRate, value => { props.form.propertyConfig.vacancyRate = value })
 const housePurchasePrice = computed({
-  get: () => roundToNearestThousand(props.form.propertyConfig.house.purchasePrice),
-  set: (value) => { props.form.propertyConfig.house.purchasePrice = roundToNearestThousand(value) }
+  get: () => normaliseCurrencyInput(props.form.propertyConfig.house.purchasePrice),
+  set: (value) => { props.form.propertyConfig.house.purchasePrice = normaliseCurrencyInput(value) }
 })
 const apartmentPurchasePrice = computed({
-  get: () => roundToNearestThousand(props.form.propertyConfig.apartment.purchasePrice),
-  set: (value) => { props.form.propertyConfig.apartment.purchasePrice = roundToNearestThousand(value) }
+  get: () => normaliseCurrencyInput(props.form.propertyConfig.apartment.purchasePrice),
+  set: (value) => { props.form.propertyConfig.apartment.purchasePrice = normaliseCurrencyInput(value) }
 })
 const houseOwnerDepositPct = percentProxy(() => props.form.propertyConfig.house.ownerDepositPct, value => { props.form.propertyConfig.house.ownerDepositPct = value })
 const houseDepositPct = percentProxy(() => props.form.propertyConfig.house.depositPct, value => { props.form.propertyConfig.house.depositPct = value })
@@ -956,6 +956,10 @@ function hasEnoughPropertyData(areaRecord, preview, propertyType) {
 
 function roundToNearestThousand(value) {
   return Math.round((Math.max(0, Number(value) || 0)) / 1000) * 1000
+}
+
+function normaliseCurrencyInput(value) {
+  return Math.max(0, Math.round(Number(value) || 0))
 }
 
 function clampPct(value) {

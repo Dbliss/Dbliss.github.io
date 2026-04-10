@@ -169,169 +169,106 @@
 
 					<section class="notebook-cell" data-section="architecture" id="architecture">
 						<div class="section-badge mono">04 - System architecture</div>
-						<h2 class="section-title">The engine is organised as a pipeline with explicit correctness and performance responsibilities</h2>
-						<div class="architecture-diagram">
-							<div class="arch-node">
-								<span class="mono">01</span>
-								<strong>Input / Position State</strong>
-							</div>
-							<div class="arch-arrow mono">-&gt;</div>
-							<div class="arch-node">
-								<span class="mono">02</span>
-								<strong>Board Representation</strong>
-							</div>
-							<div class="arch-arrow mono">-&gt;</div>
-							<div class="arch-node">
-								<span class="mono">03</span>
-								<strong>Move Generation</strong>
-							</div>
-							<div class="arch-arrow mono">-&gt;</div>
-							<div class="arch-node">
-								<span class="mono">04</span>
-								<strong>Legality Filtering</strong>
-							</div>
-							<div class="arch-arrow mono">-&gt;</div>
-							<div class="arch-node">
-								<span class="mono">05</span>
-								<strong>Search + Pruning</strong>
-							</div>
-							<div class="arch-arrow mono">-&gt;</div>
-							<div class="arch-node">
-								<span class="mono">06</span>
-								<strong>Evaluation</strong>
-							</div>
-							<div class="arch-arrow mono">-&gt;</div>
-							<div class="arch-node">
-								<span class="mono">07</span>
-								<strong>Best Move Output</strong>
-							</div>
-							<div class="arch-arrow mono">-&gt;</div>
-							<div class="arch-node arch-node-final">
-								<span class="mono">08</span>
-								<strong>UI / Lichess / Interaction Layer</strong>
-							</div>
-						</div>
-
-						<div class="subsystem-grid">
-							<div class="subsystem-card">
-								<div class="subsystem-title">Board state representation</div>
-								<p><strong>Role:</strong> keep state updates cheap enough for deep search.</p>
-								<p><strong>Design choice:</strong> a representation geared toward fast updates rather than beginner readability.</p>
-								<p><strong>Reason:</strong> search cost compounds over millions of positions.</p>
-								<p><strong>Engineering lesson:</strong> hot-path structure decisions should be made before micro-optimisation.</p>
-							</div>
-							<div class="subsystem-card">
-								<div class="subsystem-title">Move generation &amp; legality</div>
-								<p><strong>Role:</strong> generate pseudo-legal candidates, then filter down to trusted legal positions.</p>
-								<p><strong>Design choice:</strong> correctness-first handling of checks, pins, castling, en passant, and promotions.</p>
-								<p><strong>Reason:</strong> bugs here poison every higher-level subsystem.</p>
-								<p><strong>Engineering lesson:</strong> correctness is an architectural dependency, not a QA afterthought.</p>
-							</div>
-							<div class="subsystem-card">
-								<div class="subsystem-title">Search pipeline</div>
-								<p><strong>Role:</strong> find strong moves within depth and time budgets.</p>
-								<p><strong>Design choice:</strong> alpha-beta, iterative deepening, ordering, quiescence, and TT reuse.</p>
-								<p><strong>Reason:</strong> useful strength comes from cutting waste, not brute-force optimism.</p>
-								<p><strong>Engineering lesson:</strong> pipeline-level cooperation beats isolated algorithm additions.</p>
-							</div>
-							<div class="subsystem-card">
-								<div class="subsystem-title">Evaluation layer</div>
-								<p><strong>Role:</strong> score quiet positions in a way that is debuggable and tunable.</p>
-								<p><strong>Design choice:</strong> interpretable heuristics over opaque modelling.</p>
-								<p><strong>Reason:</strong> this project was as much about engineering insight as raw strength.</p>
-								<p><strong>Engineering lesson:</strong> transparent systems are easier to iterate on under pressure.</p>
-							</div>
-							<div class="subsystem-card">
-								<div class="subsystem-title">Testing harness</div>
-								<p><strong>Role:</strong> prevent regressions while optimisation work moves quickly.</p>
-								<p><strong>Design choice:</strong> perft references as the correctness contract before performance claims.</p>
-								<p><strong>Reason:</strong> benchmark wins are meaningless if move legality is broken.</p>
-								<p><strong>Engineering lesson:</strong> validation infrastructure increases iteration speed.</p>
-							</div>
-							<div class="subsystem-card">
-								<div class="subsystem-title">UI / external integration</div>
-								<p><strong>Role:</strong> make the engine playable, inspectable, and demonstrably useful.</p>
-								<p><strong>Design choice:</strong> keep engine logic separate from presentation and online execution context.</p>
-								<p><strong>Reason:</strong> the project needed to read as a shipped system, not only a solver.</p>
-								<p><strong>Engineering lesson:</strong> product surface area changes how technical work is perceived and validated.</p>
-							</div>
-						</div>
-					</section>
-
-					<section class="notebook-cell" data-section="board-state" id="board-state">
-						<div class="section-badge mono">05 - Board state &amp; move generation</div>
-						<h2 class="section-title">Core engine design started with correctness under edge-case-heavy rules</h2>
-						<div class="deep-dive-panel">
-							<div class="panel-heading">
-								<div class="panel-title">Subsystem</div>
-								<p>Board state and legal move generation</p>
-							</div>
-							<div class="panel-grid">
-								<div>
-									<div class="panel-label mono">Problem</div>
-									<p>Naive move generation is easy to write and easy to trust incorrectly. Special moves, king exposure, pins, and discovered attacks create failure modes that are hard to see without structured validation.</p>
-								</div>
-								<div>
-									<div class="panel-label mono">Implementation</div>
-									<p>The engine generates candidate moves, then filters them through legality rules that preserve king safety and consistent state transitions across make/unmake cycles.</p>
-								</div>
-								<div>
-									<div class="panel-label mono">Tradeoff</div>
-									<p>Correctness-first structure can feel slower early on, but it creates a stable base for later search and evaluation work.</p>
-								</div>
-								<div>
-									<div class="panel-label mono">Outcome</div>
-									<p>Once the legality layer became trustworthy, optimisation stopped being guesswork and became measurable engineering.</p>
-								</div>
-							</div>
-						</div>
-
-						<div class="image-grid image-grid-dual">
-							<figure class="feature-frame">
-								<img class="media-img" :src="gameplayImg" alt="Live gameplay view from the chess engine interface" loading="lazy" />
-								<figcaption class="media-cap">Gameplay view showing the engine as an interactive system rather than a console-only prototype.</figcaption>
-							</figure>
-							<div class="stacked-notes">
-								<div class="notebook-subcell">
-									<div class="decision-kicker mono">System</div>
-									<p>Pseudo-legal generation is separated from legality checks so pinned pieces, castling rights, and king exposure can be handled deliberately.</p>
-								</div>
-								<div class="notebook-subcell">
-									<div class="decision-kicker mono">Tradeoff</div>
-									<p>Some logic becomes more verbose, but the rules become easier to reason about and easier to validate against perft references.</p>
-								</div>
-								<div class="notebook-subcell">
-									<div class="decision-kicker mono">Impact</div>
-									<p>The engine avoids the trap of appearing fast while silently accepting illegal positions into the search tree.</p>
-								</div>
-							</div>
-						</div>
+						<h2 class="section-title">How to build a chess engine</h2>
+						<p>
+							From a software design perspective, the project was structured into a modular design, where the engines core 
+							was kept separate from the UI and CLI layer. The engine itself was designed as a deterministic evaluation system,
+							recieving the board state, and returning the best move based on a bounded search of the game tree. 
+						</p>
+						<p>
+							The engine itself is a depth-first-search algorithm, as an evaluation depends on exploring complete move sequences. 
+							DFS allows position evaluations to propagate back up the tree, enabling pruning techniques to 
+							drastically reduce the number of positions evaluated. 
+						</p>
+						<p>
+							The engines core was built using object-oriented design principles, allowing multiple engines
+							to share common infrastructure while having different search and evaluation parameters. Thus, enabling 
+							easy A/B testing of different engine approaches.
+						</p>
+						<p>
+							Once 'the engine core' is built, the UI, CLI, and 3rd party integration all work by submitting board states to the engine, 
+							and receiving optimal moves as a response. The engines core is simplified below.
+						</p>
+						<figure class="feature-frame">
+							<img class="media-img" :src="architectureImg" alt="Architecture diagram of the chess engine search loop" loading="lazy" />
+						</figure>
 					</section>
 
 					<section class="notebook-cell notebook-cell-dark" data-section="search-optimisation" id="search-optimisation">
-						<div class="section-badge mono">06 - Search &amp; optimisation</div>
-						<h2 class="section-title">Performance improvements were framed as reducing wasted computation while preserving correctness</h2>
+						<div class="section-badge mono">05 - Search algorithm</div>
+						<h2 class="section-title">Search became an anytime decision system under tight latency constraints</h2>
+						<p>
+							The software problem here is not "find the perfect answer". It is "return the strongest answer
+							you can before the clock expires". That makes the search an anytime algorithm: each completed
+							depth pass produces a usable answer, and if more time exists the engine keeps refining it.
+						</p>
+						<p>
+							The core traversal is recursive DFS, but performance comes from controlling the order and width of
+							the tree. Alpha-beta is essentially branch-and-bound over an adversarial state space. Iterative
+							deepening improves move ordering. The transposition table acts like memoization. Quiescence search
+							is a stability check that prevents the engine from scoring noisy frontier states too early.
+						</p>
 						<div class="deep-dive-panel deep-dive-panel-dark">
 							<div class="panel-heading">
-								<div class="panel-title">Subsystem</div>
-								<p>Search stack and evidence-driven optimisation</p>
+								<div class="panel-label mono">Decision Flow</div>
+								<h3 class="subhead">How one move request is processed</h3>
+							</div>
+							<div class="architecture-diagram">
+								<div class="arch-node"><span>01</span><strong>Depth 1</strong></div>
+								<div class="arch-arrow">-&gt;</div>
+								<div class="arch-node"><span>02</span><strong>Reorder</strong></div>
+								<div class="arch-arrow">-&gt;</div>
+								<div class="arch-node"><span>03</span><strong>Depth n</strong></div>
+								<div class="arch-arrow">-&gt;</div>
+								<div class="arch-node"><span>04</span><strong>Prune</strong></div>
+								<div class="arch-arrow">-&gt;</div>
+								<div class="arch-node"><span>05</span><strong>Stabilise leaf</strong></div>
+								<div class="arch-arrow">-&gt;</div>
+								<div class="arch-node"><span>06</span><strong>Return best-so-far</strong></div>
+							</div>
+						</div>
+						<div class="three-col-grid">
+							<div class="decision-card">
+								<div class="decision-kicker mono">Latency Control</div>
+								<p>
+									Iterative deepening means the engine never sits for a long time with no answer. Each pass
+									improves confidence while keeping the system responsive under a hard time budget.
+								</p>
+							</div>
+							<div class="decision-card">
+								<div class="decision-kicker mono">Work Prioritisation</div>
+								<p>
+									Move ordering and pruning are forms of prioritisation. Expensive work is spent first on
+									candidates most likely to matter, and low-value branches are cut early.
+								</p>
+							</div>
+							<div class="decision-card">
+								<div class="decision-kicker mono">Frontier Quality</div>
+								<p>
+									The engine does not trust every frontier state equally. If a position is still tactically
+									volatile, it keeps searching until the score is stable enough to be meaningful.
+								</p>
+							</div>
+						</div>
+						<div class="deep-dive-panel deep-dive-panel-dark">
+							<div class="panel-heading">
+								<div class="panel-label mono">Engineering Principles</div>
+								<h3 class="subhead">What this section says about software skill</h3>
 							</div>
 							<div class="panel-grid">
-								<div>
-									<div class="panel-label mono">Problem</div>
-									<p>Brute-force search collapses quickly under chess branching factor, especially when time controls require useful moves rather than perfect search.</p>
+								<div class="analysis-card">
+									<div class="panel-label mono">Performance Engineering</div>
+									<p>
+										The engine is designed around minimizing wasted work. Better ordering improves not only
+										raw speed, but the quality of the answer returned within the same deadline.
+									</p>
 								</div>
-								<div>
-									<div class="panel-label mono">Implementation</div>
-									<p>Alpha-beta pruning, iterative deepening, move ordering, transposition tables, and quiescence search cooperate to prioritise relevant lines and collapse repeated work.</p>
-								</div>
-								<div>
-									<div class="panel-label mono">Tradeoff</div>
-									<p>Selective pruning and reuse mechanisms improve speed, but only when they are backed by reliable state handling and clear TT semantics.</p>
-								</div>
-								<div>
-									<div class="panel-label mono">Outcome</div>
-									<p>The engine reaches materially stronger search within the same budget, with representative pruning near 99.98% and throughput around 130k positions per second.</p>
+								<div class="analysis-card">
+									<div class="panel-label mono">Bounded Computation</div>
+									<p>
+										This section was a practical lesson in trading completeness for value. The system needs
+										to degrade gracefully, not catastrophically, when time is limited.
+									</p>
 								</div>
 							</div>
 						</div>
@@ -339,248 +276,395 @@
 						<div class="performance-band">
 							<div class="benchmark-card">
 								<div class="metric-label mono">Node throughput</div>
-								<div class="metric-value">~130k pos/s</div>
-								<p>Throughput framed as useful search efficiency, not an isolated vanity metric.</p>
+								<div class="metric-value">~1.3m pos/s</div>
+								<p>Throughput mattered because every extra node had to translate into stronger practical play.</p>
 							</div>
 							<div class="benchmark-card">
 								<div class="metric-label mono">Pruning profile</div>
 								<div class="metric-value">~99.98%</div>
-								<p>Large tree reduction once ordering and cutoffs are working together.</p>
+								<p>Most of the raw game tree is discarded once move ordering and cutoffs begin cooperating.</p>
 							</div>
 							<div class="benchmark-card">
 								<div class="metric-label mono">Search stack</div>
-								<div class="metric-value">AB + TT + QSearch</div>
-								<p>The key gain came from subsystem cooperation rather than one heroic optimisation.</p>
+								<div class="metric-value">AB + PVS + QSearch</div>
+								<p>The gain came from subsystem cooperation rather than one isolated optimisation trick.</p>
 							</div>
 						</div>
 
+					</section>
+
+					<section class="notebook-cell" data-section="board-state" id="board-state">
+						<div class="section-badge mono">06 - Move generation &amp; bitboards</div>
+						<h2 class="section-title">Board state was modelled for data locality, rollback, and fast set operations</h2>
+						<p>
+							This section is really about data structures. A naive representation would use an 8x8 array or a
+							list of piece objects and repeatedly scan the board looking for what is occupied, attacked, or
+							legal. That is easy to understand, but expensive when the same queries happen millions of times.
+						</p>
+						<p>
+							Bitboards compress one whole 8x8 board into a single 64-bit integer. That means set operations
+							become CPU-native bitwise operations instead of loops over squares. In practice, the engine keeps
+							12 per-piece bitboards and 2 occupancy bitboards, then pairs them with a 64-byte mailbox array so
+							exact square lookup stays simple when applying and undoing moves.
+						</p>
 						<div class="two-col-grid">
-							<div class="notebook-subcell">
-								<h3 class="subhead">Optimisations that moved the needle</h3>
-								<ul class="note-list">
-									<li>Move ordering that made alpha-beta cutoffs occur earlier.</li>
-									<li>Transposition table reuse that converted repeated search into lookups.</li>
-									<li>Incremental state updates that kept the hot path lean during make/unmake cycles.</li>
-									<li>Quiescence handling that avoided evaluating tactically noisy leaf nodes as if they were settled.</li>
-								</ul>
+							<pre class="terminal-note mono diagram-terminal">Bitboard example
+
+8 | 0 0 0 0 0 0 0 1
+7 | 0 0 0 0 0 0 1 0
+6 | 0 0 0 0 0 1 0 0
+5 | 0 0 0 1 0 0 0 0
+4 | 0 0 0 0 1 0 0 0
+3 | 0 0 1 0 0 0 0 0
+2 | 0 1 0 0 0 0 0 0
+1 | 1 0 0 0 0 0 0 0
+    a b c d e f g h
+
+One 64-bit value can represent this entire mask.
+Intersection, union, and occupancy checks become
+bitwise AND / OR / XOR instead of scanning 64 cells.</pre>
+							<div class="stacked-notes">
+								<div class="subsystem-card">
+									<div class="subsystem-title">Mailbox-only board</div>
+									<p>
+										If each square is stored as a 1-byte code, the board uses exactly 64 bytes. The tradeoff
+										is compute: queries like "which white bishops are active?" require a 64-square scan.
+									</p>
+								</div>
+								<div class="subsystem-card">
+									<div class="subsystem-title">Bitboard set model</div>
+									<p>
+										One bitboard is 8 bytes. This engine keeps 14 of them, so the set-based layer costs
+										112 bytes and answers many board-wide questions with a handful of register-sized ops.
+									</p>
+								</div>
+								<div class="subsystem-card">
+									<div class="subsystem-title">Hybrid design used here</div>
+									<p>
+										`112 bytes` of bitboards plus a `64 byte` mailbox gives `176 bytes` of core placement
+										state. That is `112 bytes` more than mailbox-only, but it removes repeated full-board
+										scans from the hottest search paths.
+									</p>
+								</div>
 							</div>
-							<div class="notebook-subcell">
-								<h3 class="subhead">Optimisation judgement</h3>
-								<ul class="note-list">
-									<li>Fast-looking changes were only kept when they preserved perft results.</li>
-									<li>The project reinforced that micro-optimisations matter less than structure, ordering, and reuse.</li>
-									<li>Evidence-driven iteration was more reliable than subjective "this feels cleaner" refactors.</li>
-								</ul>
+						</div>
+						<div class="performance-band">
+							<div class="benchmark-card">
+								<div class="metric-label mono">Mailbox only</div>
+								<div class="metric-value">64 bytes</div>
+								<p>Small memory footprint, but many common queries degrade into branchy 64-cell loops.</p>
 							</div>
+							<div class="benchmark-card">
+								<div class="metric-label mono">Bitboards only</div>
+								<div class="metric-value">112 bytes</div>
+								<p>Fourteen 64-bit sets make board-wide intersection tests cheap and cache-friendly.</p>
+							</div>
+							<div class="benchmark-card">
+								<div class="metric-label mono">Hybrid used here</div>
+								<div class="metric-value">176 bytes</div>
+								<p>Extra memory buys simpler rollback, direct square lookup, and far less repeated scanning.</p>
+							</div>
+						</div>
+						<div class="subsystem-grid">
+							<div class="subsystem-card">
+								<div class="subsystem-title">Compute tradeoff</div>
+								<p>
+									A check like "is this lane occupied?" becomes a bit-mask operation on a 64-bit value,
+									which is dramatically cheaper than iterating over squares with conditionals.
+								</p>
+							</div>
+							<div class="subsystem-card">
+								<div class="subsystem-title">Rollback-friendly state</div>
+								<p>
+									The board is mutated in place and restored through undo records. That is a classic
+									performance decision: reuse memory, avoid copies, and make rollback exact.
+								</p>
+							</div>
+							<div class="subsystem-card">
+								<div class="subsystem-title">Invariant management</div>
+								<p>
+									Splitting candidate generation from legality checks made it easier to guard complex edge
+									cases without mixing correctness logic into every low-level data update.
+								</p>
+							</div>
+							<div class="subsystem-card">
+								<div class="subsystem-title">Alternative baseline</div>
+								<p>
+									For comparison, 32 piece records at 16 bytes each would already cost 512 bytes before
+									container overhead. The compact board model keeps the hot state dense and predictable.
+								</p>
+							</div>
+						</div>
+						<figure class="feature-frame">
+							<img class="media-img" :src="gameplayImg" alt="Live gameplay view from the chess engine interface" loading="lazy" />
+							<figcaption class="media-cap">The same board model had to satisfy two different software needs at once: very cheap search-state mutation and clean square-level interaction in the visible UI.</figcaption>
+						</figure>
+						<div class="callout-note">
+							The main engineering lesson here was that "fast" and "maintainable" do not have to be opposites.
+							The hybrid model costs a little extra memory, but it keeps the state machine both efficient and
+							tractable to debug.
 						</div>
 					</section>
 
 					<section class="notebook-cell" data-section="evaluation-design" id="evaluation-design">
-						<div class="section-badge mono">07 - Evaluation design</div>
-						<h2 class="section-title">The evaluation layer stayed interpretable so engine behaviour could be debugged and tuned deliberately</h2>
+						<div class="section-badge mono">07 - Static evaluation</div>
+						<h2 class="section-title">Evaluation was built as an explainable scoring pipeline instead of a black box</h2>
+						<p>
+							Once search reaches a stopping frontier, the engine needs a scoring function. Rather than using
+							an opaque learned model, I built an explicit weighted system. That made it slower to reach peak
+							strength than dropping in a black box, but it paid off in debuggability, tunability, and being
+							able to explain why the engine preferred one position over another.
+						</p>
+						<p>
+							From a software design perspective, this is feature engineering plus weighted aggregation. The
+							engine extracts many small signals, scores them separately for midgame and endgame, and blends
+							the result based on phase. The important part is not the domain vocabulary itself, but the fact
+							that the scoring logic is modular and parameterised rather than buried in one giant heuristic blob.
+						</p>
 						<div class="deep-dive-panel">
 							<div class="panel-heading">
-								<div class="panel-title">Subsystem</div>
-								<p>Heuristic evaluation design</p>
+								<div class="panel-label mono">Scoring Pipeline</div>
+								<h3 class="subhead">How a position becomes one comparable number</h3>
 							</div>
-							<div class="panel-grid">
-								<div>
-									<div class="panel-label mono">Problem</div>
-									<p>When an engine chooses a poor plan, opaque scoring makes it difficult to understand whether the issue came from mobility, king safety, material assumptions, or endgame handling.</p>
-								</div>
-								<div>
-									<div class="panel-label mono">Implementation</div>
-									<p>The project kept evaluation readable and decomposable, using interpretable terms instead of hiding behaviour behind a black-box model.</p>
-								</div>
-								<div>
-									<div class="panel-label mono">Tradeoff</div>
-									<p>Heuristic tuning can be slower than dropping in a learned scorer, but it preserves engineering visibility and makes bugs easier to localise.</p>
-								</div>
-								<div>
-									<div class="panel-label mono">Outcome</div>
-									<p>Tuning becomes an explicit design exercise: adjust a term, inspect behaviour, validate search impact, and iterate with confidence.</p>
-								</div>
+							<div class="architecture-diagram">
+								<div class="arch-node"><span>01</span><strong>Position</strong></div>
+								<div class="arch-arrow">-&gt;</div>
+								<div class="arch-node"><span>02</span><strong>Extract features</strong></div>
+								<div class="arch-arrow">-&gt;</div>
+								<div class="arch-node"><span>03</span><strong>MG weights</strong></div>
+								<div class="arch-arrow">-&gt;</div>
+								<div class="arch-node"><span>04</span><strong>EG weights</strong></div>
+								<div class="arch-arrow">-&gt;</div>
+								<div class="arch-node"><span>05</span><strong>Blend by phase</strong></div>
+								<div class="arch-arrow">-&gt;</div>
+								<div class="arch-node"><span>06</span><strong>Score</strong></div>
 							</div>
 						</div>
-
 						<div class="three-col-grid">
 							<div class="decision-card">
-								<div class="decision-kicker mono">Decision</div>
-								<p>Keep evaluation terms explainable enough to inspect move preferences line by line.</p>
+								<div class="decision-kicker mono">Explainability</div>
+								<p>
+									Because the model is hand-authored, I can trace a surprising score back to specific feature
+									weights instead of treating the evaluator as a mysterious oracle.
+								</p>
 							</div>
 							<div class="decision-card">
-								<div class="decision-kicker mono">Constraint</div>
-								<p>Search quality depends on evaluation being stable enough to cooperate with pruning and quiescence logic.</p>
+								<div class="decision-kicker mono">Phase Awareness</div>
+								<p>
+									The same feature can matter differently over time, so the scorer interpolates between two
+									weight sets rather than assuming one static value is always correct.
+								</p>
 							</div>
 							<div class="decision-card">
-								<div class="decision-kicker mono">Impact</div>
-								<p>Debugging remains grounded in engineering reasoning rather than guesswork about an opaque scorer.</p>
+								<div class="decision-kicker mono">Parameter Surface</div>
+								<p>
+									Values and bonuses are exposed as parameters, which makes the system suitable for batch A/B
+									testing instead of requiring code edits for every experiment.
+								</p>
 							</div>
+						</div>
+						<div class="callout-note">
+							This section developed a useful general skill: turning fuzzy domain judgement into a measurable,
+							tunable scoring function with clean inputs, clean outputs, and a clear calibration workflow.
 						</div>
 					</section>
 
 					<section class="notebook-cell" data-section="testing-validation" id="testing-validation">
-						<div class="section-badge mono">08 - Testing &amp; validation</div>
-						<h2 class="section-title">Correctness was treated as the foundation, with performance work gated by reference validation</h2>
-						<div class="validation-grid">
-							<div class="validation-copy">
-								<p>
-									Perft was the contract that kept optimisation honest. Before claiming a speed improvement, the engine had to
-									produce trusted node counts across reference positions designed to stress special rules and edge conditions.
-								</p>
-								<div class="notebook-subcell">
-									<div class="decision-kicker mono">Validation philosophy</div>
-									<p>Measure correctness first, then benchmark. The order matters because invalid state makes every performance result suspect.</p>
-								</div>
+						<div class="section-badge mono">08 - Caching &amp; performance</div>
+						<h2 class="section-title">Caching and hot-path discipline pushed the same hardware much further</h2>
+						<p>
+							The main performance story here is memoization plus locality. The engine hashes each position into
+							a 64-bit key and uses that key to probe a transposition table. If a semantically identical state
+							has already been searched, the engine can reuse the previous result instead of paying for the same
+							subtree again.
+						</p>
+						<p>
+							The rest of the gains came from hot-path discipline. Fixed-size move arrays avoid heap churn.
+							Incremental hashing avoids recomputing identity from scratch. In-place rollback avoids large state
+							copies. Time checks happen at intervals rather than every node. None of those changes is glamorous
+							on its own, but together they move the engine into a very different performance class.
+						</p>
+						<figure class="feature-frame">
+							<img class="media-img" :src="searchTreeImg" alt="Search tree visual showing recursive exploration of moves and responses" loading="lazy" />
+							<figcaption class="media-cap">At the bottom of the stack, the search still reduces to a recursive decision tree, but the architectural value comes from how that tree is bounded, cached, and exposed through stable interfaces.</figcaption>
+						</figure>
+						<div class="deep-dive-panel">
+							<div class="panel-heading">
+								<div class="panel-label mono">Cache Flow</div>
+								<h3 class="subhead">How repeated work is avoided</h3>
 							</div>
-							<div class="validation-dashboard">
-								<div class="dashboard-card">
-									<div class="metric-label mono">Reference suites</div>
-									<div class="metric-value">12</div>
-									<p>Used to verify legal move generation across non-trivial positions.</p>
-								</div>
-								<div class="dashboard-card">
-									<div class="metric-label mono">Regression focus</div>
-									<p>Move legality, state restoration, and pre/post optimisation consistency checks.</p>
-								</div>
-								<div class="dashboard-card dashboard-card-bugs">
-									<div class="metric-label mono">Bug classes caught</div>
-									<ul class="note-list">
-										<li>Castling legality edge cases.</li>
-										<li>En passant state corruption risks.</li>
-										<li>Pinned-piece filtering mistakes.</li>
-										<li>Incorrect king exposure handling.</li>
-									</ul>
-								</div>
+							<div class="architecture-diagram">
+								<div class="arch-node"><span>01</span><strong>Position</strong></div>
+								<div class="arch-arrow">-&gt;</div>
+								<div class="arch-node"><span>02</span><strong>64-bit hash</strong></div>
+								<div class="arch-arrow">-&gt;</div>
+								<div class="arch-node"><span>03</span><strong>Bucket probe</strong></div>
+								<div class="arch-arrow">-&gt;</div>
+								<div class="arch-node"><span>04</span><strong>Hit / miss</strong></div>
+								<div class="arch-arrow">-&gt;</div>
+								<div class="arch-node"><span>05</span><strong>Reuse or search</strong></div>
+								<div class="arch-arrow">-&gt;</div>
+								<div class="arch-node"><span>06</span><strong>Store result</strong></div>
 							</div>
 						</div>
+						<div class="subsystem-grid">
+							<div class="subsystem-card">
+								<div class="subsystem-title">Memoization key design</div>
+								<p>
+									A full board state collapses to one 64-bit identity value. That makes cache lookup cheap,
+									but only works because the key is updated exactly during every state transition.
+								</p>
+							</div>
+							<div class="subsystem-card">
+								<div class="subsystem-title">Cache replacement</div>
+								<p>
+									The table is bucketed and aged, which means the cache is managed as a bounded resource
+									rather than as an ever-growing memory sink.
+								</p>
+							</div>
+							<div class="subsystem-card">
+								<div class="subsystem-title">Allocation control</div>
+								<p>
+									The hot path avoids vectors of transient objects and other allocation-heavy patterns. That
+									helps both speed and consistency because GC-style pauses or allocator noise do not exist.
+								</p>
+							</div>
+							<div class="subsystem-card">
+								<div class="subsystem-title">Runtime budgeting</div>
+								<p>
+									The engine checks time periodically instead of constantly, which is a small but important
+									example of respecting overhead even in instrumentation and control logic.
+								</p>
+							</div>
+						</div>
+						<div class="performance-band">
+							<div class="benchmark-card">
+								<div class="metric-label mono">Cache role</div>
+								<div class="metric-value">TT + Zobrist</div>
+								<p>Repeated positions are converted from repeated searches into fast, hash-keyed reuse.</p>
+							</div>
+							<div class="benchmark-card">
+								<div class="metric-label mono">Throughput</div>
+								<div class="metric-value">~1.3m pos/s</div>
+								<p>Performance was judged by how much stronger search fit into the same time budget.</p>
+							</div>
+							<div class="benchmark-card">
+								<div class="metric-label mono">Tree reduction</div>
+								<div class="metric-value">~99.98%</div>
+								<p>Pruning, ordering, and caching cut away most of the raw tree before it becomes expensive.</p>
+							</div>
+						</div>
+						<div class="callout-note">
+							The useful software lesson here is that performance rarely comes from one clever trick. It comes
+							from many small decisions that all reduce unnecessary work, memory traffic, and avoidable latency.
+						</div>
+					</section>
 
+					<section class="notebook-cell" data-section="iteration-validation" id="iteration-validation">
+						<div class="section-badge mono">09 - Iteration &amp; validation</div>
+						<h2 class="section-title">Iteration became an experimentation workflow with regression gates</h2>
+						<p>
+							Once the engine was functional, the work shifted from building features to building a reliable
+							feedback loop. Self-play and head-to-head matches became the experiment harness, while perft acted
+							as the regression suite that stopped "optimisations" from silently breaking correctness.
+						</p>
+						<p>
+							That is a software engineering pattern I value well beyond this project: measure behaviour with
+							production-like workloads, but keep deterministic correctness checks in front of every change. A
+							performance win that corrupts state is not a win.
+						</p>
 						<div class="image-grid image-grid-dual">
 							<figure class="feature-frame">
 								<img class="media-img media-img-perft" :src="perftImg" alt="Perft validation output used to test chess move generation" loading="lazy" />
-								<figcaption class="media-cap">Perft output used as the first line of defence against illegal move generation and state corruption.</figcaption>
+								<figcaption class="media-cap">Perft remained the correctness gate before performance claims were trusted.</figcaption>
 							</figure>
-							<div class="terminal-note mono">
-								<div>&gt; run perft_suite --depth 5</div>
-								<div>[ok] reference positions aligned</div>
-								<div>[ok] no regression in legal move counts</div>
-								<div>[ok] optimisation branch preserved correctness</div>
+							<figure class="feature-frame">
+								<img
+									class="media-img media-img-log"
+									:src="engineLogImg"
+									alt="Search log from the chess engine while evaluating positions"
+									loading="lazy"
+								/>
+								<figcaption class="media-cap">Self-play and live logs made iteration measurable instead of purely subjective.</figcaption>
+							</figure>
+						</div>
+						<div class="callout-note">
+							The project eventually included dedicated tuning infrastructure, so experiments could be compared
+							in large batches with confidence instead of by a few anecdotal games.
+						</div>
+					</section>
+
+					<section class="notebook-cell" data-section="local-ui" id="local-ui">
+						<div class="section-badge mono">10 - Local UI</div>
+						<h2 class="section-title">The local UI acted as both a product surface and a debugging tool</h2>
+						<p>
+							The local interface turned the engine from a console-only program into something I could actually
+							play against, observe, and debug. That change sounds cosmetic, but it materially improved the
+							project because it exposed engine behaviour in a way raw terminal output never could.
+						</p>
+						<p>
+							Building the UI also forced a clean separation between the engine core and the interaction layer.
+							The same search and board code had to support local play, visible feedback, and future
+							integrations without being rewritten for each front end. In that sense, the UI was a proof that
+							the internal API boundary was real rather than accidental.
+						</p>
+						<div class="two-col-grid">
+							<figure class="feature-frame">
+								<img class="media-img" :src="gameplayImg" alt="Chess engine gameplay screen showing pieces and move interface" loading="lazy" />
+								<figcaption class="media-cap">The local UI made the engine easier to inspect, play against, and trust.</figcaption>
+							</figure>
+							<div class="stacked-notes">
+								<div class="subsystem-card">
+									<div class="subsystem-title">Inspectability</div>
+									<p>
+										Watching moves unfold in a proper interface made search behaviour easier to understand,
+										especially when debugging awkward tactical decisions.
+									</p>
+								</div>
+								<div class="subsystem-card">
+									<div class="subsystem-title">Practical UX</div>
+									<p>
+										Local player-vs-engine support, move feedback, and a cleaner presentation pushed the
+										project beyond "works in a terminal" toward something others could actually use.
+									</p>
+								</div>
+								<div class="subsystem-card">
+									<div class="subsystem-title">Reusable core</div>
+									<p>
+										The UI was a proof that the engine logic had been decomposed well enough to sit behind
+										more than one client.
+									</p>
+								</div>
 							</div>
 						</div>
 					</section>
 
-					<section class="notebook-cell" data-section="ui-integration" id="ui-integration">
-						<div class="section-badge mono">09 - UI &amp; lichess integration</div>
-						<h2 class="section-title">The project was productised so the engine could be inspected, played, and validated in real execution contexts</h2>
-						<div class="three-col-grid">
-							<div class="decision-card">
-								<div class="decision-kicker mono">Local UI</div>
-								<p>The board view turned an algorithm into an inspectable system with visible move feedback, position state, and iteration room.</p>
-							</div>
-							<div class="decision-card">
-								<div class="decision-kicker mono">Engine interaction model</div>
-								<p>Separating engine state from presentation state made it easier to reason about correctness, replay moves, and expose useful feedback cleanly.</p>
-							</div>
-							<div class="decision-card">
-								<div class="decision-kicker mono">Online / Lichess support</div>
-								<p>External play provided practical proof that the engine could leave the lab and perform under real game constraints.</p>
-							</div>
-						</div>
-
-							<div class="image-grid image-grid-dual">
-								<figure class="feature-frame">
-									<img
-										class="media-img media-img-log"
-										:src="engineLogImg"
-										alt="Search log from the chess engine while evaluating positions"
-										loading="lazy"
-									/>
-									<figcaption class="media-cap">Search log from the chess engine while evaluating positions, showing the real-time build output used to monitor progress.</figcaption>
-								</figure>
-							<div class="stacked-notes">
-								<div class="notebook-subcell">
-									<div class="decision-kicker mono">Training setup</div>
-									<p>This setup was used to iterate on engine behaviour in a live environment, making it easier to inspect move quality, tune heuristics, and observe the system under repeated play conditions.</p>
-								</div>
-								<div class="notebook-subcell">
-									<div class="decision-kicker mono">Why it mattered</div>
-									<p>Having a visible runtime loop meant improvements could be judged as system behaviour, not just isolated code changes or synthetic metrics.</p>
-								</div>
-							</div>
-						</div>
-
-						<div class="image-grid image-grid-triple">
-							<figure class="feature-frame">
-								<img class="media-img" :src="gameplayImg" alt="Chess engine gameplay screen showing pieces and move interface" loading="lazy" />
-								<figcaption class="media-cap">The local interface makes the system legible instead of hiding it behind a console boundary.</figcaption>
-							</figure>
+					<section class="notebook-cell notebook-cell-end" data-section="lichess-integration" id="lichess-integration">
+						<div class="section-badge mono">11 - Lichess integration</div>
+						<h2 class="section-title">Lichess integration turned the engine into a real external-facing system</h2>
+						<p>
+							Lichess integration was the point where the project stopped being a private experiment and had to
+							handle real games in a live environment. That meant dealing with external APIs, real-time move
+							exchange, and the unpredictability of human and engine opponents outside controlled local tests.
+						</p>
+						<p>
+							For portfolio purposes, this section matters because it shows the work was not limited to core
+							algorithms. The engine was taken all the way through to integration, protocol handling, and
+							practical use against real opponents on infrastructure I did not control.
+						</p>
+						<div class="image-grid image-grid-dual">
 							<figure class="feature-frame">
 								<img class="media-img" :src="lichessImg" alt="Online chess rating or match result screenshot for the engine" loading="lazy" />
-								<figcaption class="media-cap">External play evidence used as practical proof, not just celebration.</figcaption>
+								<figcaption class="media-cap">Lichess provided a live environment where strength and reliability were visible.</figcaption>
 							</figure>
 							<figure class="feature-frame">
 								<img class="media-img" :src="lichessAltImg" alt="Additional online chess match or rating screenshot for the engine" loading="lazy" />
-								<figcaption class="media-cap">A second result view helps show repeatability and live-game behaviour.</figcaption>
+								<figcaption class="media-cap">A second result helps show repeatability beyond one isolated online session.</figcaption>
 							</figure>
 						</div>
-					</section>
-
-					<section class="queen-interlude" aria-label="Decorative chess queen display">
-						<div class="queen-stage">
-							<div class="queen-aura" aria-hidden="true"></div>
-							<canvas ref="queenCanvasRef" class="queen-canvas" aria-hidden="true"></canvas>
-							<div class="queen-shadow" aria-hidden="true"></div>
-						</div>
-					</section>
-
-					<section class="notebook-cell" data-section="results" id="results">
-						<div class="section-badge mono">10 - Results</div>
-						<h2 class="section-title">The project shows correctness proof, performance proof, and practical proof</h2>
-						<div class="proof-grid">
-							<div class="proof-card">
-								<div class="proof-title">Correctness proof</div>
-								<p>Perft suites provided a stable reference point before and after optimisation passes, keeping legality work trustworthy.</p>
-							</div>
-							<div class="proof-card">
-								<div class="proof-title">Performance proof</div>
-								<p>Throughput around 130k positions per second and aggressive pruning show that the search stack is doing meaningful work efficiently.</p>
-							</div>
-							<div class="proof-card">
-								<div class="proof-title">Practical proof</div>
-								<p>Usable UI and online rated play demonstrate that the build functions as a shipped system, not only a local algorithm experiment.</p>
-							</div>
-						</div>
-					</section>
-
-					<section class="notebook-cell" data-section="engineering-lessons" id="engineering-lessons">
-						<div class="section-badge mono">11 - What this demonstrates</div>
-						<h2 class="section-title">The strongest professional signal is how the project was structured, validated, and iterated</h2>
-						<div class="lessons-grid">
-							<div class="lesson-card">Breaking a complex system into independently testable subsystems.</div>
-							<div class="lesson-card">Writing performance-conscious modern C++ around hot paths and repeated state updates.</div>
-							<div class="lesson-card">Validating correctness under edge-case-heavy rules instead of assuming the implementation is fine.</div>
-							<div class="lesson-card">Using benchmarks and reference checks to guide optimisation decisions.</div>
-							<div class="lesson-card">Building usable tooling and UI around a backend-heavy technical core.</div>
-							<div class="lesson-card">Iterating from prototype to product with evidence rather than intuition alone.</div>
-						</div>
-					</section>
-
-					<section class="notebook-cell notebook-cell-end" data-section="future-work" id="future-work">
-						<div class="section-badge mono">12 - Future work</div>
-						<h2 class="section-title">The next steps are technical roadmap items, not hobby wish-list ideas</h2>
-						<div class="future-grid">
-							<div class="future-card">
-								<div class="decision-kicker mono">Optimisation opportunities</div>
-								<p>Improve move ordering and explore faster sliding-piece generation so more tactical depth fits inside the same budget.</p>
-							</div>
-							<div class="future-card">
-								<div class="decision-kicker mono">Architecture upgrades</div>
-								<p>Keep tightening subsystem boundaries, benchmarking hooks, and portability paths so future iteration remains disciplined.</p>
-							</div>
-							<div class="future-card">
-								<div class="decision-kicker mono">Evaluation experimentation</div>
-								<p>Test richer heuristics or lightweight learned assistance without losing interpretability or validation discipline.</p>
-							</div>
+						<div class="callout-note">
+							Beating me locally was one benchmark. Operating online through a third-party platform was the more
+							convincing demonstration that the engine was robust enough to leave the dev environment.
 						</div>
 					</section>
 				</main>
@@ -604,6 +688,8 @@ import lichessImg from "../assets/chess-engine/lichess.png";
 import lichessAltImg from "../assets/chess-engine/lichess2.PNG";
 import engineLogImg from "../assets/chess-engine/log.PNG";
 import perftImg from "../assets/chess-engine/perft_tests.PNG";
+import architectureImg from "../assets/chess-engine/architecture.png";
+import searchTreeImg from "../assets/chess-engine/search_tree.png";
 import trainingEngineVideo from "../assets/chess-engine/training_engine.mp4";
 
 import { createChessGame, fileRankToSquare, squareToFileRank } from "../chess/chessGame.js";
@@ -923,17 +1009,15 @@ const pageTheme = computed(() => {
 // ------------------------------------------------------------
 const CONTENT_SECTIONS = [
 	{ id: "overview", label: "Overview", index: "01" },
-	{ id: "executive-summary", label: "Executive Summary", index: "02" },
-	{ id: "problem-framing", label: "Problem Framing", index: "03" },
-	{ id: "architecture", label: "System Architecture", index: "04" },
-	{ id: "board-state", label: "Core Engine Design", index: "05" },
-	{ id: "search-optimisation", label: "Search & Optimisation", index: "06" },
-	{ id: "evaluation-design", label: "Evaluation Design", index: "07" },
-	{ id: "testing-validation", label: "Testing & Validation", index: "08" },
-	{ id: "ui-integration", label: "UI & Productisation", index: "09" },
-	{ id: "results", label: "Results", index: "10" },
-	{ id: "engineering-lessons", label: "Engineering Lessons", index: "11" },
-	{ id: "future-work", label: "Future Work", index: "12" },
+	{ id: "problem-framing", label: "Problem Framing", index: "02" },
+	{ id: "architecture", label: "System Architecture", index: "03" },
+	{ id: "search-optimisation", label: "Search Algorithm", index: "04" },
+	{ id: "board-state", label: "Move Generation & Bitboards", index: "05" },
+	{ id: "evaluation-design", label: "Static Evaluation", index: "06" },
+	{ id: "testing-validation", label: "Caching & Performance", index: "07" },
+	{ id: "iteration-validation", label: "Iteration & Validation", index: "08" },
+	{ id: "local-ui", label: "Local UI", index: "09" },
+	{ id: "lichess-integration", label: "Lichess Integration", index: "10" },
 ];
 
 const activeSection = ref("overview");
@@ -4219,6 +4303,14 @@ function disposeAll() {
 	background: linear-gradient(180deg, rgba(8, 12, 10, 0.96), rgba(4, 7, 5, 0.98));
 	border: 1px solid rgba(120, 202, 144, 0.22);
 	color: rgba(183, 243, 196, 0.92);
+}
+
+.diagram-terminal {
+	margin: 0;
+	overflow-x: auto;
+	white-space: pre;
+	font-size: 0.82rem;
+	line-height: 1.55;
 }
 
 .feature-frame {

@@ -460,7 +460,7 @@
           <div v-if="isCalculating" class="wealth-scout__loading">
             <p class="wealth-scout__eyebrow">Calculating shortlist</p>
             <h3>Ranking the best {{ appliedConfig.granularity === 'region' ? 'regions' : 'suburbs' }}</h3>
-            <p>Comparing affordability, growth, yield, and timing for your current settings.</p>
+            <p>Comparing affordability, expected growth, yield, and purchasable timing for your current settings.</p>
             <div class="wealth-scout__loading-spinner" aria-hidden="true"></div>
           </div>
 
@@ -469,7 +469,7 @@
               <div>
                 <h3>{{ filteredResultsModel.totalMatches ? `${filteredResultsModel.totalMatches} matching ${appliedConfig.granularity === 'region' ? 'regions' : 'suburbs'}` : 'No matches yet' }}</h3>
               </div>
-              <p>Each result shows today's median, the price at your buy timing, and a relative score based on your growth and yield mix. Open a result for the deeper projection view.</p>
+              <p>Each result shows today's median, when it becomes purchasable, and the expected annual growth, yield, and volatility. Open a result for the deeper projection view.</p>
             </div>
 
             <div class="wealth-scout__results-filters">
@@ -560,20 +560,32 @@
                       <strong>{{ formatCurrency(recommendation.priceToday) }}</strong>
                     </div>
                     <div>
-                      <span>Buy-year price</span>
-                      <strong>{{ formatCurrency(recommendation.buyYearPrice) }}</strong>
-                    </div>
-                    <div>
-                      <span>Timing</span>
+                      <span>Purchasable in</span>
                       <strong>{{ recommendation.selectedTimingLabel }}</strong>
                     </div>
                     <div>
-                      <span>Growth score</span>
-                      <strong>{{ formatPercent(recommendation.growthScore) }}</strong>
+                      <span>Expected annual growth</span>
+                      <strong>{{ formatPercent(recommendation.expectedAnnualGrowth) }}</strong>
                     </div>
                     <div>
-                      <span>Yield score</span>
-                      <strong>{{ formatPercent(recommendation.rentalYieldScore) }}</strong>
+                      <span>Expected rental yield</span>
+                      <strong>{{ formatPercent(recommendation.expectedAnnualYield) }}</strong>
+                    </div>
+                    <div>
+                      <span>Expected value in 10 years</span>
+                      <strong>{{ formatCurrency(recommendation.expectedValueInTenYears) }}</strong>
+                    </div>
+                    <div>
+                      <span>Avg yearly sales</span>
+                      <strong>{{ formatGroupedNumber(recommendation.salesAverage) }}</strong>
+                    </div>
+                    <div>
+                      <span>Growth volatility</span>
+                      <strong>{{ formatPercent(recommendation.growthVolatility) }}</strong>
+                    </div>
+                    <div>
+                      <span>Yield volatility</span>
+                      <strong>{{ formatPercent(recommendation.yieldVolatility) }}</strong>
                     </div>
                   </div>
                 </div>
@@ -582,21 +594,22 @@
 
               <Transition name="wealth-scout-reveal">
                 <div v-if="activeResultKey === recommendation.key" class="wealth-scout__detail">
-                  <div class="wealth-scout__detail-metrics">
-                    <article class="wealth-scout__detail-card">
-                      <span>Deposit required</span>
-                      <strong>{{ formatCurrency(recommendation.requiredCashAtBuyYear) }}</strong>
-                      <small>{{ recommendation.requiredDepositPctAtBuyYear ? `${Math.round(recommendation.requiredDepositPctAtBuyYear * 100)}% of property value` : 'Not affordable within the current plan window' }}</small>
-                    </article>
-                    <article class="wealth-scout__detail-card">
-                      <span>Budget gap at buy timing</span>
-                      <strong :class="budgetClass(recommendation.budgetGap)">{{ formatSignedCurrency(recommendation.budgetGap) }}</strong>
-                      <small>Positive means the plan clears the buy-year price</small>
-                    </article>
-                  </div>
-
                   <div class="wealth-scout__charts wealth-scout__charts--stacked">
                     <WealthPropertyTrendChart :title="`Historical ${propertyTypeLabel.toLowerCase()} price`" :subtitle="recommendation.selectedTimingLabel" color="#0f766e" :actual-points="recommendation.actualPoints" :trend-points="recommendation.trendPoints" :estimate-point="recommendation.estimatePoint" />
+                    <WealthPropertyTrendChart
+                      title="Historical rental yield"
+                      kicker="Yield history"
+                      color="#0f766e"
+                      value-mode="percent"
+                      :value-padding="0.005"
+                      empty-text="No rental-yield history available for this property type."
+                      actual-legend-label="Actual yearly yield"
+                      trend-legend-label="Long-run yield mean"
+                      estimate-legend-label="Current estimate"
+                      :actual-points="recommendation.yieldActualPoints"
+                      :trend-points="recommendation.yieldTrendPoints"
+                      :estimate-point="null"
+                    />
                     <WealthLineChart :title="`${propertyTypeLabel} price Monte Carlo`" subtitle="P10 / P50 / P90 projection for the next 30 years." kicker="Forward market path" :series="buildMonteCarloChartSeries(recommendation)" :markers="buildResultMarkers(recommendation)" />
                     <WealthLineChart title="Purchasing power vs required property value" subtitle="Compare what you can buy against the projected price path." kicker="30-year affordability" :series="buildResultPowerSeries(recommendation)" :markers="buildResultMarkers(recommendation)" />
                   </div>
@@ -1386,18 +1399,9 @@ function formatCurrency(value) {
   return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(Number(value) || 0)
 }
 
-function formatSignedCurrency(value) {
-  const safeValue = Number(value) || 0
-  return `${safeValue >= 0 ? '+' : '-'}${formatCurrency(Math.abs(safeValue))}`
-}
-
 function formatPercent(value) {
   if (!Number.isFinite(Number(value))) return 'n/a'
   return `${(Number(value) * 100).toFixed(1)}% p.a.`
-}
-
-function budgetClass(value) {
-  return (Number(value) || 0) >= 0 ? 'is-positive' : 'is-negative'
 }
 
 function formatPriceRange(config) {
@@ -1446,6 +1450,87 @@ function yearLabel(year) {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.wealth-scout__metric-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.wealth-scout__metric-tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(93, 123, 163, 0.3);
+  background: rgba(255, 255, 255, 0.82);
+  color: #5d7ba3;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+}
+
+.wealth-scout__metric-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(320px, 72vw);
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.85rem;
+  background: rgba(11, 18, 32, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  color: rgba(248, 250, 252, 0.94);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.28);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s linear 0.16s;
+  z-index: 30;
+}
+
+.wealth-scout__metric-tooltip::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  width: 0.62rem;
+  height: 0.62rem;
+  background: rgba(11, 18, 32, 0.96);
+  border-left: 1px solid rgba(148, 163, 184, 0.22);
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+  transform: translateX(-50%) rotate(45deg);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.16s ease, visibility 0s linear 0.16s;
+  z-index: 29;
+}
+
+.wealth-scout__metric-tooltip:hover::after,
+.wealth-scout__metric-tooltip:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-2px);
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s;
+}
+
+.wealth-scout__metric-tooltip:hover::before,
+.wealth-scout__metric-tooltip:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.16s ease, visibility 0s;
 }
 
 .wealth-scout__kicker,
@@ -2224,12 +2309,13 @@ function yearLabel(year) {
 }
 
 .wealth-scout__result-metrics {
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
   min-width: 0;
 }
 
 .wealth-scout__result-metrics div {
-  flex: 1 1 10rem;
   display: grid;
   gap: 0.18rem;
   padding: 0.85rem;
@@ -2240,14 +2326,6 @@ function yearLabel(year) {
 
 .wealth-scout__detail {
   padding: 0 1rem 1rem;
-}
-
-.wealth-scout__detail strong.is-positive {
-  color: #0f766e;
-}
-
-.wealth-scout__detail strong.is-negative {
-  color: #b42318;
 }
 
 .wealth-scout__empty {
@@ -2406,8 +2484,13 @@ function yearLabel(year) {
 
   .wealth-scout__result-copy,
   .wealth-scout__result-head > div,
+  .wealth-scout__result-metrics,
   .wealth-scout__result-metrics div {
     min-width: 0;
+  }
+
+  .wealth-scout__result-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .wealth-scout__result-head h4,
@@ -2428,6 +2511,12 @@ function yearLabel(year) {
 
   .wealth-scout :deep(.wealth-chart__body) {
     min-height: 220px;
+  }
+}
+
+@media (max-width: 560px) {
+  .wealth-scout__result-metrics {
+    grid-template-columns: 1fr;
   }
 }
 </style>

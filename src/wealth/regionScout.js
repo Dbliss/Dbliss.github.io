@@ -375,7 +375,7 @@ function buildRecommendation(area, form, config, detailTimeline) {
   const comparisonPrice = comparisonPoint?.projectedPrice || summaryPoint?.projectedPrice || priceToday
   const comparisonBudget = detailTimeline.find((point) => point.year === (comparisonPoint?.year ?? summaryPoint?.year ?? 0)) || detailTimeline[0]
   const budgetGap = (comparisonBudget?.affordablePrice || 0) - comparisonPrice
-  const monteCarloSeries = buildMonteCarloSeries(priceToday, growthMean, growthVolatility, 30, seedFromKey(area.key))
+  const monteCarloSeries = buildMonteCarloSeries(area, config.propertyType, priceToday, growthMean, growthVolatility, 30, seedFromKey(area.key))
   const affordableAtTargetYear = Boolean(targetSeriesPoint?.affordable)
 
   return {
@@ -384,18 +384,16 @@ function buildRecommendation(area, form, config, detailTimeline) {
     type: area.type,
     regionLabel: area.regionLabel || area.label,
     priceToday,
-    buyYearPrice: comparisonPrice,
     comparisonPrice,
     selectedYear: selectedSeriesPoint?.year ?? null,
     earliestAffordableYear: priceRequirementSeries.find((point) => point.affordable)?.year ?? null,
     selectedTimingLabel: selectedSeriesPoint?.label || 'Not affordable in 20 years',
     growthMean,
-    growthScore: marketScore.growthScore,
-    growthScoreRaw: marketScore.growthMedian,
-    growthScoreVolatility: marketScore.growthVolatility,
-    rentalYieldScore: marketScore.yieldScore,
-    rentalYieldMedian: marketScore.yieldMedian,
-    rentalYieldVolatility: marketScore.yieldVolatility,
+    expectedAnnualGrowth: marketScore.growthMedian,
+    growthVolatility: marketScore.growthVolatility,
+    expectedAnnualYield: marketScore.yieldMedian,
+    yieldVolatility: marketScore.yieldVolatility,
+    expectedValueInTenYears: monteCarloSeries.find((point) => point.year === 10)?.mid || comparisonPrice,
     rankingScore: marketScore.combinedScore,
     historyYears,
     salesAverage,
@@ -406,6 +404,8 @@ function buildRecommendation(area, form, config, detailTimeline) {
     actualPoints,
     trendPoints: area?.marketHistory?.[config.propertyType]?.trendPoints || [],
     estimatePoint: area?.marketHistory?.[config.propertyType]?.estimatePoint || null,
+    yieldActualPoints: getYieldActualPoints(area, config.propertyType),
+    yieldTrendPoints: buildYieldTrendPoints(area, config.propertyType),
     purchasingPowerSeries: detailTimeline.map((point) => ({
       year: point.year,
       affordablePrice: point.affordablePrice,
@@ -452,8 +452,12 @@ function resolveSelectedTimingPoint(priceRequirementSeries, config) {
     : null
 }
 
-function buildMonteCarloSeries(startPrice, growthMean, growthVolatility, horizonYears, seed) {
+function buildMonteCarloSeries(area, propertyType, startPrice, growthMean, growthVolatility, horizonYears, seed) {
   const random = createMulberry32(seed)
+  const propertyGrowthBlockSampler = createPropertyGrowthBlockSampler(random, area)
+  const property = area?.[propertyType]
+  const lowerBound = propertyType === 'house' ? -0.25 : -0.18
+  const upperBound = propertyType === 'house' ? 0.25 : 0.18
   const samplesByYear = Array.from({ length: horizonYears + 1 }, () => [])
   const iterations = 220
 
@@ -461,7 +465,16 @@ function buildMonteCarloSeries(startPrice, growthMean, growthVolatility, horizon
     let price = Math.max(0, Number(startPrice) || 0)
     samplesByYear[0].push(price)
     for (let year = 1; year <= horizonYears; year += 1) {
-      const sampledGrowth = clamp(sampleNormal(random, growthMean, growthVolatility), -0.25, 0.35)
+      const sampledPropertyGrowthBlock = propertyGrowthBlockSampler ? propertyGrowthBlockSampler() : null
+      const sampledGrowth = samplePropertyGrowthRate(
+        random,
+        property,
+        growthMean,
+        growthVolatility,
+        lowerBound,
+        upperBound,
+        sampledPropertyGrowthBlock?.[propertyType === 'house' ? 'houseGrowth' : 'apartmentGrowth']
+      )
       price = Math.max(0, price * (1 + sampledGrowth))
       samplesByYear[year].push(price)
     }
@@ -487,31 +500,50 @@ function compareRecommendations(left, right) {
   if (right.budgetGap !== left.budgetGap) return right.budgetGap - left.budgetGap
   if (right.growthMean !== left.growthMean) return right.growthMean - left.growthMean
   if (right.salesAverage !== left.salesAverage) return right.salesAverage - left.salesAverage
-  return left.buyYearPrice - right.buyYearPrice
+  return left.comparisonPrice - right.comparisonPrice
 }
 
 function buildMarketScore(area, propertyType, startPrice, growthMean, growthVolatility, config, seed) {
   const random = createMulberry32(seed ^ 0x9e3779b9)
+  const propertyGrowthBlockSampler = createPropertyGrowthBlockSampler(random, area)
+  const property = area?.[propertyType]
+  const lowerBound = propertyType === 'house' ? -0.25 : -0.18
+  const upperBound = propertyType === 'house' ? 0.25 : 0.18
   const yieldSampler = createPropertyYieldSampler(random, area?.[propertyType])
   const growthOutcomes = []
   const yieldOutcomes = []
+  const priceSamplesByYear = Array.from({ length: 31 }, () => [])
   const iterations = 220
 
   for (let iteration = 0; iteration < iterations; iteration += 1) {
     let price = Math.max(0, Number(startPrice) || 0)
     let yieldTotal = 0
+    priceSamplesByYear[0].push(price)
     for (let year = 1; year <= 30; year += 1) {
-      const sampledGrowth = clamp(sampleNormal(random, growthMean, growthVolatility), -0.25, 0.35)
+      const sampledPropertyGrowthBlock = propertyGrowthBlockSampler ? propertyGrowthBlockSampler() : null
+      const sampledGrowth = samplePropertyGrowthRate(
+        random,
+        property,
+        growthMean,
+        growthVolatility,
+        lowerBound,
+        upperBound,
+        sampledPropertyGrowthBlock?.[propertyType === 'house' ? 'houseGrowth' : 'apartmentGrowth']
+      )
       price = Math.max(0, price * (1 + sampledGrowth))
+      priceSamplesByYear[year].push(price)
       yieldTotal += yieldSampler()
     }
     growthOutcomes.push(Math.pow(price / Math.max(startPrice, 1), 1 / 30) - 1)
     yieldOutcomes.push(yieldTotal / 30)
   }
 
+  const growthMedianPathAnnualIncrease = calculateMedianPathAverageAnnualIncrease(priceSamplesByYear)
   const growthMedianRaw = percentileSummary(growthOutcomes).p50
   const yieldMedianRaw = percentileSummary(yieldOutcomes).p50
-  const growthMedian = Number.isFinite(growthMedianRaw) ? growthMedianRaw : (Number(growthMean) || 0)
+  const growthMedian = Number.isFinite(growthMedianPathAnnualIncrease)
+    ? growthMedianPathAnnualIncrease
+    : (Number.isFinite(growthMedianRaw) ? growthMedianRaw : (Number(growthMean) || 0))
   const fallbackYield = getFallbackRentYield(area?.[propertyType])
   const yieldMedian = Number.isFinite(yieldMedianRaw) ? yieldMedianRaw : fallbackYield
   const growthOutcomeVolatility = Number.isFinite(calculateStandardDeviation(growthOutcomes))
@@ -520,9 +552,8 @@ function buildMarketScore(area, propertyType, startPrice, growthMean, growthVola
   const yieldOutcomeVolatility = Number.isFinite(calculateStandardDeviation(yieldOutcomes))
     ? calculateStandardDeviation(yieldOutcomes)
     : 0
-  const penalty = getRiskPenaltyMultiplier(config.riskAppetite)
-  const growthScore = growthMedian - (growthOutcomeVolatility * penalty)
-  const yieldScore = yieldMedian - (yieldOutcomeVolatility * penalty)
+  const growthScore = calculateWeightedPreferenceScore(growthMedian, growthOutcomeVolatility, config.riskAppetite)
+  const yieldScore = calculateWeightedPreferenceScore(yieldMedian, yieldOutcomeVolatility, config.riskAppetite)
   const combinedScore = (growthScore * (1 - config.rentalYieldWeight)) + (yieldScore * config.rentalYieldWeight)
 
   return {
@@ -534,6 +565,34 @@ function buildMarketScore(area, propertyType, startPrice, growthMean, growthVola
     yieldScore,
     combinedScore
   }
+}
+
+function calculateMedianPathAverageAnnualIncrease(priceSamplesByYear = []) {
+  if (!Array.isArray(priceSamplesByYear) || priceSamplesByYear.length < 2) return null
+
+  const medianPath = priceSamplesByYear
+    .map((values, year) => {
+      if (!Array.isArray(values) || !values.length) return null
+      const summary = percentileSummary(values)
+      return {
+        year,
+        value: Number(summary.p50)
+      }
+    })
+    .filter((point) => point && Number.isFinite(point.value) && point.value > 0)
+
+  if (medianPath.length < 2) return null
+
+  const annualChanges = []
+  for (let index = 1; index < medianPath.length; index += 1) {
+    const previousValue = medianPath[index - 1]?.value
+    const currentValue = medianPath[index]?.value
+    if (!(previousValue > 0) || !(currentValue > 0)) continue
+    annualChanges.push((currentValue / previousValue) - 1)
+  }
+
+  if (!annualChanges.length) return null
+  return annualChanges.reduce((sum, value) => sum + value, 0) / annualChanges.length
 }
 
 function createPropertyYieldSampler(random, property) {
@@ -583,10 +642,74 @@ function getFallbackRentYield(property) {
   return clamp(Number(property?.rentYield) || Number(property?.resolvedYieldModel?.currentYield) || Number(property?.yieldModel?.currentYield) || 0.04, 0.01, 0.12)
 }
 
-function getRiskPenaltyMultiplier(riskAppetite = 'medium') {
-  if (riskAppetite === 'small') return 0.5
-  if (riskAppetite === 'large') return 0.1
-  return 0.3
+function getYieldActualPoints(area, propertyType) {
+  const yieldModel = area?.[propertyType]?.resolvedYieldModel || area?.[propertyType]?.yieldModel
+  return Array.isArray(yieldModel?.actualYieldPoints) ? yieldModel.actualYieldPoints : []
+}
+
+function buildYieldTrendPoints(area, propertyType) {
+  const yieldModel = area?.[propertyType]?.resolvedYieldModel || area?.[propertyType]?.yieldModel
+  const points = Array.isArray(yieldModel?.actualYieldPoints) ? yieldModel.actualYieldPoints : []
+  const mean = Number(yieldModel?.longTermMean)
+  if (!points.length || !Number.isFinite(mean)) return []
+
+  return points.map((point) => ({
+    year: point.year,
+    value: mean
+  }))
+}
+
+function createPropertyGrowthBlockSampler(random, area) {
+  const historicalBlocks = Array.isArray(area?.historicalAnnualGrowthBlocks)
+    ? area.historicalAnnualGrowthBlocks
+        .map((block) => ({
+          year: Math.round(Number(block?.year) || 0),
+          houseGrowth: Number.isFinite(Number(block?.houseGrowth)) ? Number(block.houseGrowth) : null,
+          apartmentGrowth: Number.isFinite(Number(block?.apartmentGrowth)) ? Number(block.apartmentGrowth) : null
+        }))
+        .filter((block) =>
+          Number.isFinite(block.year) &&
+          (Number.isFinite(block.houseGrowth) || Number.isFinite(block.apartmentGrowth))
+        )
+    : []
+
+  if (!historicalBlocks.length) return null
+
+  return () => {
+    const block = historicalBlocks[Math.floor(random() * historicalBlocks.length)]
+    return {
+      houseGrowth: Number.isFinite(block.houseGrowth) ? clamp(block.houseGrowth, -0.25, 0.25) : null,
+      apartmentGrowth: Number.isFinite(block.apartmentGrowth) ? clamp(block.apartmentGrowth, -0.18, 0.18) : null
+    }
+  }
+}
+
+function samplePropertyGrowthRate(random, property, growthMean, growthVolatility, lowerBound, upperBound, sampledBlockValue = null) {
+  if (Number.isFinite(sampledBlockValue)) {
+    return clamp(Number(sampledBlockValue), lowerBound, upperBound)
+  }
+
+  const historicalSeries = Array.isArray(property?.historicalAnnualGrowthRates)
+    ? property.historicalAnnualGrowthRates.filter((value) => Number.isFinite(Number(value))).map((value) => Number(value))
+    : []
+
+  if (historicalSeries.length) {
+    const sampled = historicalSeries[Math.floor(random() * historicalSeries.length)]
+    return clamp(sampled, lowerBound, upperBound)
+  }
+
+  return clamp(sampleNormal(random, growthMean, growthVolatility), lowerBound, upperBound)
+}
+
+function calculateWeightedPreferenceScore(median, volatility, riskAppetite = 'medium') {
+  const safeMedian = Number.isFinite(Number(median)) ? Number(median) : 0
+  const safeVolatility = Math.max(0, Math.abs(Number(volatility) || 0))
+  const volatilityPenaltyMultiplier = riskAppetite === 'small'
+    ? 1.5
+    : riskAppetite === 'large'
+      ? 0.1
+      : 0.75
+  return safeMedian - (safeVolatility * volatilityPenaltyMultiplier)
 }
 
 function calculateStandardDeviation(values = []) {

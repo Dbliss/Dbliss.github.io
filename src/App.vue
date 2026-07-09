@@ -24,7 +24,7 @@
       </div>
     </template>
 
-    <main class="container">
+    <main :class="route.meta?.fullBleed ? 'fullbleed' : 'container'">
       <RouterView />
     </main>
 
@@ -89,6 +89,13 @@ onBeforeUnmount(() => {
 </script>
 
 <style>
+/* Full-bleed pages (e.g. the interactive city home) manage their own layout */
+main.fullbleed {
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+
 /* Only active on immersive pages */
 .nav-hotzone {
   position: fixed;

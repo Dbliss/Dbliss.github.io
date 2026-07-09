@@ -21,6 +21,9 @@ Project layout
 - `src/data/projects.js`: project metadata (slug, title, stack, tags, etc.).
 - `src/data/socials.js`: social links.
 - `src/chess/*`: helper logic for chess UI + Stockfish worker integration.
+- `src/city/cityScene.js`: three.js night-city world for the landing page. Builds
+  ground/roads/skyline/cars plus one clickable landmark per project; returns
+  `{ landmarks, update }` consumed by `src/pages/Home.vue`.
 - `public/stockfish/*`: Stockfish worker JS/WASM binaries for the chess page.
 - `src/assets/*`: images, charts, and 3D assets for project pages.
 
@@ -41,6 +44,12 @@ How the app is wired
   `src/data/projects.js`:
   - `hideNav`, `hideFooter` enable "immersive" pages.
   - `App.vue` uses those flags to swap into a nav hotzone + overlay.
+- The home route (`/`) is a full-screen interactive 3D city (`Home.vue` +
+  `src/city/cityScene.js`). Its route meta sets `hideNav`, `hideFooter`, and
+  `fullBleed` (App.vue drops the `.container` class for full-bleed routes).
+  Landmark → route mapping lives in the `defs` array in `cityScene.js`; add a
+  new landmark there when a new project ships. The old landing hero/experience
+  content now lives on `src/pages/About.vue`.
 
 
 

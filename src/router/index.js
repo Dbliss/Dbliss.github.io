@@ -9,7 +9,12 @@ import Contact from '../pages/Contact.vue'
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    { path: '/', name: 'home', component: Home },
+    {
+      path: '/',
+      name: 'home',
+      component: Home,
+      meta: { hideNav: true, hideFooter: true, fullBleed: true }
+    },
     { path: '/projects', name: 'projects', component: Projects },
     { path: '/projects/:slug', name: 'project', component: ProjectDetail, props: true },
     { path: '/about', name: 'about', component: About },

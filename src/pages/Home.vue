@@ -1,1023 +1,926 @@
 <template>
-  <div class="city-root" ref="rootEl">
-    <!-- WebGL fallback -->
-    <div v-if="webglFailed" class="city-fallback">
-      <div class="section-label">Welcome</div>
-      <h1>Dillon Bliss</h1>
-      <p class="section-sub">
-        Mechatronic Engineer working as a Full-Stack Developer in Sydney.
-        The interactive city needs WebGL — here are the quick links instead.
-      </p>
-      <div class="fallback-links">
-        <RouterLink class="btn primary" to="/projects">View projects</RouterLink>
-        <RouterLink class="btn" to="/about">About me</RouterLink>
-        <RouterLink class="btn" to="/contact">Contact</RouterLink>
-      </div>
+  <div class="descent" ref="rootEl">
+    <!-- Water: WebGL when possible, static gradient for reduced motion / no WebGL -->
+    <canvas
+      v-if="useWebGL"
+      ref="canvasEl"
+      class="descent-canvas"
+      aria-hidden="true"
+    />
+    <div v-else class="descent-static" aria-hidden="true" />
+
+    <!-- Depth meter -->
+    <div class="depth-meter" aria-hidden="true">
+      <span class="meter-value" ref="meterEl">−0 m</span>
+      <span class="meter-zone" ref="zoneEl">SURFACE</span>
     </div>
 
-    <template v-else>
-      <canvas ref="canvasEl" class="city-canvas" />
+    <!-- Slim persistent nav, appears after the hero -->
+    <nav class="descent-nav" :class="{ shown: navShown }" aria-label="Primary">
+      <button class="nav-brand" type="button" @click="scrollTop">Dillon Bliss</button>
+      <div class="nav-links">
+        <RouterLink to="/projects">Projects</RouterLink>
+        <RouterLink to="/about">About</RouterLink>
+        <RouterLink to="/contact">Contact</RouterLink>
+      </div>
+    </nav>
 
-      <!-- floating landmark chips -->
-      <div class="chip-layer" :class="{ dimmed: focusedMeta }" aria-hidden="false">
-        <button
-          v-for="lm in landmarkMeta"
-          :key="lm.key"
-          class="chip"
-          :class="{ active: hoveredKey === lm.key }"
-          :ref="(el) => setChipRef(lm.key, el)"
-          :style="{ '--chip-color': lm.cssColor }"
-          @pointerenter="hoveredKey = lm.key"
-          @pointerleave="hoveredKey === lm.key && (hoveredKey = null)"
-          @click.stop="activateByKey(lm.key)"
-        >
-          <span class="chip-dot" />
-          <span class="chip-text">
-            <span class="chip-label">{{ lm.label }}</span>
-            <span class="chip-sub">{{ lm.sub }}</span>
-          </span>
+    <div class="descent-content">
+      <!-- ─── Surface · 0 m ─────────────────────────────────────────── -->
+      <section class="hero" data-zone="surface" data-depth="0">
+        <p class="hero-kicker">Portfolio</p>
+        <h1>Dillon Bliss</h1>
+        <p class="hero-role">Software Engineer</p>
+        <p class="hero-pitch">
+          Building thoughtful software and digital systems
+          that solve real problems and create value.
+        </p>
+        <button class="hero-cta" type="button" @click="beginDescent">
+          Explore <span aria-hidden="true">↓</span>
         </button>
-      </div>
+      </section>
 
-      <!-- identity overlay -->
-      <div class="city-overlay-top">
-        <h1 class="city-name">Dillon Bliss</h1>
-        <p class="city-tag">Mechatronic engineer · Full-stack developer · Sydney</p>
-        <div class="city-links">
-          <RouterLink class="btn primary" to="/projects">All projects</RouterLink>
-          <RouterLink class="btn" to="/about">About</RouterLink>
-          <RouterLink class="btn" to="/contact">Contact</RouterLink>
+      <!-- ─── Sunlit zone · −200 m · Chess Engine ───────────────────── -->
+      <section class="zone zone-chess" data-zone="chess" data-depth="200" ref="chessSection">
+        <div class="zone-inner" ref="chessPin">
+          <div class="panel-wrap">
+            <article class="panel">
+              <p class="zone-kicker">Sunlit zone · −200 m</p>
+              <h2>C++ Chess Engine</h2>
+              <p class="outcome">
+                A from-scratch engine rated over 2000, searching millions of
+                positions per second.
+              </p>
+              <ul class="tags">
+                <li>C++</li><li>Game-tree search</li><li>Hashing</li><li>Optimisation</li>
+              </ul>
+              <RouterLink class="view-link" to="/projects/chessEngine">View project →</RouterLink>
+            </article>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <!-- tour caption -->
-      <transition name="caption">
-        <div v-if="tourCaption && !focusedMeta" class="tour-caption" :style="{ '--chip-color': tourCaption.cssColor }">
-          <span class="chip-dot" />
-          <div class="caption-text">
-            <span class="caption-label">{{ tourCaption.label }}</span>
-            <span class="caption-sub">{{ tourCaption.sub }}</span>
+      <!-- ─── Twilight zone · −1,000 m · Wealth Pathways ────────────── -->
+      <section class="zone" data-zone="wealth" data-depth="1000" ref="wealthSection">
+        <div class="zone-inner">
+          <div class="panel-wrap">
+            <article class="panel">
+              <p class="zone-kicker">Twilight zone · −1,000 m</p>
+              <h2>Wealth Pathways Workbook</h2>
+              <p class="outcome">
+                A Monte Carlo calculator that compares rent-and-invest, home
+                ownership, and rentvesting for Australians over 10–30 year horizons.
+              </p>
+              <ul class="tags">
+                <li>Vue</li><li>Web Workers</li><li>Monte Carlo</li><li>Finance modelling</li>
+              </ul>
+              <RouterLink class="view-link" to="/projects/wealth-pathways-au">View project →</RouterLink>
+            </article>
           </div>
-          <span class="caption-hint">Click to zoom in</span>
         </div>
-      </transition>
+      </section>
 
-      <!-- landmark detail panel -->
-      <transition name="panel">
-        <aside v-if="focusedMeta" class="city-panel" :style="{ '--chip-color': focusedMeta.cssColor }">
-          <div class="panel-kicker">
-            <span class="chip-dot" />
-            {{ focusedMeta.kicker }}
+      <!-- ─── Midnight zone · −2,500 m · LoL Match Predictor ────────── -->
+      <section class="zone" data-zone="predictor" data-depth="2500">
+        <div class="zone-inner">
+          <div class="panel-wrap">
+            <article class="panel">
+              <p class="zone-kicker">Midnight zone · −2,500 m</p>
+              <h2>LoL Match Predictor</h2>
+              <p class="outcome">
+                Bayesian player ratings and gradient-boosted models pricing pro
+                esports matches — 68% held-out accuracy, calibrated against
+                bookmaker odds.
+              </p>
+              <ul class="tags">
+                <li>Python</li><li>scikit-learn</li><li>Bayesian inference</li><li>Calibration</li>
+              </ul>
+              <RouterLink class="view-link" to="/projects/lol-match-predictor">View project →</RouterLink>
+            </article>
           </div>
-          <h2 class="panel-title">{{ focusedMeta.title }}</h2>
-          <p class="panel-tagline">{{ focusedMeta.tagline }}</p>
-          <p v-if="focusedMeta.excerpt" class="panel-excerpt">{{ focusedMeta.excerpt }}</p>
-          <div v-if="focusedMeta.stack.length" class="panel-stack">
-            <span v-for="s in focusedMeta.stack" :key="s" class="stack-chip">{{ s }}</span>
-          </div>
-          <div class="panel-actions">
-            <button class="btn primary" @click="openFocusedRoute">{{ focusedMeta.cta }} →</button>
-            <button class="btn" @click="resumeTour">Back to tour</button>
-          </div>
-        </aside>
-      </transition>
-
-      <!-- controls hint -->
-      <div class="city-hint" :class="{ hidden: hintHidden || focusedMeta }">
-        <span class="hint-key">Click</span> a landmark to zoom in ·
-        <span class="hint-key">Drag</span> to explore ·
-        <span class="hint-key">Scroll</span> to zoom
-      </div>
-
-      <!-- explore menu -->
-      <div class="city-explore" :class="{ open: exploreOpen }">
-        <button class="btn explore-toggle" @click="exploreOpen = !exploreOpen">
-          {{ exploreOpen ? '✕ Close' : '🗺 Explore the city' }}
-        </button>
-        <div v-if="exploreOpen" class="explore-list">
-          <button
-            v-for="lm in landmarkMeta"
-            :key="lm.key"
-            class="explore-item"
-            @click="activateByKey(lm.key)"
-            @pointerenter="hoveredKey = lm.key"
-            @pointerleave="hoveredKey === lm.key && (hoveredKey = null)"
-          >
-            <span class="chip-dot" :style="{ '--chip-color': lm.cssColor }" />
-            <span>
-              <span class="chip-label">{{ lm.label }}</span>
-              <span class="chip-sub">{{ lm.sub }}</span>
-            </span>
-          </button>
         </div>
-      </div>
+      </section>
 
-      <!-- transition veil for fly-in -->
-      <div class="city-veil" :class="{ shown: veilShown }" />
-    </template>
+      <!-- ─── Abyssal zone · −4,000 m · Sportslux + Booking ─────────── -->
+      <section class="zone zone-wide" data-zone="abyssal" data-depth="4000">
+        <div class="zone-inner">
+          <div class="panel-wrap panel-pair">
+            <article class="panel">
+              <p class="zone-kicker">Abyssal zone · −4,000 m</p>
+              <h2>Sportslux Lighting Optimiser</h2>
+              <p class="outcome">
+                Optimises pole layouts, fixture mixes, and aiming for compliant
+                sports-field lighting, with heatmaps and PDF reports.
+              </p>
+              <ul class="tags">
+                <li>Vue</li><li>Python</li><li>FastAPI</li><li>PostgreSQL</li>
+              </ul>
+              <RouterLink class="view-link" to="/projects/sportslux">View project →</RouterLink>
+            </article>
+            <article class="panel">
+              <p class="zone-kicker">Abyssal zone · −4,000 m</p>
+              <h2>FrontRunner Sports Booking</h2>
+              <p class="outcome">
+                Multi-tenant booking platform that validates reservations in
+                real time and automates lighting schedules through EXEDRA.
+              </p>
+              <ul class="tags">
+                <li>Vue 3</li><li>Node.js</li><li>PostgreSQL</li><li>RBAC</li>
+              </ul>
+              <RouterLink class="view-link" to="/projects/sports-booking">View project →</RouterLink>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Hadal zone · −6,000 m · Drone + Asset Integration ─────── -->
+      <section class="zone zone-wide" data-zone="hadal" data-depth="6000" ref="hadalSection">
+        <div class="zone-inner">
+          <div class="panel-wrap panel-pair">
+            <article class="panel hadal-card">
+              <p class="zone-kicker">Hadal zone · −6,000 m</p>
+              <h2>Autonomous Drone Prototype</h2>
+              <p class="outcome">
+                Custom-built drone with PID control loops and low-latency flight
+                software running on a Raspberry Pi.
+              </p>
+              <ul class="tags">
+                <li>Raspberry Pi</li><li>C++</li><li>PID control</li><li>Embedded</li>
+              </ul>
+              <RouterLink class="view-link" to="/projects/drone">View project →</RouterLink>
+            </article>
+            <article class="panel hadal-card">
+              <p class="zone-kicker">Hadal zone · −6,000 m</p>
+              <h2>Asset Data Integration</h2>
+              <p class="outcome">
+                ETL service that ingests CMS API data, filters and transforms it,
+                then syncs an asset-management platform.
+              </p>
+              <ul class="tags">
+                <li>Python</li><li>Node.js</li><li>ETL</li><li>REST APIs</li>
+              </ul>
+              <RouterLink class="view-link" to="/projects/asset-data-integration">View project →</RouterLink>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── The floor · −10,000 m · Contact ───────────────────────── -->
+      <section class="floor" data-zone="floor" data-depth="10000">
+        <div class="floor-inner">
+          <p class="zone-kicker">The floor · −10,000 m</p>
+          <h2>You've reached the bottom.</h2>
+          <p class="outcome">The next project could start here.</p>
+          <div class="floor-links">
+            <a class="floor-btn primary" :href="`mailto:${email}?subject=Project%20inquiry`">Email me</a>
+            <a
+              v-for="s in socials"
+              :key="s.label"
+              class="floor-btn"
+              :href="s.href"
+              target="_blank"
+              rel="noreferrer noopener"
+            >{{ s.label }} ↗</a>
+            <a class="floor-btn" href="resume.pdf" download>Résumé ↓</a>
+          </div>
+          <RouterLink class="city-tile" to="/city">
+            <span class="city-tile-label">Exhibit</span>
+            <span class="city-tile-title">Explore the 3D city</span>
+            <span class="city-tile-sub">My previous homepage, kept as an exhibit →</span>
+          </RouterLink>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
-import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
-import { buildCity } from '../city/cityScene'
-import { projects } from '../data/projects'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import Lenis from 'lenis'
+import { socials } from '../data/socials'
+import { createDescentScene } from '../descent/descentScene'
 
-const router = useRouter()
+const email = 'dillon.bliss@outlook.com'
 
 const rootEl = ref(null)
 const canvasEl = ref(null)
-const webglFailed = ref(false)
-const hoveredKey = ref(null)
-const hintHidden = ref(false)
-const exploreOpen = ref(false)
-const veilShown = ref(false)
-const focusedKey = ref(null)
-const tourStopKey = ref(null)
+const meterEl = ref(null)
+const zoneEl = ref(null)
+const chessSection = ref(null)
+const chessPin = ref(null)
+const wealthSection = ref(null)
+const hadalSection = ref(null)
+const navShown = ref(false)
 
-const landmarkMeta = reactive([])
-const chipEls = new Map()
-function setChipRef(key, el) {
-  if (el) chipEls.set(key, el)
-  else chipEls.delete(key)
-}
-
-const prefersReducedMotion =
+const prefersReduced =
   typeof window !== 'undefined' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const isMobile =
+  typeof window !== 'undefined' &&
+  (window.matchMedia('(max-width: 720px)').matches ||
+    window.matchMedia('(pointer: coarse)').matches)
 
-// ---- landmark detail content ------------------------------------------------
-const projectBySlug = Object.fromEntries(projects.map((p) => [p.slug, p]))
-const customDetails = {
-  hq: {
-    title: 'Dillon Bliss',
-    tagline: 'Mechatronic engineer · Full-stack developer · Sydney',
-    excerpt:
-      'This city is my portfolio — every district is a real project. Start here to learn who I am, my experience, and what I have shipped.',
-    stack: ['Vue', 'Node.js', 'Python', 'C++', 'PostgreSQL'],
-    cta: 'About me'
-  },
-  contact: {
-    title: 'Get in touch',
-    tagline: 'Open to interesting problems and good coffee',
-    excerpt:
-      'Want to talk engineering, full-stack work, or one of the projects in this city? The comms tower is always listening.',
-    stack: [],
-    cta: 'Contact'
-  }
-}
+const useWebGL = ref(!prefersReduced)
 
-function detailForKey(key) {
-  const lm = landmarkMeta.find((m) => m.key === key)
-  if (!lm) return null
-  const slug = lm.route.startsWith('/projects/') ? lm.route.split('/')[2] : null
-  const p = slug ? projectBySlug[slug] : null
-  const custom = customDetails[key]
-  return {
-    kicker: lm.label,
-    cssColor: lm.cssColor,
-    title: p ? p.title : custom?.title ?? lm.label,
-    tagline: p ? p.tagline : custom?.tagline ?? lm.sub,
-    excerpt: p ? p.excerpt : custom?.excerpt ?? '',
-    stack: (p ? p.stack : custom?.stack ?? []).slice(0, 6),
-    cta: p ? 'Open project' : custom?.cta ?? 'Open',
-    route: lm.route
-  }
-}
+let scene = null
+let lenis = null
+let tickFn = null
+let anchors = []
 
-const focusedMeta = computed(() => (focusedKey.value ? detailForKey(focusedKey.value) : null))
-const tourCaption = computed(() => {
-  if (!tourStopKey.value) return null
-  return landmarkMeta.find((m) => m.key === tourStopKey.value) ?? null
-})
-
-// three.js state kept out of Vue reactivity
-const three = shallowRef(null)
-let rafId = 0
-let disposed = false
-
-function easeInOutCubic(t) {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
-}
-
-// A repeatable ring around the map so the tour never criss-crosses.
-const TOUR_ORDER = [
-  'hq',
-  'sports-booking',
-  'wealth-pathways-au',
-  'lol-match-predictor',
-  'contact',
-  'chessEngine',
-  'asset-data-integration',
-  'sportslux'
+const ZONE_LABELS = [
+  [100, 'SURFACE'],
+  [600, 'SUNLIT ZONE'],
+  [1800, 'TWILIGHT ZONE'],
+  [3200, 'MIDNIGHT ZONE'],
+  [5000, 'ABYSSAL ZONE'],
+  [9200, 'HADAL ZONE'],
+  [Infinity, 'THE FLOOR']
 ]
-const TOUR_DWELL = 3.4
-const IDLE_RESUME = 12
 
-onMounted(() => {
-  let renderer
-  try {
-    renderer = new THREE.WebGLRenderer({
-      canvas: canvasEl.value,
-      antialias: true,
-      powerPreference: 'high-performance'
+function updateMeter(d) {
+  if (!meterEl.value) return
+  meterEl.value.textContent = `−${Math.round(d).toLocaleString('en-US')} m`
+  for (const [max, label] of ZONE_LABELS) {
+    if (d < max) {
+      if (zoneEl.value.textContent !== label) zoneEl.value.textContent = label
+      break
+    }
+  }
+}
+
+function depthFromProgress(p) {
+  if (!anchors.length) return p * 10000
+  const list = [{ frac: 0, depth: 0 }, ...anchors, { frac: 1, depth: 10000 }]
+  for (let i = 1; i < list.length; i++) {
+    if (p <= list[i].frac || i === list.length - 1) {
+      const a = list[i - 1]
+      const b = list[i]
+      const t = b.frac === a.frac ? 0 : (p - a.frac) / (b.frac - a.frac)
+      return a.depth + (b.depth - a.depth) * Math.max(0, Math.min(1, t))
+    }
+  }
+  return 0
+}
+
+function computeAnchors() {
+  const vh = window.innerHeight
+  const maxScroll = document.documentElement.scrollHeight - vh
+  if (maxScroll <= 0) return
+  anchors = []
+  rootEl.value.querySelectorAll('[data-zone]').forEach((el) => {
+    const name = el.dataset.zone
+    if (name === 'surface') return
+    const center = el.offsetTop + el.offsetHeight / 2 - vh / 2
+    anchors.push({
+      name,
+      frac: Math.max(0, Math.min(1, center / maxScroll)),
+      depth: Number(el.dataset.depth)
     })
-  } catch (e) {
-    webglFailed.value = true
+  })
+  anchors.sort((a, b) => a.frac - b.frac)
+  if (scene) scene.setAnchors(anchors)
+}
+
+function beginDescent() {
+  const target = chessSection.value
+  if (lenis) lenis.scrollTo(target, { offset: -window.innerHeight * 0.1, duration: 2.2 })
+  else target.scrollIntoView({ behavior: 'smooth' })
+}
+
+function scrollTop() {
+  if (lenis) lenis.scrollTo(0, { duration: 1.6 })
+  else window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// Reduced-motion / no-WebGL path: plain scroll listener drives meter + nav.
+function onPlainScroll() {
+  const maxScroll = document.documentElement.scrollHeight - window.innerHeight
+  const p = maxScroll > 0 ? window.scrollY / maxScroll : 0
+  updateMeter(depthFromProgress(p))
+  navShown.value = window.scrollY > window.innerHeight * 0.6
+}
+
+onMounted(async () => {
+  await nextTick()
+
+  if (useWebGL.value) {
+    try {
+      scene = createDescentScene(canvasEl.value, {
+        mobile: isMobile,
+        onDepth: updateMeter
+      })
+    } catch (e) {
+      console.warn('WebGL unavailable, falling back to static descent', e)
+      useWebGL.value = false
+      scene = null
+    }
+  }
+
+  if (!scene) {
+    // static gradient + native scrolling; content is fully accessible
+    computeAnchors()
+    window.addEventListener('scroll', onPlainScroll, { passive: true })
+    window.addEventListener('resize', computeAnchors)
+    onPlainScroll()
     return
   }
 
-  const width = rootEl.value.clientWidth
-  const height = rootEl.value.clientHeight
-  renderer.setSize(width, height)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75))
-  renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.28
-  renderer.shadowMap.enabled = true
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap
+  scene.resize(window.innerWidth, window.innerHeight)
+  scene.start()
 
-  const scene = new THREE.Scene()
-  const camera = new THREE.PerspectiveCamera(50, width / height, 0.5, 2000)
-  camera.position.set(260, 190, 260)
+  gsap.registerPlugin(ScrollTrigger)
 
-  const controls = new OrbitControls(camera, canvasEl.value)
-  controls.enableDamping = true
-  controls.dampingFactor = 0.06
-  controls.minDistance = 22
-  controls.maxDistance = 300
-  controls.maxPolarAngle = 1.42
-  controls.minPolarAngle = 0.12
-  controls.target.set(0, 8, 0)
+  lenis = new Lenis({ duration: 1.15 })
+  lenis.on('scroll', ScrollTrigger.update)
+  tickFn = (time) => lenis.raf(time * 1000)
+  gsap.ticker.add(tickFn)
+  gsap.ticker.lagSmoothing(0)
 
-  const { landmarks, update } = buildCity(scene)
-  for (const lm of landmarks) {
-    landmarkMeta.push({
-      key: lm.key,
-      label: lm.label,
-      sub: lm.sub,
-      route: lm.route,
-      cssColor: '#' + new THREE.Color(lm.color).getHexString()
-    })
-  }
+  computeAnchors()
+  ScrollTrigger.addEventListener('refresh', computeAnchors)
 
-  // post-processing (bloom is what makes the night city glow)
-  const composer = new EffectComposer(renderer)
-  composer.addPass(new RenderPass(scene, camera))
-  const bloom = new UnrealBloomPass(new THREE.Vector2(width, height), 0.3, 0.6, 0.66)
-  composer.addPass(bloom)
-  composer.addPass(new OutputPass())
-
-  const raycaster = new THREE.Raycaster()
-  const pointer = new THREE.Vector2(2, 2) // off-screen until first move
-  let pointerInside = false
-  let downPos = null
-
-  const hitMeshes = landmarks.map((l) => l.hitMesh)
-  const landmarkByKey = new Map(landmarks.map((l) => [l.key, l]))
-
-  // ------- camera state machine -------
-  // intro → tour (fly/dwell loop) ⇄ free (user drag) ⇄ focus (panel open)
-  let mode = 'intro'
-  let tourIndex = 0
-  let dwellT = 0
-  let idleT = 0
-  let navigating = false // route push in progress
-  let tween = null
-  const focusOffset = new THREE.Vector3() // camera offset while following a dynamic landmark
-
-  function startTween(toPos, toTarget, duration, onDone) {
-    const dist = camera.position.distanceTo(toPos)
-    tween = {
-      fromPos: camera.position.clone(),
-      toPos: toPos.clone(),
-      fromTarget: controls.target.clone(),
-      toTarget: toTarget.clone(),
-      t: 0,
-      duration,
-      arc: THREE.MathUtils.clamp(dist * 0.32, 4, 55),
-      onDone
+  // master: scroll → depth
+  ScrollTrigger.create({
+    start: 0,
+    end: () => document.documentElement.scrollHeight - window.innerHeight,
+    onUpdate: (self) => {
+      scene.setProgress(self.progress)
+      navShown.value = self.scroll() > window.innerHeight * 0.6
     }
-  }
-
-  /** Viewpoint for a landmark: outside it, looking back across it toward the city. */
-  function viewFor(lm, close) {
-    // stand on the landmark's front side (where its screens/boards face);
-    // dynamic landmarks (drone) fall back to the outward direction
-    const dir = lm.front
-      ? lm.front.clone()
-      : new THREE.Vector3(lm.center.x, 0, lm.center.z)
-    if (dir.lengthSq() < 1) dir.set(0.4, 0, 1)
-    dir.normalize()
-    // horizontal distance scales with whichever is bigger: footprint or height,
-    // so towers get a 3/4 view instead of a top-down one
-    const horiz = Math.max(
-      lm.focusRadius * (close ? 2.3 : 2.7),
-      lm.focusHeight * (close ? 1.05 : 1.2)
-    )
-    const pos = lm.center.clone().addScaledVector(dir, horiz)
-    pos.y = lm.center.y + horiz * (close ? 0.5 : 0.6)
-    return { pos, target: lm.center.clone() }
-  }
-
-  function flightDuration(toPos) {
-    if (prefersReducedMotion) return 0.35
-    return THREE.MathUtils.clamp(camera.position.distanceTo(toPos) / 55, 1.2, 2.6)
-  }
-
-  function tourFlyTo(index) {
-    mode = 'tour-fly'
-    tourIndex = ((index % TOUR_ORDER.length) + TOUR_ORDER.length) % TOUR_ORDER.length
-    const lm = landmarkByKey.get(TOUR_ORDER[tourIndex])
-    const { pos, target } = viewFor(lm, false)
-    tourStopKey.value = lm.key
-    startTween(pos, target, flightDuration(pos), () => {
-      mode = 'tour-dwell'
-      dwellT = 0
-    })
-  }
-
-  function nearestTourIndex() {
-    let best = 0
-    let bestD = Infinity
-    for (let i = 0; i < TOUR_ORDER.length; i++) {
-      const lm = landmarkByKey.get(TOUR_ORDER[i])
-      const d = controls.target.distanceToSquared(lm.center)
-      if (d < bestD) {
-        bestD = d
-        best = i
-      }
-    }
-    return best
-  }
-
-  function focusLandmark(lm) {
-    if (navigating) return
-    exploreOpen.value = false
-    hintHidden.value = true
-    tourStopKey.value = null
-    mode = 'focus-fly'
-    const { pos, target } = viewFor(lm, true)
-    startTween(pos, target, prefersReducedMotion ? 0.3 : 1.3, () => {
-      mode = 'focus'
-      focusOffset.copy(camera.position).sub(lm.center)
-      focusedKey.value = lm.key
-    })
-  }
-
-  function leaveFocus() {
-    focusedKey.value = null
-    if (mode === 'focus' || mode === 'focus-fly') {
-      tourFlyTo(nearestTourIndex() + 1)
-    }
-  }
-
-  function goToRoute(route) {
-    if (navigating) return
-    navigating = true
-    veilShown.value = true
-    setTimeout(() => router.push(route), 420)
-  }
-
-  three.value = { focusLandmark, landmarkByKey, leaveFocus, goToRoute }
-
-  if (import.meta.env.DEV) {
-    window.__cityDebug = () => ({
-      mode,
-      tourIndex,
-      tween: !!tween,
-      cam: camera.position.toArray().map((n) => +n.toFixed(1)),
-      target: controls.target.toArray().map((n) => +n.toFixed(1))
-    })
-    // jump the current flight to its destination (preview tabs throttle rAF)
-    window.__citySkip = () => {
-      if (tween) tween.t = tween.duration + 1
-      else if (mode === 'tour-dwell') dwellT = TOUR_DWELL + 1
-    }
-    window.__cityFocus = (key) => focusLandmark(landmarkByKey.get(key))
-  }
-
-  // ------- interaction -------
-  function interrupt() {
-    hintHidden.value = true
-    idleT = 0
-    // grabbing the world cancels tour/intro flights, never a focus flight
-    if (mode === 'intro' || mode === 'tour-fly' || mode === 'tour-dwell' || mode === 'free') {
-      tween = null
-      mode = 'free'
-      tourStopKey.value = null
-    }
-  }
-
-  function onPointerMove(e) {
-    const rect = canvasEl.value.getBoundingClientRect()
-    pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
-    pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
-    pointerInside = true
-  }
-  function onPointerLeave() {
-    pointerInside = false
-  }
-  function onPointerDown(e) {
-    downPos = { x: e.clientX, y: e.clientY }
-    interrupt()
-  }
-  function onClick(e) {
-    if (!downPos) return
-    const moved = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y)
-    downPos = null
-    if (moved > 7) return
-    onPointerMove(e)
-    raycaster.setFromCamera(pointer, camera)
-    const hits = raycaster.intersectObjects(hitMeshes, false)
-    if (hits.length) {
-      focusLandmark(landmarkByKey.get(hits[0].object.userData.landmarkKey))
-    } else if (mode === 'focus') {
-      leaveFocus()
-    }
-  }
-  function onWheel() {
-    interrupt()
-  }
-  function onKeyDown(e) {
-    if (e.key === 'Escape' && focusedKey.value) leaveFocus()
-  }
-
-  canvasEl.value.addEventListener('pointermove', onPointerMove)
-  canvasEl.value.addEventListener('pointerleave', onPointerLeave)
-  canvasEl.value.addEventListener('pointerdown', onPointerDown)
-  canvasEl.value.addEventListener('click', onClick)
-  canvasEl.value.addEventListener('wheel', onWheel, { passive: true })
-  window.addEventListener('keydown', onKeyDown)
-
-  function onResize() {
-    if (!rootEl.value) return
-    const w = rootEl.value.clientWidth
-    const h = rootEl.value.clientHeight
-    camera.aspect = w / h
-    camera.updateProjectionMatrix()
-    renderer.setSize(w, h)
-    composer.setSize(w, h)
-  }
-  window.addEventListener('resize', onResize)
-
-  // intro sweep, then the tour takes over
-  if (!prefersReducedMotion) {
-    startTween(new THREE.Vector3(120, 80, 165), new THREE.Vector3(0, 14, 0), 3.0, () => {
-      tourFlyTo(0)
-    })
-  } else {
-    camera.position.set(120, 80, 165)
-    controls.target.set(0, 14, 0)
-    mode = 'free'
-  }
-
-  // ------- render loop -------
-  const clock = new THREE.Clock()
-  const worldPos = new THREE.Vector3()
-
-  // adaptive quality: if the first seconds run slow, drop bloom + pixel ratio
-  let frames = 0
-  let slowFrames = 0
-  let useComposer = true
-
-  function frame() {
-    if (disposed) return
-    rafId = requestAnimationFrame(frame)
-    const dt = Math.min(clock.getDelta(), 0.05)
-    const t = clock.elapsedTime
-
-    update(dt, t)
-
-    const flying = tween !== null
-    controls.enabled = !flying && mode !== 'focus'
-
-    // camera tween (with a gentle vertical arc so flights feel like a swoop)
-    if (tween) {
-      tween.t += dt
-      const k = easeInOutCubic(Math.min(tween.t / tween.duration, 1))
-      camera.position.lerpVectors(tween.fromPos, tween.toPos, k)
-      camera.position.y += Math.sin(Math.PI * Math.min(tween.t / tween.duration, 1)) * tween.arc
-      controls.target.lerpVectors(tween.fromTarget, tween.toTarget, k)
-      if (tween.t >= tween.duration) {
-        const done = tween.onDone
-        tween = null
-        if (done) done()
-      }
-    } else if (mode === 'tour-dwell') {
-      dwellT += dt
-      // drift slowly around the stop while dwelling
-      const lm = landmarkByKey.get(TOUR_ORDER[tourIndex])
-      if (lm && !prefersReducedMotion) {
-        const angle = dt * 0.07
-        const v = camera.position.clone().sub(controls.target)
-        v.applyAxisAngle(new THREE.Vector3(0, 1, 0), angle)
-        camera.position.copy(controls.target).add(v)
-        if (lm.dynamic) controls.target.lerp(lm.center, Math.min(dt * 2, 1))
-      }
-      if (dwellT >= TOUR_DWELL && !prefersReducedMotion) tourFlyTo(tourIndex + 1)
-    } else if (mode === 'free') {
-      idleT += dt
-      if (!prefersReducedMotion && idleT > IDLE_RESUME && !focusedKey.value) {
-        tourFlyTo(nearestTourIndex() + 1)
-      }
-    } else if (mode === 'focus') {
-      // hold position; follow the landmark if it moves (drone)
-      const lm = landmarkByKey.get(focusedKey.value)
-      if (lm && lm.dynamic) {
-        controls.target.lerp(lm.center, Math.min(dt * 3, 1))
-        camera.position.copy(controls.target).add(focusOffset)
-      }
-    }
-
-    // keep orbit target inside the city
-    controls.target.x = THREE.MathUtils.clamp(controls.target.x, -110, 110)
-    controls.target.z = THREE.MathUtils.clamp(controls.target.z, -110, 110)
-    controls.target.y = THREE.MathUtils.clamp(controls.target.y, 0, 60)
-    controls.update()
-
-    // hover raycast — authoritative while the pointer is over the canvas
-    if (pointerInside && !navigating && !flying) {
-      raycaster.setFromCamera(pointer, camera)
-      const hits = raycaster.intersectObjects(hitMeshes, false)
-      hoveredKey.value = hits.length ? hits[0].object.userData.landmarkKey : null
-      canvasEl.value.style.cursor = hoveredKey.value ? 'pointer' : 'grab'
-    }
-
-    // rings pulse on hover/tour stop, chips track anchors
-    const hideChips = navigating || flying || focusedKey.value
-    for (const lm of landmarks) {
-      const highlighted =
-        hoveredKey.value === lm.key || (tourStopKey.value === lm.key && mode === 'tour-dwell')
-      if (lm.ring) {
-        const target = highlighted ? 0.45 : 0.12
-        lm.ring.material.opacity += (target - lm.ring.material.opacity) * Math.min(dt * 8, 1)
-        if (highlighted) {
-          const s = 1 + Math.sin(t * 4) * 0.03
-          lm.ring.scale.setScalar(s)
-        }
-      }
-
-      const el = chipEls.get(lm.key)
-      if (el) {
-        worldPos.copy(lm.anchor).project(camera)
-        const behind = worldPos.z > 1
-        const dist = camera.position.distanceTo(lm.anchor)
-        if (behind || dist > 340 || hideChips) {
-          el.style.opacity = '0'
-          el.style.pointerEvents = 'none'
-        } else {
-          const x = ((worldPos.x + 1) / 2) * rootEl.value.clientWidth
-          const y = ((1 - worldPos.y) / 2) * rootEl.value.clientHeight
-          const scale = THREE.MathUtils.clamp(180 / dist, 0.6, 1.15)
-          el.style.opacity = String(THREE.MathUtils.clamp(2 - dist / 220, 0.35, 1))
-          el.style.pointerEvents = 'auto'
-          el.style.transform = `translate(-50%, -100%) translate(${x}px, ${y}px) scale(${scale})`
-        }
-      }
-    }
-
-    // adaptive quality check over the first ~4 seconds
-    if (frames < 240) {
-      frames++
-      if (dt > 0.045) slowFrames++
-      if (frames === 240 && slowFrames > 90 && useComposer) {
-        useComposer = false
-        renderer.setPixelRatio(1)
-        renderer.shadowMap.enabled = false
-      }
-    }
-
-    if (useComposer) composer.render()
-    else renderer.render(scene, camera)
-  }
-  frame()
-
-  // ------- cleanup -------
-  onBeforeUnmount(() => {
-    disposed = true
-    cancelAnimationFrame(rafId)
-    window.removeEventListener('resize', onResize)
-    window.removeEventListener('keydown', onKeyDown)
-    controls.dispose()
-    composer.dispose()
-    scene.traverse((obj) => {
-      if (obj.geometry) obj.geometry.dispose()
-      const mats = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : []
-      for (const m of mats) {
-        for (const key of ['map', 'emissiveMap', 'normalMap', 'roughnessMap']) if (m[key]) m[key].dispose()
-        m.dispose()
-      }
-    })
-    renderer.dispose()
   })
+
+  // panels: reveal + gentle parallax (content drifts slightly faster than water)
+  rootEl.value.querySelectorAll('.zone').forEach((sec) => {
+    const wrap = sec.querySelector('.panel-wrap')
+    const panels = sec.querySelectorAll('.panel')
+    if (sec !== chessSection.value) {
+      gsap.fromTo(
+        wrap,
+        { y: '7vh' },
+        {
+          y: '-7vh',
+          ease: 'none',
+          scrollTrigger: { trigger: sec, start: 'top bottom', end: 'bottom top', scrub: true }
+        }
+      )
+    }
+    // opacity (not autoAlpha): hidden panels must stay readable to screen readers
+    gsap.fromTo(
+      panels,
+      { opacity: 0, y: 44 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 1.2,
+        stagger: 0.15,
+        ease: 'power2.out',
+        scrollTrigger: { trigger: sec, start: 'top 62%', toggleActions: 'play none none reverse' }
+      }
+    )
+  })
+
+  // chess panel docks: brief pin while the knight turns
+  ScrollTrigger.create({
+    trigger: chessSection.value,
+    start: 'center center',
+    end: '+=32%',
+    pin: chessPin.value,
+    pinSpacing: false,
+    anticipatePin: 1
+  })
+
+  // fish school forms the line chart while the wealth panel is centred
+  ScrollTrigger.create({
+    trigger: wealthSection.value,
+    start: 'top 85%',
+    end: 'bottom 15%',
+    onUpdate: (self) => {
+      const p = self.progress
+      const ramp = (x, a, b) => Math.max(0, Math.min(1, (x - a) / (b - a)))
+      scene.setFishForm(ramp(p, 0.12, 0.42) * (1 - ramp(p, 0.68, 0.95)))
+    },
+    onLeave: () => scene.setFishForm(0),
+    onLeaveBack: () => scene.setFishForm(0)
+  })
+
+  // hadal cards get swept by the searchlight as they enter
+  hadalSection.value.querySelectorAll('.hadal-card').forEach((card, i) => {
+    ScrollTrigger.create({
+      trigger: card,
+      start: 'top 78%',
+      onEnter: () => {
+        card.classList.remove('lit')
+        // restart the sweep animation
+        void card.offsetWidth
+        setTimeout(() => card.classList.add('lit'), i * 350)
+      },
+      onLeaveBack: () => card.classList.remove('lit')
+    })
+  })
+
+  window.addEventListener('resize', onResize)
+  updateMeter(0)
 })
 
-function activateByKey(key) {
-  const api = three.value
-  if (!api) return
-  const lm = api.landmarkByKey.get(key)
-  if (lm) api.focusLandmark(lm)
+function onResize() {
+  if (scene) scene.resize(window.innerWidth, window.innerHeight)
 }
 
-function openFocusedRoute() {
-  const api = three.value
-  const meta = focusedMeta.value
-  if (api && meta) api.goToRoute(meta.route)
-}
-
-function resumeTour() {
-  three.value?.leaveFocus()
-}
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', onResize)
+  window.removeEventListener('scroll', onPlainScroll)
+  window.removeEventListener('resize', computeAnchors)
+  if (scene) {
+    ScrollTrigger.removeEventListener('refresh', computeAnchors)
+    ScrollTrigger.getAll().forEach((t) => t.kill())
+    if (tickFn) gsap.ticker.remove(tickFn)
+    if (lenis) lenis.destroy()
+    scene.dispose()
+    scene = null
+  }
+})
 </script>
 
 <style scoped>
-.city-root {
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
-  background: #02030a;
+.descent {
+  position: relative;
+  color: #e8f4f8;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
-.city-canvas {
-  position: absolute;
+/* ── water layers ─────────────────────────────────────────────────── */
+.descent-canvas {
+  position: fixed;
   inset: 0;
   width: 100%;
   height: 100%;
+  z-index: 0;
   display: block;
-  cursor: grab;
-  touch-action: none;
-}
-.city-canvas:active {
-  cursor: grabbing;
 }
 
-/* ---- chips ---- */
-.chip-layer {
-  position: absolute;
+.descent-static {
+  position: fixed;
   inset: 0;
-  pointer-events: none;
-  z-index: 3;
-  transition: opacity 0.3s ease;
-}
-.chip-layer.dimmed {
-  opacity: 0;
-}
-.chip {
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px 6px 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(8, 10, 22, 0.72);
-  backdrop-filter: blur(6px);
-  color: var(--ink);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: border-color 0.15s ease, background 0.15s ease, opacity 0.25s ease;
-  will-change: transform;
-}
-.chip:hover,
-.chip.active {
-  border-color: var(--chip-color, var(--accent));
-  background: rgba(12, 14, 30, 0.92);
-  box-shadow: 0 0 18px color-mix(in srgb, var(--chip-color, #5b5bff) 45%, transparent);
-}
-.chip-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  flex: none;
-  background: var(--chip-color, var(--accent));
-  box-shadow: 0 0 10px var(--chip-color, var(--accent));
-}
-.chip-text {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  line-height: 1.15;
-}
-.chip-label {
-  font-weight: 700;
-  font-size: 0.82rem;
-}
-.chip-sub {
-  font-size: 0.68rem;
-  color: var(--muted);
-  display: none;
-}
-.chip:hover .chip-sub,
-.chip.active .chip-sub {
-  display: block;
+  z-index: 0;
+  background:
+    linear-gradient(to bottom, transparent 0 62%, rgba(2, 16, 31, 0.32) 100%),
+    url('/images/descent/sequence-v2/0.png') center / cover no-repeat;
 }
 
-/* ---- identity overlay ---- */
-.city-overlay-top {
-  position: absolute;
-  top: 26px;
-  left: 28px;
-  z-index: 4;
-  pointer-events: none;
-  max-width: min(420px, 80vw);
-}
-.city-overlay-top .btn {
-  pointer-events: auto;
-}
-.city-name {
-  margin: 0;
-  font-size: clamp(1.7rem, 1.2rem + 2vw, 2.6rem);
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.9);
-}
-.city-tag {
-  margin: 4px 0 14px;
-  color: var(--muted);
-  font-size: clamp(0.85rem, 0.75rem + 0.4vw, 1rem);
-  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.9);
-}
-.city-links {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.descent-content {
+  position: relative;
+  z-index: 1;
 }
 
-/* ---- tour caption ---- */
-.tour-caption {
-  position: absolute;
-  bottom: 74px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 18px;
-  border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--chip-color, #5b5bff) 45%, transparent);
-  background: rgba(6, 8, 18, 0.82);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
-  pointer-events: none;
-  white-space: nowrap;
-}
-.caption-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-.caption-label {
-  font-weight: 800;
-  font-size: 0.95rem;
-}
-.caption-sub {
-  font-size: 0.75rem;
-  color: var(--muted);
-}
-.caption-hint {
-  font-size: 0.7rem;
-  color: var(--muted);
-  border-left: 1px solid var(--line);
-  padding-left: 12px;
-}
-.caption-enter-active,
-.caption-leave-active {
-  transition: opacity 0.35s ease, transform 0.35s ease;
-}
-.caption-enter-from,
-.caption-leave-to {
-  opacity: 0;
-  transform: translateX(-50%) translateY(8px);
-}
-
-/* ---- detail panel ---- */
-.city-panel {
-  position: absolute;
-  right: 26px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 6;
-  width: min(370px, calc(100vw - 48px));
-  padding: 22px 24px;
-  border-radius: 18px;
-  border: 1px solid color-mix(in srgb, var(--chip-color, #5b5bff) 40%, rgba(148, 163, 184, 0.2));
-  background: rgba(7, 9, 20, 0.88);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.6),
-    0 0 40px color-mix(in srgb, var(--chip-color, #5b5bff) 18%, transparent);
-}
-.panel-kicker {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--chip-color, var(--accent));
-  margin-bottom: 8px;
-}
-.panel-title {
-  margin: 0 0 4px;
-  font-size: 1.35rem;
-  font-weight: 800;
-  line-height: 1.2;
-}
-.panel-tagline {
-  margin: 0 0 10px;
-  font-size: 0.88rem;
-  color: var(--muted);
-}
-.panel-excerpt {
-  margin: 0 0 14px;
-  font-size: 0.85rem;
-  line-height: 1.55;
-  color: var(--ink);
-}
-.panel-stack {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 16px;
-}
-.stack-chip {
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(148, 163, 184, 0.08);
-  color: var(--muted);
-}
-.panel-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.panel-enter-active,
-.panel-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.panel-enter-from,
-.panel-leave-to {
-  opacity: 0;
-  transform: translateY(-50%) translateX(24px);
-}
-
-/* ---- hint ---- */
-.city-hint {
-  position: absolute;
-  bottom: 22px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 4;
-  padding: 8px 16px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: rgba(8, 10, 22, 0.7);
-  backdrop-filter: blur(6px);
-  color: var(--muted);
-  font-size: 0.82rem;
-  white-space: nowrap;
-  transition: opacity 0.6s ease;
-  pointer-events: none;
-}
-.city-hint.hidden {
-  opacity: 0;
-}
-.hint-key {
-  color: var(--ink);
-  font-weight: 700;
-}
-
-/* ---- explore menu ---- */
-.city-explore {
-  position: absolute;
-  right: 22px;
-  bottom: 22px;
+/* ── depth meter ──────────────────────────────────────────────────── */
+.depth-meter {
+  position: fixed;
+  right: clamp(14px, 3vw, 34px);
+  bottom: clamp(14px, 3vh, 30px);
   z-index: 5;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 10px;
+  gap: 3px;
+  font-family: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+  pointer-events: none;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
 }
-.explore-toggle {
-  font-size: 0.88rem;
+
+.meter-value {
+  font-size: clamp(15px, 1.6vw, 19px);
+  letter-spacing: 0.06em;
+  color: #cfeef5;
+  font-variant-numeric: tabular-nums;
 }
-.explore-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--line);
-  background: rgba(8, 10, 22, 0.88);
-  backdrop-filter: blur(8px);
-  max-height: min(52vh, 420px);
-  overflow-y: auto;
+
+.meter-zone {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  color: rgba(160, 215, 230, 0.55);
 }
-.explore-item {
+
+/* ── nav ──────────────────────────────────────────────────────────── */
+.descent-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 6;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-  text-align: left;
-}
-.explore-item:hover {
-  background: rgba(91, 91, 255, 0.14);
-}
-.explore-item .chip-sub {
-  display: block;
-}
-.explore-item .chip-label {
-  display: block;
-}
-
-/* ---- veil ---- */
-.city-veil {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  background: #02030a;
+  justify-content: space-between;
+  padding: 12px clamp(18px, 4vw, 40px);
+  background: rgba(2, 10, 20, 0.42);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  border-bottom: 1px solid rgba(150, 215, 235, 0.1);
+  transform: translateY(-110%);
   opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.45s ease;
-}
-.city-veil.shown {
-  opacity: 1;
-  pointer-events: auto;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease;
 }
 
-/* ---- fallback ---- */
-.city-fallback {
-  position: absolute;
-  inset: 0;
+.descent-nav.shown {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.nav-brand {
+  background: none;
+  border: 0;
+  color: #dff3f8;
+  font: inherit;
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.nav-links {
+  display: flex;
+  gap: clamp(16px, 3vw, 34px);
+}
+
+.nav-links a {
+  color: rgba(210, 236, 244, 0.78);
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: color 0.25s ease;
+}
+
+.nav-links a:hover,
+.nav-links a:focus-visible {
+  color: #ffffff;
+}
+
+.nav-brand:focus-visible,
+.nav-links a:focus-visible,
+.view-link:focus-visible,
+.floor-btn:focus-visible,
+.city-tile:focus-visible,
+.hero-cta:focus-visible {
+  outline: 2px solid rgba(140, 220, 245, 0.85);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ── hero ─────────────────────────────────────────────────────────── */
+.hero {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
-  align-items: flex-start;
-  padding: 8vw;
-}
-.fallback-links {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 8px;
+  text-align: center;
+  /* extra bottom padding keeps the CTA clear of the boat on the waterline */
+  padding: 0 20px 17vh;
+  color: #f8fbfc;
+  text-shadow: 0 1px 18px rgba(24, 59, 75, 0.24);
 }
 
-@media (max-width: 640px) {
-  .city-overlay-top {
-    top: 16px;
-    left: 16px;
+.hero-kicker {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.44em;
+  text-transform: uppercase;
+  color: rgba(247, 251, 252, 0.92);
+  margin: 0 0 24px;
+}
+
+.hero h1 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(46px, 5.2vw, 72px);
+  font-weight: 400;
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  margin: 0;
+  color: #ffffff;
+  text-shadow: 0 2px 28px rgba(32, 69, 84, 0.28);
+}
+
+.hero-role {
+  font-size: clamp(12px, 1.25vw, 15px);
+  font-weight: 400;
+  letter-spacing: 0.34em;
+  color: rgba(248, 252, 253, 0.94);
+  margin: 25px 0 0;
+}
+
+.hero-pitch {
+  max-width: 430px;
+  margin: 29px 0 0;
+  font-size: clamp(13px, 1.1vw, 15px);
+  line-height: 1.72;
+  color: rgba(247, 251, 252, 0.88);
+}
+
+.hero-cta {
+  margin-top: 39px;
+  min-width: 178px;
+  padding: 14px 30px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: #ffffff;
+  background: rgba(113, 150, 165, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+
+.hero-cta:hover {
+  background: rgba(10, 40, 60, 0.55);
+  border-color: rgba(190, 240, 252, 0.6);
+  transform: translateY(2px);
+}
+
+.hero-cta span {
+  display: inline-block;
+  margin-left: 6px;
+  animation: bob 2.4s ease-in-out infinite;
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-cta span { animation: none; }
+}
+
+/* ── zones & panels ───────────────────────────────────────────────── */
+.zone {
+  min-height: 150vh;
+  display: flex;
+  align-items: center;
+  padding: 25vh clamp(18px, 5vw, 72px);
+  box-sizing: border-box;
+}
+
+.zone-inner {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.zone-wide .zone-inner {
+  justify-content: center;
+}
+
+.panel-wrap {
+  width: min(460px, 100%);
+}
+
+.panel-pair {
+  width: min(980px, 100%);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(16px, 2.5vw, 30px);
+}
+
+.panel {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(22px, 3vw, 34px);
+  border-radius: 18px;
+  background: rgba(6, 18, 30, 0.38);
+  border: 1px solid rgba(165, 225, 245, 0.16);
+  box-shadow: 0 22px 60px rgba(0, 2, 6, 0.5);
+  backdrop-filter: blur(16px) saturate(1.25);
+  -webkit-backdrop-filter: blur(16px) saturate(1.25);
+}
+
+.zone-kicker {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(150, 216, 232, 0.62);
+  margin: 0 0 14px;
+}
+
+.panel h2 {
+  font-size: clamp(21px, 2.4vw, 27px);
+  font-weight: 620;
+  letter-spacing: -0.01em;
+  margin: 0 0 12px;
+  color: #f2fbfd;
+}
+
+.outcome {
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: rgba(210, 235, 242, 0.82);
+  margin: 0 0 18px;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+
+.tags li {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(178, 228, 240, 0.75);
+  padding: 5px 10px;
+  border: 1px solid rgba(150, 215, 235, 0.18);
+  border-radius: 999px;
+  background: rgba(10, 30, 46, 0.3);
+}
+
+.view-link {
+  display: inline-block;
+  font-size: 13.5px;
+  letter-spacing: 0.08em;
+  color: #9fe3f2;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(140, 215, 235, 0.35);
+  padding-bottom: 2px;
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+
+.view-link:hover {
+  color: #ffffff;
+  border-color: rgba(230, 250, 255, 0.7);
+}
+
+/* hadal cards: searchlight sweep when they enter view */
+.hadal-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(190, 235, 252, 0.14) 46%,
+    rgba(220, 245, 255, 0.22) 50%,
+    rgba(190, 235, 252, 0.14) 54%,
+    transparent 70%
+  );
+  transform: translateX(-130%);
+  opacity: 0;
+}
+
+.hadal-card.lit::after {
+  animation: sweep 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes sweep {
+  0% { transform: translateX(-130%); opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateX(130%); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hadal-card.lit::after { animation: none; }
+}
+
+/* ── the floor ────────────────────────────────────────────────────── */
+.floor {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12vh 20px;
+  box-sizing: border-box;
+}
+
+.floor-inner {
+  max-width: 560px;
+}
+
+.floor h2 {
+  font-size: clamp(26px, 3.4vw, 38px);
+  font-weight: 640;
+  margin: 0 0 10px;
+  color: #f4fcfe;
+}
+
+.floor .outcome {
+  margin-bottom: 30px;
+}
+
+.floor-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.floor-btn {
+  padding: 11px 22px;
+  font-size: 12.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(220, 244, 250, 0.88);
+  text-decoration: none;
+  border: 1px solid rgba(160, 222, 240, 0.28);
+  border-radius: 999px;
+  background: rgba(8, 24, 38, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.floor-btn:hover {
+  background: rgba(14, 42, 62, 0.6);
+  border-color: rgba(200, 240, 252, 0.55);
+}
+
+.floor-btn.primary {
+  background: rgba(120, 210, 235, 0.16);
+  border-color: rgba(170, 230, 248, 0.5);
+  color: #ffffff;
+}
+
+.city-tile {
+  display: block;
+  margin: 46px auto 0;
+  max-width: 380px;
+  padding: 18px 22px;
+  text-align: left;
+  text-decoration: none;
+  border-radius: 14px;
+  border: 1px solid rgba(150, 215, 235, 0.16);
+  background: rgba(6, 18, 30, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.city-tile:hover {
+  border-color: rgba(190, 235, 250, 0.4);
+  background: rgba(10, 30, 46, 0.5);
+}
+
+.city-tile-label {
+  display: block;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(150, 216, 232, 0.55);
+  margin-bottom: 6px;
+}
+
+.city-tile-title {
+  display: block;
+  font-size: 16.5px;
+  font-weight: 600;
+  color: #eaf8fc;
+}
+
+.city-tile-sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: rgba(200, 230, 240, 0.6);
+}
+
+/* ── mobile ───────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .zone {
+    padding-left: 16px;
+    padding-right: 16px;
   }
-  .city-hint {
-    font-size: 0.72rem;
-    bottom: 76px;
+
+  .zone-inner {
+    justify-content: center;
   }
-  .city-explore {
-    right: 12px;
-    bottom: 14px;
+
+  .panel-wrap {
+    width: 100%;
   }
-  .chip-sub {
-    display: none !important;
+
+  .panel-pair {
+    grid-template-columns: 1fr;
+    width: 100%;
   }
-  .tour-caption {
-    bottom: 120px;
-    max-width: calc(100vw - 24px);
+
+  .nav-links {
+    gap: 18px;
   }
-  .caption-hint {
-    display: none;
-  }
-  .city-panel {
-    right: 12px;
-    left: 12px;
-    top: auto;
-    bottom: 12px;
-    transform: none;
-    width: auto;
-    max-height: 55vh;
-    overflow-y: auto;
-  }
-  .panel-enter-from,
-  .panel-leave-to {
-    opacity: 0;
-    transform: translateY(20px);
+
+  .nav-links a {
+    font-size: 12px;
   }
 }
 </style>

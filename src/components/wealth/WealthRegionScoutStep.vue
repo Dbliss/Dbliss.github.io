@@ -610,7 +610,7 @@
                       :trend-points="recommendation.yieldTrendPoints"
                       :estimate-point="null"
                     />
-                    <WealthLineChart :title="`${propertyTypeLabel} price Monte Carlo`" subtitle="P10 / P50 / P90 projection for the next 30 years." kicker="Forward market path" :series="buildMonteCarloChartSeries(recommendation)" :markers="buildResultMarkers(recommendation)" />
+                    <WealthLineChart :title="`${propertyTypeLabel} price Monte Carlo`" subtitle="P25 / P50 / P75 projection for the next 30 years." kicker="Forward market path" :series="buildMonteCarloChartSeries(recommendation)" :markers="buildResultMarkers(recommendation)" />
                     <WealthLineChart title="Purchasing power vs required property value" subtitle="Compare what you can buy against the projected price path." kicker="30-year affordability" :series="buildResultPowerSeries(recommendation)" :markers="buildResultMarkers(recommendation)" />
                   </div>
                 </div>

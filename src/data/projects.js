@@ -1,5 +1,36 @@
 export const projects = [
   {
+    slug: 'frontier',
+    title: 'Frontier — Tower-Defence Roguelike',
+    tagline: 'Build a civilisation that evolves faster than the world can destroy it',
+    excerpt:
+      'A browser game where your tower layout is a living city: gather by day, survive waves by night, and watch the settlement leap from campfires to a neon metropolis.',
+    description: `
+Frontier is a 3D tower-defence roguelike built in the browser with three.js, using the same low-poly asset pipeline as this site's interactive city homepage (Kenney kits + CC0 farm models).
+
+You play in first person as the settlement's commander — sword, axe, pickaxe and build hammer on keys 1–4 — with a tactical bird's-eye view a keypress away.
+
+Each run lasts around 20–30 minutes across 12 nightly waves:
+- **By day** you chop trees and mine stone by hand (or automate it with camps), raise buildings, and train militia who follow you and hold positions at your banner.
+- **By night** enemies path dynamically through your city — walls redirect them, flyers ignore them, siege units shell your towers from range.
+- **After each wave** you pick one of three roguelike mutations (twin arrows, exploding walls, compost cycles, chain lightning...) that push each run toward a different build identity.
+- **Every four waves** the whole settlement leaps an era and every building physically transforms: barn-and-palisade farm camp → suburban town with roads and cars → commercial metropolis with skyscrapers and tesla towers.
+
+Under the hood:
+- a weighted Dijkstra flow field re-routes every enemy whenever the city layout changes, so mazes work but can be chewed through
+- a lightweight economy sim (population, worker allocation, node depletion, market and road auras)
+- the scene reconciles game state into three.js objects each frame, so era transitions just swap models
+- auto-tiling Kenney road pieces with ambient cars that navigate the road network you build
+- day/night lighting cycle and a tiny WebAudio synth — zero audio assets
+    `,
+    stack: ['Vue 3', 'three.js', 'JavaScript', 'WebAudio', 'Dijkstra flow fields'],
+    tags: ['Game Dev', 'Roguelike', 'Simulation'],
+    category: 'Personal project',
+    repoUrl: 'https://github.com/Dbliss/Dbliss.github.io',
+    liveUrl: '#/frontier',
+    featured: true
+  },
+  {
     slug: 'lol-match-predictor',
     title: 'Bayesian Predictor for Esports',
     tagline: 'Side project to price pro esports matches like a bookmaker',

@@ -4176,15 +4176,13 @@ function disposeAll() {
 
 .deep-dive-panel {
 	display: grid;
-	gap: 16px;
-	padding: 18px;
-	border-radius: 20px;
-	background: rgba(255, 255, 255, 0.028);
-	border: 1px solid rgba(221, 227, 242, 0.1);
+	gap: 18px;
+	padding: 20px 0 2px;
+	border-top: 1px solid rgba(221, 227, 242, 0.14);
 }
 
 .deep-dive-panel-dark {
-	background: linear-gradient(180deg, rgba(14, 18, 27, 0.74), rgba(9, 12, 18, 0.82));
+	background: none;
 }
 
 .panel-heading {
@@ -4212,19 +4210,22 @@ function disposeAll() {
 }
 
 .architecture-diagram {
-	grid-template-columns: repeat(15, minmax(0, 1fr));
+	display: flex;
 	align-items: center;
+	gap: clamp(6px, 1vw, 12px);
+	min-width: 0;
 }
 
 .arch-node {
-	grid-column: span 1;
+	position: relative;
+	flex: 1 1 0;
+	min-width: 0;
 	display: grid;
-	gap: 8px;
-	padding: 14px 12px;
-	border-radius: 18px;
-	background: rgba(255, 255, 255, 0.03);
-	border: 1px solid rgba(221, 227, 242, 0.1);
-	text-align: center;
+	align-content: start;
+	gap: 7px;
+	padding: 12px 4px 0;
+	border-top: 2px solid rgba(var(--accent), 0.46);
+	text-align: left;
 }
 
 .arch-node span {
@@ -4233,24 +4234,39 @@ function disposeAll() {
 }
 
 .arch-node strong {
-	font-size: 0.9rem;
+	font-size: clamp(0.76rem, 1.25vw, 0.9rem);
 	line-height: 1.35;
 	color: rgba(var(--title), 0.94);
+	overflow-wrap: normal;
+	word-break: normal;
 }
 
 .arch-arrow {
+	flex: 0 0 auto;
 	text-align: center;
 	color: rgba(var(--accent), 0.75);
-	font-size: 0.8rem;
+	font-size: 0.74rem;
 }
 
 .arch-node,
 .arch-arrow {
-	grid-column: span 1;
+	grid-column: auto;
 }
 
 .arch-node-final {
-	grid-column: span 2;
+	flex-grow: 1.25;
+}
+
+.decision-card,
+.subsystem-card,
+.proof-card,
+.future-card,
+.lesson-card {
+	padding: 14px 2px 4px;
+	border: 0;
+	border-top: 1px solid rgba(221, 227, 242, 0.14);
+	border-radius: 0;
+	background: none;
 }
 
 .performance-band {
@@ -4508,13 +4524,13 @@ function disposeAll() {
 	}
 
 	.architecture-diagram {
-		grid-template-columns: 1fr;
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 18px 14px;
 	}
 
-	.arch-node,
-	.arch-node-final,
 	.arch-arrow {
-		grid-column: auto;
+		display: none;
 	}
 
 	.queen-stage,
@@ -4544,6 +4560,10 @@ function disposeAll() {
 	.hero-console {
 		position: static;
 		margin-top: 12px;
+	}
+
+	.architecture-diagram {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 }
 

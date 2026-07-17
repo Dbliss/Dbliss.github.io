@@ -37,9 +37,9 @@ export function percentile(values, pct) {
 
 export function percentileSummary(values) {
   return {
-    p10: percentile(values, 0.1),
+    p10: percentile(values, 0.25),
     p50: percentile(values, 0.5),
-    p90: percentile(values, 0.9)
+    p90: percentile(values, 0.75)
   }
 }
 

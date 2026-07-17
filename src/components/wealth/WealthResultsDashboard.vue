@@ -17,12 +17,12 @@
       <article class="wealth-results__kpi card">
         <p class="wealth-results__kpi-kicker">Strongest downside</p>
         <h3>{{ visibleKpis.downsideLeader?.label || (noVisibleStrategies ? 'No visible strategy' : 'No result') }}</h3>
-        <p>{{ visibleKpis.downsideLeader ? `${formatCurrency(visibleKpis.downsideLeader.summary.downsideRisk)} at the 10th percentile.` : noVisibleStrategies ? 'Use the strategy visibility chips above to show at least one strategy.' : 'Run the model to populate this card.' }}</p>
+        <p>{{ visibleKpis.downsideLeader ? `${formatCurrency(visibleKpis.downsideLeader.summary.downsideRisk)} at the 25th percentile.` : noVisibleStrategies ? 'Use the strategy visibility chips above to show at least one strategy.' : 'Run the model to populate this card.' }}</p>
       </article>
       <article class="wealth-results__kpi card">
         <p class="wealth-results__kpi-kicker">Widest variability</p>
         <h3>{{ visibleKpis.variabilityLeader?.label || (noVisibleStrategies ? 'No visible strategy' : 'No result') }}</h3>
-        <p>{{ visibleKpis.variabilityLeader ? `${formatCurrency(visibleKpis.variabilityLeader.variabilitySpread)} spread between P10 and P90 at the horizon.` : noVisibleStrategies ? 'Use the strategy visibility chips above to show at least one strategy.' : 'Run the model to populate this card.' }}</p>
+        <p>{{ visibleKpis.variabilityLeader ? `${formatCurrency(visibleKpis.variabilityLeader.variabilitySpread)} spread between P25 and P75 at the horizon.` : noVisibleStrategies ? 'Use the strategy visibility chips above to show at least one strategy.' : 'Run the model to populate this card.' }}</p>
       </article>
     </section>
 

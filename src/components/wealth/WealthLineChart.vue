@@ -147,9 +147,9 @@
                   <span>{{ point.label }}</span>
                 </div>
                 <div class="wealth-chart__hover-values">
-                  <span>P10 {{ formatShortCurrency(point.low) }}</span>
+                  <span>P25 {{ formatShortCurrency(point.low) }}</span>
                   <span>P50 {{ formatShortCurrency(point.mid) }}</span>
-                  <span>P90 {{ formatShortCurrency(point.high) }}</span>
+                  <span>P75 {{ formatShortCurrency(point.high) }}</span>
                 </div>
               </div>
             </div>

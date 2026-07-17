@@ -4,7 +4,7 @@
     <SiteNav v-if="!hideNavBase" />
 
     <!-- Immersive nav reveal system -->
-    <template v-else>
+    <template v-else-if="route.meta?.navReveal !== false">
       <!-- Hotzone: moving mouse near top reveals nav -->
       <div
         class="nav-hotzone"

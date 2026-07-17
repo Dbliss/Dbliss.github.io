@@ -1,0 +1,5 @@
+﻿Cozy Farm Asset Pack by styloo
+Source: https://store.godotengine.org/asset/styloo/farm/
+License: Creative Commons CC0 1.0 Universal
+Downloaded: 2026-07-12
+Included subset: barnlvl2, soil, corn, wheat, haystackround, cart, fenceclean.

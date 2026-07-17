@@ -1,0 +1,5400 @@
+{
+  "version": 1,
+  "tile": 12,
+  "roads": [
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      -1
+    ],
+    [
+      0,
+      -2
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      -1,
+      1
+    ],
+    [
+      -2,
+      1
+    ],
+    [
+      -3,
+      1
+    ],
+    [
+      -4,
+      1
+    ],
+    [
+      -5,
+      1
+    ],
+    [
+      -6,
+      1
+    ],
+    [
+      -7,
+      1
+    ],
+    [
+      -8,
+      1
+    ],
+    [
+      -9,
+      1
+    ],
+    [
+      -11,
+      1
+    ],
+    [
+      -12,
+      1
+    ],
+    [
+      -10,
+      1
+    ],
+    [
+      0,
+      -3
+    ],
+    [
+      0,
+      -4
+    ],
+    [
+      0,
+      -5
+    ],
+    [
+      0,
+      -6
+    ],
+    [
+      0,
+      -7
+    ],
+    [
+      0,
+      -8
+    ],
+    [
+      0,
+      -9
+    ],
+    [
+      0,
+      -10
+    ],
+    [
+      0,
+      -11
+    ],
+    [
+      0,
+      -12
+    ],
+    [
+      1,
+      1
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      3,
+      1
+    ],
+    [
+      4,
+      1
+    ],
+    [
+      5,
+      1
+    ],
+    [
+      6,
+      1
+    ],
+    [
+      6,
+      0
+    ],
+    [
+      6,
+      2
+    ],
+    [
+      6,
+      3
+    ],
+    [
+      7,
+      3
+    ],
+    [
+      8,
+      3
+    ],
+    [
+      9,
+      3
+    ],
+    [
+      9,
+      4
+    ],
+    [
+      9,
+      5
+    ],
+    [
+      9,
+      6
+    ],
+    [
+      9,
+      7
+    ],
+    [
+      9,
+      8
+    ],
+    [
+      9,
+      9
+    ],
+    [
+      9,
+      10
+    ],
+    [
+      9,
+      11
+    ],
+    [
+      9,
+      12
+    ],
+    [
+      6,
+      -1
+    ],
+    [
+      6,
+      -2
+    ],
+    [
+      6,
+      -3
+    ],
+    [
+      6,
+      -4
+    ],
+    [
+      6,
+      -5
+    ],
+    [
+      6,
+      -6
+    ],
+    [
+      6,
+      -7
+    ],
+    [
+      7,
+      -7
+    ],
+    [
+      8,
+      -7
+    ],
+    [
+      8,
+      -8
+    ],
+    [
+      8,
+      -9
+    ],
+    [
+      8,
+      -10
+    ],
+    [
+      8,
+      -11
+    ],
+    [
+      8,
+      -12
+    ],
+    [
+      7,
+      -12
+    ],
+    [
+      6,
+      -12
+    ],
+    [
+      5,
+      -12
+    ],
+    [
+      4,
+      -12
+    ],
+    [
+      3,
+      -12
+    ],
+    [
+      2,
+      -12
+    ],
+    [
+      1,
+      -12
+    ],
+    [
+      -4,
+      2
+    ],
+    [
+      -4,
+      3
+    ],
+    [
+      -4,
+      4
+    ],
+    [
+      -4,
+      5
+    ],
+    [
+      -4,
+      6
+    ],
+    [
+      -4,
+      7
+    ],
+    [
+      -4,
+      8
+    ],
+    [
+      -4,
+      9
+    ],
+    [
+      -4,
+      10
+    ],
+    [
+      -4,
+      11
+    ],
+    [
+      -4,
+      12
+    ],
+    [
+      -12,
+      10
+    ],
+    [
+      -12,
+      11
+    ],
+    [
+      -12,
+      9
+    ],
+    [
+      -12,
+      8
+    ],
+    [
+      -12,
+      7
+    ],
+    [
+      -12,
+      6
+    ],
+    [
+      -12,
+      5
+    ],
+    [
+      -12,
+      4
+    ],
+    [
+      -12,
+      3
+    ],
+    [
+      -12,
+      2
+    ],
+    [
+      -10,
+      0
+    ],
+    [
+      -10,
+      -1
+    ],
+    [
+      -10,
+      -2
+    ],
+    [
+      -10,
+      -3
+    ],
+    [
+      -10,
+      -4
+    ],
+    [
+      -9,
+      -4
+    ],
+    [
+      -8,
+      -4
+    ],
+    [
+      -7,
+      -4
+    ],
+    [
+      -6,
+      -4
+    ],
+    [
+      -5,
+      -4
+    ],
+    [
+      -4,
+      -4
+    ],
+    [
+      -3,
+      -4
+    ],
+    [
+      -2,
+      -4
+    ],
+    [
+      -1,
+      -4
+    ],
+    [
+      3,
+      2
+    ],
+    [
+      3,
+      3
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      3,
+      5
+    ],
+    [
+      3,
+      6
+    ],
+    [
+      3,
+      7
+    ],
+    [
+      3,
+      8
+    ],
+    [
+      3,
+      9
+    ],
+    [
+      3,
+      10
+    ],
+    [
+      3,
+      11
+    ],
+    [
+      3,
+      12
+    ],
+    [
+      2,
+      8
+    ],
+    [
+      1,
+      8
+    ],
+    [
+      0,
+      8
+    ],
+    [
+      -1,
+      8
+    ],
+    [
+      -2,
+      8
+    ],
+    [
+      -3,
+      8
+    ],
+    [
+      2,
+      4
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      0,
+      4
+    ],
+    [
+      -1,
+      4
+    ],
+    [
+      -2,
+      4
+    ],
+    [
+      -3,
+      4
+    ],
+    [
+      -5,
+      10
+    ],
+    [
+      -6,
+      10
+    ],
+    [
+      -7,
+      10
+    ],
+    [
+      -8,
+      10
+    ],
+    [
+      -9,
+      10
+    ],
+    [
+      -10,
+      10
+    ],
+    [
+      -11,
+      10
+    ],
+    [
+      -11,
+      -4
+    ],
+    [
+      -12,
+      -4
+    ],
+    [
+      -8,
+      -5
+    ],
+    [
+      -8,
+      -6
+    ],
+    [
+      -8,
+      -7
+    ],
+    [
+      -8,
+      -8
+    ],
+    [
+      -7,
+      -8
+    ],
+    [
+      -6,
+      -8
+    ],
+    [
+      -5,
+      -8
+    ],
+    [
+      -5,
+      -7
+    ],
+    [
+      -5,
+      -6
+    ],
+    [
+      -5,
+      -5
+    ],
+    [
+      -5,
+      -9
+    ],
+    [
+      -5,
+      -10
+    ],
+    [
+      -5,
+      -11
+    ],
+    [
+      -5,
+      -12
+    ],
+    [
+      -6,
+      -12
+    ],
+    [
+      -4,
+      -12
+    ],
+    [
+      -3,
+      -12
+    ],
+    [
+      -2,
+      -12
+    ],
+    [
+      -1,
+      -12
+    ],
+    [
+      -7,
+      -12
+    ],
+    [
+      -8,
+      -12
+    ],
+    [
+      -9,
+      -12
+    ],
+    [
+      -10,
+      -12
+    ],
+    [
+      -11,
+      -12
+    ],
+    [
+      -12,
+      -12
+    ],
+    [
+      -12,
+      -11
+    ],
+    [
+      -12,
+      -10
+    ],
+    [
+      -12,
+      -9
+    ],
+    [
+      -12,
+      -8
+    ],
+    [
+      -12,
+      -7
+    ],
+    [
+      -12,
+      -6
+    ],
+    [
+      -12,
+      -5
+    ],
+    [
+      10,
+      3
+    ],
+    [
+      11,
+      3
+    ],
+    [
+      12,
+      3
+    ],
+    [
+      12,
+      2
+    ],
+    [
+      12,
+      1
+    ],
+    [
+      12,
+      0
+    ],
+    [
+      12,
+      -1
+    ],
+    [
+      12,
+      -2
+    ],
+    [
+      12,
+      -3
+    ],
+    [
+      12,
+      -4
+    ],
+    [
+      12,
+      -5
+    ],
+    [
+      12,
+      -6
+    ],
+    [
+      12,
+      -7
+    ],
+    [
+      11,
+      -7
+    ],
+    [
+      10,
+      -7
+    ],
+    [
+      9,
+      -7
+    ],
+    [
+      7,
+      -1
+    ],
+    [
+      8,
+      -1
+    ],
+    [
+      9,
+      -1
+    ],
+    [
+      10,
+      -1
+    ],
+    [
+      11,
+      -1
+    ],
+    [
+      -5,
+      -3
+    ],
+    [
+      -5,
+      -2
+    ],
+    [
+      -5,
+      -1
+    ],
+    [
+      -5,
+      0
+    ],
+    [
+      -8,
+      -3
+    ],
+    [
+      -8,
+      -2
+    ],
+    [
+      -8,
+      -1
+    ],
+    [
+      -8,
+      0
+    ],
+    [
+      -4,
+      -2
+    ],
+    [
+      -3,
+      -2
+    ],
+    [
+      -2,
+      -2
+    ],
+    [
+      -1,
+      -2
+    ],
+    [
+      -2,
+      2
+    ],
+    [
+      -2,
+      3
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      1,
+      3
+    ],
+    [
+      -8,
+      9
+    ],
+    [
+      -8,
+      8
+    ],
+    [
+      -8,
+      7
+    ],
+    [
+      -8,
+      6
+    ],
+    [
+      -8,
+      5
+    ],
+    [
+      -8,
+      4
+    ],
+    [
+      -9,
+      4
+    ],
+    [
+      -10,
+      4
+    ],
+    [
+      -10,
+      3
+    ],
+    [
+      -10,
+      2
+    ],
+    [
+      -8,
+      3
+    ],
+    [
+      -7,
+      3
+    ],
+    [
+      -6,
+      3
+    ],
+    [
+      -6,
+      2
+    ],
+    [
+      -9,
+      7
+    ],
+    [
+      -10,
+      7
+    ],
+    [
+      -10,
+      8
+    ],
+    [
+      -10,
+      9
+    ],
+    [
+      -7,
+      8
+    ],
+    [
+      -6,
+      8
+    ],
+    [
+      -5,
+      8
+    ],
+    [
+      -2,
+      5
+    ],
+    [
+      -2,
+      6
+    ],
+    [
+      -2,
+      7
+    ],
+    [
+      11,
+      -3
+    ],
+    [
+      10,
+      -3
+    ],
+    [
+      9,
+      -3
+    ],
+    [
+      8,
+      -3
+    ],
+    [
+      7,
+      -3
+    ],
+    [
+      11,
+      -5
+    ],
+    [
+      10,
+      -5
+    ],
+    [
+      9,
+      -5
+    ],
+    [
+      8,
+      -5
+    ],
+    [
+      7,
+      -5
+    ],
+    [
+      10,
+      0
+    ],
+    [
+      10,
+      1
+    ],
+    [
+      10,
+      2
+    ],
+    [
+      9,
+      -9
+    ],
+    [
+      10,
+      -9
+    ],
+    [
+      11,
+      -9
+    ],
+    [
+      12,
+      -9
+    ],
+    [
+      9,
+      -11
+    ],
+    [
+      10,
+      -11
+    ],
+    [
+      11,
+      -11
+    ],
+    [
+      12,
+      -11
+    ],
+    [
+      10,
+      5
+    ],
+    [
+      11,
+      5
+    ],
+    [
+      12,
+      5
+    ],
+    [
+      10,
+      8
+    ],
+    [
+      11,
+      8
+    ],
+    [
+      12,
+      8
+    ],
+    [
+      10,
+      11
+    ],
+    [
+      11,
+      11
+    ],
+    [
+      12,
+      11
+    ],
+    [
+      6,
+      4
+    ],
+    [
+      6,
+      5
+    ],
+    [
+      6,
+      6
+    ],
+    [
+      6,
+      7
+    ],
+    [
+      6,
+      8
+    ],
+    [
+      6,
+      9
+    ],
+    [
+      5,
+      -2
+    ],
+    [
+      4,
+      -2
+    ],
+    [
+      3,
+      -2
+    ],
+    [
+      3,
+      -3
+    ],
+    [
+      3,
+      -4
+    ],
+    [
+      3,
+      -5
+    ],
+    [
+      3,
+      -6
+    ],
+    [
+      3,
+      -7
+    ],
+    [
+      3,
+      -8
+    ],
+    [
+      3,
+      -9
+    ],
+    [
+      3,
+      -10
+    ],
+    [
+      3,
+      -11
+    ],
+    [
+      4,
+      -7
+    ],
+    [
+      5,
+      -7
+    ],
+    [
+      5,
+      -11
+    ],
+    [
+      5,
+      -10
+    ]
+  ],
+  "objects": [
+    {
+      "kind": "landmark",
+      "type": "hq",
+      "x": -69,
+      "z": -73,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "landmark",
+      "type": "sportslux",
+      "x": 93,
+      "z": 12,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "landmark",
+      "type": "chessEngine",
+      "x": 74,
+      "z": -103,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "landmark",
+      "type": "asset-data-integration",
+      "x": -30,
+      "z": -6,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "landmark",
+      "type": "contact",
+      "x": -104,
+      "z": 0,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "landmark",
+      "type": "lol-match-predictor",
+      "x": -8,
+      "z": 78,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "landmark",
+      "type": "wealth-pathways-au",
+      "x": -74,
+      "z": 58,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "landmark",
+      "type": "sports-booking",
+      "x": 83,
+      "z": 126,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "landmark",
+      "type": "sports-booking",
+      "x": -150,
+      "z": 150,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "landmark",
+      "type": "sports-booking",
+      "x": -150,
+      "z": 150,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "landmark",
+      "type": "sports-booking",
+      "x": -150,
+      "z": 150,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-a",
+      "x": -36,
+      "z": 24,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-a",
+      "x": 27,
+      "z": 38,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-a",
+      "x": -11,
+      "z": -36,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-a",
+      "x": -72,
+      "z": -34,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-a",
+      "x": -97,
+      "z": 24,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-b",
+      "x": -37,
+      "z": 38,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-b",
+      "x": 14,
+      "z": 2,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-b",
+      "x": -85,
+      "z": -62,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-b",
+      "x": -72,
+      "z": 2,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-e",
+      "x": -49,
+      "z": -12,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-e",
+      "x": -88,
+      "z": 1,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-e",
+      "x": -61,
+      "z": 38,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-e",
+      "x": -109,
+      "z": -24,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-d",
+      "x": -86,
+      "z": -38,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-d",
+      "x": -23,
+      "z": -37,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-d",
+      "x": -50,
+      "z": -60,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-d",
+      "x": -71,
+      "z": -59,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-d",
+      "x": -72,
+      "z": -10,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-d",
+      "x": -61,
+      "z": 21,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-c",
+      "x": -60,
+      "z": 29,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-c",
+      "x": -9,
+      "z": -16,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-c",
+      "x": -14,
+      "z": 21,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-c",
+      "x": 3,
+      "z": 38,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-c",
+      "x": -34,
+      "z": -37,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-c",
+      "x": -10,
+      "z": -60,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-b",
+      "x": -24,
+      "z": -61,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-b",
+      "x": -49,
+      "z": -36,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-b",
+      "x": -11,
+      "z": 1,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-b",
+      "x": -49,
+      "z": 1,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-b",
+      "x": -109,
+      "z": -36,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-b",
+      "x": -110,
+      "z": 24,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-b",
+      "x": -61,
+      "z": 86,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-b",
+      "x": -36,
+      "z": 62,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-a",
+      "x": -85,
+      "z": -20,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-a",
+      "x": -108,
+      "z": -13,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-a",
+      "x": -109,
+      "z": 36,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "skyscraper",
+      "type": "building-skyscraper-a",
+      "x": -11,
+      "z": 36,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -109,
+      "z": 43,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -150,
+      "z": 150,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -150,
+      "z": 150,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-a",
+      "x": -37,
+      "z": 73,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-a",
+      "x": -108,
+      "z": 59,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-a",
+      "x": -133,
+      "z": 0,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-a",
+      "x": -109,
+      "z": -60,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-a",
+      "x": -85,
+      "z": -84,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-a",
+      "x": -36,
+      "z": -61,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-a",
+      "x": 11,
+      "z": -12,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-a",
+      "x": 24,
+      "z": 59,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-b",
+      "x": 25,
+      "z": 84,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-b",
+      "x": -36,
+      "z": 85,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-b",
+      "x": -85,
+      "z": 84,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-b",
+      "x": -11,
+      "z": -74,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-c",
+      "x": 11,
+      "z": -24,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-c",
+      "x": 23,
+      "z": 22,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-c",
+      "x": -12,
+      "z": 58,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-c",
+      "x": -72,
+      "z": 84,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-c",
+      "x": -106,
+      "z": 73,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-d",
+      "x": -133,
+      "z": 25,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-d",
+      "x": -85,
+      "z": -71,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-f",
+      "x": -12,
+      "z": -86,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-f",
+      "x": 12,
+      "z": -36,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-f",
+      "x": 0,
+      "z": 24,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-f",
+      "x": 11,
+      "z": 61,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-f",
+      "x": -36,
+      "z": 109,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-f",
+      "x": -84,
+      "z": 107,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-g",
+      "x": -108,
+      "z": 97,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-g",
+      "x": -121,
+      "z": 60,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-g",
+      "x": -132,
+      "z": -36,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-g",
+      "x": -48,
+      "z": -73,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-g",
+      "x": 12,
+      "z": -48,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-h",
+      "x": 24,
+      "z": 73,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-h",
+      "x": 12,
+      "z": 85,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-h",
+      "x": 25,
+      "z": 110,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-h",
+      "x": -58,
+      "z": 107,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-h",
+      "x": -108,
+      "z": 108,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-h",
+      "x": -120,
+      "z": 72,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-h",
+      "x": -132,
+      "z": 36,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-i",
+      "x": -132,
+      "z": -24,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-i",
+      "x": -121,
+      "z": -60,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-i",
+      "x": -48,
+      "z": -85,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-i",
+      "x": 12,
+      "z": -60,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-i",
+      "x": 12,
+      "z": 108,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-i",
+      "x": -22,
+      "z": 108,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-k",
+      "x": 28,
+      "z": 3,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-k",
+      "x": -6,
+      "z": 106,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-k",
+      "x": -72,
+      "z": 107,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-k",
+      "x": -135,
+      "z": 49,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-k",
+      "x": -130,
+      "z": -12,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-m",
+      "x": -132,
+      "z": -60,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-m",
+      "x": -30,
+      "z": -77,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-m",
+      "x": 42,
+      "z": 0,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-m",
+      "x": 46,
+      "z": 24,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-m",
+      "x": -8,
+      "z": 115,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-m",
+      "x": -84,
+      "z": 24,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "commercial",
+      "type": "building-m",
+      "x": -72,
+      "z": -20,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": 119,
+      "z": 45,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": 146,
+      "z": 46,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": 134,
+      "z": -3,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": 82,
+      "z": -75,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": 133,
+      "z": -75,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": 134,
+      "z": -49,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": 135,
+      "z": -23,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": 92,
+      "z": -23,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": 84,
+      "z": -49,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 106,
+      "z": -75,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 91,
+      "z": -51,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 80,
+      "z": -21,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 128,
+      "z": 27,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 118,
+      "z": 51,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 145,
+      "z": 51,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 116,
+      "z": 70,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 118,
+      "z": 87,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 118,
+      "z": 105,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 83,
+      "z": 99,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 97,
+      "z": 72,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 143,
+      "z": 123,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 118,
+      "z": 142,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 145,
+      "z": 87,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 133,
+      "z": 3,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 118,
+      "z": -27,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 119,
+      "z": -44,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 134,
+      "z": -68,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 107,
+      "z": -92,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 146,
+      "z": -124,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 105,
+      "z": -122,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 51,
+      "z": -134,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 86,
+      "z": -136,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 47,
+      "z": -94,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 63,
+      "z": -75,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 25,
+      "z": -134,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 9,
+      "z": -113,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 46,
+      "z": -32,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 47,
+      "z": -54,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 92,
+      "z": -75,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 120,
+      "z": -75,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 107,
+      "z": -50,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 126,
+      "z": -25,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 63,
+      "z": -35,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 46,
+      "z": -74,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 51,
+      "z": -120,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 26,
+      "z": -108,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 87,
+      "z": -121,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 121,
+      "z": -116,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 141,
+      "z": -98,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 110,
+      "z": -25,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 138,
+      "z": 70,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 139,
+      "z": 105,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 96,
+      "z": 97,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 83,
+      "z": 46,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 59,
+      "z": 99,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 62,
+      "z": 64,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 46,
+      "z": 123,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-c",
+      "x": 46,
+      "z": 145,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": 46,
+      "z": 134,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": 63,
+      "z": 108,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": 118,
+      "z": 123,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": 129,
+      "z": 72,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": 133,
+      "z": 46,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": 135,
+      "z": 26,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": 127,
+      "z": -94,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": 138,
+      "z": -117,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": 70,
+      "z": -134,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": 26,
+      "z": -123,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": 11,
+      "z": -134,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": -11,
+      "z": -134,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": -50,
+      "z": -133,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": -70,
+      "z": -108,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": -24,
+      "z": -110,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": 10,
+      "z": -92,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": 98,
+      "z": 47,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": 111,
+      "z": -2,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": 109,
+      "z": 26,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-e",
+      "x": 62,
+      "z": 83,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-g",
+      "x": 98,
+      "z": 148,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-g",
+      "x": 130,
+      "z": 107,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-g",
+      "x": 129,
+      "z": 142,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-g",
+      "x": 147,
+      "z": 143,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-g",
+      "x": 147,
+      "z": 105,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-g",
+      "x": 147,
+      "z": 70,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-g",
+      "x": 135,
+      "z": 12,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-g",
+      "x": 124,
+      "z": -51,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-g",
+      "x": 62,
+      "z": -48,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-g",
+      "x": 45,
+      "z": -106,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-g",
+      "x": 106,
+      "z": -99,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-g",
+      "x": 107,
+      "z": -141,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-g",
+      "x": 147,
+      "z": -143,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-g",
+      "x": 27,
+      "z": -81,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-g",
+      "x": 63,
+      "z": -66,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 102,
+      "z": -22,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 100,
+      "z": -45,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 116,
+      "z": -97,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 114,
+      "z": -122,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 71,
+      "z": -123,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 10,
+      "z": -122,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 10,
+      "z": -102,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 26,
+      "z": -50,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 26,
+      "z": -32,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 62,
+      "z": 4,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 63,
+      "z": -13,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 61,
+      "z": 27,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 63,
+      "z": 44,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 43,
+      "z": 98,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 81,
+      "z": 82,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 116,
+      "z": 80,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 118,
+      "z": 114,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 139,
+      "z": 144,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 97,
+      "z": 81,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 44,
+      "z": -45,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 24,
+      "z": -72,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": -13,
+      "z": -122,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": -31,
+      "z": -135,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": -48,
+      "z": -116,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": -73,
+      "z": -133,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": -108,
+      "z": -134,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": -133,
+      "z": -101,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": -73,
+      "z": -120,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 113,
+      "z": -71,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 100,
+      "z": -70,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-h",
+      "x": 81,
+      "z": 60,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 82,
+      "z": 71,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 99,
+      "z": 59,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 130,
+      "z": 85,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 132,
+      "z": 121,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 59,
+      "z": 145,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 45,
+      "z": 86,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 25,
+      "z": 123,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 24,
+      "z": 144,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": -61,
+      "z": 132,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": -102,
+      "z": 131,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": -86,
+      "z": -132,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": -135,
+      "z": -87,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": -135,
+      "z": -134,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": -51,
+      "z": -106,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": -12,
+      "z": -108,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": -12,
+      "z": -96,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 25,
+      "z": -96,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 57,
+      "z": -93,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 54,
+      "z": -73,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 25,
+      "z": -60,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 24,
+      "z": -41,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 53,
+      "z": -12,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 47,
+      "z": 46,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 46,
+      "z": 66,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-k",
+      "x": 45,
+      "z": 111,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": 26,
+      "z": 133,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": 57,
+      "z": 130,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": 46,
+      "z": 76,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": 46,
+      "z": 56,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": 62,
+      "z": 54,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": 46,
+      "z": -62,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": 11,
+      "z": -72,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": 10,
+      "z": -81,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": -50,
+      "z": -124,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": -132,
+      "z": -114,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": -126,
+      "z": -135,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": -41,
+      "z": -134,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": 86,
+      "z": -129,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": 98,
+      "z": 90,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": 61,
+      "z": 90,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": 61,
+      "z": 74,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": 47,
+      "z": 37,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": -61,
+      "z": 141,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": -91,
+      "z": 129,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": -48,
+      "z": -96,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": -134,
+      "z": -71,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": -84,
+      "z": -106,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-n",
+      "x": -133,
+      "z": -124,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": 54,
+      "z": -37,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": 41,
+      "z": -13,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": 24,
+      "z": -19,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": -21,
+      "z": -134,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": -97,
+      "z": -135,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": -117,
+      "z": -134,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": -131,
+      "z": -79,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": -106,
+      "z": -87,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": -96,
+      "z": -108,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": -29,
+      "z": -123,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": 57,
+      "z": -109,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": -38,
+      "z": 121,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": -38,
+      "z": 147,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": -80,
+      "z": 130,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": -124,
+      "z": 129,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": -133,
+      "z": 109,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-a",
+      "x": -133,
+      "z": 87,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": -115,
+      "z": 128,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": -134,
+      "z": 130,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": -39,
+      "z": 132,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 59,
+      "z": 117,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": 83,
+      "z": 91,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": -108,
+      "z": -70,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": -106,
+      "z": -97,
+      "ry": 0,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": -68,
+      "z": -126,
+      "ry": 1.571,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": -133,
+      "z": 60,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": -133,
+      "z": 97,
+      "ry": 3.142,
+      "s": 1
+    },
+    {
+      "kind": "house",
+      "type": "building-type-b",
+      "x": -70,
+      "z": 131,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -4,
+      "z": 40,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -17,
+      "z": 39,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -17,
+      "z": 29,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -56,
+      "z": 40,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -65,
+      "z": 27,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -48,
+      "z": -41,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -39,
+      "z": -41,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 7,
+      "z": -18,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 9,
+      "z": -4,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 34,
+      "z": 3,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 64,
+      "z": -2,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 63,
+      "z": -5,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 57,
+      "z": -3,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 143,
+      "z": 80,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 139,
+      "z": 83,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 137,
+      "z": 80,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 140,
+      "z": 77,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 137,
+      "z": 86,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 123,
+      "z": 125,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 101,
+      "z": 107,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 89,
+      "z": 104,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 88,
+      "z": 44,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 63,
+      "z": 36,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 50,
+      "z": 38,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 55,
+      "z": 44,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 55,
+      "z": 54,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 53,
+      "z": 63,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 56,
+      "z": 69,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 53,
+      "z": 75,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 54,
+      "z": 85,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 51,
+      "z": 93,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 51,
+      "z": 104,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 52,
+      "z": 118,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 57,
+      "z": 126,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 62,
+      "z": 137,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 68,
+      "z": 146,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 72,
+      "z": 149,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 86,
+      "z": 149,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 90,
+      "z": 89,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 87,
+      "z": 82,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 89,
+      "z": 68,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 87,
+      "z": 58,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 89,
+      "z": 57,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 81,
+      "z": 52,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 86,
+      "z": -18,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 84,
+      "z": -24,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 80,
+      "z": -30,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 56,
+      "z": -45,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 50,
+      "z": -43,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 46,
+      "z": -40,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 55,
+      "z": -53,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 63,
+      "z": -58,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 55,
+      "z": -64,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 48,
+      "z": -68,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 52,
+      "z": -105,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 49,
+      "z": -112,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 45,
+      "z": -115,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 44,
+      "z": -131,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 44,
+      "z": -138,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 75,
+      "z": -131,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 80,
+      "z": -124,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 88,
+      "z": -115,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 87,
+      "z": -93,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 79,
+      "z": -68,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 88,
+      "z": -68,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 95,
+      "z": -68,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 78,
+      "z": -54,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 79,
+      "z": -45,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 85,
+      "z": -29,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 93,
+      "z": -44,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 99,
+      "z": -52,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 111,
+      "z": -44,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 116,
+      "z": -53,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 20,
+      "z": -88,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 27,
+      "z": -90,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 29,
+      "z": -102,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 10,
+      "z": -110,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 18,
+      "z": -114,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 26,
+      "z": -118,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 18,
+      "z": -124,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 11,
+      "z": -129,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -10,
+      "z": -127,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -9,
+      "z": -116,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -19,
+      "z": -119,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -19,
+      "z": -126,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -36,
+      "z": -127,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -38,
+      "z": -117,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -33,
+      "z": -109,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -39,
+      "z": -107,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -32,
+      "z": -99,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -39,
+      "z": -96,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -37,
+      "z": -105,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -32,
+      "z": -106,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -34,
+      "z": -96,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -92,
+      "z": -123,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -109,
+      "z": -119,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -114,
+      "z": -110,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -124,
+      "z": -121,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -119,
+      "z": -97,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -120,
+      "z": -88,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -117,
+      "z": -83,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -119,
+      "z": -100,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -124,
+      "z": -107,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -109,
+      "z": -107,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -114,
+      "z": -120,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -122,
+      "z": -121,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -122,
+      "z": -108,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -135,
+      "z": -94,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -126,
+      "z": -93,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -117,
+      "z": -95,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -110,
+      "z": -82,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -106,
+      "z": -94,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -105,
+      "z": -113,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -92,
+      "z": -120,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -83,
+      "z": -119,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -69,
+      "z": -115,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -82,
+      "z": -111,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -73,
+      "z": -102,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -41,
+      "z": -15,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 24,
+      "z": 0,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 26,
+      "z": -4,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 20,
+      "z": -8,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 26,
+      "z": -10,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 31,
+      "z": -9,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 33,
+      "z": -11,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 31,
+      "z": -17,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 28,
+      "z": -23,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 21,
+      "z": -28,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 20,
+      "z": -45,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 29,
+      "z": -45,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 15,
+      "z": -70,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 27,
+      "z": -65,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 9,
+      "z": -68,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 31,
+      "z": -13,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 49,
+      "z": -15,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 54,
+      "z": -46,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 53,
+      "z": -51,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 55,
+      "z": -55,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 62,
+      "z": -55,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 61,
+      "z": -58,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 86,
+      "z": -43,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 86,
+      "z": -27,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 92,
+      "z": -28,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 97,
+      "z": -22,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 88,
+      "z": 75,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 89,
+      "z": 80,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 92,
+      "z": 83,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 90,
+      "z": 98,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 94,
+      "z": 104,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 97,
+      "z": 107,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 100,
+      "z": 99,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 101,
+      "z": 81,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 101,
+      "z": 76,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 100,
+      "z": 66,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 93,
+      "z": 62,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 89,
+      "z": 58,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 121,
+      "z": 73,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 120,
+      "z": 78,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 123,
+      "z": 83,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 138,
+      "z": 88,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 140,
+      "z": 86,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 145,
+      "z": 78,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 148,
+      "z": 77,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 149,
+      "z": 83,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 149,
+      "z": 89,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 148,
+      "z": 116,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 141,
+      "z": 114,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 138,
+      "z": 112,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 135,
+      "z": 113,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 134,
+      "z": 138,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 124,
+      "z": 146,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 116,
+      "z": 147,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -17,
+      "z": 133,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -29,
+      "z": 113,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -32,
+      "z": 136,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -16,
+      "z": 134,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -20,
+      "z": 145,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -5,
+      "z": 138,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 7,
+      "z": 137,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 8,
+      "z": 125,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 16,
+      "z": 116,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 14,
+      "z": 135,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 12,
+      "z": 143,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -1,
+      "z": 139,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": 1,
+      "z": 123,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -7,
+      "z": 128,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -11,
+      "z": 137,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -13,
+      "z": 146,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -26,
+      "z": 131,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -21,
+      "z": 126,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -23,
+      "z": 119,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -22,
+      "z": 138,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -25,
+      "z": 144,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -30,
+      "z": 126,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-small",
+      "x": -27,
+      "z": 121,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -26,
+      "z": 134,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -33,
+      "z": 145,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -19,
+      "z": 135,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -3,
+      "z": 145,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 7,
+      "z": 129,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 0,
+      "z": 125,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -14,
+      "z": 120,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -21,
+      "z": 128,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -25,
+      "z": 129,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -5,
+      "z": 134,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 1,
+      "z": 133,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 5,
+      "z": 142,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 14,
+      "z": 130,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 9,
+      "z": 120,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": 2,
+      "z": 117,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -9,
+      "z": 127,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -66,
+      "z": 144,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -72,
+      "z": 139,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -78,
+      "z": 142,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -84,
+      "z": 137,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -91,
+      "z": 142,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -97,
+      "z": 140,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -99,
+      "z": 145,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -107,
+      "z": 137,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -110,
+      "z": 143,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -119,
+      "z": 142,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -122,
+      "z": 146,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -129,
+      "z": 73,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -132,
+      "z": 65,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -136,
+      "z": 74,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -132,
+      "z": 73,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -134,
+      "z": 68,
+      "ry": 4.712,
+      "s": 1
+    },
+    {
+      "kind": "tree",
+      "type": "tree-large",
+      "x": -57,
+      "z": 74,
+      "ry": 4.712,
+      "s": 1
+    }
+  ]
+}

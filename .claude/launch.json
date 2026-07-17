@@ -1,0 +1,47 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "portfolio-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "4300",
+        "--strictPort"
+      ],
+      "port": 4300,
+      "autoPort": false
+    },
+    {
+      "name": "portfolio-dev-alt",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "4315",
+        "--strictPort"
+      ],
+      "port": 4315,
+      "autoPort": false
+    },
+    {
+      "name": "portfolio-dev-b",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "4330",
+        "--strictPort"
+      ],
+      "port": 4330,
+      "autoPort": false
+    }
+  ]
+}

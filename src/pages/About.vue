@@ -26,21 +26,87 @@
         </div>
       </div>
 
-      <div class="portrait-wrap" aria-hidden="true">
-        <div class="portrait-orbit portrait-orbit--one"></div>
-        <div class="portrait-orbit portrait-orbit--two"></div>
-        <div class="portrait-panel">
-          <span class="portrait-code portrait-code--one">&lt;/&gt;</span>
-          <span class="portrait-code portrait-code--two">{ }</span>
-          <img :src="headshotUrl" alt="" />
+      <div class="desk-visual">
+        <img
+          :src="deskIllustrationUrl"
+          alt="Laptop displaying code beside a plant, notebook and coffee mug"
+        />
+      </div>
+    </section>
+
+    <section class="gantt-section" aria-labelledby="gantt-title">
+      <div class="gantt-heading">
+        <div><p class="eyebrow">The path so far</p><h2 id="gantt-title">Experience at a glance</h2></div>
+        <div class="gantt-heading-meta">
+          <p>
+            Full details in my <a href="/resume.pdf" download>resume</a> and
+            <a href="https://www.linkedin.com/in/dillon-bliss-770704184/" target="_blank" rel="noreferrer">LinkedIn</a>.
+          </p>
+          <span>Scroll left to explore earlier years</span>
+        </div>
+      </div>
+
+      <div ref="ganttScroll" class="gantt-scroll" tabindex="0" :aria-label="`Career and education timeline from ${timelineStartYear} to today`">
+        <div class="gantt-chart" :style="{ '--gantt-year-columns': ganttYearColumns }">
+          <div class="gantt-axis">
+            <span class="axis-label">Role</span>
+            <div class="axis-years" aria-hidden="true">
+              <span v-for="year in ganttYears" :key="year">{{ year }}</span>
+            </div>
+          </div>
+
+          <article
+            v-for="item in ganttItems"
+            :key="item.id"
+            class="gantt-row"
+            :class="{
+              'gantt-row--expanded': expandedGanttItem === item.id,
+              'gantt-row--current': item.current
+            }"
+            role="button"
+            tabindex="0"
+            :aria-expanded="expandedGanttItem === item.id"
+            :aria-controls="`gantt-detail-${item.id}`"
+            @click="toggleGanttItem(item.id)"
+            @keydown.enter="toggleGanttItem(item.id)"
+            @keydown.space.prevent="toggleGanttItem(item.id)"
+          >
+            <div class="gantt-role">
+              <div class="gantt-title-line">
+                <h3>{{ item.title }}</h3>
+                <span v-if="item.current" class="gantt-current-badge">Current</span>
+              </div>
+              <p class="gantt-organisation">{{ item.organisation }}</p>
+              <span class="gantt-period">{{ item.period }}</span>
+              <p
+                v-show="expandedGanttItem === item.id"
+                :id="`gantt-detail-${item.id}`"
+                class="gantt-detail"
+              >
+                {{ item.details }}
+              </p>
+              <span class="gantt-toggle" aria-hidden="true">
+                {{ expandedGanttItem === item.id ? '−' : '+' }}
+              </span>
+            </div>
+            <div class="gantt-track">
+              <span v-for="year in ganttYears" :key="year" class="year-line" aria-hidden="true"></span>
+              <div
+                class="gantt-bar"
+                :class="`gantt-bar--${item.tone}`"
+                :style="ganttBarStyle(item)"
+                aria-hidden="true"
+              ></div>
+            </div>
+          </article>
         </div>
       </div>
     </section>
 
     <section class="about-section" aria-labelledby="achievements-title">
-      <div class="section-heading">
-        <p class="eyebrow">Highlights</p>
+      <div class="section-heading achievement-heading">
         <h2 id="achievements-title">Selected achievements</h2>
+        <p>Key recognitions and milestones.</p>
       </div>
 
       <div class="achievement-grid">
@@ -58,96 +124,126 @@
         </article>
       </div>
     </section>
-
-    <section class="current-role" aria-labelledby="current-role-title">
-      <div class="role-mark" aria-hidden="true">⌘</div>
-      <div class="role-heading">
-        <p class="eyebrow">What I do</p>
-        <h2 id="current-role-title">Current role</h2>
-      </div>
-      <p>
-        Full-stack developer on smart city and sports lighting platforms — from optimisation
-        engines and data pipelines to customer-facing booking and configuration tools.
-      </p>
-    </section>
-
-    <section class="current-role upcoming-row" aria-labelledby="upcoming-title">
-      <div class="role-mark" aria-hidden="true">↗</div>
-      <div class="role-heading">
-        <p class="eyebrow">Next up</p>
-        <h2 id="upcoming-title">Upcoming projects</h2>
-      </div>
-      <p>
-        This portfolio keeps growing as new case studies and experiments are added to the projects
-        collection.
-      </p>
-    </section>
-
-    <section class="timeline-section" aria-labelledby="timeline-title">
-      <div class="timeline-heading">
-        <div><p class="eyebrow">The path so far</p><h2 id="timeline-title">A timeline</h2></div>
-        <p>
-          Full details in my <a href="/resume.pdf" download>resume</a> and
-          <a href="https://www.linkedin.com/in/dillon-bliss-770704184/" target="_blank" rel="noreferrer">LinkedIn</a>.
-        </p>
-      </div>
-
-      <ol class="timeline">
-        <li v-for="item in timeline" :key="item.period" class="timeline-item">
-          <div class="timeline-date">{{ item.period }}</div>
-          <article class="timeline-card">
-            <div class="timeline-card-header">
-              <h3>{{ item.title }}</h3>
-              <span v-if="item.badge" class="timeline-badge">{{ item.badge }}</span>
-            </div>
-            <ul><li v-for="detail in item.details" :key="detail">{{ detail }}</li></ul>
-          </article>
-        </li>
-      </ol>
-    </section>
   </div>
 </template>
 
 <script setup>
+import { nextTick, onMounted, ref } from 'vue'
 import BrandIcon from '../components/BrandIcon.vue'
-import headshotUrl from '../assets/site/dillon.png'
+import deskIllustrationUrl from '../assets/site/about-desk.png'
 
-const timeline = [
+const ganttScroll = ref(null)
+const expandedGanttItem = ref(null)
+
+const timelineStartYear = 2019
+const today = new Date()
+const currentYear = today.getFullYear()
+const daysInCurrentMonth = new Date(currentYear, today.getMonth() + 1, 0).getDate()
+const currentYearElapsedMonths = today.getMonth() + (today.getDate() / daysInCurrentMonth)
+const ganttYears = Array.from(
+  { length: currentYear - timelineStartYear + 1 },
+  (_, index) => timelineStartYear + index
+)
+const ganttTotalMonths = ((currentYear - timelineStartYear) * 12) + currentYearElapsedMonths
+const ganttYearColumns = ganttYears
+  .map(year => `${year === currentYear ? currentYearElapsedMonths : 12}fr`)
+  .join(' ')
+
+const ganttItems = [
   {
-    period: '2025',
-    title: 'Schréder (SCS) — Software Engineer',
-    badge: 'Rising Star Employee Award',
-    details: [
-      'Building smart city lighting platforms and migration tooling.',
-      'Working across backend, frontend and AWS infrastructure.'
-    ]
+    id: 'lead-engineer',
+    title: 'Lead System and Software Development Engineer',
+    organisation: 'Schréder',
+    period: 'May 2026 – Present',
+    startMonth: 88,
+    current: true,
+    tone: 'lead',
+    details: 'Leading a software team building scalable integration platforms and automation tools for connected lighting systems.'
   },
   {
-    period: '2022–2025',
-    title: 'UNSW — Bachelor of Engineering (Mechatronic)',
-    badge: 'High Distinction',
-    details: [
-      'High distinction average in final year.',
-      'Focused on control systems, embedded systems and robotics.'
-    ]
+    id: 'project-systems-engineer',
+    title: 'Project and Control System Services Engineer',
+    organisation: 'Schréder',
+    period: 'May 2024 – May 2026',
+    startMonth: 64,
+    endMonth: 88,
+    tone: 'engineering',
+    details: 'Delivered tailored lighting and smart-city solutions across system integration, controls and customer-facing services.'
   },
   {
-    period: '2021–2022',
-    title: 'Multiple freelance projects',
-    details: [
-      'Built custom web apps, automation scripts and dashboards for small businesses.',
-      'Gained experience across the full stack and cloud deployment.'
-    ]
+    id: 'co-founder',
+    title: 'Co-Founder',
+    organisation: 'Concepts and Calculations',
+    period: 'Jun 2022 – Nov 2025',
+    startMonth: 41,
+    endMonth: 83,
+    tone: 'founder',
+    details: 'Co-founded a Northern Beaches tutoring company and helped manage its services, projects and day-to-day operations.'
   },
   {
-    period: '2019',
-    title: 'Higher School Certificate',
-    details: ['Completed HSC with strong results in Maths, Physics and Engineering Studies.']
+    id: 'technical-consultant',
+    title: 'Technical Consultant',
+    organisation: 'Australian Business Council of Sweden',
+    period: 'May 2023 – May 2024',
+    startMonth: 52,
+    endMonth: 65,
+    tone: 'consulting',
+    details: 'Supported project work on a needs basis, including an automated email sign-up system built with Google Apps Script.'
+  },
+  {
+    id: 'tutor',
+    title: 'High School Math and Software Tutor',
+    organisation: 'Self-employed',
+    period: 'Mar 2019 – May 2024',
+    startMonth: 2,
+    endMonth: 65,
+    tone: 'tutoring',
+    details: 'Tutored high-school students in mathematics and software development through tailored one-to-one lessons.'
+  },
+  {
+    id: 'engineering-degree',
+    title: 'Bachelor of Engineering (Mechatronic)',
+    organisation: 'UNSW',
+    period: 'Mar 2019 – Apr 2024',
+    startMonth: 2,
+    endMonth: 64,
+    tone: 'education',
+    details: 'Completed a Mechatronic Engineering degree focused on control systems, embedded systems and robotics, with a high-distinction final-year average.'
   }
 ]
+
+const toggleGanttItem = (itemId) => {
+  expandedGanttItem.value = expandedGanttItem.value === itemId ? null : itemId
+}
+
+onMounted(async () => {
+  await nextTick()
+  const chart = ganttScroll.value
+  if (chart) chart.scrollLeft = chart.scrollWidth - chart.clientWidth
+})
+
+const ganttBarStyle = ({ startMonth, endMonth, current }) => ({
+  left: `${(startMonth / ganttTotalMonths) * 100}%`,
+  width: `${(((current ? ganttTotalMonths : endMonth) - startMonth) / ganttTotalMonths) * 100}%`
+})
+
 </script>
 
 <style scoped>
+:global(.page:has(.about-page)) {
+  background: #e9e6f8;
+}
+
+:global(.page:has(.about-page) .nav) {
+  border-bottom-color: rgba(101, 84, 238, 0.12);
+  background: rgba(233, 230, 248, 0.94);
+}
+
+:global(.page:has(.about-page) .footer) {
+  border-top-color: rgba(101, 84, 238, 0.12);
+  background: #e9e6f8;
+}
+
 .about-page {
   --about-purple: #6554ee;
   --about-line: #dedcf2;
@@ -234,200 +330,213 @@ h1 span { color: var(--about-purple); }
 .social-links a:hover { color: var(--about-purple); }
 .social-links :deep(.brand-icon) { width: 18px; height: 18px; }
 
-.portrait-wrap {
+.desk-visual {
   position: relative;
-  min-height: 490px;
-  display: grid;
-  place-items: center;
+  width: min(52vw, 690px);
+  margin-right: min(-8vw, -70px);
 }
 
-.portrait-panel {
-  position: relative;
-  width: min(100%, 480px);
-  aspect-ratio: 1;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  overflow: hidden;
-  border: 1px solid rgba(101, 84, 238, 0.12);
-  border-radius: 42% 58% 46% 54% / 55% 42% 58% 45%;
-  background: radial-gradient(circle at 55% 32%, rgba(255,255,255,.96), transparent 24%), linear-gradient(145deg, #f4f2ff, #e9e6ff 62%, #ddd8ff);
-  box-shadow: 0 35px 75px rgba(60, 47, 145, 0.14);
+.desk-visual img {
+  display: block;
+  width: 100%;
+  -webkit-mask-image: radial-gradient(ellipse 94% 92% at center, #000 0%, #000 68%, rgba(0, 0, 0, 0.86) 78%, transparent 100%);
+  mask-image: radial-gradient(ellipse 94% 92% at center, #000 0%, #000 68%, rgba(0, 0, 0, 0.86) 78%, transparent 100%);
 }
 
-.portrait-panel::after {
-  position: absolute;
-  inset: auto 10% 7%;
-  height: 18%;
-  border-radius: 50%;
-  background: rgba(77, 60, 181, 0.14);
-  filter: blur(24px);
-  content: '';
-}
+.about-section, .gantt-section { display: grid; gap: 28px; }
 
-.portrait-panel img {
-  position: relative;
-  z-index: 2;
-  width: 92%;
-  max-height: 96%;
-  object-fit: contain;
-  object-position: center bottom;
-}
-
-.portrait-orbit { position: absolute; border: 1px solid rgba(101,84,238,.16); border-radius: 50%; }
-.portrait-orbit--one { width: 112%; aspect-ratio: 1; transform: rotate(18deg) scaleY(.72); }
-.portrait-orbit--two { width: 91%; aspect-ratio: 1; transform: rotate(-28deg) scaleY(.82); }
-
-.portrait-code {
-  position: absolute;
-  z-index: 3;
-  display: grid;
-  place-items: center;
-  width: 58px;
-  height: 58px;
-  border: 1px solid rgba(101,84,238,.16);
-  border-radius: 16px;
-  color: var(--about-purple);
-  background: rgba(255,255,255,.88);
-  box-shadow: 0 14px 35px rgba(53,44,117,.13);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 1rem;
-  font-weight: 800;
-}
-
-.portrait-code--one { top: 16%; left: 8%; }
-.portrait-code--two { right: 7%; bottom: 19%; }
-
-.about-section, .timeline-section { display: grid; gap: 28px; }
-
-.section-heading h2, .timeline-heading h2, .current-role h2 {
+.section-heading h2, .gantt-heading h2 {
   margin-bottom: 0;
   font-size: clamp(2rem, 3.6vw, 3.25rem);
   line-height: 1.05;
   letter-spacing: -0.05em;
 }
 
-.achievement-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.achievement-heading {
+  display: grid;
+  gap: 8px;
+}
+
+.section-heading.achievement-heading h2 {
+  font-size: clamp(1.8rem, 2.6vw, 2.35rem);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+}
+
+.achievement-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .92rem;
+  line-height: 1.5;
+}
+
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 4px;
+}
 
 .achievement-card {
-  display: flex;
-  gap: 18px;
-  min-height: 164px;
-  padding: 24px;
-  border: 1px solid var(--about-line);
-  border-radius: 18px;
-  background: rgba(255,255,255,.82);
-  box-shadow: 0 16px 40px rgba(31,28,80,.045);
-}
-
-.achievement-number { color: #9a92df; font: 800 .76rem ui-monospace, SFMono-Regular, Menlo, monospace; }
-.achievement-card h3 { margin-bottom: 9px; font-size: 1.02rem; line-height: 1.35; }
-.achievement-card p { margin-bottom: 0; color: var(--muted); font-size: .9rem; line-height: 1.65; }
-
-.current-role {
-  display: grid;
-  grid-template-columns: auto minmax(180px, .38fr) minmax(0, 1fr);
-  align-items: center;
-  gap: 26px;
-  padding: clamp(26px, 4vw, 44px);
-  border: 1px solid #d9d5fb;
-  border-radius: 22px;
-  background: radial-gradient(circle at 92% 15%, rgba(114,92,240,.14), transparent 31%), linear-gradient(135deg, #faf9ff, #f3f0ff);
-}
-
-.role-mark {
-  display: grid;
-  place-items: center;
-  width: 58px;
-  height: 58px;
-  border-radius: 17px;
-  color: var(--about-purple);
-  background: #e8e4ff;
-  font-size: 1.55rem;
-  font-weight: 800;
-}
-
-.role-heading .eyebrow { margin-bottom: 9px; }
-
-.upcoming-row {
-  margin-top: -68px;
-  background: radial-gradient(circle at 8% 85%, rgba(114,92,240,.12), transparent 30%), linear-gradient(135deg, #fff, #f8f7ff);
-}
-.current-role > p { margin: 0; padding-left: 28px; border-left: 1px solid #d8d3f7; color: #565d78; font-size: 1rem; line-height: 1.75; }
-
-.timeline-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
-.timeline-heading > p { margin-bottom: 4px; color: var(--muted); font-size: .88rem; }
-.timeline-heading a { color: var(--about-purple); font-weight: 700; }
-
-.timeline { position: relative; display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
-.timeline::before { position: absolute; top: 34px; bottom: 34px; left: 51px; width: 1px; background: #c9c3ff; content: ''; }
-.timeline-item { position: relative; display: grid; grid-template-columns: 104px minmax(0, 1fr); align-items: center; gap: 20px; }
-
-.timeline-date {
   position: relative;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  width: 104px;
-  min-height: 58px;
-  padding: 8px;
-  border: 1px solid #968aff;
-  border-radius: 999px;
-  color: var(--about-purple);
-  background: #fff;
-  font-size: .75rem;
-  font-weight: 800;
-  line-height: 1.15;
-  text-align: center;
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(18px, 2vw, 32px);
+  min-width: 0;
+  padding: 8px clamp(26px, 3.8vw, 58px);
+  background: transparent;
 }
 
-.timeline-card { position: relative; padding: 20px 24px; border: 1px solid var(--about-line); border-radius: 15px; background: #fff; }
-.timeline-card::before { position: absolute; top: 50%; right: 100%; width: 21px; height: 1px; background: var(--about-line); content: ''; }
-.timeline-card-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 9px; }
-.timeline-card h3 { margin-bottom: 0; color: #5346c7; font-size: .9rem; }
+.achievement-card:first-child { padding-left: 0; }
+.achievement-card:last-child { padding-right: 0; }
 
-.timeline-badge {
+.achievement-card + .achievement-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 1px;
+  background: #c5bfe8;
+}
+
+.achievement-number {
   flex: 0 0 auto;
-  padding: 5px 9px;
-  border-radius: 999px;
-  color: #765212;
-  background: #fff3d9;
-  font-size: .68rem;
-  font-weight: 800;
+  padding-top: 2px;
+  color: var(--about-purple);
+  font: 800 .72rem ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-.timeline-card ul { display: grid; gap: 3px; margin: 0; padding-left: 18px; color: #5f667f; font-size: .84rem; line-height: 1.55; }
+.achievement-card h3 {
+  margin-bottom: 8px;
+  font-size: .94rem;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+}
+
+.achievement-card p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.55;
+}
+
+.gantt-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+.gantt-heading-meta { display: grid; justify-items: end; gap: 5px; text-align: right; }
+.gantt-heading-meta p { margin: 0; color: var(--muted); font-size: .88rem; }
+.gantt-heading-meta span { color: #817a9b; font-size: .7rem; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+.gantt-heading-meta span::before { content: '← '; }
+.gantt-heading a { color: var(--about-purple); font-weight: 700; }
+
+.gantt-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--about-line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .82);
+  box-shadow: 0 18px 48px rgba(31, 28, 80, .055);
+  scrollbar-color: #b9b1f3 transparent;
+}
+
+.gantt-scroll:focus-visible { outline: 3px solid rgba(101, 84, 238, .3); outline-offset: 4px; }
+.gantt-chart { width: max(980px, calc(160% - 162px)); }
+.gantt-axis, .gantt-row { display: grid; grid-template-columns: 270px minmax(0, 1fr); }
+.gantt-axis { min-height: 54px; color: #77718e; background: #f7f5ff; font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.axis-label {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  border-right: 1px solid var(--about-line);
+  background: #f7f5ff;
+  box-shadow: 10px 0 18px rgba(42, 34, 96, .035);
+}
+.axis-years, .gantt-track { display: grid; grid-template-columns: var(--gantt-year-columns); }
+.axis-years span { display: flex; align-items: center; padding-left: 10px; border-left: 1px solid #e5e2f4; }
+.gantt-row {
+  min-height: 72px;
+  border-top: 1px solid var(--about-line);
+  cursor: pointer;
+}
+.gantt-row:focus-visible { position: relative; z-index: 5; outline: 3px solid rgba(101, 84, 238, .32); outline-offset: -3px; }
+.gantt-row:hover .gantt-role { background: #faf9ff; }
+.gantt-row--current { box-shadow: inset 4px 0 0 var(--about-purple); }
+.gantt-row--current .gantt-role { background: #f2efff; }
+.gantt-row--current:hover .gantt-role { background: #ece8ff; }
+.gantt-row--current .gantt-track { background: linear-gradient(90deg, rgba(101, 84, 238, .08), rgba(101, 84, 238, .025)); }
+.gantt-role {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 72px;
+  padding: 10px 42px 10px 18px;
+  border-right: 1px solid var(--about-line);
+  background: #fff;
+  box-shadow: 10px 0 18px rgba(42, 34, 96, .035);
+}
+.gantt-title-line { display: flex; align-items: center; gap: 7px; }
+.gantt-role h3 { margin-bottom: 2px; color: #383350; font-size: .79rem; line-height: 1.28; }
+.gantt-current-badge {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--about-purple);
+  font-size: .52rem;
+  font-weight: 850;
+  letter-spacing: .08em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+.gantt-organisation { margin: 0 0 2px; color: var(--about-purple); font-size: .71rem; font-weight: 750; }
+.gantt-period { color: #858098; font-size: .65rem; }
+.gantt-detail { margin: 8px 0 2px; color: #656079; font-size: .7rem; font-weight: 500; line-height: 1.5; }
+.gantt-toggle { position: absolute; top: 50%; right: 17px; color: var(--about-purple); font-size: 1.05rem; font-weight: 700; transform: translateY(-50%); }
+.gantt-track { position: relative; min-height: 72px; background: rgba(249, 248, 255, .56); }
+.year-line { border-left: 1px solid #e9e6f5; }
+.gantt-bar {
+  position: absolute;
+  top: 50%;
+  min-width: 10px;
+  height: 22px;
+  border: 1px solid rgba(255, 255, 255, .6);
+  border-radius: 7px;
+  transform: translateY(-50%);
+  box-shadow: 0 8px 18px rgba(57, 45, 145, .18);
+}
+.gantt-bar--lead { background: linear-gradient(90deg, #5844e7, #7b68f2); }
+.gantt-bar--engineering { background: linear-gradient(90deg, #7567e9, #9a8ff5); }
+.gantt-bar--founder { background: linear-gradient(90deg, #e66e9b, #ef9bb9); }
+.gantt-bar--consulting { background: linear-gradient(90deg, #36a59b, #70c7bd); }
+.gantt-bar--tutoring { background: linear-gradient(90deg, #4389d8, #83b6ec); }
+.gantt-bar--education { background: linear-gradient(90deg, #e1a63c, #f0c66f); }
 
 @media (max-width: 900px) {
   .about-page { gap: 70px; }
   .about-hero { grid-template-columns: 1fr; min-height: auto; }
-  .portrait-wrap { grid-row: 1; min-height: 390px; }
-  .portrait-panel { width: min(82vw, 430px); }
+  .desk-visual { grid-row: 1; width: min(96vw, 680px); margin: 0 auto; }
   .achievement-grid { grid-template-columns: 1fr; }
-  .achievement-card { min-height: 0; }
-  .current-role { grid-template-columns: auto 1fr; }
-  .current-role > p { grid-column: 1 / -1; padding: 22px 0 0; border-top: 1px solid #d8d3f7; border-left: 0; }
-  .upcoming-row { margin-top: -50px; }
+  .achievement-card,
+  .achievement-card:first-child,
+  .achievement-card:last-child { padding: 24px 0; }
+  .achievement-card:first-child { padding-top: 8px; }
+  .achievement-card + .achievement-card::before { inset: 0 0 auto; width: auto; height: 1px; }
+  .gantt-chart { width: max(900px, calc(160% - 138px)); }
+  .gantt-axis, .gantt-row { grid-template-columns: 230px minmax(0, 1fr); }
 }
 
 @media (max-width: 620px) {
   .about-page { gap: 58px; }
-  .upcoming-row { margin-top: -38px; }
   .about-hero { gap: 36px; }
-  .portrait-wrap { min-height: 320px; }
   h1 { font-size: clamp(2.7rem, 13vw, 4rem); }
-  .timeline-heading { align-items: flex-start; flex-direction: column; }
-  .timeline::before { left: 29px; }
-  .timeline-item { grid-template-columns: 60px minmax(0, 1fr); gap: 12px; }
-  .timeline-date { width: 60px; min-height: 52px; font-size: .62rem; }
-  .timeline-card { padding: 18px; }
-  .timeline-card::before { width: 13px; }
-  .timeline-card-header { align-items: flex-start; flex-direction: column; gap: 8px; }
-  .timeline-badge { white-space: normal; }
+  .gantt-heading { align-items: flex-start; flex-direction: column; }
+  .gantt-heading-meta { justify-items: start; text-align: left; }
+  .gantt-chart { width: max(820px, calc(160% - 126px)); }
+  .gantt-axis, .gantt-row { grid-template-columns: 210px minmax(0, 1fr); }
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .achievement-card, .timeline-card, .social-links a { transition: transform 180ms ease, border-color 180ms ease, color 180ms ease; }
-  .achievement-card:hover, .timeline-card:hover { transform: translateY(-3px); border-color: #c9c3f2; }
+  .social-links a { transition: color 180ms ease; }
 }
 </style>

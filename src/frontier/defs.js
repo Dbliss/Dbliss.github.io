@@ -47,18 +47,18 @@ export const ERAS = [
 // resource pool, `yield` what one chop/mine hit returns.
 
 export const TREE_TIERS = [
-  { tier: 1, name: 'Scrub Pine', model: 'tree_small', amount: 40, yield: 2, scale: 0.85 },
-  { tier: 2, name: 'Birch', model: 'tree_default', amount: 60, yield: 3, scale: 0.95 },
-  { tier: 3, name: 'Oak', model: 'tree_oak', amount: 90, yield: 4, scale: 1.05 },
-  { tier: 4, name: 'Fir', model: 'tree_pineRoundA', amount: 130, yield: 6, scale: 1.15 },
-  { tier: 5, name: 'Old Pine', model: 'tree_pineTallA', amount: 180, yield: 8, scale: 1.3 },
-  { tier: 6, name: 'Broadwood', model: 'tree_fat', amount: 240, yield: 11, scale: 1.45 },
-  { tier: 7, name: 'Ironwood', model: 'tree_tall_dark', amount: 320, yield: 15, scale: 1.6 },
-  { tier: 8, name: 'Eldertree', model: 'tree_pineTallA_detailed', amount: 420, yield: 20, scale: 1.9 }
+  { tier: 1, name: 'Scrub Pine', model: 'tree_small', amount: 40, yield: 2, scale: 0.72, tint: 0x89b85a },
+  { tier: 2, name: 'Birch', model: 'tree_default', amount: 60, yield: 3, scale: 0.9, tint: 0xa5c86b },
+  { tier: 3, name: 'Oak', model: 'tree_oak', amount: 90, yield: 4, scale: 1.12, tint: 0x6f9b45 },
+  { tier: 4, name: 'Fir', model: 'tree_pineRoundA', amount: 130, yield: 6, scale: 1.38, tint: 0x477c43 },
+  { tier: 5, name: 'Old Pine', model: 'tree_pineTallA', amount: 180, yield: 8, scale: 1.68, tint: 0x315f3e },
+  { tier: 6, name: 'Broadwood', model: 'tree_fat', amount: 240, yield: 11, scale: 2.02, tint: 0x586b35 },
+  { tier: 7, name: 'Ironwood', model: 'tree_tall_dark', amount: 320, yield: 15, scale: 2.4, tint: 0x34443f },
+  { tier: 8, name: 'Eldertree', model: 'tree_pineTallA_detailed', amount: 420, yield: 20, scale: 2.9, tint: 0x263d34 }
 ]
 
 export const ROCK_TIERS = [
-  { tier: 1, name: 'Loose Stones', model: 'rock_smallA', amount: 45, yield: 2, scale: 0.9 },
+  { tier: 1, name: 'Loose Stones', model: 'rock_largeA', amount: 45, yield: 2, scale: 1.08, tint: 0x7d8790 },
   { tier: 2, name: 'Limestone', model: 'rock_smallC', amount: 70, yield: 3, scale: 1.05 },
   { tier: 3, name: 'Granite', model: 'rock_largeA', amount: 100, yield: 4, scale: 1.1 },
   { tier: 4, name: 'Iron Vein', model: 'rock_largeC', amount: 140, yield: 6, scale: 1.2, tint: 0xb08968 },
@@ -106,7 +106,9 @@ export const FORGE_REQ = [0, 1, 1, 2, 2, 3, 3, 4, 4] // index = tool tier
 export const MAX_TOOL_TIER = 8
 
 // Damage / yield scaling per tool tier.
-export const SWORD = { dmg: 20, reach: 2.8, arc: 0.9, cooldown: 0.45, dmgPerTier: 0.45 }
+// The commander can interrupt and finish enemies, but trained soldiers are
+// now the settlement's dependable front line.
+export const SWORD = { dmg: 8, reach: 2.25, arc: 0.78, cooldown: 0.62, dmgPerTier: 0.25 }
 export const GATHER = {
   reach: 3.6,          // tiles
   cooldown: 0.45,
@@ -168,7 +170,7 @@ export const BUILDINGS = {
     era: 0,
     size: 2,
     hp: 90,
-    cost: { wood: 15 },
+    cost: { wood: 12, stone: 3 },
     popCap: 4,
     popCapPerLevel: 2,
     maxLevel: 3,
@@ -182,12 +184,14 @@ export const BUILDINGS = {
     era: 0,
     size: 2,
     hp: 80,
-    cost: { wood: 20 },
+    cost: { wood: 18, stone: 4 },
     workers: 1,
+    workerJob: 'farm',
+    workersPerLevel: 0,
     produces: { food: 0.55 },
     maxLevel: 3,
     limit: [2, 3, 5, 7, 9],
-    desc: 'Produces food while a villager farms it. Assign farmers from the roster.',
+    desc: 'Employs one farmer. Upgrades enlarge the fields and improve their yield.',
     interact: 'farm'
   },
   lumber: {
@@ -196,13 +200,15 @@ export const BUILDINGS = {
     era: 0,
     size: 1,
     hp: 80,
-    cost: { wood: 18 },
-    produces: { wood: 0.4 },
+    cost: { wood: 14, stone: 3 },
+    workers: 1,
+    workerJob: 'wood',
+    workersPerLevel: 1,
     needsNode: 'tree',
     maxLevel: 3,
     limit: [2, 3, 4, 5, 6],
     depot: 'wood',
-    desc: 'Slowly saws adjacent trees, and is a drop-off point for wood haulers.',
+    desc: 'Employs one lumberjack per level to fell and haul nearby trees.',
     interact: 'info'
   },
   quarry: {
@@ -211,13 +217,15 @@ export const BUILDINGS = {
     era: 0,
     size: 1,
     hp: 90,
-    cost: { wood: 25 },
-    produces: { stone: 0.32 },
+    cost: { wood: 18, stone: 6 },
+    workers: 1,
+    workerJob: 'mine',
+    workersPerLevel: 1,
     needsNode: 'rock',
     maxLevel: 3,
     limit: [2, 3, 4, 5, 6],
     depot: 'stone',
-    desc: 'Slowly chips adjacent rock, and is a drop-off point for miners.',
+    desc: 'Employs one miner per level to quarry and haul nearby stone.',
     interact: 'info'
   },
   forge: {
@@ -238,7 +246,7 @@ export const BUILDINGS = {
     era: 0,
     size: 1,
     hp: 140, // overridden by era
-    cost: { wood: 4 },
+    cost: { wood: 3, stone: 1 },
     isWall: true,
     limit: [40, 70, 110, 160, 220],
     desc: 'Redirects enemies. Upgrades each era.',
@@ -250,7 +258,7 @@ export const BUILDINGS = {
     era: 0,
     size: 1,
     hp: 130,
-    cost: { wood: 30 },
+    cost: { wood: 22, stone: 8 },
     tower: { range: 4.4, dmg: 7, rate: 1.15, kind: 'arrow' },
     maxLevel: 3,
     limit: [4, 6, 9, 12, 16],
@@ -263,12 +271,13 @@ export const BUILDINGS = {
     era: 0,
     size: 2,
     hp: 140,
-    cost: { wood: 30, food: 10 },
-    trains: 3,
+    cost: { wood: 25, stone: 8, food: 10 },
+    trains: 1,
     trainsPerLevel: 1,
+    replacementTime: 24,
     maxLevel: 3,
     limit: [1, 1, 2, 2, 3],
-    desc: 'Villagers sent here train into soldiers who guard the settlement.',
+    desc: 'Automatically fields one soldier per level. Fallen troops take time to replace.',
     interact: 'barracks'
   },
   road: {
@@ -290,6 +299,9 @@ export const BUILDINGS = {
     hp: 100,
     cost: { wood: 30, stone: 20 },
     produces: { knowledge: 0.28 },
+    workers: 1,
+    workerJob: 'work',
+    workersPerLevel: 1,
     maxLevel: 3,
     limit: [1, 2, 3, 4, 5],
     desc: 'Generates knowledge (rerolls rewards, unlocks high tool tiers).',
@@ -297,17 +309,16 @@ export const BUILDINGS = {
   },
   market: {
     id: 'market',
-    name: 'Market',
+    name: 'Training Grounds',
     era: 1,
     size: 2,
     hp: 100,
-    cost: { wood: 25, stone: 15 },
-    aura: { radius: 3, prodBonus: 0.18 },
-    auraPerLevel: 0.06,
+    cost: { wood: 25, stone: 35 },
+    training: true,
     maxLevel: 3,
     limit: [1, 2, 3, 4, 5],
-    desc: '+18% production to buildings within 3 tiles.',
-    interact: 'info'
+    desc: 'Awards a random permanent team doctrine when built and upgraded. Rare doctrines can transform a run.',
+    interact: 'training'
   },
   cannon: {
     id: 'cannon',
@@ -315,7 +326,7 @@ export const BUILDINGS = {
     era: 1,
     size: 1,
     hp: 160,
-    cost: { wood: 30, stone: 30 },
+    cost: { wood: 20, stone: 45 },
     tower: { range: 5.2, dmg: 16, rate: 0.5, kind: 'cannon', splash: 1.25 },
     maxLevel: 3,
     limit: [0, 2, 4, 6, 9],
@@ -330,6 +341,9 @@ export const BUILDINGS = {
     hp: 120,
     cost: { stone: 40, wood: 20 },
     produces: { energy: 0.55 },
+    workers: 1,
+    workerJob: 'work',
+    workersPerLevel: 1,
     maxLevel: 3,
     limit: [0, 0, 2, 4, 6],
     desc: 'Produces energy for tesla towers.',
@@ -343,6 +357,9 @@ export const BUILDINGS = {
     hp: 110,
     cost: { stone: 30 },
     produces: { energy: 0.7 },
+    workers: 1,
+    workerJob: 'work',
+    workersPerLevel: 1,
     needsNode: 'crystal',
     maxLevel: 3,
     limit: [0, 0, 2, 4, 6],
@@ -384,7 +401,8 @@ export const VILLAGER = {
   carry: 12,          // resources hauled before returning to a depot
   chopTime: 1.6,      // seconds per swing
   fleeRadius: 7,      // run home when an enemy is this close
-  foodUpkeep: 0.05    // food per second each
+  foodUpkeep: 0.05,   // food per second each
+  replacementTime: 20
 }
 
 export const JOBS = [
@@ -392,21 +410,43 @@ export const JOBS = [
   { id: 'wood', name: 'Chop Wood', desc: 'Fell the nearest trees your axe tier allows.' },
   { id: 'mine', name: 'Mine Stone', desc: 'Mine the nearest rocks your pickaxe tier allows.' },
   { id: 'farm', name: 'Farm', desc: 'Work an unstaffed farm.' },
+  { id: 'work', name: 'Tend Building', desc: 'Operate the building that employs this villager.' },
   { id: 'train', name: 'Enlist', desc: 'Train at the barracks into a soldier.' }
 ]
 
 export const SOLDIER = {
   hp: 55,
-  dmg: 10,
-  rate: 1.1,      // attacks per second
-  range: 0.95,    // melee reach in tiles
-  aggro: 9,       // engage enemies within this range of their anchor
-  speed: 3.6,
+  dmg: 8,
+  rate: 0.8,      // ranged attacks per second
+  range: 7.5,
+  aggro: 18,      // actively hunt enemies around their post
+  speed: 3.8,
+  projectileSpeed: 14,
   trainTime: 6,   // seconds in the barracks
   cost: { food: 10 },
   hpPerBarracksLevel: 0.25,
   dmgPerSwordTier: 0.35
 }
+
+// Training Grounds rolls one permanent doctrine on construction and on each
+// upgrade. Weight makes the run-changing doctrines genuinely uncommon.
+export const TRAINING_BUFFS = [
+  { id: 'trail_legs', name: 'Trail Legs', desc: 'All workers move 18% faster.', weight: 12, mods: { villagerSpeed: 0.18 } },
+  { id: 'sharp_axes', name: 'Sharp Axes', desc: 'Lumberjacks chop 25% faster.', weight: 12, mods: { woodSpeed: 0.25 } },
+  { id: 'stone_rhythm', name: 'Stone Rhythm', desc: 'Miners work 25% faster.', weight: 12, mods: { mineSpeed: 0.25 } },
+  { id: 'deep_baskets', name: 'Deep Baskets', desc: 'Workers carry 40% more.', weight: 10, mods: { carryBonus: 0.4 } },
+  { id: 'field_rations', name: 'Field Rations', desc: 'Villager food upkeep falls 25%.', weight: 10, mods: { upkeepDiscount: 0.25 } },
+  { id: 'quick_draw', name: 'Quick Draw', desc: 'Barracks troops fire 22% faster.', weight: 11, mods: { soldierRate: 0.22 } },
+  { id: 'broadheads', name: 'Broadheads', desc: 'Barracks troops deal 25% more damage.', weight: 11, mods: { soldierDmg: 0.25 } },
+  { id: 'long_sight', name: 'Long Sight', desc: 'Barracks troop range increases by 2 tiles.', weight: 9, mods: { soldierRange: 2 } },
+  { id: 'marching_drill', name: 'Marching Drill', desc: 'Barracks troops move 20% faster.', weight: 9, mods: { soldierSpeed: 0.2 } },
+  { id: 'padded_coats', name: 'Padded Coats', desc: 'Barracks troops gain 25% maximum health.', weight: 9, mods: { soldierHp: 0.25 } },
+  { id: 'command_drill', name: 'Command Drill', desc: 'The commander moves 15% faster.', weight: 8, mods: { commanderSpeed: 0.15 } },
+  { id: 'night_school', name: 'Night School', desc: 'Production continues at 35% while workers shelter.', weight: 5, rare: true, mods: { nightShift: 0.35 } },
+  { id: 'master_craftsfolk', name: 'Master Craftsfolk', desc: 'All gathering and production improves by 45%.', weight: 3, rare: true, mods: { prodMult: 0.45, woodSpeed: 0.2, mineSpeed: 0.2 } },
+  { id: 'volley_fire', name: 'Volley Fire', desc: 'Barracks troops fire twice as fast.', weight: 2, rare: true, mods: { soldierRate: 1 } },
+  { id: 'frontier_legend', name: 'Frontier Legends', desc: 'All people move faster; troops gain major damage, range and health.', weight: 1, rare: true, mods: { villagerSpeed: 0.3, soldierSpeed: 0.3, soldierDmg: 0.5, soldierRange: 2, soldierHp: 0.5 } }
+]
 
 // ------------------------------------------------------------------ enemies
 
@@ -656,6 +696,6 @@ export const RALLY = { cost: { food: 15 }, duration: 10, cooldown: 35, rateBonus
 export const REPAIR_COST_PER_HP = 0.08 // wood per hp repaired
 export const DEMOLISH_REFUND = 0.5
 
-export const START_RESOURCES = { wood: 70, stone: 30, food: 40, energy: 0, knowledge: 0 }
+export const START_RESOURCES = { wood: 70, stone: 45, food: 40, energy: 0, knowledge: 0 }
 export const PREP_TIME = 90
 export const REROLL_COST = 25

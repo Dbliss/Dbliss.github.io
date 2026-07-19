@@ -86,9 +86,8 @@
       <div class="section-label">Next up</div>
       <h2 class="section-title">Upcoming projects</h2>
       <p class="section-sub" style="max-width:none">
-        This portfolio keeps growing — new landmarks appear in the
-        <RouterLink to="/" style="color:#b7b9ff">interactive city</RouterLink>
-        as projects ship.
+        This portfolio keeps growing as new case studies and experiments are added to the
+        <RouterLink to="/projects" style="color:var(--accent);font-weight:700">projects collection</RouterLink>.
       </p>
     </div>
   </section>

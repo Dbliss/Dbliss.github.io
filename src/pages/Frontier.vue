@@ -11,11 +11,10 @@
           Build a civilisation that evolves faster than the mist can destroy it.
         </p>
         <p class="intro-body">
-          You are the commander, on the ground with sword, axe and pickaxe. Command your
-          villagers from the roster — send them to chop, mine, farm, or enlist at the
-          barracks. Forge better tools to reach the ancient trees and rich veins deep in
-          the mist. Upgrade the Beacon to grow your city, upgrade every building, and hold
-          the line for twelve nights.
+          You are the commander, on the ground with sword, axe and pickaxe. Each farm,
+          lumber camp and quarry brings its own visible worker, while barracks muster
+          soldiers to defend their post. Workers shelter at their workplace after dark.
+          Forge better tools, upgrade each building, and hold the line for twelve nights.
         </p>
         <div class="intro-controls">
           <span><b>WASD</b> walk</span>
@@ -174,32 +173,16 @@
           <span class="menu-sub">{{ ui.villagers.length }} villagers · {{ ui.soldiers.length }}/{{ ui.soldierCap }} soldiers</span>
           <button class="menu-close" @click="ui.rosterOpen = false">✕</button>
         </div>
-        <div class="roster-all">
-          <span>All:</span>
-          <button v-for="j in jobs" :key="j.id" class="job-btn" :title="`Everyone: ${j.name}`"
-                  @click="game.setAllJobs(j.id)">
-            <GameIcon :k="jobIconKey(j.id)" :fb="j.name[0]" size="16" />
-          </button>
-        </div>
         <div class="roster-list">
           <div v-for="v in ui.villagers" :key="v.uid" class="roster-row">
             <span class="r-name">{{ v.name }}</span>
             <span class="r-status">{{ v.status }}<template v-if="v.carry"> ({{ v.carry }})</template></span>
-            <span class="r-jobs">
-              <button
-                v-for="j in jobs"
-                :key="j.id"
-                class="job-btn"
-                :class="{ active: v.job === j.id }"
-                :title="`${j.name} — ${j.desc}`"
-                @click="game.setJob(v.uid, j.id)"
-              >
-                <GameIcon :k="jobIconKey(j.id)" :fb="j.name[0]" size="16" />
-              </button>
+            <span class="r-jobs" :title="v.workplace">
+              <GameIcon :k="jobIconKey(v.job)" :fb="v.job[0]" size="16" />
             </span>
           </div>
           <div v-if="!ui.villagers.length" class="roster-empty">
-            No villagers yet — build houses and keep food stocked.
+            No workers yet — build a farm, lumber camp, quarry, lab, or generator.
           </div>
           <div v-for="s in ui.soldiers" :key="s.uid" class="roster-row soldier-row">
             <span class="r-name"><GameIcon k="soldier" fb="⚔" size="15" /> {{ s.name }}</span>
@@ -231,11 +214,13 @@
           <div class="sel-hp-fill" :style="{ width: (100 * ui.panel.hp / ui.panel.hpMax) + '%' }" />
         </div>
         <div class="sel-sub">{{ ui.panel.hp }}/{{ ui.panel.hpMax }} hp — {{ ui.panel.desc }}</div>
-        <div v-if="ui.panel.type === 'farm'" class="sel-sub">
-          Farmers working: {{ ui.panel.staffed }} — assign from the roster (N)
+        <div v-if="ui.panel.workerCap" class="sel-sub">
+          Workers: {{ ui.panel.staffed }}/{{ ui.panel.workerCap }}
+          <template v-if="ui.panel.replacements"> — {{ ui.panel.replacements }} replacement(s) on the way</template>
         </div>
         <div v-if="ui.panel.soldiers !== undefined" class="sel-sub">
-          Soldiers from here: {{ ui.panel.soldiers }}/{{ ui.panel.trainCap }} — enlist villagers from the roster (N)
+          Soldiers from here: {{ ui.panel.soldiers }}/{{ ui.panel.trainCap }}
+          <template v-if="ui.panel.soldierReplacements"> — {{ ui.panel.soldierReplacements }} replacement(s) training</template>
         </div>
 
         <!-- upgrade -->
@@ -351,11 +336,10 @@ import { ref, reactive, computed, h, onMounted, onBeforeUnmount } from 'vue'
 import { RouterLink } from 'vue-router'
 import { FrontierGame } from '../frontier/game.js'
 import {
-  BUILDINGS, BUILD_ORDER, PLAYER_TOOLS, JOBS, TOOLS, TOOL_TIER_NAMES, buildingLimit
+  BUILDINGS, BUILD_ORDER, PLAYER_TOOLS, TOOLS, TOOL_TIER_NAMES, buildingLimit
 } from '../frontier/defs.js'
 
 const tools = PLAYER_TOOLS
-const jobs = JOBS
 
 const canvasEl = ref(null)
 const started = ref(false)

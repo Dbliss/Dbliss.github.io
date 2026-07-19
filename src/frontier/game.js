@@ -13,7 +13,7 @@ import {
   BUILD_REACH, HAMMER_REACH_PER_TIER, HAMMER_REPAIR_DISCOUNT,
   CORE_LEVELS, MAX_CORE_LEVEL, UPGRADE_COST_MULT, UPGRADE_HP_MULT,
   UPGRADE_PROD_MULT, UPGRADE_TOWER_DMG_MULT, UPGRADE_TOWER_RANGE_ADD,
-  buildingLimit, VILLAGER, SOLDIER, JOBS
+  buildingLimit, VILLAGER, SOLDIER, JOBS, TRAINING_BUFFS
 } from './defs.js'
 import { computeFlowField } from './pathfind.js'
 import { createScene3D } from './scene3d.js'
@@ -69,6 +69,9 @@ export class FrontierGame {
       teslaChain: 0, towerRange: 0, dropMult: 0, woodDiscount: 0, towerDmg: 0,
       fortressDoctrine: 0, boomWalls: 0, postWaveRepair: 0, energyMult: 0,
       passiveKnowledge: 0, armedHouses: 0, splashMult: 0, repairDrone: 0
+      , villagerSpeed: 0, woodSpeed: 0, mineSpeed: 0, carryBonus: 0,
+      upkeepDiscount: 0, soldierRate: 0, soldierDmg: 0, soldierRange: 0,
+      soldierSpeed: 0, soldierHp: 0, commanderSpeed: 0, nightShift: 0
     }
     this.toolTiers = { sword: 1, axe: 1, pick: 1, hammer: 1 }
     this.picked = []
@@ -101,8 +104,9 @@ export class FrontierGame {
     this.flow = null
     this.flowDirty = true
     this.auraDirty = true
-    this.growthT = 0
     this.rosterT = 0
+    this.housingWarnAt = -Infinity
+    this.housingBlocked = false
     this.rallyT = 0       // remaining active time
     this.rallyCd = 0
     this.placing = null
@@ -113,7 +117,6 @@ export class FrontierGame {
     this.eraFlash = 0
     this.generateMap()
     this.spawnCore()
-    for (let i = 0; i < 4; i++) this.spawnVillager()
     if (this.view) this.view.clearWorld()
     this.syncUi(true)
     this.syncRoster()
@@ -346,7 +349,9 @@ export class FrontierGame {
     const b = {
       uid: uid++, type: typeId, def, x: tx, y: ty, size: def.size, level: 1,
       hp: hpMax, hpMax, cooldown: Math.random() * 0.3, prodBonus: 0,
-      active: true, spentCost: cost
+      active: true, spentCost: cost,
+      workerSlotsKnown: 0, soldierSlotsKnown: 0,
+      workerQueue: [], soldierQueue: []
     }
     this.buildings.push(b)
     for (let dy = 0; dy < def.size; dy++) {
@@ -355,6 +360,7 @@ export class FrontierGame {
       }
     }
     this.stats.built++
+    if (def.training) this.awardTraining(b)
     this.flowDirty = true
     this.auraDirty = true
     this.audio.play('build')
@@ -397,6 +403,7 @@ export class FrontierGame {
       b.hpMax = nm
     }
     b.visualDirty = true
+    if (b.def.training) this.awardTraining(b)
     this.auraDirty = true
     this.audio.play('upgrade')
     this.effects.push({
@@ -449,6 +456,15 @@ export class FrontierGame {
     }
     this.flowDirty = true
     this.auraDirty = true
+    // A destroyed workplace displaces its people; it never silently deletes them.
+    for (const v of this.villagers) {
+      if (v.home !== b.uid) continue
+      v.home = 0
+      v.workAt = 0
+      v.job = 'idle'
+      v.sheltering = false
+    }
+    for (const u of this.units) if (u.home === b.uid) u.home = 0
     if (this.selected === b) { this.selected = null; this.panelOpen = false }
     if (violent) {
       const cx = (b.x + b.size / 2) * TILE, cy = (b.y + b.size / 2) * TILE
@@ -679,6 +695,7 @@ export class FrontierGame {
     this.time += dt
     if (this.flowDirty) this.recomputeFlow()
     if (this.auraDirty) this.recomputeAuras()
+    this.reconcileWorkforces()
     this.updateCommander(dt)
     this.updateEconomy(dt)
     if (this.phase === 'day') {
@@ -767,7 +784,7 @@ export class FrontierGame {
       const uidAt = this.buildingAt[i]
       if (uidAt >= 0) {
         const b = byUid.get(uidAt)
-        if (b) cost[i] = b.def.isWall ? 42 : 16
+        if (b) cost[i] = b.def.isWall ? 500 : 16
       }
     }
     const goals = []
@@ -808,13 +825,7 @@ export class FrontierGame {
   }
 
   updateEconomy(dt) {
-    // population capacity from houses + core
-    let popCap = 0
-    for (const b of this.buildings) {
-      if (!b.def.popCap) continue
-      popCap += b.def.popCap + (b.def.popCapPerLevel || 0) * ((b.level || 1) - 1)
-    }
-    this.popCap = popCap
+    this.popCap = this.populationCapacity()
     this.pop = this.villagers.length + this.units.length
 
     const starving = this.res.food <= 0
@@ -822,10 +833,17 @@ export class FrontierGame {
 
     for (const b of this.buildings) {
       b.active = true
+      if (b.def.workers) {
+        b.staffed = this.villagers.filter(v => v.home === b.uid).length
+        b.activeStaff = this.villagers.filter(v => v.home === b.uid && !v.sheltering).length
+      }
       if (!b.def.produces) continue
-      // farms need a farmer standing in them
-      if (b.type === 'farm') {
-        if (!(b.staffed > 0)) { b.active = false; continue }
+      // Worker-operated buildings pause while their people shelter or await replacement.
+      if (b.def.workers) {
+        if (!(b.activeStaff > 0) && !(this.phase === 'night' && b.staffed > 0 && this.mods.nightShift)) {
+          b.active = false
+          continue
+        }
       }
       // node-fed buildings drain their node
       if (b.def.needsNode) {
@@ -841,6 +859,7 @@ export class FrontierGame {
       const lvlMult = this.prodMultOf(b)
       for (const [k, v] of Object.entries(b.def.produces)) {
         let rate = v * lvlMult * prodMult * (1 + b.prodBonus)
+        if (this.phase === 'night' && !b.activeStaff) rate *= this.mods.nightShift
         if (k === 'energy') rate *= 1 + this.mods.energyMult
         if (k === 'food' && b.type === 'farm') {
           rate *= Math.min(1, b.staffed)
@@ -850,19 +869,9 @@ export class FrontierGame {
       }
     }
 
-    // eating + growth
-    this.res.food = Math.max(0, this.res.food - this.pop * VILLAGER.foodUpkeep * dt)
-    this.growthT += dt
-    if (this.growthT > 7) {
-      this.growthT = 0
-      if (this.res.food > 5 && this.pop < this.popCap) {
-        this.spawnVillager()
-        this.cb.toast(`${this.villagers[this.villagers.length - 1].name} joins the settlement`)
-      } else if (starving && this.villagers.length > 1) {
-        const v = this.villagers.pop()
-        this.cb.toast(`${v.name} starved — grow more food`)
-      }
-    }
+    // Hunger slows production, but does not silently remove named villagers.
+    this.res.food = Math.max(0, this.res.food - this.pop * VILLAGER.foodUpkeep *
+      (1 - Math.min(0.75, this.mods.upkeepDiscount)) * dt)
     if (this.mods.passiveKnowledge) this.res.knowledge += this.mods.passiveKnowledge * dt
 
     // wall regen + repair drone
@@ -883,26 +892,149 @@ export class FrontierGame {
 
   // ---------------------------------------------------------------- villagers
 
-  spawnVillager() {
+  workerCapacity(b) {
+    if (!b?.def?.workers) return 0
+    return b.def.workers + (b.def.workersPerLevel || 0) * ((b.level || 1) - 1)
+  }
+
+  populationCapacity() {
+    let cap = 0
+    for (const b of this.buildings) {
+      if (!b.def.popCap) continue
+      cap += b.def.popCap + (b.def.popCapPerLevel || 0) * ((b.level || 1) - 1)
+    }
+    return cap
+  }
+
+  awardTraining(building) {
+    const total = TRAINING_BUFFS.reduce((sum, buff) => sum + buff.weight, 0)
+    let roll = Math.random() * total
+    let chosen = TRAINING_BUFFS[0]
+    for (const buff of TRAINING_BUFFS) {
+      roll -= buff.weight
+      if (roll <= 0) { chosen = buff; break }
+    }
+    building.trainingBuffs ||= []
+    building.trainingBuffs.push(chosen)
+    for (const [key, value] of Object.entries(chosen.mods)) {
+      this.mods[key] = (this.mods[key] || 0) + value
+    }
+    if (chosen.mods.soldierHp) {
+      for (const unit of this.units) {
+        const gain = Math.max(1, Math.round(unit.hpMax * chosen.mods.soldierHp))
+        unit.hpMax += gain
+        unit.hp += gain
+      }
+    }
+    this.cb.toast(`${chosen.rare ? 'RARE TRAINING' : 'Training'}: ${chosen.name} — ${chosen.desc}`)
+  }
+
+  warnHousingFull() {
+    this.housingBlocked = true
+    if (this.time - this.housingWarnAt < 12) return
+    this.housingWarnAt = this.time
+    this.cb.toast('Housing full — build or upgrade houses before more workers can arrive')
+    this.audio.play('deny')
+  }
+
+  /** Keep each workplace and barracks at its promised headcount. New upgrade
+   * slots fill immediately; a casualty starts a clearly delayed replacement. */
+  reconcileWorkforces() {
+    this.housingBlocked = false
+    for (const b of this.buildings) {
+      const wanted = this.workerCapacity(b)
+      if (wanted > 0) {
+        b.workerQueue ||= []
+        b.workerSlotsKnown ??= 0
+        while (b.workerSlotsKnown < wanted) {
+          b.workerQueue.push(this.time)
+          b.workerSlotsKnown++
+        }
+        const alive = this.villagers.filter(v => v.home === b.uid).length
+        while (alive + b.workerQueue.length < wanted) {
+          b.workerQueue.push(this.time + VILLAGER.replacementTime)
+        }
+        b.workerQueue.sort((a, c) => a - c)
+        while (b.workerQueue.length && b.workerQueue[0] <= this.time &&
+          this.villagers.filter(v => v.home === b.uid).length < wanted) {
+          if (this.villagers.length + this.units.length >= this.populationCapacity()) {
+            this.warnHousingFull()
+            break
+          }
+          b.workerQueue.shift()
+          const v = this.spawnVillager(b, b.def.workerJob)
+          this.cb.toast(`${v.name} reports to the ${b.def.name}`)
+        }
+      }
+
+      if (b.def.trains) {
+        const wantedSoldiers = b.def.trains + (b.def.trainsPerLevel || 0) * ((b.level || 1) - 1)
+        b.soldierQueue ||= []
+        b.soldierSlotsKnown ??= 0
+        while (b.soldierSlotsKnown < wantedSoldiers) {
+          b.soldierQueue.push(this.time)
+          b.soldierSlotsKnown++
+        }
+        const alive = this.units.filter(u => u.home === b.uid).length
+        while (alive + b.soldierQueue.length < wantedSoldiers) {
+          b.soldierQueue.push(this.time + (b.def.replacementTime || 24))
+        }
+        b.soldierQueue.sort((a, c) => a - c)
+        while (b.soldierQueue.length && b.soldierQueue[0] <= this.time &&
+          this.units.filter(u => u.home === b.uid).length < wantedSoldiers) {
+          if (this.villagers.length + this.units.length >= this.populationCapacity()) {
+            this.warnHousingFull()
+            break
+          }
+          b.soldierQueue.shift()
+          this.spawnBarracksSoldier(b)
+        }
+      }
+    }
+  }
+
+  spawnVillager(home = null, job = 'idle') {
     const ang = Math.random() * Math.PI * 2
+    const hx = home ? home.x + home.size / 2 : GRID_W / 2
+    const hy = home ? home.y + home.size / 2 : GRID_H / 2
     const v = {
       uid: uid++,
       name: NAMES[Math.floor(Math.random() * NAMES.length)],
-      x: GRID_W / 2 + Math.cos(ang) * 3.2,
-      y: GRID_H / 2 + Math.sin(ang) * 3.2,
+      x: hx + Math.cos(ang) * ((home?.size || 2) / 2 + 0.8),
+      y: hy + Math.sin(ang) * ((home?.size || 2) / 2 + 0.8),
       hp: VILLAGER.hp, hpMax: VILLAGER.hp,
-      job: 'idle', state: 'idle', carry: 0, carryKind: null,
-      nodeI: -1, workAt: 0, chopT: 0, trainT: 0,
+      home: home?.uid || 0,
+      job, state: 'seek', carry: 0, carryKind: null,
+      nodeI: -1, workAt: home?.uid || 0, chopT: 0, trainT: 0,
       wobble: Math.random() * 6, moving: false, fleeing: false,
-      wanderT: 0, wx: 0, wy: 0, stuckT: 0
+      sheltering: false, wanderT: 0, wx: 0, wy: 0, stuckT: 0
     }
     this.villagers.push(v)
     return v
   }
 
+  spawnBarracksSoldier(barracks) {
+    const barracksLvl = barracks.level || 1
+    const hp = Math.round(SOLDIER.hp * (1 + SOLDIER.hpPerBarracksLevel * (barracksLvl - 1)) *
+      (1 + this.mods.soldierHp))
+    const name = NAMES[Math.floor(Math.random() * NAMES.length)]
+    this.units.push({
+      uid: uid++, name, home: barracks.uid, slot: this.unitSlot++,
+      x: barracks.x + barracks.size / 2 + (Math.random() - 0.5),
+      y: barracks.y + barracks.size + 0.7,
+      hp, hpMax: hp, mode: 'guard', cooldown: 0, target: null,
+      wobble: Math.random() * 6
+    })
+    this.cb.toast(`${name} musters at the ${barracks.def.name}`)
+  }
+
   setJob(vUid, job) {
     const v = this.villagers.find(x => x.uid === vUid)
     if (!v) return
+    if (v.home) {
+      this.cb.toast(`${v.name} is employed by their building`)
+      return
+    }
     if (job === 'train') {
       const cap = this.soldierCapacity()
       const inTraining = this.villagers.filter(x => x.job === 'train').length
@@ -1002,6 +1134,19 @@ export class FrontierGame {
     return Math.hypot(gx - ent.x, gy - ent.y)
   }
 
+  villagerSpeed() {
+    return VILLAGER.speed * (1 + this.mods.villagerSpeed)
+  }
+
+  villagerCarry() {
+    return Math.round(VILLAGER.carry * (1 + this.mods.carryBonus))
+  }
+
+  villagerWorkTime(v) {
+    const bonus = v.job === 'wood' ? this.mods.woodSpeed : v.job === 'mine' ? this.mods.mineSpeed : 0
+    return VILLAGER.chopTime / (1 + bonus)
+  }
+
   updateVillagers(dt) {
     this.nodeClaims = this.nodeClaims || new Map()
     const claims = new Map()
@@ -1020,12 +1165,32 @@ export class FrontierGame {
       const v = this.villagers[idx]
       v.wobble += dt * 7
       v.moving = false
+      const moveSpeed = this.villagerSpeed(v)
+      const carryCap = this.villagerCarry(v)
       if (v.hp <= 0) {
         this.villagers.splice(idx, 1)
         this.effects.push({ kind: 'pop', x: v.x * TILE, y: v.y * TILE, t: 0, ttl: 0.4, r: TILE * 0.6, color: '#e8c49a' })
         this.cb.toast(`${v.name} was slain`)
         continue
       }
+
+      // Workers stop exposing themselves at night and gather just outside the
+      // doorway of their own workplace. They remain visible and accounted for.
+      if (this.phase === 'night') {
+        const shelter = this.buildingByUid(v.home) || this.core
+        const ang = (v.uid * 2.399963) % (Math.PI * 2)
+        const rad = shelter.size * 0.72 + 0.65
+        const gx = shelter.x + shelter.size / 2 + Math.cos(ang) * rad
+        const gy = shelter.y + shelter.size / 2 + Math.sin(ang) * rad
+        v.sheltering = true
+        v.fleeing = false
+        v.nodeI = -1
+        if (Math.hypot(gx - v.x, gy - v.y) > 0.3) {
+          this.walkTo(v, gx, gy, moveSpeed * 1.15, dt)
+        }
+        continue
+      }
+      v.sheltering = false
 
       // flee from nearby enemies (except soldiers-in-training already at barracks)
       if (this.enemies.length && v.job !== 'train') {
@@ -1036,7 +1201,7 @@ export class FrontierGame {
         }
         if (danger) {
           v.fleeing = true
-          this.walkTo(v, coreX, coreY, VILLAGER.speed * 1.35, dt)
+          this.walkTo(v, coreX, coreY, moveSpeed * 1.35, dt)
           continue
         }
       }
@@ -1052,7 +1217,7 @@ export class FrontierGame {
             v.wy = coreY + Math.sin(ang) * (2 + Math.random() * 4)
           }
           if (Math.hypot(v.wx - v.x, v.wy - v.y) > 0.5) {
-            this.walkTo(v, v.wx, v.wy, VILLAGER.speed * 0.55, dt)
+            this.walkTo(v, v.wx, v.wy, moveSpeed * 0.55, dt)
           }
           break
         }
@@ -1062,11 +1227,11 @@ export class FrontierGame {
           const tiers = v.job === 'wood' ? TREE_TIERS : ROCK_TIERS
           const toolTier = v.job === 'wood' ? this.toolTiers.axe : this.toolTiers.pick
           const resKind = v.job === 'wood' ? 'wood' : 'stone'
-          if (v.carry >= VILLAGER.carry) {
+          if (v.carry >= carryCap) {
             // haul to depot
             const depot = this.findDepot(v, resKind)
             const gx = depot.x + depot.size / 2, gy = depot.y + depot.size / 2
-            const d = this.walkTo(v, gx, gy, VILLAGER.speed, dt)
+            const d = this.walkTo(v, gx, gy, moveSpeed, dt)
             if (d < depot.size / 2 + 0.9) {
               this.res[resKind] += v.carry
               this.effects.push({ kind: 'ring', x: gx * TILE, y: gy * TILE, t: 0, ttl: 0.3, r: TILE * 0.8 })
@@ -1079,8 +1244,8 @@ export class FrontierGame {
             v.chopT = 0
             if (v.nodeI < 0) {
               // nothing harvestable — deposit what we hold, else idle near core
-              if (v.carry > 0) { v.carry = VILLAGER.carry } // trigger haul next tick
-              else this.walkTo(v, coreX, coreY, VILLAGER.speed * 0.5, dt)
+              if (v.carry > 0) { v.carry = carryCap } // trigger haul next tick
+              else this.walkTo(v, coreX, coreY, moveSpeed * 0.5, dt)
               break
             }
           }
@@ -1088,18 +1253,19 @@ export class FrontierGame {
           const ny = Math.floor(v.nodeI / GRID_W) + 0.5
           const d = Math.hypot(nx - v.x, ny - v.y)
           if (d > 1.25) {
-            this.walkTo(v, nx, ny, VILLAGER.speed, dt)
+            this.walkTo(v, nx, ny, moveSpeed, dt)
           } else {
             v.chopT += dt
             v.working = this.time // drives the swing animation
-            if (v.chopT >= VILLAGER.chopTime) {
+            if (v.chopT >= this.villagerWorkTime(v)) {
               v.chopT = 0
               const tier = this.nodeTier[v.nodeI]
               const spec = tiers[tier - 1]
               const yieldAmt = spec.yield * (1 + 0.15 * (toolTier - tier))
-              const take = Math.min(yieldAmt, this.nodeAmount[v.nodeI], VILLAGER.carry - v.carry + yieldAmt)
+              const take = Math.min(yieldAmt, this.nodeAmount[v.nodeI], carryCap - v.carry)
               v.carry += Math.min(take, yieldAmt)
               this.nodeAmount[v.nodeI] -= yieldAmt
+              this.markNodeDirty(v.nodeI)
               this.audio.play(v.job === 'wood' ? 'chop' : 'mine', 0.4)
               if (this.nodeAmount[v.nodeI] <= 0) {
                 this.nodeAmount[v.nodeI] = 0
@@ -1112,28 +1278,28 @@ export class FrontierGame {
           break
         }
         case 'farm': {
-          let farm = v.workAt ? this.buildingByUid(v.workAt) : null
-          if (!farm || farm.type !== 'farm') {
-            // claim the nearest unstaffed farm
-            let best = null, bd = Infinity
-            const claimed = new Set(this.villagers.filter(o => o !== v && o.job === 'farm').map(o => o.workAt))
-            for (const b of this.buildings) {
-              if (b.type !== 'farm' || claimed.has(b.uid)) continue
-              const d = Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y)
-              if (d < bd) { bd = d; best = b }
-            }
-            if (!best) {
-              this.walkTo(v, coreX, coreY, VILLAGER.speed * 0.5, dt)
-              break
-            }
-            v.workAt = best.uid
-            farm = best
-          }
+          const farm = this.buildingByUid(v.home)
+          if (!farm || farm.type !== 'farm') { v.job = 'idle'; break }
           const gx = farm.x + farm.size / 2, gy = farm.y + farm.size + 0.4
           const d = Math.hypot(gx - v.x, gy - v.y)
-          if (d > 0.5) this.walkTo(v, gx, gy, VILLAGER.speed, dt)
+          if (d > 0.5) this.walkTo(v, gx, gy, moveSpeed, dt)
           else {
             farm.staffed = (farm.staffed || 0) + 1
+            v.working = this.time
+          }
+          break
+        }
+        case 'work': {
+          const workplace = this.buildingByUid(v.home)
+          if (!workplace) { v.job = 'idle'; break }
+          const ang = (v.uid * 2.399963) % (Math.PI * 2)
+          const rad = workplace.size * 0.72 + 0.5
+          const gx = workplace.x + workplace.size / 2 + Math.cos(ang) * rad
+          const gy = workplace.y + workplace.size / 2 + Math.sin(ang) * rad
+          if (Math.hypot(gx - v.x, gy - v.y) > 0.35) {
+            this.walkTo(v, gx, gy, moveSpeed * 0.8, dt)
+          } else {
+            workplace.staffed = (workplace.staffed || 0) + 1
             v.working = this.time
           }
           break
@@ -1154,7 +1320,7 @@ export class FrontierGame {
           const gx = barracks.x + barracks.size / 2, gy = barracks.y + barracks.size + 0.5
           const d = Math.hypot(gx - v.x, gy - v.y)
           if (d > 0.7) {
-            this.walkTo(v, gx, gy, VILLAGER.speed, dt)
+            this.walkTo(v, gx, gy, moveSpeed, dt)
             break
           }
           v.trainT += dt
@@ -1195,10 +1361,10 @@ export class FrontierGame {
   soldierStats() {
     const t = this.toolTiers.sword
     return {
-      dmg: SOLDIER.dmg * (1 + SOLDIER.dmgPerSwordTier * (t - 1)),
-      rate: SOLDIER.rate,
-      range: SOLDIER.range,
-      speed: SOLDIER.speed
+      dmg: SOLDIER.dmg * (1 + SOLDIER.dmgPerSwordTier * (t - 1)) * (1 + this.mods.soldierDmg),
+      rate: SOLDIER.rate * (1 + this.mods.soldierRate),
+      range: SOLDIER.range + this.mods.soldierRange,
+      speed: SOLDIER.speed * (1 + this.mods.soldierSpeed)
     }
   }
 
@@ -1216,19 +1382,21 @@ export class FrontierGame {
       }
       u.wobble += dt * 7
       u.cooldown -= dt
+      u.hopT = Math.max(0, (u.hopT || 0) - dt)
+      const home = this.buildingByUid(u.home)
       const anchor = u.mode === 'follow'
         ? this.commander
-        : (this.banner || { x: coreX, y: coreY })
+        : (this.banner || (home
+            ? { x: home.x + home.size / 2, y: home.y + home.size / 2 }
+            : { x: coreX, y: coreY }))
       // acquire target: enemies threatening the anchor zone, or right next to the unit
       if (u.target && (u.target.hp <= 0 || !this.enemySet.has(u.target))) u.target = null
       if (!u.target) {
         let best = null, bd = Infinity
         for (const e of this.enemies) {
           if (e.def.flying) continue
-          const dAnchor = Math.hypot(e.x - anchor.x, e.y - anchor.y)
           const dSelf = Math.hypot(e.x - u.x, e.y - u.y)
-          const d = Math.min(dAnchor, dSelf)
-          if ((dAnchor < SOLDIER.aggro || dSelf < 3.5) && d < bd) { bd = d; best = e }
+          if (dSelf < bd) { bd = dSelf; best = e }
         }
         u.target = best
       }
@@ -1236,15 +1404,19 @@ export class FrontierGame {
         const d = Math.hypot(u.target.x - u.x, u.target.y - u.y)
         if (d > st.range) {
           this.moveCircle(u, ((u.target.x - u.x) / d) * st.speed * dt,
-            ((u.target.y - u.y) / d) * st.speed * dt, 0.26)
+            ((u.target.y - u.y) / d) * st.speed * dt, 0.26, true)
           u.moving = true
         } else {
           u.moving = false
           if (u.cooldown <= 0) {
             u.cooldown = 1 / st.rate
-            this.damageEnemy(u.target, st.dmg)
+            this.projectiles.push({
+              kind: this.era >= 2 ? 'bullet' : 'arrow',
+              x: u.x, y: u.y, target: u.target,
+              speed: SOLDIER.projectileSpeed, dmg: st.dmg
+            })
             u.struck = this.time
-            this.audio.play('kill', 0.5)
+            this.audio.play(this.era >= 2 ? 'gun' : 'arrow')
           }
         }
       } else {
@@ -1265,7 +1437,7 @@ export class FrontierGame {
         u.moving = d > 0.35
         if (u.moving) {
           this.moveCircle(u, ((gx - u.x) / d) * st.speed * dt,
-            ((gy - u.y) / d) * st.speed * dt, 0.26)
+            ((gy - u.y) / d) * st.speed * dt, 0.26, true)
         }
       }
       u.x = Math.max(0.5, Math.min(GRID_W - 0.5, u.x))
@@ -1309,6 +1481,7 @@ export class FrontierGame {
     const sight = e.def.sight || 10
     let best = null, bd = sight
     for (const b of this.buildings) {
+      if (b.def.isWall) continue
       const d = Math.hypot(b.x + b.size / 2 - e.x, b.y + b.size / 2 - e.y) - b.size / 2
       if (d < bd) { bd = d; best = b }
     }
@@ -1317,6 +1490,7 @@ export class FrontierGame {
       if (d < bd) { bd = d; best = u }
     }
     for (const v of this.villagers) {
+      if (v.sheltering || this.phase === 'night') continue
       const d = Math.hypot(v.x - e.x, v.y - e.y)
       if (d < bd) { bd = d; best = v }
     }
@@ -1554,8 +1728,8 @@ export class FrontierGame {
     }
     this.res[resKind] += yieldAmt
     this.nodeAmount[i] = Math.max(0, this.nodeAmount[i] - yieldAmt)
+    this.markNodeDirty(i)
     if (this.nodeAmount[i] <= 0) {
-      this.markNodeDirty(i)
       this.flowDirty = true
     }
     const x = (i % GRID_W) + 0.5, y = ((i / GRID_W) | 0) + 0.5
@@ -1569,20 +1743,28 @@ export class FrontierGame {
 
   // ---------------------------------------------------------------- collision
 
-  isBlockedTile(tx, ty) {
+  isBlockedTile(tx, ty, jumpWalls = false) {
     if (tx < 0 || ty < 0 || tx >= GRID_W || ty >= GRID_H) return true
     const i = ty * GRID_W + tx
-    if (this.buildingAt[i] >= 0) return true
+    if (this.buildingAt[i] >= 0) {
+      const building = this.buildingByUid(this.buildingAt[i])
+      if (!(jumpWalls && building?.def.isWall)) return true
+    }
     return this.nodeKind[i] !== NODE_KIND.none && this.nodeAmount[i] > 0
   }
 
   /** Circle-vs-tile collision with axis-separated sliding. Mutates ent.x/y. */
-  moveCircle(ent, dx, dy, r = 0.3) {
+  moveCircle(ent, dx, dy, r = 0.3, jumpWalls = false) {
     const clear = (x, y) => {
       for (const [cx, cy] of [[-r, -r], [r, -r], [-r, r], [r, r]]) {
-        if (this.isBlockedTile(Math.floor(x + cx), Math.floor(y + cy))) return false
+        if (this.isBlockedTile(Math.floor(x + cx), Math.floor(y + cy), jumpWalls)) return false
       }
       return true
+    }
+    if (jumpWalls) {
+      const tx = Math.floor(ent.x + dx), ty = Math.floor(ent.y + dy)
+      const wall = this.buildingByUid(this.buildingAt[ty * GRID_W + tx])
+      if (wall?.def.isWall) ent.hopT = 0.4
     }
     const nx = ent.x + dx
     if (clear(nx, ent.y)) ent.x = nx
@@ -1749,11 +1931,15 @@ export class FrontierGame {
       uid: v.uid,
       name: v.name,
       job: v.job,
-      status: v.fleeing ? 'fleeing!' :
+      workplace: this.buildingByUid(v.home)?.def.name || 'Displaced',
+      status: v.sheltering ? `sheltering at ${this.buildingByUid(v.home)?.def.name || 'the Beacon'}` :
+        v.fleeing ? 'fleeing!' :
         v.job === 'train' ? (v.trainT > 0 ? `training ${Math.round(100 * v.trainT / SOLDIER.trainTime)}%` : 'heading to barracks') :
         v.job === 'wood' || v.job === 'mine'
-          ? (v.carry >= VILLAGER.carry ? 'hauling' : v.working && this.time - v.working < 2 ? 'working' : 'walking')
-          : v.job === 'farm' ? (v.working && this.time - v.working < 2 ? 'farming' : 'walking') : jobName(v.job).toLowerCase(),
+          ? (v.carry >= this.villagerCarry(v) ? 'hauling' : v.working && this.time - v.working < 2 ? 'working' : 'walking')
+          : v.job === 'farm' ? (v.working && this.time - v.working < 2 ? 'farming' : 'walking')
+            : v.job === 'work' ? `tending ${this.buildingByUid(v.home)?.def.name || 'workplace'}`
+              : jobName(v.job).toLowerCase(),
       carry: Math.round(v.carry)
     }))
     this.ui.soldiers = this.units.map(u => ({
@@ -1776,6 +1962,7 @@ export class FrontierGame {
     set('knowledge', Math.floor(this.res.knowledge))
     set('pop', this.pop || 0)
     set('popCap', this.popCap || 0)
+    set('housingBlocked', !!this.housingBlocked)
     set('era', this.era)
     set('wave', Math.min(this.wave, WAVES.length))
     set('waveTotal', WAVES.length)
@@ -1821,7 +2008,9 @@ export class FrontierGame {
         upgradeCost: upCost,
         canUpgrade: !!upCost && this.canAfford(upCost),
         active: s.active !== false,
-        staffed: s.staffed || 0
+        staffed: s.staffed || 0,
+        workerCap: this.workerCapacity(s),
+        replacements: (s.workerQueue || []).length
       }
       if (s.type === 'forge' || s.type === 'core') {
         info.tools = {}
@@ -1837,11 +2026,19 @@ export class FrontierGame {
       if (s.def.trains) {
         info.soldiers = this.units.filter(u => u.home === s.uid).length
         info.trainCap = s.def.trains + (s.def.trainsPerLevel || 0) * ((s.level || 1) - 1)
+        info.soldierReplacements = (s.soldierQueue || []).length
+      }
+      if (s.def.training) {
+        info.trainingBuffs = (s.trainingBuffs || []).map(buff => ({
+          id: buff.id, name: buff.name, desc: buff.desc, rare: !!buff.rare
+        }))
       }
       const prev = ui.panel
       if (force || !prev || prev.uid !== info.uid || prev.hp !== info.hp ||
           prev.level !== info.level || prev.canUpgrade !== info.canUpgrade ||
-          prev.active !== info.active || prev.staffed !== info.staffed) {
+          prev.active !== info.active || prev.staffed !== info.staffed ||
+          prev.replacements !== info.replacements || prev.soldiers !== info.soldiers ||
+          prev.soldierReplacements !== info.soldierReplacements) {
         ui.panel = info
       }
     } else if (ui.panel) {

@@ -179,15 +179,23 @@ function makeBackground(plateTextureA, plateTextureB, cloudTexture) {
         // Keep the cloud bank rigid. As the waterline rises, move the cloud
         // plate upward by exactly the same screen-space distance. skyOnly and
         // highSky clip it to the sky, so clouds can never cross into the water.
-        vec2 cloudUv = coverUv(vUv);
+        float cloudLife = 1.0 - smoothstep(0.12, 0.15, uPlateProgress);
+        // Keep a little overscan around the cloud plate so its wider drift
+        // never reveals a clamped edge. This matches the broad, slow movement
+        // of the earlier photographic treatment rather than barely wobbling.
+        vec2 cloudUv = (coverUv(vUv) - 0.5) * 0.88 + 0.5;
         cloudUv.y -= max(0.0, uHorizon - 0.35);
+        cloudUv.x += sin(t * 0.057) * 0.055 * cloudLife;
+        cloudUv.y += sin(t * 0.031 + 1.2) * 0.012 * cloudLife;
         vec3 cloud = texture2D(uCloudMap, cloudUv).rgb;
         // luminance of the lit clouds doubles as their coverage mask
         float cloudLum = max(cloud.r, max(cloud.g, cloud.b));
         float cloudMask = smoothstep(0.04, 0.5, cloudLum);
         // ride up in the sky and fade into the horizon haze
         float highSky = smoothstep(0.0, 0.34, rel);
-        float cloudAlpha = cloudMask * skyOnly * highSky * 0.8;
+        // The added cloud bank belongs only to the opening plate. Fade it out
+        // as the first frame transition completes so later plates remain clean.
+        float cloudAlpha = cloudMask * skyOnly * highSky * cloudLife * 0.8;
         col = 1.0 - (1.0 - col) * (1.0 - cloud * cloudAlpha);
 
         float haze = exp(-abs(rel) * 36.0);
@@ -286,7 +294,11 @@ function makeBackground(plateTextureA, plateTextureB, cloudTexture) {
         // each plate without UV displacement keeps its waterline stable and
         // prevents the baked-in buoy from stretching sideways.
         vec3 plateStill = samplePlate(coverUv(vUv));
-        vec3 surfacePlate = mix(plateStill, skyColor(p, t), skyMask);
+        // Only the opening plate receives the synthetic sky treatment. Keeping
+        // it active later recolours the upper half of split-surface frames and
+        // creates a visible horizontal boundary across the photograph.
+        float openingTreatment = 1.0 - smoothstep(0.12, 0.15, uPlateProgress);
+        vec3 surfacePlate = mix(plateStill, skyColor(p, t), skyMask * openingTreatment);
         // The final plates are fully underwater and no longer have a meaningful
         // sky/water split, so show them as complete frames during the handoff.
         float underwaterPlate = smoothstep(0.68, 0.86, uPlateProgress);
@@ -493,7 +505,7 @@ function makeSunShafts() {
 }
 
 // ---------------------------------------------------------------------------
-// Ocean surface — animated wave plane; sun glitter above, luminous ceiling below
+// Ocean surface — layered swell; sun glitter above, luminous ceiling below
 // ---------------------------------------------------------------------------
 
 function makeOcean(sunDir, plateTextureA, plateTextureB) {
@@ -522,24 +534,26 @@ function makeOcean(sunDir, plateTextureA, plateTextureB) {
       uResolution: { value: new THREE.Vector2(1, 1) }
     },
     vertexShader: /* glsl */ `
-      uniform float uTime;
+      uniform float uTime, uPlateProgress;
       varying vec3 vNormal, vWorld;
       varying float vWave;
       void main() {
         vec3 p = position;
-        float t = uTime;
-        p.y = sin(p.x * 0.16 + p.z * 0.055 + t * 0.42) * 0.019
-            + sin(p.x * 0.045 + p.z * 0.19 + t * 0.31) * 0.012
-            + sin(p.x * 0.38 - p.z * 0.09 + t * 0.68) * 0.007
-            + sin(p.x * 0.72 + p.z * 0.31 + t * 0.91) * 0.003;
-        float dx = 0.16 * cos(p.x * 0.16 + p.z * 0.055 + t * 0.42) * 0.019
-                 + 0.045 * cos(p.x * 0.045 + p.z * 0.19 + t * 0.31) * 0.012
-                 + 0.38 * cos(p.x * 0.38 - p.z * 0.09 + t * 0.68) * 0.007
-                 + 0.72 * cos(p.x * 0.72 + p.z * 0.31 + t * 0.91) * 0.003;
-        float dz = 0.055 * cos(p.x * 0.16 + p.z * 0.055 + t * 0.42) * 0.019
-                 + 0.19 * cos(p.x * 0.045 + p.z * 0.19 + t * 0.31) * 0.012
-                 - 0.09 * cos(p.x * 0.38 - p.z * 0.09 + t * 0.68) * 0.007
-                 + 0.31 * cos(p.x * 0.72 + p.z * 0.31 + t * 0.91) * 0.003;
+        // Animate only the opening surface. The waves settle before later
+        // split-surface plates, where a moving mesh creates a visible seam.
+        // Four differently directed layers restore the broad, natural swell
+        // of the earlier treatment instead of a simple two-wave wobble.
+        float waveLife = 1.0 - smoothstep(0.10, 0.15, uPlateProgress);
+        float a = p.x * 0.16 + p.z * 0.055 + uTime * 0.42;
+        float b = p.x * 0.045 + p.z * 0.19 + uTime * 0.31;
+        float c = p.x * 0.38 - p.z * 0.09 + uTime * 0.68;
+        float d = p.x * 0.72 + p.z * 0.31 + uTime * 0.91;
+        p.y = (sin(a) * 0.019 + sin(b) * 0.012
+             + sin(c) * 0.007 + sin(d) * 0.003) * waveLife;
+        float dx = (0.16 * cos(a) * 0.019 + 0.045 * cos(b) * 0.012
+                  + 0.38 * cos(c) * 0.007 + 0.72 * cos(d) * 0.003) * waveLife;
+        float dz = (0.055 * cos(a) * 0.019 + 0.19 * cos(b) * 0.012
+                  - 0.09 * cos(c) * 0.007 + 0.31 * cos(d) * 0.003) * waveLife;
         vNormal = normalize(vec3(-dx, 1.0, -dz));
         vWave = p.y;
         vWorld = (modelMatrix * vec4(p, 1.0)).xyz;
@@ -572,14 +586,44 @@ function makeOcean(sunDir, plateTextureA, plateTextureB) {
         );
       }
 
-      float boatKeepMask(vec2 uv) {
+      float ellipseMask(vec2 uv, vec2 center, vec2 radius) {
+        float d = length((uv - center) / radius);
+        return 1.0 - smoothstep(0.82, 1.0, d);
+      }
+
+      float capsuleMask(vec2 uv, vec2 a, vec2 b, float radius) {
+        vec2 pa = uv - a;
+        vec2 ba = b - a;
+        float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+        return 1.0 - smoothstep(radius * 0.62, radius, length(pa - ba * h));
+      }
+
+      float subjectKeepMask(vec2 uv) {
         float travel = smoothstep(0.0, 0.58, uPlateProgress);
-        vec2 center = vec2(0.5, mix(0.55, 0.76, travel));
-        vec2 radius = mix(vec2(0.09, 0.12), vec2(0.18, 0.15), travel);
-        vec2 q = (uv - center) / radius;
-        float shape = 1.0 - smoothstep(0.72, 1.0, length(q));
+        vec2 boatCenter = vec2(0.5, mix(0.55, 0.76, travel));
+        vec2 boatRadius = mix(vec2(0.105, 0.115), vec2(0.19, 0.16), travel);
+
+        // Separate, feathered shapes keep the protected area tight: hull and
+        // fisherman, rod, fishing line, and the foreground buoy. Masking them
+        // independently avoids freezing a large obvious oval of surrounding
+        // water while ensuring no part of the subject inherits the refraction.
+        float boatAndPerson = ellipseMask(uv, boatCenter, boatRadius);
+        vec2 rodBase = boatCenter + boatRadius * vec2(0.20, 0.20);
+        vec2 rodTip = boatCenter + boatRadius * vec2(1.05, 0.88);
+        float rod = capsuleMask(uv, rodBase, rodTip, mix(0.006, 0.010, travel));
+
+        vec2 buoyCenter = vec2(mix(0.54, 0.56, travel), mix(0.205, 0.34, travel));
+        vec2 buoyRadius = mix(vec2(0.026, 0.038), vec2(0.05, 0.065), travel);
+        float buoy = ellipseMask(uv, buoyCenter, buoyRadius);
+        float fishingLine = capsuleMask(
+          uv,
+          rodTip,
+          buoyCenter + vec2(0.0, buoyRadius.y * 0.7),
+          mix(0.0035, 0.006, travel)
+        );
+
         float present = 1.0 - smoothstep(0.56, 0.70, uPlateProgress);
-        return shape * present;
+        return max(max(boatAndPerson, rod), max(fishingLine, buoy)) * present;
       }
 
       float hash21(vec2 p) {
@@ -673,13 +717,23 @@ function makeOcean(sunDir, plateTextureA, plateTextureB) {
           vec2 suv = gl_FragCoord.xy / uResolution;
           float shore = clamp((uHorizon - suv.y) / max(uHorizon, 0.001), 0.0, 1.0);
           float amp = shore * shore; // rigid at the horizon, supple up close
-          vec2 duv = vec2(microDx, microDz) * (0.001 + 0.054 * amp);
+          // A coherent travelling current carries the photograph while the
+          // smaller facets break it up. The previous revision leaned almost
+          // entirely on micro-frequencies, which read as nervous shimmer rather
+          // than the broad drift of water.
+          vec2 flow = vec2(
+            sin(suv.y * 13.0 + uTime * 0.34) + sin(suv.y * 27.0 - uTime * 0.19) * 0.45,
+            cos(suv.x * 11.0 - uTime * 0.27) + sin(suv.x * 23.0 + uTime * 0.16) * 0.35
+          );
+          vec2 duv = flow * (0.0015 + 0.0105 * amp)
+                   + vec2(microDx, microDz) * (0.0008 + 0.033 * amp);
           duv.y += vWave * 0.4 * amp;
           vec2 puv = suv + duv;
           puv.y = min(puv.y, uHorizon - 0.002);
           vec3 plate = samplePlate(coverUv(puv));
           vec3 plateStill = samplePlate(coverUv(suv));
-          plate = mix(plate, plateStill, boatKeepMask(suv));
+          float keepStill = subjectKeepMask(suv);
+          plate = mix(plate, plateStill, keepStill);
 
           // Gently animate the plate's existing sun glitter rather than
           // painting new speckles over the whole band. The glint mask keeps to
@@ -702,12 +756,24 @@ function makeOcean(sunDir, plateTextureA, plateTextureB) {
           plateCol *= 1.0 + (sin(p1) * 0.5 + sin(p3) * 0.5) * 0.05 * amp;
           plateCol = max(plateCol, 0.0);
 
-          // The animation plates already contain the intended water and buoy.
-          // Use the rigid lookup for the final surface so neither can warp.
-          plateCol = plateStill;
+          // Apply the mask again after glint and travelling-shade modulation.
+          // This prevents the boat, person, rod, line, and buoy from brightness
+          // pulsing even though their texture lookup is already stationary.
+          plateCol = mix(plateCol, plateStill, keepStill);
+
+          // Let the opening water breathe, then settle to the rigid plate before
+          // the first frame change. Later plates must not warp or form seams.
+          float openingMotion = 1.0 - smoothstep(0.10, 0.15, uPlateProgress);
+          plateCol = mix(plateStill, plateCol, openingMotion);
 
           col = mix(col, plateCol, uPlateMix);
-          gl_FragColor = vec4(col, uSurfaceAlpha);
+
+          // Do not draw protected subjects on the animated mesh at all. Even an
+          // undistorted texture lookup still rides the displaced geometry and
+          // makes baked-in objects bob. The transparent, feathered cutout lets
+          // the rigid fullscreen plate underneath supply these pixels instead.
+          float subjectCutout = keepStill * uPlateMix;
+          gl_FragColor = vec4(col, uSurfaceAlpha * (1.0 - subjectCutout));
         } else {
           float pulse = sin(vWorld.x * 0.18 + uTime * 0.42)
                       * sin(vWorld.z * 0.15 - uTime * 0.31) * 0.5 + 0.5;
@@ -1641,9 +1707,9 @@ export function createDescentScene(canvas, opts = {}) {
       pitch = 0
       above = 0
     }
-    // Keep the photographic surface locked between scroll adjustments. The
-    // subtle camera drift begins only after the camera is underwater.
-    camera.position.y = camY + (1 - above) * Math.sin(t * 0.23) * 0.15
+    // Keep vertical movement entirely tied to scroll. This prevents the
+    // waterline and underwater scene from bobbing while the page is still.
+    camera.position.y = camY
     camera.position.x = (1 - above) * Math.sin(t * 0.11) * 0.25
     camera.rotation.x = pitch
     camera.rotation.z = (1 - above) * Math.sin(t * 0.07) * 0.008
@@ -1674,11 +1740,16 @@ export function createDescentScene(canvas, opts = {}) {
     ocean.mat.uniforms.uHorizon.value = horizon
     ocean.mat.uniforms.uPlateMix.value = above
     ocean.mat.uniforms.uSunX.value = 0.69
+    // Show the moving mesh on the opening slide, then remove it before the
+    // split-surface plates. It returns once the photographic sequence is gone.
+    ocean.mesh.visible = plateProgress < 0.15 || plateAlpha <= 0.01
     snow.material.uniforms.uTime.value = t
     snow.material.uniforms.uCamY.value = camY
     snow.material.uniforms.uDepth.value = depth
     bubbles.material.uniforms.uTime.value = t
     bubbles.material.uniforms.uDepth.value = depth
+    // Do not introduce procedural bubbles over the photographic transition.
+    bubbles.visible = plateAlpha <= 0.01
     shafts.mat.uniforms.uTime.value = t
     shafts.mat.uniforms.uDepth.value = depth
     fish.mat.uniforms.uTime.value = t

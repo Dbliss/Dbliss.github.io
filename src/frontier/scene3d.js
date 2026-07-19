@@ -313,11 +313,11 @@ function buildingVisual(b, era, game) {
   switch (b.type) {
     case 'core': {
       if (era === 0) {
-        addKit(g, 'tent', { s: ks('tent') * 0.55, ry: 0.3 })
-        addKit(g, 'campfirePit', { x: foot * 0.32, z: foot * 0.3 })
-        addKit(g, 'chest', { x: -foot * 0.34, z: foot * 0.28, ry: 0.6 })
-        if (level >= 2) addKit(g, 'tentCanvas', { x: -foot * 0.3, z: -foot * 0.32, ry: 2.4, s: 0.8 })
-        if (level >= 3) addKit(g, 'signpost', { x: foot * 0.4, z: -foot * 0.3, ry: -0.4 })
+        addKit(g, 'tentCanvas', { s: ks('tentCanvas') * 0.8, ry: 0.3 })
+        addKit(g, 'campfirePit', { x: foot * 0.34, z: foot * 0.32 })
+        addKit(g, 'chest', { x: -foot * 0.36, z: foot * 0.3, ry: 0.6, s: 0.6 })
+        if (level >= 2) addKit(g, 'tent', { x: -foot * 0.28, z: -foot * 0.34, ry: 2.4, s: 0.3 })
+        if (level >= 3) addKit(g, 'signpost', { x: foot * 0.42, z: -foot * 0.3, ry: -0.4 })
       } else if (era === 1) {
         addKit(g, 'comK', { emissive: 0.12, s: ks('comK') * 0.85 })
         g.add(box(foot * 0.7, 0.25, foot * 0.7, MAT.stone, 0, 0, 0))
@@ -333,7 +333,7 @@ function buildingVisual(b, era, game) {
     }
     case 'house': {
       if (era === 0) {
-        addKit(g, 'tentCanvas', { ry, s: ks('tentCanvas') * lvlScale })
+        addKit(g, 'tentCanvas', { ry, s: ks('tentCanvas') * 0.75 * lvlScale })
         addKit(g, 'bedroll', { x: foot * 0.28, z: foot * 0.3, ry: ry + 0.5, s: 0.8 })
         if (level >= 2) addKit(g, 'barrel', { x: -foot * 0.32, z: foot * 0.3 })
         if (level >= 3) addKit(g, 'haystack', { x: -foot * 0.3, z: -foot * 0.34, s: 0.45 })
@@ -347,11 +347,12 @@ function buildingVisual(b, era, game) {
       break
     }
     case 'farm': {
-      addKit(g, 'soil', { s: ks('soil') })
+      addKit(g, 'soil', { s: ks('soil') * (0.82 + level * 0.09) })
       // crop type changes with farm level (and glows in the neon era)
       const rows = [[-1.15, -0.95], [-1.15, 0.95], [0, -0.95], [0, 0.95], [1.15, -0.95], [1.15, 0.95]]
       const em = era === 2 ? 0.25 : 0
-      for (let i = 0; i < rows.length; i++) {
+      const plantedRows = Math.min(rows.length, 2 + (level - 1) * 2)
+      for (let i = 0; i < plantedRows; i++) {
         const [dx, dz] = rows[i]
         const crop = level === 1 ? (era === 0 ? 'cropWheat' : 'wheat')
           : level === 2 ? (i % 2 ? 'cropCarrot' : 'cropTurnip')
@@ -368,7 +369,9 @@ function buildingVisual(b, era, game) {
       break
     }
     case 'barracks': {
-      const kit = era === 2 ? 'structureMetal' : 'structure'
+      // Every level swaps the main building silhouette: tent, timber hall,
+      // then reinforced keep.
+      const kit = level === 1 ? 'tent' : level === 2 && era < 2 ? 'structure' : 'structureMetal'
       addKit(g, kit, { s: ks(kit) * 0.95 * lvlScale, emissive: era === 2 ? 0.2 : 0 })
       if (era === 1) g.add(box(foot * 0.92, 0.18, foot * 0.92, MAT.stone, 0, 0, 0))
       // training yard: crossed spears rack + banner
@@ -390,7 +393,11 @@ function buildingVisual(b, era, game) {
       addKit(g, 'treeLog', { x: -0.3, ry: ry + 0.4, s: 0.9 })
       addKit(g, 'resourceWood', { x: 0.45, z: 0.35, ry, s: 0.9 })
       if (level >= 2) addKit(g, 'resourcePlanks', { x: 0.4, z: -0.4, ry: ry + 1, s: 0.85 })
-      if (level >= 3) addKit(g, 'cart', { x: -0.2, z: 0.55, ry: ry + 2, s: 0.55 })
+      if (level >= 2) addKit(g, 'workbench', { x: -0.35, z: -0.45, ry: ry + 0.4, s: 0.65 })
+      if (level >= 3) {
+        addKit(g, 'structure', { z: -0.15, ry, s: 0.42 })
+        addKit(g, 'cart', { x: -0.2, z: 0.55, ry: ry + 2, s: 0.55 })
+      }
       break
     }
     case 'quarry': {
@@ -398,7 +405,11 @@ function buildingVisual(b, era, game) {
       addKit(g, 'resourceStone', { x: -0.35, z: 0.2, ry, s: 0.9 })
       addKit(g, 'resourceStoneL', { x: 0.4, z: -0.25, ry: ry + 0.8, s: 0.9 })
       if (level >= 2) addKit(g, 'bucket', { x: 0.35, z: 0.5 })
-      if (level >= 3) addKit(g, 'cart', { x: -0.15, z: -0.6, ry: ry + 1.2, s: 0.55 })
+      if (level === 2) addKit(g, 'structure', { z: 0.05, ry: ry + 0.5, s: 0.32 })
+      if (level >= 3) {
+        addKit(g, 'structureMetal', { z: 0.05, ry: ry + 0.5, s: 0.38 })
+        addKit(g, 'cart', { x: -0.15, z: -0.6, ry: ry + 1.2, s: 0.55 })
+      }
       break
     }
     case 'forge': {
@@ -728,7 +739,7 @@ export function createScene3D(game, canvas) {
   scene.background = new THREE.Color(0x9fc4e8)
   scene.fog = new THREE.Fog(0x9fc4e8, 42, VIEW_DISTANCE)
 
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.4, VIEW_DISTANCE + 40)
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.4, 420)
   const camCtl = { tx: 0, tz: 6, dist: 46, azim: Math.PI * 0.05, polar: 0.96 }
 
   // ----- lights
@@ -834,8 +845,19 @@ export function createScene3D(game, canvas) {
       // grip low so the head sits up like it's held
       addKit(holder, key, { y: -0.1, s: 0.55 })
       viewModel.add(holder)
-      // strip shadows off the late-loading tool meshes
-      setTimeout(() => holder.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false } }), 350)
+      // strip shadows + brighten the held tool (it sits in the camera's shade)
+      setTimeout(() => holder.traverse((o) => {
+        if (o.isMesh) {
+          o.castShadow = false
+          o.receiveShadow = false
+          o.material = o.material.clone()
+          if (o.material.emissive) {
+            o.material.emissive.set(0xffffff)
+            o.material.emissiveMap = o.material.map ?? null
+            o.material.emissiveIntensity = 0.35
+          }
+        }
+      }), 350)
     }
     if (swingT >= 0) {
       swingT += dt
@@ -1626,7 +1648,8 @@ export function createScene3D(game, canvas) {
   const PANTS = new THREE.MeshStandardMaterial({ color: 0x4a4038, roughness: 0.9 })
   const SOLDIER_BODY = new THREE.MeshStandardMaterial({ color: 0x3f7fa8, roughness: 0.8 })
   const JOB_COLORS = {
-    idle: 0x9a8f80, wood: 0x6f8f4a, mine: 0x8a8f98, farm: 0xc9a35a, train: 0x5b7fa8
+    idle: 0x9a8f80, wood: 0x6f8f4a, mine: 0x8a8f98, farm: 0xc9a35a,
+    work: 0x6e8fa8, train: 0x5b7fa8
   }
 
   /** Articulated low-poly person; hinged legs/arms, optional kit tool in hand. */
@@ -1710,7 +1733,8 @@ export function createScene3D(game, canvas) {
       if (!cullByDist(rec.group, wx, wz)) continue
       const bob = v.moving ? Math.abs(Math.sin(v.wobble)) * 0.05 : 0
       rec.group.position.set(wx, bob, wz)
-      rec.group.userData.tunicMat.color.setHex(v.fleeing ? 0xd86a5a : (JOB_COLORS[v.job] || 0x9a8f80))
+      rec.group.userData.tunicMat.color.setHex(v.sheltering ? 0x59677a :
+        v.fleeing ? 0xd86a5a : (JOB_COLORS[v.job] || 0x9a8f80))
       const kit = villagerToolKit(v)
       if (rec.toolKit !== kit) {
         rec.toolKit = kit
@@ -1967,9 +1991,10 @@ export function createScene3D(game, canvas) {
     const n = nightAmount
     scene.background.copy(tmpC.copy(DAY.bg).lerp(NIGHT.bg, n))
     scene.fog.color.copy(scene.background)
-    // the mist closes in at night
-    scene.fog.near = 42 - n * 14
-    scene.fog.far = VIEW_DISTANCE - n * 24
+    // the mist closes in at night; the tactical camera sees over more of it
+    const orbitExtra = game.camMode === 'orbit' ? camCtl.dist * 1.4 : 0
+    scene.fog.near = 42 - n * 14 + orbitExtra * 0.5
+    scene.fog.far = VIEW_DISTANCE - n * 24 + orbitExtra
     hemi.intensity = DAY.hemi + (NIGHT.hemi - DAY.hemi) * n
     sun.intensity = DAY.sun + (NIGHT.sun - DAY.sun) * n
     sun.color.copy(tmpC.copy(DAY.sunC).lerp(NIGHT.sunC, n))

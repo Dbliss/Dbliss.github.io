@@ -83,6 +83,16 @@
                 :style="ganttBarStyle(item)"
                 aria-hidden="true"
               ></div>
+              <svg
+                v-if="item.promotion"
+                class="gantt-promotion"
+                :style="ganttPromotionStyle(item)"
+                viewBox="0 0 22 84"
+                aria-hidden="true"
+              >
+                <path class="gantt-promotion-halo" d="M 2 78 H 6 C 10 78, 10 6, 14 6 H 19" />
+                <path class="gantt-promotion-line" d="M 2 78 H 6 C 10 78, 10 6, 14 6 H 19" />
+              </svg>
             </div>
           </article>
         </div>
@@ -143,6 +153,7 @@ const ganttItems = [
     organisation: 'Schréder',
     period: 'May 2026 – Present',
     startMonth: 88,
+    barStartInsetMonths: 0.35,
     current: true,
     tone: 'lead',
     details: 'Leading a software team building scalable integration platforms and automation tools for smart city applications.'
@@ -154,6 +165,8 @@ const ganttItems = [
     period: 'May 2024 – May 2026',
     startMonth: 64,
     endMonth: 88,
+    barEndInsetMonths: 0.35,
+    promotion: true,
     tone: 'engineering',
     details: 'Built scalable integration platforms and automation tools for smart city applications.'
   },
@@ -204,17 +217,25 @@ const startsBeforeTimeline = ({ startMonth }) => startMonth < ganttVisibleStartM
 const ganttBarStyle = ({
   startMonth,
   endMonth,
-  current
+  current,
+  barStartInsetMonths = 0,
+  barEndInsetMonths = 0
 }) => {
-  const visibleStart = Math.max(startMonth, ganttVisibleStartMonth)
+  const visibleStart = Math.max(startMonth + barStartInsetMonths, ganttVisibleStartMonth)
   const visibleEnd = Math.min(
-    current ? ganttVisibleEndMonth : endMonth,
+    current ? ganttVisibleEndMonth : endMonth - barEndInsetMonths,
     ganttVisibleEndMonth
   )
 
   return {
     left: ((visibleStart - ganttVisibleStartMonth) / ganttTotalMonths) * 100 + '%',
     width: (Math.max(0, visibleEnd - visibleStart) / ganttTotalMonths) * 100 + '%'
+  }
+}
+
+const ganttPromotionStyle = ({ endMonth }) => {
+  return {
+    left: `calc(${((endMonth - ganttVisibleStartMonth) / ganttTotalMonths) * 100}% - 11px)`
   }
 }
 
@@ -498,6 +519,24 @@ h1 span { color: var(--about-purple); }
 .gantt-bar--consulting { background: linear-gradient(90deg, #36a59b, #70c7bd); }
 .gantt-bar--tutoring { background: linear-gradient(90deg, #4389d8, #83b6ec); }
 .gantt-bar--education { background: linear-gradient(90deg, #e1a63c, #f0c66f); }
+.gantt-promotion {
+  position: absolute;
+  top: -42px;
+  z-index: 2;
+  width: 22px;
+  height: 84px;
+  overflow: visible;
+  pointer-events: none;
+}
+.gantt-promotion-halo,
+.gantt-promotion-line {
+  fill: none;
+  stroke-dasharray: 2 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.gantt-promotion-halo { stroke: rgba(255, 255, 255, .92); stroke-width: 7; }
+.gantt-promotion-line { stroke: #6958e8; stroke-width: 3; }
 @media (max-width: 900px) {
   .about-page { gap: 70px; }
   .about-hero { grid-template-columns: 1fr; min-height: auto; }

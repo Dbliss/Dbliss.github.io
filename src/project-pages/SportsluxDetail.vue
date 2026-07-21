@@ -88,7 +88,9 @@
           class="image"
           :src="login"
           alt="Sportslux secure login screen."
-          loading="lazy"
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
         />
       </div>
     </section>
@@ -215,6 +217,8 @@
             class="image"
             :src="currentResultFrame.image"
             :alt="`Optimisation stage ${currentResultFrame.id}`"
+            loading="lazy"
+            decoding="async"
           />
 
           <div class="slx-engine-result-text">
@@ -429,6 +433,7 @@
           :src="admin"
           alt="Sportslux secure admin screen."
           loading="lazy"
+          decoding="async"
         />
       </div>
     </section>
@@ -441,6 +446,7 @@
           :src="devBoard"
           alt="Sportslux secure admin screen."
           loading="lazy"
+          decoding="async"
         />
       </div>
       <div class="slx-section-block">
@@ -484,6 +490,7 @@
           :src="reportImage"
           alt="Example of an automatically generated Sportslux report."
           loading="lazy"
+          decoding="async"
         />
       </div>
       </div>

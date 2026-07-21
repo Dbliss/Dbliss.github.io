@@ -1,13 +1,17 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
+// Keep the small landing page in the entry bundle so its hero renders immediately.
+// Every other page is loaded only when visited; several of them include large 3D,
+// game, chart, or case-study dependencies that should not delay first paint.
 import Home from '../pages/Home.vue'
-import City from '../pages/City.vue'
-import Projects from '../pages/Projects.vue'
-import ProjectDetail from '../pages/ProjectDetail.vue'
-import About from '../pages/About.vue'
-import Contact from '../pages/Contact.vue'
-import CityEditor from '../pages/CityEditor.vue'
-import Frontier from '../pages/Frontier.vue'
+
+const City = () => import('../pages/City.vue')
+const Projects = () => import('../pages/Projects.vue')
+const ProjectDetail = () => import('../pages/ProjectDetail.vue')
+const About = () => import('../pages/About.vue')
+const Contact = () => import('../pages/Contact.vue')
+const CityEditor = () => import('../pages/CityEditor.vue')
+const Frontier = () => import('../pages/Frontier.vue')
 
 const router = createRouter({
   history: createWebHashHistory(),

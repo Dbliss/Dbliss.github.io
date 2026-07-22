@@ -15,20 +15,31 @@
           <span><i class="line core"></i>Core</span>
           <span><i class="line frequent"></i>Used together</span>
           <span><i class="line support"></i>Supports</span>
+          <button class="rotation-control" type="button" :aria-pressed="rotationPaused" @click="rotationPaused = !rotationPaused">
+            <span aria-hidden="true">{{ rotationPaused ? '>' : '||' }}</span>
+            {{ rotationPaused ? 'Resume rotation' : 'Pause rotation' }}
+          </button>
         </div>
       </div>
 
       <div
+        ref="graphCanvas"
         class="graph-canvas"
-        :class="{ focused: hasFocus, frozen: Boolean(pinnedId) }"
+        :class="{ focused: hasFocus, frozen: Boolean(pinnedId) || rotationPaused, dragging: isDragging }"
         :style="{ '--focus-color': activeDetail.color }"
         role="group"
-        aria-label="Interactive relationship map of professional skills"
-        @dblclick="handleCanvasDoubleClick"
+        tabindex="0"
+        aria-label="Interactive relationship map of professional skills. Drag in any direction or use the arrow keys to rotate."
+        @keydown="handleGraphKeydown"
+        @pointerdown="startDrag"
+        @pointermove="dragGraph"
+        @pointerup="endDrag"
+        @pointercancel="endDrag"
+        @click="handleCanvasClick"
       >
         <svg class="edge-layer" viewBox="0 0 1000 700" preserveAspectRatio="none" aria-hidden="true">
           <g v-for="edge in edges" :key="`${edge.from}-${edge.to}`" class="edge" :class="[`edge-${edge.type}`, { active: isEdgeActive(edge), muted: isEdgeMuted(edge) }]">
-            <line :x1="nodePosition(edge.from).x" :y1="nodePosition(edge.from).y" :x2="nodePosition(edge.to).x" :y2="nodePosition(edge.to).y" />
+            <line :x1="nodePosition(edge.from).x" :y1="nodePosition(edge.from).y" :x2="nodePosition(edge.to).x" :y2="nodePosition(edge.to).y" :style="{ opacity: edgeDepth(edge) }" />
             <text v-if="edge.label" :x="edgeLabelPosition(edge).x" :y="edgeLabelPosition(edge).y" text-anchor="middle">{{ edge.label }}</text>
           </g>
         </svg>
@@ -42,9 +53,11 @@
           :style="nodeStyle(skill)"
           :aria-label="`${skill.label}: ${skill.summary}`"
           :aria-pressed="pinnedId === skill.id"
+          @focus="hoveredId = skill.id"
+          @blur="hoveredId = null"
           @pointerenter="hoveredId = skill.id"
           @pointerleave="hoveredId = null"
-          @click.stop="toggleSkill(skill.id)"
+          @click.stop="handleSkillClick(skill.id)"
         >
           <span class="node-glyph"><SkillIcon :name="skill.icon" /></span><span>{{ skill.label }}</span>
         </button>
@@ -54,7 +67,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import SkillIcon from './SkillIcon.vue'
 
 const groups = [
@@ -84,9 +97,14 @@ const skills = [
   { id: 'postgresql', label: 'PostgreSQL', group: 'backend', x: 485, y: 220, level: 'strong', icon: 'database', summary: 'Relational persistence, schemas and production application data.' },
   { id: 'pipelines', label: 'Data pipelines', group: 'backend', x: 235, y: 305, level: 'strong', icon: 'layers', summary: 'Repeatable movement from raw inputs to useful, trustworthy outputs.' },
   { id: 'auth', label: 'Auth & RBAC', group: 'backend', x: 430, y: 305, level: 'strong', icon: 'shield', summary: 'Secure authentication and role-based access for multi-tenant products.' },
-  { id: 'aws', label: 'AWS', group: 'systems', x: 615, y: 225, level: 'core', icon: 'cloud', summary: 'Cloud infrastructure and managed services shaped around product needs.' },
+  { id: 'aws', label: 'AWS', group: 'systems', x: 615, y: 225, level: 'core', icon: 'cloud', summary: 'Hands-on cloud infrastructure across compute, storage, databases, DNS and VPC networking.' },
   { id: 'docker', label: 'Docker', group: 'systems', x: 745, y: 225, level: 'strong', icon: 'docker', summary: 'Portable, predictable application environments from development to deployment.' },
   { id: 'linux', label: 'Linux', group: 'systems', x: 870, y: 225, level: 'strong', icon: 'terminal', summary: 'The operational foundation beneath services, automation and edge systems.' },
+  { id: 'ec2', label: 'Amazon EC2', group: 'systems', x: 535, y: 270, level: 'strong', icon: 'server', summary: 'Provisioning, configuring and operating EC2 instances for production workloads.' },
+  { id: 'route53', label: 'DNS & Route 53', group: 'systems', x: 655, y: 270, level: 'strong', icon: 'signal', summary: 'Domain and DNS configuration, hosted zones and reliable traffic routing with Route 53.' },
+  { id: 's3', label: 'Amazon S3', group: 'systems', x: 775, y: 270, level: 'strong', icon: 'database', summary: 'Creating and configuring secure, durable object-storage buckets for applications and assets.' },
+  { id: 'rds', label: 'Amazon RDS', group: 'systems', x: 895, y: 270, level: 'strong', icon: 'database', summary: 'Setting up and operating managed relational databases with practical security and connectivity.' },
+  { id: 'vpc-networking', label: 'VPC Networking', group: 'systems', x: 790, y: 350, level: 'strong', icon: 'layers', summary: 'Designing subnets, route tables and internet gateways to connect cloud workloads safely.' },
   { id: 'iot', label: 'IoT', group: 'systems', x: 600, y: 315, level: 'strong', icon: 'signal', summary: 'Connected hardware and software designed as one dependable system.' },
   { id: 'mqtt', label: 'MQTT', group: 'systems', x: 725, y: 315, level: 'familiar', icon: 'signal', summary: 'Lightweight messaging for devices and distributed telemetry.' },
   { id: 'raspberry-pi', label: 'Raspberry Pi', group: 'systems', x: 875, y: 315, level: 'strong', icon: 'chip', summary: 'Embedded computing for robotics, prototyping and control systems.' },
@@ -102,7 +120,12 @@ const skills = [
   { id: 'performance', label: 'Optimisation', group: 'design', x: 690, y: 505, level: 'strong', icon: 'speed', summary: 'Profiling bottlenecks and improving performance with evidence.' },
   { id: 'project-management', label: 'Project Management', group: 'project', x: 105, y: 610, level: 'core', icon: 'calendar', summary: 'Turning ambiguity into an executable path with managed risk.' },
   { id: 'agile', label: 'Agile delivery', group: 'project', x: 270, y: 610, level: 'strong', icon: 'cycle', summary: 'Short feedback loops and visible progress without process theatre.' },
-  { id: 'github', label: 'CI/CD', group: 'project', x: 405, y: 610, level: 'strong', icon: 'cycle', summary: 'Automated checks and repeatable delivery workflows with GitHub Actions.' },
+  { id: 'github', label: 'CI/CD', group: 'project', x: 405, y: 610, level: 'strong', icon: 'cycle', summary: 'Automated delivery pipelines spanning builds, security gates, deployment verification and operations.' },
+  { id: 'github-actions', label: 'GitHub Actions', group: 'project', x: 330, y: 555, level: 'strong', icon: 'cycle', summary: 'Building automated workflows for testing, scanning, delivery and repeatable operations.' },
+  { id: 'self-hosted-runners', label: 'Self-hosted Runners', group: 'project', x: 455, y: 555, level: 'strong', icon: 'server', summary: 'Configuring and maintaining self-hosted GitHub Actions runners for controlled workloads.' },
+  { id: 'security-scanning', label: 'Security Scanning', group: 'project', x: 245, y: 670, level: 'strong', icon: 'shield', summary: 'Embedding vulnerability and dependency scans into delivery pipelines as actionable security gates.' },
+  { id: 'agentic-security', label: 'Agentic Security Workflows', group: 'project', x: 410, y: 680, level: 'strong', icon: 'brain', summary: 'Using AI agents to inspect code and dependencies, surface vulnerabilities and support remediation.' },
+  { id: 'health-monitoring', label: 'Health Checks & Monitoring', group: 'project', x: 570, y: 680, level: 'strong', icon: 'speed', summary: 'Verifying service availability and deployment health through automated checks and monitoring.' },
   { id: 'stakeholders', label: 'Stakeholders', group: 'project', x: 535, y: 610, level: 'strong', icon: 'people', summary: 'Creating shared understanding across technical and non-technical groups.' },
   { id: 'leadership', label: 'Leadership', group: 'people', x: 660, y: 610, level: 'core', icon: 'people', summary: 'Giving teams direction, context and the confidence to deliver.' },
   { id: 'communication', label: 'Communication', group: 'people', x: 805, y: 610, level: 'core', icon: 'speech', summary: 'Making complex work clear, useful and actionable.' },
@@ -132,6 +155,14 @@ const edges = [
   { from: 'rest', to: 'auth', type: 'frequent', label: 'Security' },
   { from: 'postgresql', to: 'pipelines', type: 'frequent', label: 'Data flow' },
   { from: 'aws', to: 'docker', type: 'core', label: 'Deployment' },
+  { from: 'aws', to: 'ec2', type: 'core', label: 'Compute' },
+  { from: 'aws', to: 'route53', type: 'core', label: 'DNS' },
+  { from: 'aws', to: 's3', type: 'core', label: 'Storage' },
+  { from: 'aws', to: 'rds', type: 'core', label: 'Managed data' },
+  { from: 'aws', to: 'vpc-networking', type: 'core', label: 'Networking' },
+  { from: 'ec2', to: 'linux', type: 'frequent', label: 'Operations' },
+  { from: 'ec2', to: 'vpc-networking', type: 'frequent', label: 'Subnets' },
+  { from: 'rds', to: 'postgresql', type: 'frequent', label: 'Database' },
   { from: 'linux', to: 'docker', type: 'support', label: 'Runtime' },
   { from: 'aws', to: 'iot', type: 'frequent', label: 'Cloud edge' },
   { from: 'iot', to: 'mqtt', type: 'core', label: 'Messaging' },
@@ -149,6 +180,13 @@ const edges = [
   { from: 'system-design', to: 'rest', type: 'support', label: 'Contracts' },
   { from: 'system-design', to: 'aws', type: 'frequent', label: 'Infrastructure' },
   { from: 'testing', to: 'github', type: 'frequent', label: 'Automation' },
+  { from: 'github', to: 'github-actions', type: 'core', label: 'Workflows' },
+  { from: 'github-actions', to: 'self-hosted-runners', type: 'core', label: 'Execution' },
+  { from: 'github-actions', to: 'security-scanning', type: 'frequent', label: 'Security gates' },
+  { from: 'security-scanning', to: 'agentic-security', type: 'frequent', label: 'AI review' },
+  { from: 'github-actions', to: 'health-monitoring', type: 'frequent', label: 'Verification' },
+  { from: 'self-hosted-runners', to: 'docker', type: 'support', label: 'Runtime' },
+  { from: 'health-monitoring', to: 'aws', type: 'support', label: 'Cloud services' },
   { from: 'project-management', to: 'system-design', type: 'core', label: 'Delivery' },
   { from: 'project-management', to: 'agile', type: 'frequent', label: 'Cadence' },
   { from: 'project-management', to: 'stakeholders', type: 'core', label: 'Alignment' },
@@ -164,7 +202,52 @@ const edges = [
 
 const hoveredId = ref(null)
 const pinnedId = ref(null)
-const skillById = new Map(skills.map(skill => [skill.id, skill]))
+const graphCanvas = ref(null)
+const canvasSize = ref({ width: 1000, height: 700 })
+const rotationAngle = ref(-0.22)
+const rotationTilt = ref(-0.12)
+const rotationPaused = ref(false)
+const prefersReducedMotion = ref(false)
+const isDragging = ref(false)
+const pivot = ref({ x: 0, y: 0, z: 0 })
+const pivotTarget = ref({ x: 0, y: 0, z: 0 })
+const sceneScale = ref(0.76)
+const sceneScaleTarget = ref(0.76)
+const groupIndex = new Map(groups.map((group, index) => [group.id, index]))
+
+const points3d = new Map(skills.map((skill, index) => {
+  const group = groupIndex.get(skill.group)
+  const depth = Math.sin(index * 2.399 + group * 0.73) * 245 + Math.cos(skill.y * 0.014 + group) * 65
+  return [skill.id, { x: (skill.x - 500) * 0.92, y: (skill.y - 350) * 0.84, z: depth }]
+}))
+
+const projectedNodes = computed(() => {
+  const projection = new Map()
+  const cosY = Math.cos(rotationAngle.value)
+  const sinY = Math.sin(rotationAngle.value)
+  const cosX = Math.cos(rotationTilt.value)
+  const sinX = Math.sin(rotationTilt.value)
+  const cameraDistance = 1120
+
+  points3d.forEach((point, id) => {
+    const localX = (point.x - pivot.value.x) * sceneScale.value
+    const localY = (point.y - pivot.value.y) * sceneScale.value
+    const localZ = (point.z - pivot.value.z) * sceneScale.value
+    const rotatedX = localX * cosY + localZ * sinY
+    const rotatedZ = -localX * sinY + localZ * cosY
+    const rotatedY = localY * cosX - rotatedZ * sinX
+    const depth = localY * sinX + rotatedZ * cosX
+    const scale = cameraDistance / (cameraDistance - depth)
+    projection.set(id, {
+      x: 500 + rotatedX * scale,
+      y: 350 + rotatedY * scale,
+      z: depth,
+      scale: Math.max(0.72, Math.min(1.28, scale))
+    })
+  })
+
+  return projection
+})
 
 const focusedId = computed(() => pinnedId.value || hoveredId.value)
 const hasFocus = computed(() => Boolean(focusedId.value))
@@ -193,16 +276,200 @@ const activeRelationships = computed(() => {
   })
 })
 
-function nodePosition(id) { return skillById.get(id) }
+function nodePosition(id) { return projectedNodes.value.get(id) }
 function edgeLabelPosition(edge) { const from = nodePosition(edge.from); const to = nodePosition(edge.to); return { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 - 8 } }
+function edgeDepth(edge) { const depth = (nodePosition(edge.from).z + nodePosition(edge.to).z) / 2; return Math.max(0.28, Math.min(0.92, 0.6 + depth / 900)) }
 function isNodeActive(skill) { return focusedId.value && connectedIds.value.has(skill.id) }
 function isNodeMuted(skill) { return focusedId.value && !connectedIds.value.has(skill.id) }
 function isEdgeActive(edge) { return focusedId.value && (edge.from === focusedId.value || edge.to === focusedId.value) }
 function isEdgeMuted(edge) { return hasFocus.value && !isEdgeActive(edge) }
-function nodeStyle(skill) { const group = groups.find(item => item.id === skill.group); return { left: `${skill.x / 10}%`, top: `${skill.y / 7}%`, '--node-color': group.color } }
-function toggleSkill(id) { pinnedId.value = pinnedId.value === id ? null : id }
-function resetGraph() { pinnedId.value = null; hoveredId.value = null }
-function handleCanvasDoubleClick(event) { if (!event.target.closest('.skill-node')) resetGraph() }
+function scaleToFitAround(id) {
+  const center = points3d.get(id)
+  let furthest = 1
+  points3d.forEach(point => {
+    const distance = Math.hypot(point.x - center.x, point.y - center.y, point.z - center.z)
+    furthest = Math.max(furthest, distance)
+  })
+  return Math.min(0.64, 360 / furthest)
+}
+function nodeStyle(skill) {
+  const group = groups.find(item => item.id === skill.group)
+  const point = nodePosition(skill.id)
+  const x = point.x / 1000 * canvasSize.value.width
+  const y = point.y / 700 * canvasSize.value.height
+  return {
+    zIndex: pinnedId.value === skill.id ? 100 : Math.round(point.z / 24) + 30,
+    transform: `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`,
+    '--node-color': group.color,
+    '--depth-opacity': Math.max(0.52, Math.min(1, 0.78 + point.z / 1050))
+  }
+}
+function nearestAngle(target, current) {
+  return current + Math.atan2(Math.sin(target - current), Math.cos(target - current))
+}
+function viewingAnglesFor(point) {
+  const horizontalDistance = Math.hypot(point.x, point.z)
+  return {
+    yaw: nearestAngle(Math.atan2(-point.x, point.z), rotationAngle.value),
+    tilt: nearestAngle(Math.atan2(point.y, horizontalDistance), rotationTilt.value)
+  }
+}
+function handleSkillClick(id) {
+  if (performance.now() < suppressClickUntil) return
+  const nextId = pinnedId.value === id ? null : id
+  pinnedId.value = nextId
+  if (!nextId) {
+    centeringTarget = null
+    settlingPivot = false
+    pivotTarget.value = { x: 0, y: 0, z: 0 }
+    sceneScaleTarget.value = 0.76
+    return
+  }
+
+  const point = points3d.get(nextId)
+  const angles = viewingAnglesFor(point)
+  sceneScaleTarget.value = scaleToFitAround(nextId)
+  pivotTarget.value = { x: 0, y: 0, z: 0 }
+
+  if (prefersReducedMotion.value) {
+    rotationAngle.value = angles.yaw
+    rotationTilt.value = angles.tilt
+    pivot.value = { ...point }
+    pivotTarget.value = { ...point }
+    centeringTarget = null
+    settlingPivot = false
+  } else {
+    settlingPivot = false
+    centeringTarget = { id: nextId, point, ...angles }
+  }
+}
+function resetGraph() {
+  pinnedId.value = null
+  hoveredId.value = null
+  centeringTarget = null
+  settlingPivot = false
+  pivotTarget.value = { x: 0, y: 0, z: 0 }
+  sceneScaleTarget.value = 0.76
+}
+function handleCanvasClick(event) {
+  if (performance.now() < suppressClickUntil) return
+  if (!event.target.closest('.skill-node')) resetGraph()
+}
+
+let dragPointerId
+let dragCaptureTarget
+let dragStartX = 0
+let dragStartY = 0
+let dragX = 0
+let dragY = 0
+let didDrag = false
+let suppressClickUntil = 0
+
+function startDrag(event) {
+  if (event.button !== undefined && event.button !== 0) return
+  dragPointerId = event.pointerId
+  dragCaptureTarget = event.target.closest?.('.skill-node') || event.currentTarget
+  dragStartX = event.clientX
+  dragStartY = event.clientY
+  dragX = event.clientX
+  dragY = event.clientY
+  didDrag = false
+  isDragging.value = true
+  dragCaptureTarget.setPointerCapture(event.pointerId)
+}
+
+function dragGraph(event) {
+  if (!isDragging.value || event.pointerId !== dragPointerId) return
+  const deltaX = event.clientX - dragX
+  const deltaY = event.clientY - dragY
+  if (Math.hypot(event.clientX - dragStartX, event.clientY - dragStartY) > 6) didDrag = true
+  rotationAngle.value += deltaX * 0.006
+  rotationTilt.value -= deltaY * 0.006
+  dragX = event.clientX
+  dragY = event.clientY
+}
+
+function endDrag(event) {
+  if (event.pointerId !== dragPointerId) return
+  if (didDrag) suppressClickUntil = performance.now() + 120
+  isDragging.value = false
+  dragPointerId = undefined
+  dragCaptureTarget = undefined
+  window.setTimeout(() => { didDrag = false }, 0)
+}
+
+function handleGraphKeydown(event) {
+  const step = event.shiftKey ? 0.18 : 0.08
+  if (event.key === 'ArrowLeft') rotationAngle.value -= step
+  else if (event.key === 'ArrowRight') rotationAngle.value += step
+  else if (event.key === 'ArrowUp') rotationTilt.value += step
+  else if (event.key === 'ArrowDown') rotationTilt.value -= step
+  else return
+  event.preventDefault()
+}
+
+let animationFrame
+let previousTime
+let resizeObserver
+let centeringTarget = null
+let settlingPivot = false
+function animate(time) {
+  if (previousTime === undefined) previousTime = time
+  const elapsed = Math.min(time - previousTime, 50)
+  const pivotEase = 1 - Math.exp(-elapsed * 0.0065)
+  const target = pivotTarget.value
+  const current = pivot.value
+  pivot.value = {
+    x: current.x + (target.x - current.x) * pivotEase,
+    y: current.y + (target.y - current.y) * pivotEase,
+    z: current.z + (target.z - current.z) * pivotEase
+  }
+  sceneScale.value += (sceneScaleTarget.value - sceneScale.value) * pivotEase
+
+  if (centeringTarget && !isDragging.value) {
+    const rotationEase = 1 - Math.exp(-elapsed * 0.0045)
+    rotationAngle.value += (centeringTarget.yaw - rotationAngle.value) * rotationEase
+    rotationTilt.value += (centeringTarget.tilt - rotationTilt.value) * rotationEase
+    const angleDistance = Math.abs(centeringTarget.yaw - rotationAngle.value) + Math.abs(centeringTarget.tilt - rotationTilt.value)
+    const pivotDistance = Math.hypot(pivot.value.x, pivot.value.y, pivot.value.z)
+    if (angleDistance < 0.004 && pivotDistance < 1) {
+      rotationAngle.value = centeringTarget.yaw
+      rotationTilt.value = centeringTarget.tilt
+      pivotTarget.value = { ...centeringTarget.point }
+      centeringTarget = null
+      settlingPivot = true
+    }
+  } else if (settlingPivot) {
+    const remaining = Math.hypot(
+      pivotTarget.value.x - pivot.value.x,
+      pivotTarget.value.y - pivot.value.y,
+      pivotTarget.value.z - pivot.value.z
+    )
+    if (remaining < 1) {
+      pivot.value = { ...pivotTarget.value }
+      settlingPivot = false
+    }
+  } else if (!rotationPaused.value && !isDragging.value && (!hoveredId.value || pinnedId.value)) {
+    rotationAngle.value += elapsed * 0.00005
+  }
+  previousTime = time
+  animationFrame = requestAnimationFrame(animate)
+}
+
+onMounted(() => {
+  prefersReducedMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  rotationPaused.value = prefersReducedMotion.value
+  resizeObserver = new ResizeObserver(([entry]) => {
+    canvasSize.value = { width: entry.contentRect.width, height: entry.contentRect.height }
+  })
+  resizeObserver.observe(graphCanvas.value)
+  animationFrame = requestAnimationFrame(animate)
+})
+
+onBeforeUnmount(() => {
+  cancelAnimationFrame(animationFrame)
+  resizeObserver?.disconnect()
+})
 </script>
 
 <style scoped>
@@ -288,7 +555,7 @@ function handleCanvasDoubleClick(event) { if (!event.target.closest('.skill-node
 
 .edge-key{
   display:grid;
-  grid-template-columns:repeat(3,max-content);
+  grid-template-columns:repeat(4,max-content);
   justify-content:end;
   column-gap:28px;
   width:100%;
@@ -303,6 +570,33 @@ function handleCanvasDoubleClick(event) { if (!event.target.closest('.skill-node
   font-weight:700;
   white-space:nowrap;
 }
+
+.rotation-control{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:0;
+  border:0;
+  color:#6f6a7f;
+  background:transparent;
+  font:inherit;
+  font-size:.59rem;
+  font-weight:750;
+  cursor:pointer;
+}
+
+.rotation-control span{
+  display:grid;
+  place-items:center;
+  width:20px;
+  height:20px;
+  border:1px solid rgba(101,84,238,.2);
+  border-radius:50%;
+  color:#6554ee;
+  font-size:.48rem;
+}
+
+.rotation-control:hover,.rotation-control:focus-visible{color:#3f368d}
 
 .group-key i{
   display:block;
@@ -331,14 +625,37 @@ function handleCanvasDoubleClick(event) { if (!event.target.closest('.skill-node
   min-width:0;
   overflow:visible;
   isolation:isolate;
-  touch-action:pan-y;
+  perspective:1100px;
+  touch-action:none;
+  cursor:grab;
   border:0;
   border-radius:0;
-  background:none;
+  background:
+    radial-gradient(circle at 50% 48%,rgba(101,84,238,.075),transparent 31%),
+    radial-gradient(ellipse at 50% 54%,rgba(255,255,255,.7),transparent 63%);
   box-shadow:none;
 }
 
-.graph-canvas::before,.graph-canvas::after{display:none}
+.graph-canvas::before{
+  content:"";
+  position:absolute;
+  inset:10% 6%;
+  z-index:0;
+  border:1px solid rgba(101,84,238,.08);
+  border-radius:50%;
+  transform:rotateX(68deg);
+  box-shadow:0 0 80px rgba(101,84,238,.04) inset;
+  pointer-events:none;
+}
+
+.graph-canvas.dragging{cursor:grabbing}
+
+.graph-canvas:focus-visible{
+  outline:2px solid rgba(101,84,238,.5);
+  outline-offset:6px;
+}
+
+.graph-canvas::after{display:none}
 
 .edge-layer{
   position:absolute;
@@ -386,6 +703,8 @@ function handleCanvasDoubleClick(event) { if (!event.target.closest('.skill-node
 
 .skill-node{
   position:absolute;
+  left:0;
+  top:0;
   z-index:3;
   display:inline-flex;
   align-items:center;
@@ -403,8 +722,10 @@ function handleCanvasDoubleClick(event) { if (!event.target.closest('.skill-node
   white-space:nowrap;
   cursor:pointer;
   box-shadow:0 8px 22px rgba(42,34,92,.09);
-  transform:translate(-50%,-50%);
-  transition:opacity 240ms ease,filter 240ms ease,border-color 180ms ease,box-shadow 180ms ease,color 180ms ease,background 180ms ease;
+  opacity:var(--depth-opacity);
+  transform-origin:center;
+  will-change:transform,opacity;
+  transition:filter 240ms ease,border-color 180ms ease,box-shadow 180ms ease,color 180ms ease,background 180ms ease;
 }
 
 .node-glyph{
@@ -433,7 +754,7 @@ function handleCanvasDoubleClick(event) { if (!event.target.closest('.skill-node
 .node-familiar{font-size:.6rem}
 
 .skill-node:hover,.skill-node.active,.skill-node.selected{
-  z-index:7;
+  opacity:1;
   border-color:color-mix(in srgb,var(--node-color) 55%,transparent);
   box-shadow:0 0 0 5px color-mix(in srgb,var(--node-color) 9%,transparent),0 15px 32px rgba(42,34,92,.15);
 }
@@ -469,7 +790,8 @@ function handleCanvasDoubleClick(event) { if (!event.target.closest('.skill-node
   .graph-intro{max-width:430px;margin-top:20px}
   .graph-legend{grid-column:1;grid-row:2;justify-items:start;padding-top:4px}
   .group-key{justify-content:start}
-  .edge-key{display:none}
+  .edge-key{display:flex;justify-content:flex-start}
+  .edge-key>span{display:none}
   .graph-canvas{grid-column:1;grid-row:3;height:700px}
   .skill-node{max-width:86px;min-height:28px;padding:5px 7px;gap:4px;font-size:.49rem;line-height:1.08;white-space:normal;text-align:left}
   .node-core{min-height:34px;padding:7px 9px;font-size:.56rem}

@@ -3,27 +3,24 @@
     <section class="about-hero" aria-labelledby="about-title">
       <div class="hero-copy">
         <p class="eyebrow">About me</p>
-        <h1 id="about-title">Engineer by day,<br />problem solver <span>always.</span></h1>
+        <h1 id="about-title" aria-label="Your future-ready engineering partner">
+          <span class="title-prefix" aria-hidden="true">Your</span>
+          <span class="typing-line" aria-hidden="true">
+            <span class="typing-text">{{ typedTitle }}</span><span class="typing-cursor"></span>
+          </span>
+        </h1>
         <p class="hero-summary">
-          Mechatronic Engineer working as a Full-Stack Developer based in Sydney. I design and
-          build robust systems across backend, frontend and cloud infrastructure, with a focus on
-          reliability and performance.
+          Mechatronic Engineer currently working as a lead project & software developer. I am a motivated and adaptable engineer 
+          with a passion for continous learning and putting myself in challenging positions. 
         </p>
 
         <ul class="quick-facts" aria-label="About Dillon">
-          <li><span aria-hidden="true">⌖</span>Sydney, Australia</li>
-          <li><span aria-hidden="true">↗</span>2+ years professional experience</li>
+          <li>
+            <span class="location-pin" aria-hidden="true"></span>
+            <span class="location-text">Sydney, Australia</span>
+          </li>
         </ul>
 
-        <div class="social-links" aria-label="Profile links">
-          <a href="https://github.com/Dbliss" target="_blank" rel="noreferrer">
-            <BrandIcon name="github" /> GitHub
-          </a>
-          <a href="https://www.linkedin.com/in/dillon-bliss-770704184/" target="_blank" rel="noreferrer">
-            <BrandIcon name="linkedin" /> LinkedIn
-          </a>
-          <a href="/resume.pdf" download><BrandIcon name="resume" /> Resume</a>
-        </div>
       </div>
 
       <div class="desk-visual">
@@ -36,13 +33,14 @@
       </div>
     </section>
 
+    <hr class="section-divider" />
 
     <section class="gantt-section" aria-labelledby="gantt-title">
       <div class="gantt-heading">
         <div><p class="eyebrow">The path so far</p><h2 id="gantt-title">Experience at a glance</h2></div>
         <div class="gantt-heading-meta">
           <p>
-            Full details in my <a href="/resume.pdf" download>resume</a> and
+            Full details in my <a :href="resumeUrl" download>resume</a> and
             <a href="https://www.linkedin.com/in/dillon-bliss-770704184/" target="_blank" rel="noreferrer">LinkedIn</a>.
           </p>
         </div>
@@ -60,6 +58,7 @@
           <article
             v-for="item in ganttItems"
             :key="item.id"
+            :id="`experience-${item.id}`"
             class="gantt-row"
             :class="{ 'gantt-row--current': item.current }"
           >
@@ -99,6 +98,12 @@
       </div>
     </section>
 
+    <hr class="section-divider" />
+
+    <SkillsCloud />
+
+    <hr class="section-divider" />
+
     <section class="about-section" aria-labelledby="achievements-title">
       <div class="section-heading achievement-heading">
         <h2 id="achievements-title">Selected achievements</h2>
@@ -120,14 +125,69 @@
         </article>
       </div>
     </section>
-    <SkillsCloud />
   </div>
 </template>
 
 <script setup>
-import BrandIcon from '../components/BrandIcon.vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import SkillsCloud from '../components/SkillsCloud.vue'
 import deskIllustrationUrl from '../assets/site/about-desk.png'
+import resumeUrl from '../../Resume.docx?url'
+
+const titlePhrases = [
+  'systems engineer',
+  'full-stack dev',
+  'cloud architect',
+  'mechatronic engineer',
+  'automation expert',
+  'technical lead',
+  'smart-city curator',
+  'project lead',
+  'AI transformation engineer'
+
+]
+const typedTitle = ref('')
+let titlePhraseIndex = 0
+let titleCharacterIndex = 0
+let titleIsDeleting = false
+let titleTimer
+
+const runTitleTypewriter = () => {
+  const phrase = titlePhrases[titlePhraseIndex]
+
+  if (titleIsDeleting) {
+    titleCharacterIndex -= 1
+  } else {
+    titleCharacterIndex += 1
+  }
+
+  typedTitle.value = phrase.slice(0, titleCharacterIndex)
+
+  let delay = titleIsDeleting ? 38 : 72
+  if (!titleIsDeleting && titleCharacterIndex === phrase.length) {
+    titleIsDeleting = true
+    delay = 1700
+  } else if (titleIsDeleting && titleCharacterIndex === 0) {
+    titleIsDeleting = false
+    titlePhraseIndex = (titlePhraseIndex + 1) % titlePhrases.length
+    delay = 380
+  }
+
+  titleTimer = window.setTimeout(runTitleTypewriter, delay)
+}
+
+onMounted(() => {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    typedTitle.value = titlePhrases[0]
+    return
+  }
+
+  titleTimer = window.setTimeout(runTitleTypewriter, 450)
+})
+
+onBeforeUnmount(() => {
+  window.clearTimeout(titleTimer)
+})
 
 const timelineDataStartYear = 2019
 const today = new Date()
@@ -260,7 +320,19 @@ const ganttPromotionStyle = ({ endMonth }) => {
   --about-purple: #6554ee;
   --about-line: #dedcf2;
   display: grid;
-  gap: 88px;
+  gap: 44px;
+}
+
+.section-divider {
+  width: 100%;
+  height: 1px;
+  margin: 0;
+  border: 0;
+  background: rgba(101, 84, 238, 0.2);
+}
+
+.about-page :deep(.skills-explorer) {
+  padding-top: 0;
 }
 
 .about-hero {
@@ -284,12 +356,38 @@ h1, h2, h3, p { margin-top: 0; }
 
 h1 {
   margin-bottom: 24px;
-  font-size: clamp(3rem, 5.4vw, 5.15rem);
+  font-size: clamp(1.3rem, 3.8vw, 2.85rem);
   line-height: 0.99;
   letter-spacing: -0.065em;
+  white-space: nowrap;
 }
 
 h1 span { color: var(--about-purple); }
+
+.title-prefix {
+  display: inline;
+  margin-right: 0.22em;
+  color: inherit;
+}
+
+.typing-line {
+  display: inline;
+  white-space: nowrap;
+}
+
+.typing-cursor {
+  display: inline-block;
+  width: 0.055em;
+  height: 0.82em;
+  margin-left: 0.08em;
+  background: var(--about-purple);
+  vertical-align: -0.02em;
+  animation: typing-cursor-blink 850ms steps(1) infinite;
+}
+
+@keyframes typing-cursor-blink {
+  50% { opacity: 0; }
+}
 
 .hero-summary {
   max-width: 625px;
@@ -300,9 +398,7 @@ h1 span { color: var(--about-purple); }
 }
 
 .quick-facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  display: inline-flex;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -311,36 +407,53 @@ h1 span { color: var(--about-purple); }
 .quick-facts li {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 12px;
-  border: 1px solid #e5e1ff;
-  border-radius: 999px;
-  color: #514b72;
-  background: #f7f5ff;
-  font-size: 0.82rem;
-  font-weight: 650;
+  min-height: 48px;
+  color: #35314f;
 }
 
-.quick-facts span { color: var(--about-purple); font-size: 1rem; }
-
-.social-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-  margin-top: 30px;
+.location-pin {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  margin: 0 25px 0 4px;
+  border: 2px solid var(--about-purple);
+  border-radius: 50% 50% 50% 0;
+  color: var(--about-purple);
+  transform: rotate(-45deg);
 }
 
-.social-links a {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: #343951;
-  font-size: 0.88rem;
+.location-pin::before {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 5px;
+  height: 5px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.location-pin::after {
+  content: none;
+}
+
+.location-text {
+  position: relative;
+  font-size: 0.95rem;
   font-weight: 700;
+  letter-spacing: -0.015em;
 }
 
-.social-links a:hover { color: var(--about-purple); }
-.social-links :deep(.brand-icon) { width: 18px; height: 18px; }
+.location-text::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -14px;
+  width: 1px;
+  height: 30px;
+  background: rgba(101, 84, 238, 0.4);
+  transform: translateY(calc(-50% + 2px));
+}
 
 .desk-visual {
   position: relative;
@@ -538,7 +651,7 @@ h1 span { color: var(--about-purple); }
 .gantt-promotion-halo { stroke: rgba(255, 255, 255, .92); stroke-width: 7; }
 .gantt-promotion-line { stroke: #6958e8; stroke-width: 3; }
 @media (max-width: 900px) {
-  .about-page { gap: 70px; }
+  .about-page { gap: 35px; }
   .about-hero { grid-template-columns: 1fr; min-height: auto; }
   .desk-visual { grid-row: 1; width: min(96vw, 680px); margin: 0 auto; }
   .achievement-grid { grid-template-columns: 1fr; }
@@ -551,16 +664,15 @@ h1 span { color: var(--about-purple); }
 }
 
 @media (max-width: 620px) {
-  .about-page { gap: 58px; }
+  .about-page { gap: 29px; }
   .about-hero { gap: 36px; }
-  h1 { font-size: clamp(2.7rem, 13vw, 4rem); }
   .gantt-heading { align-items: flex-start; flex-direction: column; }
   .gantt-heading-meta { justify-items: start; text-align: left; }
   .gantt-axis, .gantt-row { grid-template-columns: minmax(150px, 42%) minmax(0, 1fr); }
   .axis-years span { padding-left: 4px; font-size: .58rem; }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .social-links a { transition: color 180ms ease; }
+@media (prefers-reduced-motion: reduce) {
+  .typing-cursor { animation: none; }
 }
 </style>

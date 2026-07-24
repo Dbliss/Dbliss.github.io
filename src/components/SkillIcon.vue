@@ -1,11 +1,56 @@
 <template>
   <svg class="skill-icon" viewBox="0 0 24 24" aria-hidden="true">
-    <path :d="icons[name] || icons.spark" fill="currentColor" />
+    <path :d="iconPath" fill="currentColor" />
   </svg>
 </template>
 
 <script setup>
-defineProps({ name: { type: String, required: true } })
+import { computed } from 'vue'
+import {
+  siCplusplus,
+  siCss,
+  siFastapi,
+  siHtml5,
+  siLinux,
+  siMqtt,
+  siNginx,
+  siNodedotjs,
+  siNumpy,
+  siOpenapiinitiative,
+  siPandas,
+  siPostgresql,
+  siRaspberrypi,
+  siRedis,
+  siScikitlearn,
+  siSqlite,
+  siThreedotjs,
+  siVite,
+  siVuedotjs
+} from 'simple-icons'
+
+const props = defineProps({ name: { type: String, required: true } })
+
+const sourcedIcons = {
+  cplusplus: siCplusplus,
+  css: siCss,
+  fastapi: siFastapi,
+  html5: siHtml5,
+  linux: siLinux,
+  mqtt: siMqtt,
+  nginx: siNginx,
+  nodejs: siNodedotjs,
+  numpy: siNumpy,
+  openapi: siOpenapiinitiative,
+  pandas: siPandas,
+  postgresql: siPostgresql,
+  raspberrypi: siRaspberrypi,
+  redis: siRedis,
+  scikitlearn: siScikitlearn,
+  sqlite: siSqlite,
+  threejs: siThreedotjs,
+  vite: siVite,
+  vue: siVuedotjs
+}
 
 const icons = {
   python: 'M12.1 2c-4.8 0-4.5 2.1-4.5 2.1v2.2h4.6V7H5.8S2 6.6 2 11.7s3.3 4.9 3.3 4.9h2v-2.8s-.1-3.3 3.2-3.3h4.6s2.8 0 2.8-2.7V4.7S18.3 2 12.1 2Zm-2.5 1.6a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6ZM11.9 22c4.8 0 4.5-2.1 4.5-2.1v-2.2h-4.6V17h6.4s3.8.4 3.8-4.7-3.3-4.9-3.3-4.9h-2v2.8s.1 3.3-3.2 3.3H8.9s-2.8 0-2.8 2.7v3.1S5.7 22 11.9 22Zm2.5-1.6a.8.8 0 1 1 0-1.6.8.8 0 0 1 0 1.6Z',
@@ -39,6 +84,10 @@ const icons = {
   mentor: 'M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm-9 19c0-4 4-7 9-7s9 3 9 7v1H3v-1Zm14-9 4-4 1.4 1.4-4 4L17 12Z',
   spark: 'm12 2 2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2L12 2Z'
 }
+
+const iconPath = computed(() =>
+  sourcedIcons[props.name]?.path || icons[props.name] || icons.spark
+)
 </script>
 
 <style scoped>

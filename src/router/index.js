@@ -42,11 +42,14 @@ const router = createRouter({
     },
     { path: '/projects', name: 'projects', component: Projects },
     { path: '/projects/:slug', name: 'project', component: ProjectDetail, props: true },
-    { path: '/about', name: 'about', component: About },
+    { path: '/about', name: 'about', component: About, meta: { hideFooter: true } },
     { path: '/contact', name: 'contact', component: Contact },
     { path: '/:pathMatch(.*)*', redirect: '/' }
   ],
-  scrollBehavior() {
+  scrollBehavior(to) {
+    if (to.hash) {
+      return { el: to.hash, behavior: 'smooth', top: 96 }
+    }
     return { top: 0, behavior: 'smooth' }
   }
 })

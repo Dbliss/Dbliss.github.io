@@ -5,9 +5,11 @@ import yipRentalYieldHistoryCsv from '../../temp_data_aggregated/yip_rental_yiel
 import { buildRentalYieldMarket } from './rentalYieldMarket.js'
 
 const currentMarketYear = new Date().getFullYear()
-const minimumPropertySalesCount = 100
-const minimumAnnualSalesForCalculations = 10
-const minimumRecentHistoryYears = 20
+const minimumPropertySalesCount = 30
+const minimumAnnualSalesForCalculations = 3
+const minimumRecentHistoryYears = 8
+const recentHistoryWindowYears = 15
+const maximumHistoryAgeYears = 3
 const rentalYieldMarket = buildRentalYieldMarket(yipRentalYieldHistoryCsv, yearlySuburbMetricsCsv)
 
 export const wealthPsiRegionMarketPayload = buildAreaMarketPayload([
@@ -17,9 +19,9 @@ export const wealthPsiRegionMarketPayload = buildAreaMarketPayload([
 ])
 
 function buildAreaMarketPayload(datasets) {
-  const areas = datasets
+  const areas = applySuburbMarketFallbacks(datasets
     .flatMap((dataset) => buildAreasFromCsv(dataset.csvText, dataset.type))
-    .sort(sortAreas)
+  ).sort(sortAreas)
 
   return {
     metadata: {
@@ -42,7 +44,22 @@ function buildAreasFromCsv(csvText, type) {
 
     const entry = groupedAreas.get(areaSeed.key) || {
       ...areaSeed,
+      sourceKeys: [],
+      latestIdentityYear: -Infinity,
       rows: []
+    }
+
+    if (areaSeed.sourceKey && !entry.sourceKeys.includes(areaSeed.sourceKey)) {
+      entry.sourceKeys.push(areaSeed.sourceKey)
+    }
+    if (areaSeed.year >= entry.latestIdentityYear) {
+      Object.assign(entry, {
+        label: areaSeed.label,
+        postcode: areaSeed.postcode,
+        subregionKey: areaSeed.subregionKey,
+        searchText: areaSeed.searchText,
+        latestIdentityYear: areaSeed.year
+      })
     }
 
     entry.rows.push({
@@ -107,7 +124,8 @@ function getAreaSeed(row, type) {
     : (suburbLabel || null)
 
   return {
-    key: cleanText(row.suburb_key),
+    key: buildSuburbGroupingKey(regionKey, suburb || suburbLabel),
+    sourceKey: cleanText(row.suburb_key),
     label,
     type,
     year,
@@ -138,12 +156,17 @@ function createAreaRecord(area) {
     : createEmptyPropertyHistory()
   const historicalAnnualGrowthBlocks = buildJointGrowthBlocks(houseHistory.calculationPoints, apartmentHistory.calculationPoints)
 
-  if (salesSummary.houseTotal < minimumPropertySalesCount && salesSummary.apartmentTotal < minimumPropertySalesCount) {
+  if (
+    area.type !== 'suburb'
+    && salesSummary.houseTotal < minimumPropertySalesCount
+    && salesSummary.apartmentTotal < minimumPropertySalesCount
+  ) {
     return null
   }
 
   return {
     key: area.key,
+    sourceKeys: area.sourceKeys || [],
     label: area.label,
     type: area.type,
     regionKey: area.regionKey || null,
@@ -179,10 +202,71 @@ function createAreaRecord(area) {
   }
 }
 
+function applySuburbMarketFallbacks(areas) {
+  const areasByKey = new Map(areas.map((area) => [area.key, area]))
+
+  areas.forEach((area) => {
+    if (area.type !== 'suburb') return
+    const postcodeArea = areasByKey.get(area.subregionKey)
+
+    ;['house', 'apartment'].forEach((propertyType) => {
+      const property = area[propertyType]
+      const directSalesAverage = area.marketHistory?.salesSummary?.[`${propertyType}Average`] || 0
+      if (hasUsableMarketProperty(property)) {
+        property.dataSourceAreaKey = area.key
+        property.dataSourceAreaLabel = area.label
+        property.dataSourceAreaType = 'suburb'
+        property.dataSourceSalesAverage = directSalesAverage
+        return
+      }
+
+      const fallbackProperty = postcodeArea?.[propertyType]
+      if (!hasUsableMarketProperty(fallbackProperty)) return
+
+      area[propertyType] = {
+        ...fallbackProperty,
+        yieldModel: property?.yieldModel || null,
+        dataSourceAreaKey: postcodeArea.key,
+        dataSourceAreaLabel: postcodeArea.label,
+        dataSourceAreaType: 'postcode',
+        dataSourceSalesAverage: postcodeArea.marketHistory?.salesSummary?.[`${propertyType}Average`] || 0
+      }
+      area.marketHistory[propertyType] = {
+        ...postcodeArea.marketHistory[propertyType],
+        dataSourceAreaKey: postcodeArea.key,
+        dataSourceAreaLabel: postcodeArea.label,
+        dataSourceAreaType: 'postcode'
+      }
+    })
+
+    area.historicalAnnualGrowthBlocks = buildJointGrowthBlocks(
+      area.marketHistory.house.calculationPoints,
+      area.marketHistory.apartment.calculationPoints
+    )
+    area.marketHistory.historicalAnnualGrowthBlocks = area.historicalAnnualGrowthBlocks
+  })
+
+  return areas
+}
+
+function hasUsableMarketProperty(property) {
+  return Number(property?.currentPriceEstimate ?? property?.latestActualPrice) > 0
+    && Number.isFinite(Number(property?.annualGrowthMean))
+}
+
 function mergeRentalYieldIntoArea(area) {
   if (!area || typeof area !== 'object') return area
 
-  const yieldModelsForArea = rentalYieldMarket.areasByType?.[area.type]?.[area.key] || {}
+  const sourceKeys = area.type === 'suburb'
+    ? [...new Set([area.key, ...(area.sourceKeys || [])])]
+    : [area.key]
+  const yieldModelsBySource = sourceKeys
+    .map((key) => rentalYieldMarket.areasByType?.[area.type]?.[key] || null)
+    .filter(Boolean)
+  const yieldModelsForArea = {
+    house: yieldModelsBySource.find((models) => models.house)?.house || null,
+    apartment: yieldModelsBySource.find((models) => models.apartment)?.apartment || null
+  }
   return {
     ...area,
     house: {
@@ -210,14 +294,7 @@ function sortAreas(left, right) {
 }
 
 function buildPropertyHistory(rows, priceKey, salesKey) {
-  const actualPoints = rows
-    .map((row) => ({
-      year: Number(row.year),
-      value: toNumber(row[priceKey]),
-      salesCount: toNumber(row[salesKey])
-    }))
-    .filter((point) => Number.isFinite(point.year) && Number.isFinite(point.value) && point.value > 0)
-    .sort((left, right) => left.year - right.year)
+  const actualPoints = buildAnnualPropertyPoints(rows, priceKey, salesKey)
 
   if (!actualPoints.length) {
     return createEmptyPropertyHistory()
@@ -281,15 +358,52 @@ function createEmptyPropertyHistory() {
 function hasRequiredRecentHistory(points) {
   if (!Array.isArray(points) || !points.length) return false
 
-  const years = new Set(points.map((point) => Number(point.year)).filter(Number.isFinite))
-  const endYear = currentMarketYear - 1
-  const startYear = endYear - minimumRecentHistoryYears + 1
+  const years = [...new Set(points.map((point) => Number(point.year)).filter(Number.isFinite))]
+    .sort((left, right) => left - right)
+  const latestYear = years[years.length - 1]
+  const earliestYear = years[0]
+  const recentStartYear = currentMarketYear - recentHistoryWindowYears + 1
+  const recentYearCount = years.filter((year) => year >= recentStartYear).length
 
-  for (let year = startYear; year <= endYear; year += 1) {
-    if (!years.has(year)) return false
-  }
+  return latestYear >= currentMarketYear - maximumHistoryAgeYears
+    && latestYear - earliestYear >= minimumRecentHistoryYears
+    && recentYearCount >= minimumRecentHistoryYears
+}
 
-  return true
+function buildAnnualPropertyPoints(rows, priceKey, salesKey) {
+  const byYear = new Map()
+
+  rows.forEach((row) => {
+    const year = Number(row.year)
+    const value = toNumber(row[priceKey])
+    const salesCount = Math.max(0, toNumber(row[salesKey]) || 0)
+    if (!Number.isFinite(year) || !Number.isFinite(value) || value <= 0) return
+
+    const yearEntry = byYear.get(year) || {
+      year,
+      weightedValueSum: 0,
+      totalSales: 0,
+      fallbackValues: []
+    }
+    if (salesCount > 0) {
+      yearEntry.weightedValueSum += value * salesCount
+      yearEntry.totalSales += salesCount
+    } else {
+      yearEntry.fallbackValues.push(value)
+    }
+    byYear.set(year, yearEntry)
+  })
+
+  return [...byYear.values()]
+    .map((entry) => ({
+      year: entry.year,
+      value: entry.totalSales > 0
+        ? entry.weightedValueSum / entry.totalSales
+        : median(entry.fallbackValues),
+      salesCount: entry.totalSales
+    }))
+    .filter((point) => point.value > 0)
+    .sort((left, right) => left.year - right.year)
 }
 
 function excludeCalculationOutliers(actualPoints) {
@@ -714,6 +828,16 @@ function parseCsvLine(line) {
 function cleanText(value) {
   const text = String(value || '').trim()
   return text || ''
+}
+
+function buildSuburbGroupingKey(regionKey, suburbName) {
+  const suburbKey = cleanText(suburbName)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase()
+  return [cleanText(regionKey), 'suburb', suburbKey].filter(Boolean).join(':')
 }
 
 function toNumber(value) {

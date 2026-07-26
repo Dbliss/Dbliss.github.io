@@ -75,7 +75,10 @@ function buildRecommendation(area, config) {
   const firstYear = actualPoints[0]?.year || null
   const lastYear = actualPoints[actualPoints.length - 1]?.year || null
   const historyYears = firstYear && lastYear ? Math.max(1, (lastYear - firstYear) + 1) : actualPoints.length
-  const salesAverage = Number(area?.marketHistory?.salesSummary?.[`${config.propertyType}Average`]) || 0
+  const salesAverage = Number(
+    property?.dataSourceSalesAverage
+      ?? area?.marketHistory?.salesSummary?.[`${config.propertyType}Average`]
+  ) || 0
   const monteCarloSeries = buildMonteCarloSeries(area, config.propertyType, priceToday, growthMean, growthVolatility, 30, seedFromKey(area.key))
 
   return {
@@ -98,6 +101,9 @@ function buildRecommendation(area, config) {
     rankingScore: marketScore.combinedScore,
     historyYears,
     salesAverage,
+    marketDataSourceKey: property?.dataSourceAreaKey || area.key,
+    marketDataSourceLabel: property?.dataSourceAreaLabel || area.label,
+    marketDataSourceType: property?.dataSourceAreaType || 'suburb',
     actualPoints,
     trendPoints: area?.marketHistory?.[config.propertyType]?.trendPoints || [],
     estimatePoint: area?.marketHistory?.[config.propertyType]?.estimatePoint || null,

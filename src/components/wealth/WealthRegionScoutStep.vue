@@ -388,6 +388,7 @@
           :recommendations="mapRecommendations"
           :property-type-label="propertyTypeLabel"
           :score-bounds="relativeScoreBounds"
+          @close="resultsViewMode = 'list'"
         />
 
         <div v-else-if="filteredResultsModel.hasRecommendations" class="wealth-scout__results">

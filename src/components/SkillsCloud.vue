@@ -324,6 +324,15 @@ const links = connectionPairs.flatMap(([fromLabel, toLabel]) => {
   }]
 })
 
+const linksBySkillId = new Map()
+links.forEach(link => {
+  for (const id of [link.from, link.to]) {
+    const existing = linksBySkillId.get(id)
+    if (existing) existing.push(link)
+    else linksBySkillId.set(id, [link])
+  }
+})
+
 const activeFilter = ref('all')
 const selectedSkillId = ref(null)
 const selectedSkillSide = ref(null)
@@ -341,6 +350,12 @@ const linkCanvas = ref(null)
 const isDragging = ref(false)
 const prefersReducedMotion = ref(false)
 const skillElements = []
+// Last value written to each node, so unchanged frames skip the DOM entirely.
+const nodeTransforms = new Array(allSkills.length).fill('')
+const nodeLayers = new Int32Array(allSkills.length).fill(-1)
+const nodeDepths = new Int32Array(allSkills.length).fill(-1)
+let linkContext = null
+let linksAreDrawn = false
 let pointerId
 let pointerX = 0
 let pointerY = 0
@@ -370,12 +385,14 @@ const rotationDirections = [
   { id: 'S', label: 'south', arrow: '↓', x: -1, y: 0, row: 3, column: 2 },
   { id: 'SE', label: 'south east', arrow: '↘', x: -DIAGONAL, y: -DIAGONAL, row: 3, column: 3 }
 ]
-let sphereRotation = multiplyRotationMatrices(
-  axisRotationMatrix(1, 0, 0, -0.12),
-  axisRotationMatrix(0, 1, 0, 0.35)
-)
+const rotationDirectionById = new Map(rotationDirections.map(option => [option.id, option]))
+const sphereRotation = new Float64Array(9)
+const axisMatrix = new Float64Array(9)
+const rotationProduct = new Float64Array(9)
+sphereRotation.set(axisRotationMatrix(0, 1, 0, 0.35, rotationProduct))
+rotateSphere(1, 0, -0.12)
 
-const selectedSkill = computed(() => allSkills.find(skill => skill.id === selectedSkillId.value))
+const selectedSkill = computed(() => skillById.get(selectedSkillId.value))
 const rotationSpeedMultiplier = computed(() =>
   rotationSpeed.value <= 1
     ? rotationSpeed.value
@@ -425,9 +442,8 @@ const connectedSkillIds = computed(() => {
   const activeId = activeConnectionSkillId.value
   if (!activeId) return result
   result.add(activeId)
-  links.forEach(link => {
-    if (link.from === activeId) result.add(link.to)
-    if (link.to === activeId) result.add(link.from)
+  linksBySkillId.get(activeId)?.forEach(link => {
+    result.add(link.from === activeId ? link.to : link.from)
   })
   return result
 })
@@ -552,20 +568,29 @@ function skillIcon(skill) {
   return 'code'
 }
 
-function spherePoint(index, count) {
+const skillCount = allSkills.length
+// Flat buffers keep the per-frame maths allocation free.
+const spherePoints = new Float64Array(skillCount * 3)
+const projections = new Float64Array(skillCount * 2)
+
+for (let index = 0; index < skillCount; index += 1) {
   const goldenAngle = Math.PI * (3 - Math.sqrt(5))
-  const y = 1 - (2 * (index + 0.5)) / count
+  const y = 1 - (2 * (index + 0.5)) / skillCount
   const radius = Math.sqrt(1 - y * y)
   const angle = index * goldenAngle
-  return { x: Math.cos(angle) * radius, y, z: Math.sin(angle) * radius }
+  spherePoints[index * 3] = Math.cos(angle) * radius
+  spherePoints[index * 3 + 1] = y
+  spherePoints[index * 3 + 2] = Math.sin(angle) * radius
 }
 
-const spherePoints = allSkills.map((_, index) => spherePoint(index, allSkills.length))
-
-function projectPoint(point) {
-  const x = sphereRotation[0] * point.x + sphereRotation[1] * point.y + sphereRotation[2] * point.z
-  const y = sphereRotation[3] * point.x + sphereRotation[4] * point.y + sphereRotation[5] * point.z
-  const z = sphereRotation[6] * point.x + sphereRotation[7] * point.y + sphereRotation[8] * point.z
+function projectPoint(index) {
+  const offset = index * 3
+  const pointX = spherePoints[offset]
+  const pointY = spherePoints[offset + 1]
+  const pointZ = spherePoints[offset + 2]
+  const x = sphereRotation[0] * pointX + sphereRotation[1] * pointY + sphereRotation[2] * pointZ
+  const y = sphereRotation[3] * pointX + sphereRotation[4] * pointY + sphereRotation[5] * pointZ
+  const z = sphereRotation[6] * pointX + sphereRotation[7] * pointY + sphereRotation[8] * pointZ
   const perspective = 1 / (1.18 - z * 0.25)
   return {
     x: x * perspective,
@@ -575,20 +600,19 @@ function projectPoint(point) {
   }
 }
 
-function multiplyRotationMatrices(left, right) {
-  const result = new Array(9)
+function multiplyRotationMatrices(left, right, target) {
   for (let row = 0; row < 3; row += 1) {
     for (let column = 0; column < 3; column += 1) {
-      result[row * 3 + column] =
+      target[row * 3 + column] =
         left[row * 3] * right[column] +
         left[row * 3 + 1] * right[3 + column] +
         left[row * 3 + 2] * right[6 + column]
     }
   }
-  return result
+  return target
 }
 
-function axisRotationMatrix(axisX, axisY, axisZ, angle) {
+function axisRotationMatrix(axisX, axisY, axisZ, angle, target) {
   const length = Math.hypot(axisX, axisY, axisZ) || 1
   const x = axisX / length
   const y = axisY / length
@@ -596,25 +620,23 @@ function axisRotationMatrix(axisX, axisY, axisZ, angle) {
   const cosine = Math.cos(angle)
   const sine = Math.sin(angle)
   const inverseCosine = 1 - cosine
-  return [
-    cosine + x * x * inverseCosine,
-    x * y * inverseCosine - z * sine,
-    x * z * inverseCosine + y * sine,
-    y * x * inverseCosine + z * sine,
-    cosine + y * y * inverseCosine,
-    y * z * inverseCosine - x * sine,
-    z * x * inverseCosine - y * sine,
-    z * y * inverseCosine + x * sine,
-    cosine + z * z * inverseCosine
-  ]
+  target[0] = cosine + x * x * inverseCosine
+  target[1] = x * y * inverseCosine - z * sine
+  target[2] = x * z * inverseCosine + y * sine
+  target[3] = y * x * inverseCosine + z * sine
+  target[4] = cosine + y * y * inverseCosine
+  target[5] = y * z * inverseCosine - x * sine
+  target[6] = z * x * inverseCosine - y * sine
+  target[7] = z * y * inverseCosine + x * sine
+  target[8] = cosine + z * z * inverseCosine
+  return target
 }
 
 function rotateSphere(axisX, axisY, angle) {
   if (!angle) return
-  sphereRotation = multiplyRotationMatrices(
-    axisRotationMatrix(axisX, axisY, 0, angle),
-    sphereRotation
-  )
+  axisRotationMatrix(axisX, axisY, 0, angle, axisMatrix)
+  multiplyRotationMatrices(axisMatrix, sphereRotation, rotationProduct)
+  sphereRotation.set(rotationProduct)
 }
 
 function updateDetailLayout() {
@@ -653,7 +675,7 @@ function positionDetailBesideSkill(id) {
   const index = skillIndexById.get(id)
   if (index === undefined) return
 
-  const projected = projectPoint(spherePoints[index])
+  const projected = projectPoint(index)
   selectedSkillSide.value = projected.x < 0 ? 'left' : 'right'
   updateDetailLayout()
 }
@@ -663,49 +685,80 @@ function renderSphere() {
   const radius = Math.min(canvasWidth * 0.42, canvasHeight * 0.43)
   const centerX = canvasWidth / 2
   const centerY = canvasHeight * 0.49
-  const projections = spherePoints.map(point => {
-    const projected = projectPoint(point)
-    return {
-      ...projected,
-      x: centerX + projected.x * radius,
-      y: centerY + projected.y * radius
-    }
-  })
+  const m0 = sphereRotation[0], m1 = sphereRotation[1], m2 = sphereRotation[2]
+  const m3 = sphereRotation[3], m4 = sphereRotation[4], m5 = sphereRotation[5]
+  const m6 = sphereRotation[6], m7 = sphereRotation[7], m8 = sphereRotation[8]
 
-  projections.forEach((point, index) => {
+  for (let index = 0; index < skillCount; index += 1) {
+    const offset = index * 3
+    const pointX = spherePoints[offset]
+    const pointY = spherePoints[offset + 1]
+    const pointZ = spherePoints[offset + 2]
+    const z = m6 * pointX + m7 * pointY + m8 * pointZ
+    const perspective = 1 / (1.18 - z * 0.25)
+    const screenX = centerX + (m0 * pointX + m1 * pointY + m2 * pointZ) * perspective * radius
+    const screenY = centerY + (m3 * pointX + m4 * pointY + m5 * pointZ) * perspective * radius
+    projections[index * 2] = screenX
+    projections[index * 2 + 1] = screenY
+
     const element = skillElements[index]
-    if (!element) return
-    element.style.transform = `translate3d(${point.x}px,${point.y}px,0) translate(-50%,-50%) scale(${point.scale})`
-    element.style.zIndex = String(Math.round((point.z + 1) * 30) + 10)
-    element.style.setProperty('--depth-opacity', String(Math.max(0.42, 0.68 + point.z * 0.3)))
-  })
+    if (!element) continue
 
-  drawLinks(projections)
+    // Every style write costs a recalc, so only touch what actually changed.
+    const scale = Math.round((0.78 + (z + 1) * 0.16) * 1000) / 1000
+    const transform =
+      `translate3d(${Math.round(screenX * 10) / 10}px,${Math.round(screenY * 10) / 10}px,0)` +
+      ` translate(-50%,-50%) scale(${scale})`
+    if (transform !== nodeTransforms[index]) {
+      element.style.transform = transform
+      nodeTransforms[index] = transform
+    }
+
+    const layer = Math.round((z + 1) * 30) + 10
+    if (layer !== nodeLayers[index]) {
+      element.style.zIndex = String(layer)
+      nodeLayers[index] = layer
+    }
+
+    // Quantised to 0.02 steps: imperceptible, but skips most custom-property writes,
+    // each of which would otherwise invalidate the node's whole subtree.
+    const depthStep = Math.round(Math.max(0.42, 0.68 + z * 0.3) * 50)
+    if (depthStep !== nodeDepths[index]) {
+      element.style.setProperty('--depth-opacity', String(depthStep / 50))
+      nodeDepths[index] = depthStep
+    }
+  }
+
+  drawLinks()
 }
 
-function drawLinks(projections) {
-  const context = linkCanvas.value?.getContext('2d')
-  if (!context) return
-  context.clearRect(0, 0, canvasWidth, canvasHeight)
+function drawLinks() {
+  if (!linkContext) return
 
   const activeSkillId = activeConnectionSkillId.value
-  if (activeSkillId) {
-    context.beginPath()
-    links.forEach(link => {
-      if (link.from !== activeSkillId && link.to !== activeSkillId) return
-      const from = projections[link.fromIndex]
-      const to = projections[link.toIndex]
-      context.moveTo(from.x, from.y)
-      context.lineTo(to.x, to.y)
-    })
-    context.globalAlpha = 0.85
-    context.strokeStyle = skillById.get(activeSkillId)?.color || '#6554ee'
-    context.lineWidth = 2.2
-    context.setLineDash([8, 7])
-    context.stroke()
-    context.setLineDash([])
+  const activeLinks = activeSkillId ? linksBySkillId.get(activeSkillId) : null
+  if (!activeLinks) {
+    if (linksAreDrawn) {
+      linkContext.clearRect(0, 0, canvasWidth, canvasHeight)
+      linksAreDrawn = false
+    }
+    return
   }
-  context.globalAlpha = 1
+
+  linkContext.clearRect(0, 0, canvasWidth, canvasHeight)
+  linkContext.beginPath()
+  activeLinks.forEach(link => {
+    linkContext.moveTo(projections[link.fromIndex * 2], projections[link.fromIndex * 2 + 1])
+    linkContext.lineTo(projections[link.toIndex * 2], projections[link.toIndex * 2 + 1])
+  })
+  linkContext.globalAlpha = 0.85
+  linkContext.strokeStyle = skillById.get(activeSkillId)?.color || '#6554ee'
+  linkContext.lineWidth = 2.2
+  linkContext.setLineDash([8, 7])
+  linkContext.stroke()
+  linkContext.setLineDash([])
+  linkContext.globalAlpha = 1
+  linksAreDrawn = true
 }
 
 function startDrag(event, skillId = null) {
@@ -776,14 +829,11 @@ function handleKeydown(event) {
 }
 
 function animate(time) {
+  animationFrame = 0
+  if (!sphereIsVisible || !pageIsVisible) return
+
   if (!lastFrame) lastFrame = time
   const elapsed = Math.min(time - lastFrame, 40)
-
-  if (!sphereIsVisible || !pageIsVisible) {
-    lastFrame = time
-    animationFrame = requestAnimationFrame(animate)
-    return
-  }
 
   if (isDragging.value && (pendingDragX || pendingDragY)) {
     rotateSphere(0, -1, pendingDragX * 0.006)
@@ -799,7 +849,7 @@ function animate(time) {
     !selectedSkillId.value &&
     !hoveredSkillId.value
   ) {
-    const direction = rotationDirections.find(option => option.id === rotationDirection.value)
+    const direction = rotationDirectionById.get(rotationDirection.value)
     const rotationStep = elapsed * 0.000084 * rotationSpeedMultiplier.value
     if (direction && rotationStep) {
       rotateSphere(direction.x, -direction.y, rotationStep)
@@ -816,9 +866,16 @@ function animate(time) {
   animationFrame = requestAnimationFrame(animate)
 }
 
+function startAnimation() {
+  if (animationFrame) return
+  lastFrame = 0
+  animationFrame = requestAnimationFrame(animate)
+}
+
 function handlePageVisibility() {
   pageIsVisible = !document.hidden
   lastFrame = 0
+  if (pageIsVisible) startAnimation()
 }
 
 function resizeLinkCanvas() {
@@ -826,7 +883,10 @@ function resizeLinkCanvas() {
   const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5)
   linkCanvas.value.width = Math.max(1, Math.round(canvasWidth * pixelRatio))
   linkCanvas.value.height = Math.max(1, Math.round(canvasHeight * pixelRatio))
-  linkCanvas.value.getContext('2d')?.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
+  linkContext = linkCanvas.value.getContext('2d')
+  linkContext?.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
+  // Resizing the backing store wipes it.
+  linksAreDrawn = false
 }
 
 onMounted(() => {
@@ -847,6 +907,7 @@ onMounted(() => {
     sphereIsVisible = entry.isIntersecting
     lastFrame = 0
     renderNeeded = true
+    if (sphereIsVisible) startAnimation()
   }, { rootMargin: '120px' })
   visibilityObserver.observe(sphereCanvas.value)
   document.addEventListener('visibilitychange', handlePageVisibility)
@@ -854,7 +915,7 @@ onMounted(() => {
   renderSphere()
   renderNeeded = false
   lastRenderFrame = performance.now()
-  animationFrame = requestAnimationFrame(animate)
+  startAnimation()
 })
 
 onBeforeUnmount(() => {

@@ -42,6 +42,20 @@
       ],
       "port": 4330,
       "autoPort": false
+    },
+    {
+      "name": "portfolio-dev-c",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "4345",
+        "--strictPort"
+      ],
+      "port": 4345,
+      "autoPort": false
     }
   ]
 }

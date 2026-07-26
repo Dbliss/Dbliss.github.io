@@ -12,6 +12,7 @@
 
     <div ref="workspaceRef" class="wealth-workspace" :class="{ 'is-entered': hasEnteredWorkspace }">
       <WealthStageProgress
+        v-if="!isRegionScoutMode"
         :stages="stageDefinitions"
         :current-stage="currentStage"
         :current-substep="activeSheet"
@@ -37,23 +38,23 @@
 
       <Transition name="wealth-stage-slide" mode="out-in">
         <section :key="currentStage" class="wealth-stage">
-        <template v-if="currentStage === 'introduction'">
-          <WealthIntroStep :form="form" />
-          <div class="wealth-stage-footer">
-            <button type="button" class="wealth-secondary-btn" disabled>Back</button>
-            <p v-if="introductionStageMessage" class="wealth-stage-hint">{{ introductionStageMessage }}</p>
-            <button type="button" class="wealth-primary-btn" :disabled="!canProceedToInterests" @click="goToInterests">Next: Interests</button>
-          </div>
-        </template>
-
-        <template v-else-if="currentStage === 'interests'">
+        <template v-if="currentStage === 'interests'">
           <WealthInterestStep
             :scenario-selection="form.scenarioSelection"
             :selected-mode="selectedComparisonMode"
             @select-mode="selectComparisonMode"
           />
           <div class="wealth-stage-footer">
-            <button type="button" class="wealth-secondary-btn" @click="currentStage = 'introduction'">Back</button>
+            <button type="button" class="wealth-secondary-btn" disabled>Back</button>
+          </div>
+        </template>
+
+        <template v-else-if="currentStage === 'situation'">
+          <WealthIntroStep :form="form" />
+          <div class="wealth-stage-footer">
+            <button type="button" class="wealth-secondary-btn" @click="currentStage = 'interests'">Back: Interests</button>
+            <p v-if="situationStageMessage" class="wealth-stage-hint">{{ situationStageMessage }}</p>
+            <button type="button" class="wealth-primary-btn" :disabled="!canProceedToInputs" @click="goToInputs">Next: Inputs</button>
           </div>
         </template>
 
@@ -73,9 +74,9 @@
             @select-property-area="handlePropertyAreaSelect"
           />
 
-          <div class="wealth-stage-footer">
+          <div class="wealth-stage-footer" :class="{ 'wealth-stage-footer--scout': activeSheet === 'regionScout' }">
             <button type="button" class="wealth-secondary-btn" @click="goToPreviousInputStep">
-              {{ activeSheet === firstInputSheet ? 'Back: Interests' : `Back: ${previousInputSheetLabel}` }}
+              {{ activeSheet === firstInputSheet ? `Back: ${firstInputSheetBackLabel}` : `Back: ${previousInputSheetLabel}` }}
             </button>
             <p v-if="activeInputSheetMessage" class="wealth-stage-hint">{{ activeInputSheetMessage }}</p>
             <button
@@ -92,9 +93,11 @@
 
         <template v-else>
           <div v-if="selectedComparisonMode === 'regionScout'" class="wealth-region-scout-stage">
+            <div class="wealth-stage-footer wealth-stage-footer--scout-results">
+              <button type="button" class="wealth-secondary-btn" @click="goToSuburbSearch">Back: Suburb search</button>
+            </div>
             <WealthRegionScoutStep
               view="results"
-              :form="form"
               :scout-config="regionScoutConfig"
               :suburb-search-context="suburbSearchContext"
               @loading-change="handleRegionScoutLoadingChange"
@@ -154,9 +157,9 @@ const props = defineProps({
   project: { type: Object, required: true }
 })
 
-const stageDefinitions = [
-  { key: 'introduction', label: 'Introduction' },
+const allStageDefinitions = [
   { key: 'interests', label: 'Interests' },
+  { key: 'situation', label: 'Your Situation' },
   { key: 'inputs', label: 'Inputs' },
   { key: 'results', label: 'Results' }
 ]
@@ -175,7 +178,7 @@ form.scenarioSelection = resolveScenarioSelection(form.scenarioSelection)
 
 const strategyMeta = getWealthStrategyMeta()
 const client = new WealthSimulationClient()
-const currentStage = ref('introduction')
+const currentStage = ref('interests')
 const activeSheet = ref('stock')
 const selectedComparisonMode = ref(null)
 const hasEnteredWorkspace = ref(false)
@@ -193,25 +196,24 @@ const selectedApartmentAreaSelection = ref(null)
 const selectedHouseAreaSelection = ref(null)
 const areaMarketPayload = ref(wealthPsiRegionMarketPayload)
 const regionScoutConfig = reactive({
-  targetYears: 5,
-  buyFlexibility: 'target',
+  budget: 800000,
   propertyType: 'apartment',
-  granularity: 'region',
+  granularity: 'suburb',
   locationKey: null,
-  savingsMode: 'defaultPortfolio',
-  depositMode: 'optimal',
-  fixedDepositPct: 0.2,
   rentalYieldWeight: 0,
-  riskAppetite: 'medium',
-  hasCustomPriceRange: false,
-  minPrice: null,
-  maxPrice: null
+  riskAppetite: 5
 })
 const heroRef = ref(null)
 const workspaceRef = ref(null)
 let runToken = 0
 let isEnforcingWorkspaceScroll = false
 const workspaceRevealOffset = 104
+
+// The region scout is a pure market search, so it skips the personal-situation stage.
+const isRegionScoutMode = computed(() => selectedComparisonMode.value === 'regionScout')
+const stageDefinitions = computed(() =>
+  allStageDefinitions.filter((stage) => !(isRegionScoutMode.value && stage.key === 'situation'))
+)
 
 const suburbSearchContext = computed(() => buildAreaSearchContext(areaMarketPayload.value))
 const selectedApartmentAreaRecord = computed(() => {
@@ -245,7 +247,7 @@ const loadingScreenContent = computed(() => {
   if (selectedComparisonMode.value === 'regionScout') {
     return {
       eyebrow: 'Calculating shortlist',
-      title: `Ranking the best ${regionScoutConfig.granularity === 'region' ? 'regions' : 'suburbs'}`,
+      title: 'Ranking the best suburbs',
       copy: 'Comparing affordability, growth, yield, and timing for your current settings.'
     }
   }
@@ -293,7 +295,7 @@ const inputStageSubsteps = computed(() =>
       sheetKey === 'stock'
         ? 'Stock assumptions'
         : sheetKey === 'regionScout'
-          ? 'Region scout'
+          ? 'Suburb search'
         : sheetKey === 'apartment'
           ? 'Apartment assumptions'
           : sheetKey === 'house'
@@ -358,25 +360,17 @@ function getInputSheetState(sheetKey) {
   }
 
   if (sheetKey === 'regionScout') {
-    const portfolioWeights = [
-      Number(form.portfolioConfig.asxWeight) || 0,
-      Number(form.portfolioConfig.qqqWeight) || 0,
-      Number(form.portfolioConfig.vgsWeight) || 0,
-      Number(form.portfolioConfig.vgeWeight) || 0,
-      Number(form.portfolioConfig.dbpWeight) || 0,
-      Number(form.portfolioConfig.bondWeight) || 0,
-      Number(form.portfolioConfig.cashWeight) || 0,
-      Number(form.portfolioConfig.bitcoinWeight) || 0
-    ]
-    const portfolioTotal = portfolioWeights.reduce((sum, value) => sum + value, 0)
-    const hasValidSavingsMode = regionScoutConfig.savingsMode === 'cash' || Math.abs(portfolioTotal - 1) < 0.011
-    const hasValidLocation = regionScoutConfig.locationKey
-      ? true
-      : ['region', 'suburb'].includes(regionScoutConfig.granularity)
+    if (!(Number(regionScoutConfig.budget) > 0)) {
+      return { complete: false, message: 'Enter a budget before searching.' }
+    }
 
-    return hasValidSavingsMode && hasValidLocation
+    // A null location means "all of NSW"; a set one has to resolve to a real region.
+    const hasValidLocation = !regionScoutConfig.locationKey
+      || Boolean(suburbSearchContext.value.areasByKey[regionScoutConfig.locationKey])
+
+    return hasValidLocation
       ? { complete: true, message: '' }
-      : { complete: false, message: 'Complete the region scout inputs before continuing.' }
+      : { complete: false, message: 'Choose which region the scout should search before continuing.' }
   }
 
   return { complete: true, message: '' }
@@ -431,16 +425,20 @@ function getSheetLabel(sheetKey) {
 
 const previousInputSheetLabel = computed(() => getSheetLabel(previousInputSheet.value))
 const nextInputSheetLabel = computed(() => getSheetLabel(nextInputSheet.value))
-const inputPrimaryActionLabel = computed(() =>
-  isLastInputSheet.value ? 'Generate results' : `Next: ${nextInputSheetLabel.value}`
+const inputPrimaryActionLabel = computed(() => {
+  if (!isLastInputSheet.value) return `Next: ${nextInputSheetLabel.value}`
+  return isRegionScoutMode.value ? 'Search areas' : 'Generate results'
+})
+const firstInputSheetBackLabel = computed(() =>
+  isRegionScoutMode.value ? 'Interests' : 'Your Situation'
 )
-const introductionStageState = computed(() => ({ complete: true, message: '' }))
-const canProceedToInterests = computed(() => introductionStageState.value.complete)
-const introductionStageMessage = computed(() => introductionStageState.value.message)
+const situationStageState = computed(() => ({ complete: true, message: '' }))
+const canProceedToInputs = computed(() => situationStageState.value.complete)
+const situationStageMessage = computed(() => situationStageState.value.message)
 const disabledStageKeys = computed(() => {
   const keys = []
-  if (!canProceedToInterests.value) keys.push('interests')
-  if (!selectedComparisonMode.value) keys.push('inputs')
+  if (!selectedComparisonMode.value) keys.push('situation')
+  if (!selectedComparisonMode.value || !canProceedToInputs.value) keys.push('inputs')
   if (!((selectedComparisonMode.value === 'regionScout' || result.value) && allInputSheetsComplete.value)) keys.push('results')
   return keys
 })
@@ -545,25 +543,39 @@ function selectComparisonMode(modeKey) {
     stockBaselineKey
   })
 
-  if (currentStage.value === 'interests') {
-    goToInputs()
+  if (currentStage.value !== 'interests') return
+
+  if (modeKey === 'regionScout') {
+    void enterWorkspace()
+    currentStage.value = 'inputs'
+    activeSheet.value = 'regionScout'
+    return
   }
+
+  goToSituation()
 }
 
-function goToInterests() {
-  if (!canProceedToInterests.value) return
-  currentStage.value = 'interests'
+function goToSituation() {
+  void enterWorkspace()
+  currentStage.value = 'situation'
 }
 
 function goToInputs() {
+  if (!canProceedToInputs.value) return
   void enterWorkspace()
   currentStage.value = 'inputs'
   activeSheet.value = firstInputSheet.value
 }
 
+// The scout pathway hides the stage bar, so results need their own way back to the form.
+function goToSuburbSearch() {
+  currentStage.value = 'inputs'
+  activeSheet.value = 'regionScout'
+}
+
 function handleStageSelect(stageKey) {
   if (disabledStageKeys.value.includes(stageKey)) return
-  if (stageKey === 'inputs' && currentStage.value === 'introduction') return
+  if (stageKey === 'inputs' && currentStage.value === 'interests') return
   void enterWorkspace()
   currentStage.value = stageKey
 }
@@ -580,7 +592,7 @@ function goToPreviousInputStep() {
     return
   }
 
-  currentStage.value = 'interests'
+  currentStage.value = isRegionScoutMode.value ? 'interests' : 'situation'
 }
 
 async function goToNextInputStep() {
@@ -734,7 +746,7 @@ watch(form, () => {
 }, { deep: true })
 
 watch(currentStage, (stageKey) => {
-  if (stageKey !== 'introduction') {
+  if (stageKey !== 'interests') {
     void enterWorkspace()
   }
   if (stageKey === 'results') {
@@ -864,6 +876,8 @@ onBeforeUnmount(() => {
 <style scoped>
 .wealth-page {
   --wealth-content-max: 1360px;
+  /* Shared by the region scout form and its footer so both stay on the same column. */
+  --wealth-scout-max: 64rem;
   color: #173050;
   box-sizing: border-box;
   position: relative;
@@ -1012,6 +1026,11 @@ onBeforeUnmount(() => {
   align-items: center;
 }
 
+.wealth-stage-footer--scout {
+  width: min(100%, var(--wealth-scout-max));
+  margin-inline: auto;
+}
+
 .wealth-stage-hint {
   flex: 1 1 18rem;
   margin: 0;
@@ -1081,6 +1100,11 @@ onBeforeUnmount(() => {
 
 .wealth-region-scout-stage {
   display: grid;
+  gap: 0.85rem;
+}
+
+.wealth-stage-footer--scout-results {
+  justify-content: flex-start;
 }
 
 .wealth-results-loading-overlay {
@@ -1149,6 +1173,18 @@ onBeforeUnmount(() => {
 
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (min-width: 1200px) {
+  .wealth-page {
+    --wealth-scout-max: 70rem;
+  }
+}
+
+@media (min-width: 1560px) {
+  .wealth-page {
+    --wealth-scout-max: 76rem;
   }
 }
 

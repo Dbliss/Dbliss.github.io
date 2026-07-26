@@ -192,6 +192,7 @@ The goal is not to give personal advice, but to make the trade-offs and drivers 
     category: 'Personal project',
     repoUrl: '',
     liveUrl: '',
-    featured: false
+    featured: false,
+    hideFooter: true
   }
 ]

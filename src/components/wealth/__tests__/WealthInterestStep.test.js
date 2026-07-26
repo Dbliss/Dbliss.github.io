@@ -12,7 +12,8 @@ describe('WealthInterestStep', () => {
 
     expect(wrapper.text()).toContain('Deep dive in portfolio options')
     expect(wrapper.text()).toContain('Property vs stocks')
-    expect(wrapper.text()).toContain('Property as an investment vs living')
+    expect(wrapper.text()).toContain('Property as investment vs living')
+    expect(wrapper.text()).toContain('Best suburbs to target')
     expect(wrapper.find('[data-testid="interest-mode-portfolioDeepDive"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="interest-mode-propertyVsStocks"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="interest-mode-propertyInvestmentVsLiving"]').exists()).toBe(true)

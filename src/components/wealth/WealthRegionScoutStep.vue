@@ -1,639 +1,483 @@
 <template>
-  <section class="wealth-scout card">
+  <section class="wealth-scout" :class="viewMode === 'inputs' ? 'wealth-scout--bare' : 'card'">
     <section v-if="viewMode === 'inputs'" class="wealth-scout__panel wealth-scout__panel--form">
-      <div class="wealth-scout__hero">
-        <h2>Find the next area worth targeting</h2>
-      </div>
+      <div class="scout-form">
+        <header class="scout-form__head">
+          <p class="scout-form__eyebrow">Area search</p>
+          <h2>Set your search</h2>
+          <p class="scout-form__lede">
+            Tell us your budget and what matters most, and we will rank every NSW suburb for you.
+          </p>
+        </header>
 
-      <div class="wealth-scout__inputs">
-        <section class="wealth-scout__input-section">
-          <div class="wealth-scout__question-head wealth-scout__question-head--stacked">
-            <h3>When do you want to buy?</h3>
-          </div>
-          <div class="wealth-scout__selection-stage">
-            <div class="wealth-scout__choice-grid wealth-scout__choice-grid--two">
-              <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.buyFlexibility === 'target' }" @click="setTargetBuyMode()">
-                <strong>I'll choose when to buy</strong>
-                <span>Set a target purchase window yourself.</span>
-              </button>
-              <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.buyFlexibility === 'whenever' }" @click="setWheneverMode()">
-                <strong>Buy whenever I can afford to</strong>
-                <span>Automatically find the earliest buying point.</span>
-              </button>
+        <section class="scout-form__block">
+          <div class="scout-form__budget-head">
+            <span class="wealth-scout__metric-label">
+              Target purchase price
+              <span
+                class="wealth-scout__metric-tooltip"
+                tabindex="0"
+                data-tooltip="The most you would pay for a property. Suburbs whose median sits at or below this price are treated as within budget."
+                aria-label="What is the target purchase price?"
+              >i</span>
+            </span>
+            <div class="scout-form__budget-value" data-prefix="$">
+              <input
+                :value="formattedBudget"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                aria-label="Target purchase price"
+                data-testid="scout-budget-input"
+                :style="budgetInputStyle"
+                @input="handleBudgetTextInput"
+              />
             </div>
-            <div class="wealth-scout__selection-detail">
-              <div v-if="draftConfig.buyFlexibility === 'target'" class="wealth-scout__slider-card">
-                <div class="wealth-scout__slider-head">
-                  <span>Target timing</span>
-                  <strong>{{ sliderTimingLabel }}</strong>
-                </div>
-                <input v-model.number="targetYearsUi" class="wealth-scout__slider" type="range" min="0" max="20" step="1" @input="handleTargetYearsInput" />
-                <div class="wealth-scout__slider-scale">
-                  <span>Now</span>
-                  <span>10 years</span>
-                  <span>20 years</span>
-                </div>
-              </div>
+          </div>
+
+          <input
+            v-model.number="budgetUi"
+            class="scout-form__slider"
+            type="range"
+            aria-label="Drag to adjust your target purchase price"
+            :style="budgetSliderStyle"
+            :min="budgetSliderBounds.min"
+            :max="budgetSliderBounds.max"
+            :step="budgetSliderBounds.step"
+          />
+
+          <div class="scout-form__scale">
+            <span v-for="tick in budgetScaleTicks" :key="tick.value">{{ tick.label }}</span>
+          </div>
+
+          <div class="scout-form__callout">
+            <span class="scout-form__callout-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19V9" />
+                <path d="M10 19V5" />
+                <path d="M16 19v-7" />
+                <path d="M21 19H3" />
+              </svg>
+            </span>
+            <div class="scout-form__callout-copy">
+              <strong>{{ medianHeadline }}</strong>
+              <span>{{ medianSubline }}</span>
             </div>
           </div>
         </section>
 
-        <section class="wealth-scout__input-section">
-          <div class="wealth-scout__question-head wealth-scout__question-head--stacked">
-            <h3>Are you comfortable investing while you save for a house?</h3>
-          </div>
-          <div class="wealth-scout__selection-stage">
-            <div class="wealth-scout__choice-grid wealth-scout__choice-grid--two">
-              <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.savingsMode === 'defaultPortfolio' }" @click="selectSavingsMode('defaultPortfolio')">
-                <strong>Yes, invest while saving</strong>
-                <span>Use the portfolio mix below to grow the deposit.</span>
-              </button>
-              <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.savingsMode === 'cash' }" @click="selectSavingsMode('cash')">
-                <strong>No, keep it in cash</strong>
-                <span>Assume savings stay in a high-interest cash path.</span>
-              </button>
-            </div>
-            <div class="wealth-scout__selection-detail">
-              <div v-if="draftConfig.savingsMode === 'defaultPortfolio'" class="wealth-scout__portfolio">
-                <label
-                  v-for="allocation in portfolioAllocationFields"
-                  :key="allocation.key"
-                  class="wealth-scout__allocation"
-                  :class="{ 'is-locked': isAllocationLocked(allocation.key) }"
-                >
-                  <span class="wealth-scout__allocation-top">
-                    <span class="wealth-scout__allocation-title">
-                      <i class="wealth-scout__swatch" :style="{ background: allocation.color }"></i>
-                      {{ allocation.label }}
-                    </span>
-                    <span class="wealth-scout__allocation-actions">
-                      <strong>{{ getAllocationPct(allocation.key) }}%</strong>
-                      <button
-                        type="button"
-                        class="wealth-scout__lock-btn"
-                        :class="{ 'is-active': isAllocationLocked(allocation.key) }"
-                        :aria-pressed="isAllocationLocked(allocation.key)"
-                        @click.prevent="toggleAllocationLock(allocation.key)"
-                      >
-                        {{ isAllocationLocked(allocation.key) ? 'Locked' : 'Lock' }}
-                      </button>
-                    </span>
-                  </span>
-                  <div class="wealth-scout__allocation-controls">
-                    <input :value="getAllocationPct(allocation.key)" type="range" min="0" max="100" step="1" :disabled="isAllocationLocked(allocation.key) && !hasUnlockedAllocationPeers(allocation.key)" @input="handleAllocationInput(allocation.key, $event)" />
-                    <input :value="getAllocationPct(allocation.key)" type="number" min="0" max="100" step="1" :disabled="isAllocationLocked(allocation.key) && !hasUnlockedAllocationPeers(allocation.key)" @input="handleAllocationInput(allocation.key, $event)" />
-                  </div>
-                </label>
-              </div>
-            </div>
+        <section class="scout-form__block">
+          <h3 class="scout-form__question">Next, what type of property?</h3>
+          <div class="scout-form__option-grid">
+            <button
+              type="button"
+              class="scout-form__option"
+              :class="{ 'is-active': draftConfig.propertyType === 'apartment' }"
+              :aria-pressed="draftConfig.propertyType === 'apartment'"
+              @click="draftConfig.propertyType = 'apartment'"
+            >
+              <span class="scout-form__option-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 21h18" />
+                  <path d="M5 21V4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v17" />
+                  <path d="M14 9h4a1 1 0 0 1 1 1v11" />
+                  <path d="M8 7h3M8 11h3M8 15h3" />
+                </svg>
+              </span>
+              <span class="scout-form__option-copy">
+                <strong>Apartment</strong>
+                <span>Rank by apartment medians, growth and rental yield.</span>
+              </span>
+              <span class="scout-form__radio" aria-hidden="true"></span>
+            </button>
+
+            <button
+              type="button"
+              class="scout-form__option"
+              :class="{ 'is-active': draftConfig.propertyType === 'house' }"
+              :aria-pressed="draftConfig.propertyType === 'house'"
+              @click="draftConfig.propertyType = 'house'"
+            >
+              <span class="scout-form__option-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 10.5 12 3l9 7.5" />
+                  <path d="M5.5 9.5V21h13V9.5" />
+                  <path d="M10 21v-5.5h4V21" />
+                </svg>
+              </span>
+              <span class="scout-form__option-copy">
+                <strong>House</strong>
+                <span>Rank by house medians, growth and rental yield.</span>
+              </span>
+              <span class="scout-form__radio" aria-hidden="true"></span>
+            </button>
           </div>
         </section>
 
-        <section class="wealth-scout__input-section">
-          <div class="wealth-scout__question-head wealth-scout__question-head--stacked">
-            <h3>Your purchasing power and deposit runway</h3>
-          </div>
-          <div class="wealth-scout__choice-grid wealth-scout__choice-grid--two">
-            <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.depositMode === 'optimal' }" @click="draftConfig.depositMode = 'optimal'">
-              <strong>Use the strongest deposit automatically</strong>
-              <span>The scout scales deposit size up as savings grow.</span>
+        <section class="scout-form__block">
+          <h3 class="scout-form__question">Where should we look?</h3>
+          <div class="scout-form__option-grid">
+            <button
+              type="button"
+              class="scout-form__option"
+              :class="{ 'is-active': locationPreference === 'broad' }"
+              :aria-pressed="locationPreference === 'broad'"
+              @click="selectLocationPreference('broad')"
+            >
+              <span class="scout-form__option-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4z" />
+                  <path d="M9 4v13M15 6.5v13" />
+                </svg>
+              </span>
+              <span class="scout-form__option-copy">
+                <strong>All of NSW</strong>
+                <span>Rank every individual suburb across the state.</span>
+              </span>
+              <span class="scout-form__radio" aria-hidden="true"></span>
             </button>
-            <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.depositMode === 'fixed' }" @click="draftConfig.depositMode = 'fixed'">
-              <strong>Set my own deposit %</strong>
-              <span>Keep the deposit ratio fixed across the scouting window.</span>
-            </button>
-          </div>
-          <div v-if="draftConfig.depositMode === 'fixed'" class="wealth-scout__slider-card wealth-scout__slider-card--compact">
-            <div class="wealth-scout__slider-head">
-              <span>Fixed deposit size</span>
-              <strong>{{ Math.round(draftConfig.fixedDepositPct * 100) }}%</strong>
-            </div>
-            <input v-model.number="fixedDepositPctUi" class="wealth-scout__slider" type="range" min="5" max="40" step="1" />
-          </div>
-        </section>
 
-        <section class="wealth-scout__input-section">
-          <div class="wealth-scout__question-head wealth-scout__question-head--stacked">
-            <h3>Do you have a preference for location?</h3>
-          </div>
-          <div class="wealth-scout__choice-grid wealth-scout__choice-grid--two">
-            <button type="button" class="wealth-scout__choice" :class="{ 'is-active': locationPreference === 'specific' }" @click="selectLocationPreference('specific')">
-              <strong>Yes, I have a region in mind</strong>
-              <span>Rank the best suburbs inside that region.</span>
+            <button
+              type="button"
+              class="scout-form__option"
+              :class="{ 'is-active': locationPreference === 'specific' }"
+              :aria-pressed="locationPreference === 'specific'"
+              @click="selectLocationPreference('specific')"
+            >
+              <span class="scout-form__option-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z" />
+                  <circle cx="12" cy="10" r="2.6" />
+                </svg>
+              </span>
+              <span class="scout-form__option-copy">
+                <strong>One region</strong>
+                <span>Rank only the suburbs inside a region you pick.</span>
+              </span>
+              <span class="scout-form__radio" aria-hidden="true"></span>
             </button>
-            <button type="button" class="wealth-scout__choice" :class="{ 'is-active': locationPreference !== 'specific' }" @click="selectLocationPreference('broad')">
-              <strong>No strong preference</strong>
-              <span>Choose between top regions or all individual suburbs.</span>
-            </button>
           </div>
-          <Transition name="wealth-scout-reveal" mode="out-in">
-            <div v-if="locationPreference === 'specific'" key="specific" class="wealth-scout__range-grid wealth-scout__range-grid--single">
-              <label>
-                <span>Preferred region</span>
-                <select v-model="draftConfig.locationKey">
-                  <option :value="null">Select a region</option>
-                  <option v-for="option in regionOptions" :key="option.key" :value="option.key">{{ option.label }}</option>
-                </select>
-              </label>
-            </div>
-            <div v-else key="broad" class="wealth-scout__choice-grid wealth-scout__choice-grid--two">
-              <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.granularity === 'region' }" @click="setBroadSearchMode('region')">
-                <strong>Show top regions</strong>
-                <span>Return larger regional catchments first.</span>
-              </button>
-              <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.granularity === 'suburb' }" @click="setBroadSearchMode('suburb')">
-                <strong>Show all individual suburbs</strong>
-                <span>Rank individual suburbs across NSW.</span>
-              </button>
-            </div>
+
+          <Transition name="wealth-scout-reveal">
+            <label v-if="locationPreference === 'specific'" class="scout-form__field">
+              <span>Preferred region</span>
+              <select v-model="draftConfig.locationKey">
+                <option v-for="option in regionOptions" :key="option.key" :value="option.key">{{ option.label }}</option>
+              </select>
+            </label>
           </Transition>
         </section>
 
-        <section class="wealth-scout__input-section">
-          <div class="wealth-scout__question-head wealth-scout__question-head--stacked">
-            <h3>Are you interested in an apartment or house?</h3>
-          </div>
-          <div class="wealth-scout__choice-grid wealth-scout__choice-grid--two">
-            <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.propertyType === 'apartment' }" @click="draftConfig.propertyType = 'apartment'">
-              <strong>Apartment</strong>
-              <span>Use apartment medians and apartment-specific holding costs.</span>
-            </button>
-            <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.propertyType === 'house' }" @click="draftConfig.propertyType = 'house'">
-              <strong>House</strong>
-              <span>Use house medians and house-specific borrowing assumptions.</span>
-            </button>
-          </div>
-          <div class="wealth-scout__summary-grid">
-            <article class="wealth-scout__summary-card">
-              <span>Search scope</span>
-              <strong>{{ searchScopeLabel }}</strong>
-              <small>{{ locationSummaryLabel }}</small>
-            </article>
-            <article class="wealth-scout__summary-card">
-              <span>Buying goal</span>
-              <strong>{{ buyTimingLabel }}</strong>
-              <small>{{ draftConfig.buyFlexibility === 'whenever' ? 'Scout will surface earliest affordable timing' : 'Results fixed to the chosen timeframe' }}</small>
-            </article>
+        <section class="scout-form__block">
+          <h3 class="scout-form__question">
+            <span class="wealth-scout__metric-label">
+              What matters most to you?
+              <span
+                class="wealth-scout__metric-tooltip"
+                tabindex="0"
+                data-tooltip="Growth ranks suburbs on projected capital gains. Yield ranks them on projected rental return. Anywhere in between blends the two."
+                aria-label="How is the growth and yield balance used?"
+              >i</span>
+            </span>
+          </h3>
+          <p class="scout-form__hint">Balance growth potential against rental return.</p>
+
+          <div class="scout-form__balance">
+            <div class="scout-form__balance-side">
+              <strong>Growth</strong>
+              <span>Capital growth focused</span>
+            </div>
+            <div class="scout-form__balance-track">
+              <span class="scout-form__balance-flag" :style="rankingFlagStyle">{{ rankingPreferenceLabel }}</span>
+              <input
+                v-model.number="draftConfig.rentalYieldWeight"
+                class="scout-form__slider"
+                type="range"
+                aria-label="Balance growth against rental yield"
+                :style="rankingSliderStyle"
+                min="0"
+                max="1"
+                step="0.05"
+              />
+            </div>
+            <div class="scout-form__balance-side scout-form__balance-side--end">
+              <strong>Yield</strong>
+              <span>Rental yield focused</span>
+            </div>
           </div>
         </section>
 
-        <section class="wealth-scout__input-section">
-          <div class="wealth-scout__question-head wealth-scout__question-head--stacked">
-            <h3>How should results be sorted?</h3>
-          </div>
-          <div class="wealth-scout__ranking">
-            <div class="wealth-scout__ranking-head">
-              <strong>Do you have value growth or rental yield?</strong>
-              <span>{{ rankingPreferenceLabel }}</span>
+        <section class="scout-form__block">
+          <h3 class="scout-form__question">
+            <span class="wealth-scout__metric-label">
+              Risk tolerance
+              <span
+                class="wealth-scout__metric-tooltip"
+                tabindex="0"
+                data-tooltip="Lower settings favour suburbs with more consistent projected outcomes. Higher settings accept greater volatility in pursuit of stronger returns."
+                aria-label="How is risk tolerance used?"
+              >i</span>
+            </span>
+          </h3>
+          <p class="scout-form__hint">Choose how strongly projected volatility should influence the ranking.</p>
+
+          <div class="scout-form__balance scout-form__balance--risk">
+            <div class="scout-form__balance-side">
+              <strong>Lower tolerance</strong>
+              <span>Prioritise stability</span>
             </div>
-            <input v-model.number="draftConfig.rentalYieldWeight" class="wealth-scout__slider" type="range" min="0" max="1" step="0.05" />
-            <div class="wealth-scout__slider-scale">
-              <span>Property growth only</span>
-              <span>Balanced</span>
-              <span>Rental yield only</span>
+            <div class="scout-form__balance-track scout-form__balance-track--risk">
+              <span class="scout-form__balance-flag" :style="riskFlagStyle">{{ riskAppetiteLabel }}</span>
+              <input
+                v-model.number="riskAppetiteIndex"
+                class="scout-form__slider"
+                type="range"
+                aria-label="Risk tolerance from 1 to 10"
+                :style="riskSliderStyle"
+                min="1"
+                max="10"
+                step="1"
+              />
+              <div class="scout-form__risk-scale" aria-hidden="true">
+                <span v-for="level in 10" :key="level">{{ level }}</span>
+              </div>
             </div>
-            <div class="wealth-scout__mini-head">
-              <strong>What is your risk appetite?</strong>
-            </div>
-            <div class="wealth-scout__choice-grid wealth-scout__choice-grid--three">
-              <button type="button" class="wealth-scout__choice wealth-scout__choice--compact" :class="{ 'is-active': draftConfig.riskAppetite === 'small' }" @click="setRiskAppetite('small')">
-                <strong>Small</strong>
-                <span>Bigger penalty for volatility.</span>
-              </button>
-              <button type="button" class="wealth-scout__choice wealth-scout__choice--compact" :class="{ 'is-active': draftConfig.riskAppetite === 'medium' }" @click="setRiskAppetite('medium')">
-                <strong>Medium</strong>
-                <span>Balanced penalty.</span>
-              </button>
-              <button type="button" class="wealth-scout__choice wealth-scout__choice--compact" :class="{ 'is-active': draftConfig.riskAppetite === 'large' }" @click="setRiskAppetite('large')">
-                <strong>Large</strong>
-                <span>Smaller penalty for volatility.</span>
-              </button>
+            <div class="scout-form__balance-side scout-form__balance-side--end">
+              <strong>Higher tolerance</strong>
+              <span>Accept more volatility</span>
             </div>
           </div>
         </section>
+
+        <footer class="scout-form__summary">
+          <div>
+            <span>Search scope</span>
+            <strong>{{ searchScopeLabel }}</strong>
+          </div>
+          <div>
+            <span>Budget</span>
+            <strong>{{ formatCurrency(budgetUi) }}</strong>
+          </div>
+          <div>
+            <span>Ranking</span>
+            <strong>{{ rankingPreferenceLabel }} &middot; risk tolerance {{ riskAppetiteLabel }}</strong>
+          </div>
+        </footer>
       </div>
     </section>
 
-    <template v-else>
-    <Transition :name="transitionName" mode="out-in">
-      <section :key="activeStep.key" class="wealth-scout__panel">
-        <template v-if="false && activeStep.key === 'intro'">
-          <div class="wealth-scout__hero">
-            <p class="wealth-scout__kicker">Region scout</p>
-            <h2>Find the next area worth targeting</h2>
-            <p class="wealth-scout__copy">
-              Answer a few questions, move back when you need to, and the scout will translate your savings path into suburbs or regions worth watching.
-            </p>
-          </div>
-        </template>
+    <section v-else class="wealth-scout__panel">
+      <div v-if="isCalculating" class="wealth-scout__loading">
+        <p class="wealth-scout__eyebrow">Searching the market</p>
+        <h3>Ranking the best suburbs</h3>
+        <p>Comparing expected growth, rental yield, and volatility for your current settings.</p>
+        <div class="wealth-scout__loading-spinner" aria-hidden="true"></div>
+      </div>
 
-        <template v-else-if="false && activeStep.key === 'timing'">
-          <div class="wealth-scout__question-head">
-            <p class="wealth-scout__question-index">{{ questionProgressLabel }}</p>
-            <h3>When do you want to buy?</h3>
-            <p>Pick a timeframe, or tell the scout to keep looking until something becomes realistically affordable.</p>
+      <template v-else>
+        <div class="wealth-scout__question-head wealth-scout__question-head--results">
+          <div>
+            <h3>
+              {{
+                resultsViewMode === 'map'
+                  ? `${mapRecommendations.length} scored suburbs across NSW`
+                  : filteredResultsModel.totalMatches
+                    ? `${filteredResultsModel.totalMatches} matching suburbs`
+                    : 'No matches yet'
+              }}
+            </h3>
           </div>
+          <p v-if="resultsViewMode === 'map'">
+            The map always shows every scored suburb, regardless of budget or price. Grey areas do not have enough market data to score.
+          </p>
+          <p v-else>
+            Each result shows today's median, the expected annual growth, yield, and volatility. Open a result for the deeper projection view.
+          </p>
+        </div>
 
-          <div class="wealth-scout__selection-stage">
-            <div class="wealth-scout__choice-grid wealth-scout__choice-grid--two">
-              <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.buyFlexibility === 'target' }" @click="setTargetBuyMode()">
-                <strong>I'll choose when to buy</strong>
-                <span>Set a target purchase window yourself.</span>
-              </button>
-              <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.buyFlexibility === 'whenever' }" @click="setWheneverMode()">
-                <strong>Buy whenever I can afford to</strong>
-                <span>Automatically find the earliest buying point.</span>
-              </button>
+        <div class="wealth-scout__view-switch" aria-label="Choose results view">
+          <button
+            type="button"
+            :class="{ 'is-active': resultsViewMode === 'list' }"
+            :aria-pressed="resultsViewMode === 'list'"
+            @click="resultsViewMode = 'list'"
+          >
+            List view
+          </button>
+          <button
+            type="button"
+            :class="{ 'is-active': resultsViewMode === 'map' }"
+            :aria-pressed="resultsViewMode === 'map'"
+            @click="resultsViewMode = 'map'"
+          >
+            Map view
+          </button>
+        </div>
+
+        <div v-if="resultsViewMode === 'list'" class="wealth-scout__results-filters">
+          <div class="wealth-scout__results-filters-head">
+            <div>
+              <h4>Results filter</h4>
             </div>
+            <span>{{ filteredResultsModel.totalMatches }} matches</span>
+          </div>
 
-            <div class="wealth-scout__selection-detail">
-              <div v-if="draftConfig.buyFlexibility === 'target'" class="wealth-scout__slider-card">
-                <div class="wealth-scout__slider-head">
-                  <span>Target timing</span>
-                  <strong>{{ sliderTimingLabel }}</strong>
-                </div>
-                <input
-                  v-model.number="draftConfig.targetYears"
-                  class="wealth-scout__slider"
-                  type="range"
-                  min="0"
-                  max="20"
-                  step="1"
-                  @input="draftConfig.buyFlexibility = 'target'"
-                />
-                <div class="wealth-scout__slider-scale">
-                  <span>Now</span>
-                  <span>10 years</span>
-                  <span>20 years</span>
+          <div class="wealth-scout__filter-toggle-group">
+            <button type="button" class="wealth-scout__filter-chip" :class="{ 'is-active': resultFilters.mode === 'budget' }" @click="setResultsMode('budget')">
+              Within my budget ({{ formatCurrency(appliedConfig.budget) }})
+            </button>
+            <button type="button" class="wealth-scout__filter-chip" :class="{ 'is-active': resultFilters.mode === 'all' }" @click="setResultsMode('all')">
+              Any price
+            </button>
+          </div>
+
+          <div v-if="resultFilters.mode === 'all'" class="wealth-scout__price-filter">
+            <div class="wealth-scout__price-slider-shell" :style="priceSelectionStyle">
+              <div class="wealth-scout__histogram">
+                <div class="wealth-scout__histogram-bars">
+                  <div v-for="(bin, index) in priceHistogramBins" :key="`bin-${index}`" class="wealth-scout__histogram-bar" :style="{ height: `${bin.height}%` }"></div>
                 </div>
               </div>
-            </div>
-          </div>
-        </template>
-
-        <template v-else-if="false && activeStep.key === 'savings'">
-          <div class="wealth-scout__question-head">
-            <p class="wealth-scout__question-index">{{ questionProgressLabel }}</p>
-            <h3>Are you comfortable investing while you save for a house?</h3>
-            <p>If yes, use the same portfolio sleeves as the main workbook. If no, the scout assumes high-interest cash.</p>
-          </div>
-
-          <div class="wealth-scout__selection-stage">
-            <div class="wealth-scout__choice-grid wealth-scout__choice-grid--two">
-              <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.savingsMode === 'defaultPortfolio' }" @click="selectSavingsMode('defaultPortfolio')">
-                <strong>Yes, invest while saving</strong>
-                <span>Use the portfolio mix below to grow the deposit.</span>
-              </button>
-              <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.savingsMode === 'cash' }" @click="selectSavingsMode('cash')">
-                <strong>No, keep it in cash</strong>
-                <span>Assume savings stay in a high-interest cash path.</span>
-              </button>
-            </div>
-
-            <div class="wealth-scout__selection-detail">
-              <div v-if="draftConfig.savingsMode === 'defaultPortfolio'" class="wealth-scout__portfolio">
-                <label v-for="allocation in portfolioAllocationFields" :key="allocation.key" class="wealth-scout__allocation">
-                  <span class="wealth-scout__allocation-top">
-                    <span class="wealth-scout__allocation-title">
-                      <i class="wealth-scout__swatch" :style="{ background: allocation.color }"></i>
-                      {{ allocation.label }}
-                    </span>
-                    <strong>{{ getAllocationPct(allocation.key) }}%</strong>
-                  </span>
-                  <div class="wealth-scout__allocation-controls">
-                    <input :value="getAllocationPct(allocation.key)" type="range" min="0" max="100" step="1" @input="handleAllocationInput(allocation.key, $event)" />
-                    <input :value="getAllocationPct(allocation.key)" type="number" min="0" max="100" step="1" @input="handleAllocationInput(allocation.key, $event)" />
-                  </div>
-                </label>
+              <div class="wealth-scout__range-track">
+                <div class="wealth-scout__range-track-base"></div>
+                <div class="wealth-scout__range-track-active"></div>
+                <input v-model.number="draftMinPrice" class="wealth-scout__range-input wealth-scout__range-input--min" type="range" :min="resultPriceBounds.min" :max="resultPriceBounds.max" :step="resultPriceBounds.step" />
+                <input v-model.number="draftMaxPrice" class="wealth-scout__range-input wealth-scout__range-input--max" type="range" :min="resultPriceBounds.min" :max="resultPriceBounds.max" :step="resultPriceBounds.step" />
               </div>
             </div>
-          </div>
-        </template>
 
-        <template v-else-if="false && activeStep.key === 'power'">
-          <div class="wealth-scout__question-head">
-            <p class="wealth-scout__question-index">{{ questionProgressLabel }}</p>
-            <h3>Your purchasing power and deposit runway</h3>
-            <p>The chart tracks what you can buy over time and how much deposit cash you should have available from savings or sell-off value.</p>
-          </div>
-
-          <div class="wealth-scout__choice-grid wealth-scout__choice-grid--two">
-            <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.depositMode === 'optimal' }" @click="draftConfig.depositMode = 'optimal'">
-              <strong>Use the strongest deposit automatically</strong>
-              <span>The scout scales deposit size up as savings grow.</span>
-            </button>
-            <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.depositMode === 'fixed' }" @click="draftConfig.depositMode = 'fixed'">
-              <strong>Set my own deposit %</strong>
-              <span>Keep the deposit ratio fixed across the scouting window.</span>
-            </button>
-          </div>
-
-          <div v-if="draftConfig.depositMode === 'fixed'" class="wealth-scout__slider-card wealth-scout__slider-card--compact">
-            <div class="wealth-scout__slider-head">
-              <span>Fixed deposit size</span>
-              <strong>{{ Math.round(draftConfig.fixedDepositPct * 100) }}%</strong>
-            </div>
-            <input v-model.number="fixedDepositPctUi" class="wealth-scout__slider" type="range" min="5" max="40" step="1" />
-          </div>
-          <div class="wealth-scout__charts">
-            <WealthLineChart title="Purchasing power over time" subtitle="The max property value your savings and serviceability support." kicker="0-20 year path" :series="purchasingPowerChartSeries" :markers="buyYearMarker" />
-          </div>
-
-        </template>
-
-        <template v-else-if="false && activeStep.key === 'location'">
-          <div class="wealth-scout__question-head">
-            <p class="wealth-scout__question-index">{{ questionProgressLabel }}</p>
-            <h3>Do you have a preference for location?</h3>
-            <p>Pick a specific NSW region, or let the scout compare broad regions versus all individual suburbs.</p>
-          </div>
-
-          <div class="wealth-scout__choice-grid wealth-scout__choice-grid--two">
-            <button type="button" class="wealth-scout__choice" :class="{ 'is-active': locationPreference === 'specific' }" @click="selectLocationPreference('specific')">
-              <strong>Yes, I have a region in mind</strong>
-              <span>Rank the best suburbs inside that region.</span>
-            </button>
-            <button type="button" class="wealth-scout__choice" :class="{ 'is-active': locationPreference !== 'specific' }" @click="selectLocationPreference('broad')">
-              <strong>No strong preference</strong>
-              <span>Choose between top regions or all individual suburbs.</span>
-            </button>
-          </div>
-
-          <Transition name="wealth-scout-reveal" mode="out-in">
-            <div v-if="locationPreference === 'specific'" key="specific" class="wealth-scout__range-grid wealth-scout__range-grid--single">
-              <label>
-                <span>Preferred region</span>
-                <select v-model="draftConfig.locationKey">
-                  <option :value="null">Select a region</option>
-                  <option v-for="option in regionOptions" :key="option.key" :value="option.key">{{ option.label }}</option>
-                </select>
+            <div class="wealth-scout__price-input-grid">
+              <label class="wealth-scout__price-field-box">
+                <span>Min price</span>
+                <div class="wealth-scout__price-field-value" data-prefix="$">
+                  <input
+                    :value="formattedDraftMinPrice"
+                    type="text"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    @input="handlePriceTextInput('min', $event)"
+                  />
+                </div>
+              </label>
+              <label class="wealth-scout__price-field-box">
+                <span>Max price</span>
+                <div class="wealth-scout__price-field-value" data-prefix="$">
+                  <input
+                    :value="formattedDraftMaxPrice"
+                    type="text"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    @input="handlePriceTextInput('max', $event)"
+                  />
+                </div>
               </label>
             </div>
-            <div v-else key="broad" class="wealth-scout__choice-grid wealth-scout__choice-grid--two">
-              <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.granularity === 'region' }" @click="setBroadSearchMode('region')">
-                <strong>Show top regions</strong>
-                <span>Return larger regional catchments first.</span>
-              </button>
-              <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.granularity === 'suburb' }" @click="setBroadSearchMode('suburb')">
-                <strong>Show all individual suburbs</strong>
-                <span>Rank individual suburbs across NSW.</span>
-              </button>
-            </div>
-          </Transition>
-        </template>
-
-        <template v-else-if="false && activeStep.key === 'property'">
-          <div class="wealth-scout__question-head">
-            <p class="wealth-scout__question-index">{{ questionProgressLabel }}</p>
-            <h3>Are you interested in an apartment or house?</h3>
-            <p>The scout uses the matching market history, growth assumptions, and purchasing-power track for that property type.</p>
           </div>
+        </div>
 
-          <div class="wealth-scout__choice-grid wealth-scout__choice-grid--two">
-            <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.propertyType === 'apartment' }" @click="draftConfig.propertyType = 'apartment'">
-              <strong>Apartment</strong>
-              <span>Use apartment medians and apartment-specific holding costs.</span>
+        <label v-if="resultsViewMode === 'list'" class="wealth-scout__results-search">
+          <input
+            v-model.trim="resultFilters.searchQuery"
+            type="search"
+            placeholder="Search a suburb name"
+          />
+        </label>
+
+        <WealthRegionScoutMap
+          v-if="resultsViewMode === 'map' && mapRecommendations.length"
+          :recommendations="mapRecommendations"
+          :property-type-label="propertyTypeLabel"
+          :score-bounds="relativeScoreBounds"
+        />
+
+        <div v-else-if="filteredResultsModel.hasRecommendations" class="wealth-scout__results">
+          <article v-for="recommendation in visibleRecommendations" :key="recommendation.key" class="wealth-scout__result-card" :class="{ 'is-expanded': activeResultKey === recommendation.key }">
+            <button type="button" class="wealth-scout__result-main" @click="toggleResult(recommendation.key)">
+              <div class="wealth-scout__result-rank">#{{ recommendation.rank }}</div>
+              <div class="wealth-scout__result-copy">
+                <div class="wealth-scout__result-head">
+                  <div>
+                    <h4>{{ recommendation.label }}</h4>
+                    <p>Suburb<template v-if="recommendation.regionLabel && recommendation.regionLabel !== recommendation.label"> | {{ recommendation.regionLabel }}</template></p>
+                  </div>
+                  <strong>{{ formatRelativeResultScore(recommendation) }}/10</strong>
+                </div>
+
+                <div class="wealth-scout__result-metrics">
+                  <div>
+                    <span>Median {{ propertyTypeLabel.toLowerCase() }} price</span>
+                    <strong>{{ formatCurrency(recommendation.priceToday) }}</strong>
+                  </div>
+                  <div>
+                    <span>Against your budget</span>
+                    <strong>{{ formatBudgetGap(recommendation) }}</strong>
+                  </div>
+                  <div>
+                    <span>Expected annual growth</span>
+                    <strong>{{ formatPercent(recommendation.expectedAnnualGrowth) }}</strong>
+                  </div>
+                  <div>
+                    <span>Expected rental yield</span>
+                    <strong>{{ formatPercent(recommendation.expectedAnnualYield) }}</strong>
+                  </div>
+                  <div>
+                    <span>Expected value in 10 years</span>
+                    <strong>{{ formatCurrency(recommendation.expectedValueInTenYears) }}</strong>
+                  </div>
+                  <div>
+                    <span>Avg yearly sales</span>
+                    <strong>{{ formatGroupedNumber(recommendation.salesAverage) }}</strong>
+                  </div>
+                  <div>
+                    <span>Growth volatility</span>
+                    <strong>{{ formatPercent(recommendation.growthVolatility) }}</strong>
+                  </div>
+                  <div>
+                    <span>Yield volatility</span>
+                    <strong>{{ formatPercent(recommendation.yieldVolatility) }}</strong>
+                  </div>
+                </div>
+              </div>
+              <span class="wealth-scout__result-toggle" :class="{ 'is-open': activeResultKey === recommendation.key }" aria-hidden="true"></span>
             </button>
-            <button type="button" class="wealth-scout__choice" :class="{ 'is-active': draftConfig.propertyType === 'house' }" @click="draftConfig.propertyType = 'house'">
-              <strong>House</strong>
-              <span>Use house medians and house-specific borrowing assumptions.</span>
-            </button>
-          </div>
 
-          <div class="wealth-scout__summary-grid">
-            <article class="wealth-scout__summary-card">
-              <span>Search scope</span>
-              <strong>{{ searchScopeLabel }}</strong>
-              <small>{{ locationSummaryLabel }}</small>
-            </article>
-            <article class="wealth-scout__summary-card">
-              <span>Buying goal</span>
-              <strong>{{ buyTimingLabel }}</strong>
-              <small>{{ draftConfig.buyFlexibility === 'whenever' ? 'Scout will surface earliest affordable timing' : 'Results fixed to the chosen timeframe' }}</small>
-            </article>
-          </div>
-        </template>
-
-        <template v-else-if="false && activeStep.key === 'ranking'">
-          <div class="wealth-scout__question-head">
-            <p class="wealth-scout__question-index">{{ questionProgressLabel }}</p>
-            <h3>How should results be sorted?</h3>
-            <p>Balance long-run capital growth against rental yield, and choose how much volatility should be penalised.</p>
-          </div>
-
-          <div class="wealth-scout__ranking">
-            <div class="wealth-scout__ranking-head">
-              <strong>Do you have value growth or rental yield?</strong>
-              <span>{{ rankingPreferenceLabel }}</span>
-            </div>
-            <input
-              v-model.number="draftConfig.rentalYieldWeight"
-              class="wealth-scout__slider"
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-            />
-            <div class="wealth-scout__slider-scale">
-              <span>Property growth only</span>
-              <span>Balanced</span>
-              <span>Rental yield only</span>
-            </div>
-            <div class="wealth-scout__choice-grid wealth-scout__choice-grid--three">
-              <button type="button" class="wealth-scout__choice wealth-scout__choice--compact" :class="{ 'is-active': draftConfig.riskAppetite === 'small' }" @click="setRiskAppetite('small')">
-                <strong>Small</strong>
-                <span>Bigger penalty for volatility.</span>
-              </button>
-              <button type="button" class="wealth-scout__choice wealth-scout__choice--compact" :class="{ 'is-active': draftConfig.riskAppetite === 'medium' }" @click="setRiskAppetite('medium')">
-                <strong>Medium</strong>
-                <span>Balanced penalty.</span>
-              </button>
-              <button type="button" class="wealth-scout__choice wealth-scout__choice--compact" :class="{ 'is-active': draftConfig.riskAppetite === 'large' }" @click="setRiskAppetite('large')">
-                <strong>Large</strong>
-                <span>Smaller penalty for volatility.</span>
-              </button>
-            </div>
-          </div>
-        </template>
-
-        <template v-else>
-          <div v-if="isCalculating" class="wealth-scout__loading">
-            <p class="wealth-scout__eyebrow">Calculating shortlist</p>
-            <h3>Ranking the best {{ appliedConfig.granularity === 'region' ? 'regions' : 'suburbs' }}</h3>
-            <p>Comparing affordability, expected growth, yield, and purchasable timing for your current settings.</p>
-            <div class="wealth-scout__loading-spinner" aria-hidden="true"></div>
-          </div>
-
-          <template v-else>
-            <div class="wealth-scout__question-head wealth-scout__question-head--results">
-              <div>
-                <h3>{{ filteredResultsModel.totalMatches ? `${filteredResultsModel.totalMatches} matching ${appliedConfig.granularity === 'region' ? 'regions' : 'suburbs'}` : 'No matches yet' }}</h3>
-              </div>
-              <p>Each result shows today's median, when it becomes purchasable, and the expected annual growth, yield, and volatility. Open a result for the deeper projection view.</p>
-            </div>
-
-            <div class="wealth-scout__results-filters">
-              <div class="wealth-scout__results-filters-head">
-                <div>
-                  <h4>Results filter</h4>
-                </div>
-                <span>{{ filteredResultsModel.totalMatches }} matches</span>
-              </div>
-
-              <div class="wealth-scout__filter-toggle-group">
-                <button type="button" class="wealth-scout__filter-chip" :class="{ 'is-active': resultFilters.mode === 'affordable' }" @click="setResultsMode('affordable')">
-                  Properties that I can afford
-                </button>
-                <button type="button" class="wealth-scout__filter-chip" :class="{ 'is-active': resultFilters.mode === 'all' }" @click="setResultsMode('all')">
-                  All properties
-                </button>
-              </div>
-
-              <div v-if="resultFilters.mode === 'all'" class="wealth-scout__price-filter">
-                <div class="wealth-scout__price-slider-shell" :style="priceSelectionStyle">
-                  <div class="wealth-scout__histogram">
-                    <div class="wealth-scout__histogram-bars">
-                      <div v-for="(bin, index) in priceHistogramBins" :key="`bin-${index}`" class="wealth-scout__histogram-bar" :style="{ height: `${bin.height}%` }"></div>
-                    </div>
-                  </div>
-                  <div class="wealth-scout__range-track">
-                    <div class="wealth-scout__range-track-base"></div>
-                    <div class="wealth-scout__range-track-active"></div>
-                    <input v-model.number="draftMinPrice" class="wealth-scout__range-input wealth-scout__range-input--min" type="range" :min="resultPriceBounds.min" :max="resultPriceBounds.max" :step="resultPriceBounds.step" />
-                    <input v-model.number="draftMaxPrice" class="wealth-scout__range-input wealth-scout__range-input--max" type="range" :min="resultPriceBounds.min" :max="resultPriceBounds.max" :step="resultPriceBounds.step" />
-                  </div>
-                </div>
-
-                <div class="wealth-scout__price-input-grid">
-                  <label class="wealth-scout__price-field-box">
-                    <span>Min price</span>
-                    <div class="wealth-scout__price-field-value" data-prefix="$">
-                      <input
-                        :value="formattedDraftMinPrice"
-                        type="text"
-                        inputmode="numeric"
-                        autocomplete="off"
-                        @input="handlePriceTextInput('min', $event)"
-                      />
-                    </div>
-                  </label>
-                  <label class="wealth-scout__price-field-box">
-                    <span>Max price</span>
-                    <div class="wealth-scout__price-field-value" data-prefix="$">
-                      <input
-                        :value="formattedDraftMaxPrice"
-                        type="text"
-                        inputmode="numeric"
-                        autocomplete="off"
-                        @input="handlePriceTextInput('max', $event)"
-                      />
-                    </div>
-                  </label>
+            <Transition name="wealth-scout-reveal">
+              <div v-if="activeResultKey === recommendation.key" class="wealth-scout__detail">
+                <div class="wealth-scout__charts wealth-scout__charts--stacked">
+                  <WealthPropertyTrendChart :title="`Historical ${propertyTypeLabel.toLowerCase()} price`" color="#0f766e" :actual-points="recommendation.actualPoints" :trend-points="recommendation.trendPoints" :estimate-point="recommendation.estimatePoint" />
+                  <WealthPropertyTrendChart
+                    title="Historical rental yield"
+                    kicker="Yield history"
+                    color="#0f766e"
+                    value-mode="percent"
+                    :value-padding="0.005"
+                    empty-text="No rental-yield history available for this property type."
+                    actual-legend-label="Actual yearly yield"
+                    trend-legend-label="Long-run yield mean"
+                    estimate-legend-label="Current estimate"
+                    :actual-points="recommendation.yieldActualPoints"
+                    :trend-points="recommendation.yieldTrendPoints"
+                    :estimate-point="null"
+                  />
+                  <WealthLineChart :title="`${propertyTypeLabel} price Monte Carlo`" subtitle="P25 / P50 / P75 projection for the next 30 years." kicker="Forward market path" :series="buildMonteCarloChartSeries(recommendation)" />
                 </div>
               </div>
-            </div>
+            </Transition>
+          </article>
+        </div>
 
-            <label class="wealth-scout__results-search">
-              <input
-                v-model.trim="resultFilters.searchQuery"
-                type="search"
-                placeholder="Search a suburb or region name"
-              />
-            </label>
+        <div v-if="filteredResultsModel.hasRecommendations && resultsViewMode === 'list' && canLoadMoreResults" class="wealth-scout__results-more">
+          <button type="button" class="wealth-scout__load-more-btn" @click="loadMoreResults">
+            Show 10 more
+          </button>
+        </div>
 
-            <div v-if="filteredResultsModel.hasRecommendations" class="wealth-scout__results">
-              <article v-for="recommendation in visibleRecommendations" :key="recommendation.key" class="wealth-scout__result-card" :class="{ 'is-expanded': activeResultKey === recommendation.key }">
-              <button type="button" class="wealth-scout__result-main" @click="toggleResult(recommendation.key)">
-                <div class="wealth-scout__result-rank">#{{ recommendation.rank }}</div>
-                <div class="wealth-scout__result-copy">
-                  <div class="wealth-scout__result-head">
-                    <div>
-                      <h4>{{ recommendation.label }}</h4>
-                      <p>{{ recommendation.type === 'region' ? 'Region' : 'Suburb' }}<template v-if="recommendation.regionLabel && recommendation.regionLabel !== recommendation.label"> | {{ recommendation.regionLabel }}</template></p>
-                    </div>
-                    <strong>{{ formatRelativeResultScore(recommendation) }}/10</strong>
-                  </div>
-
-                  <div class="wealth-scout__result-metrics">
-                    <div>
-                      <span>Median {{ propertyTypeLabel.toLowerCase() }} price</span>
-                      <strong>{{ formatCurrency(recommendation.priceToday) }}</strong>
-                    </div>
-                    <div>
-                      <span>Purchasable in</span>
-                      <strong>{{ recommendation.selectedTimingLabel }}</strong>
-                    </div>
-                    <div>
-                      <span>Expected annual growth</span>
-                      <strong>{{ formatPercent(recommendation.expectedAnnualGrowth) }}</strong>
-                    </div>
-                    <div>
-                      <span>Expected rental yield</span>
-                      <strong>{{ formatPercent(recommendation.expectedAnnualYield) }}</strong>
-                    </div>
-                    <div>
-                      <span>Expected value in 10 years</span>
-                      <strong>{{ formatCurrency(recommendation.expectedValueInTenYears) }}</strong>
-                    </div>
-                    <div>
-                      <span>Avg yearly sales</span>
-                      <strong>{{ formatGroupedNumber(recommendation.salesAverage) }}</strong>
-                    </div>
-                    <div>
-                      <span>Growth volatility</span>
-                      <strong>{{ formatPercent(recommendation.growthVolatility) }}</strong>
-                    </div>
-                    <div>
-                      <span>Yield volatility</span>
-                      <strong>{{ formatPercent(recommendation.yieldVolatility) }}</strong>
-                    </div>
-                  </div>
-                </div>
-                <span class="wealth-scout__result-toggle" :class="{ 'is-open': activeResultKey === recommendation.key }" aria-hidden="true"></span>
-              </button>
-
-              <Transition name="wealth-scout-reveal">
-                <div v-if="activeResultKey === recommendation.key" class="wealth-scout__detail">
-                  <div class="wealth-scout__charts wealth-scout__charts--stacked">
-                    <WealthPropertyTrendChart :title="`Historical ${propertyTypeLabel.toLowerCase()} price`" :subtitle="recommendation.selectedTimingLabel" color="#0f766e" :actual-points="recommendation.actualPoints" :trend-points="recommendation.trendPoints" :estimate-point="recommendation.estimatePoint" />
-                    <WealthPropertyTrendChart
-                      title="Historical rental yield"
-                      kicker="Yield history"
-                      color="#0f766e"
-                      value-mode="percent"
-                      :value-padding="0.005"
-                      empty-text="No rental-yield history available for this property type."
-                      actual-legend-label="Actual yearly yield"
-                      trend-legend-label="Long-run yield mean"
-                      estimate-legend-label="Current estimate"
-                      :actual-points="recommendation.yieldActualPoints"
-                      :trend-points="recommendation.yieldTrendPoints"
-                      :estimate-point="null"
-                    />
-                    <WealthLineChart :title="`${propertyTypeLabel} price Monte Carlo`" subtitle="P25 / P50 / P75 projection for the next 30 years." kicker="Forward market path" :series="buildMonteCarloChartSeries(recommendation)" :markers="buildResultMarkers(recommendation)" />
-                    <WealthLineChart title="Purchasing power vs required property value" subtitle="Compare what you can buy against the projected price path." kicker="30-year affordability" :series="buildResultPowerSeries(recommendation)" :markers="buildResultMarkers(recommendation)" />
-                  </div>
-                </div>
-              </Transition>
-              </article>
-            </div>
-
-            <div v-if="filteredResultsModel.hasRecommendations && canLoadMoreResults" class="wealth-scout__results-more">
-              <button type="button" class="wealth-scout__load-more-btn" @click="loadMoreResults">
-                Show 10 more
-              </button>
-            </div>
-
-            <div v-if="!filteredResultsModel.hasRecommendations" class="wealth-scout__empty">
-              <h4>No results match those settings</h4>
-              <p>Widen the price range, switch between regions and suburbs, or change the buy timing.</p>
-            </div>
-          </template>
-        </template>
-      </section>
-    </Transition>
-
-    </template>
+        <div v-if="resultsViewMode === 'list' && !filteredResultsModel.hasRecommendations" class="wealth-scout__empty">
+          <h4>No results match those settings</h4>
+          <p>Raise your budget, widen the price range, or search across all of NSW instead of one region.</p>
+        </div>
+      </template>
+    </section>
   </section>
 </template>
 
@@ -641,21 +485,14 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import WealthLineChart from './WealthLineChart.vue'
 import WealthPropertyTrendChart from './WealthPropertyTrendChart.vue'
-import { buildRegionScoutPreviewModel, buildRegionScoutResultsModel, normaliseRegionScoutConfig } from '../../wealth/regionScout.js'
-import {
-  getLockedWeightKeys,
-  isPortfolioWeightLocked,
-  portfolioAllocationFields,
-  setPortfolioAllocation,
-  togglePortfolioWeightLock
-} from '../../wealth/portfolioAllocation.js'
+import WealthRegionScoutMap from './WealthRegionScoutMap.vue'
+import { buildRegionScoutResultsModel, normaliseRegionScoutConfig } from '../../wealth/regionScout.js'
 
 const props = defineProps({
   view: {
     type: String,
     default: 'inputs'
   },
-  form: { type: Object, required: true },
   scoutConfig: {
     type: Object,
     required: true
@@ -668,110 +505,122 @@ const props = defineProps({
 
 const emit = defineEmits(['loading-change'])
 
-const steps = [
-  { key: 'intro', label: 'Intro' },
-  { key: 'timing', label: 'Timing' },
-  { key: 'savings', label: 'Savings path' },
-  { key: 'power', label: 'Purchasing power' },
-  { key: 'location', label: 'Location' },
-  { key: 'property', label: 'Property type' },
-  { key: 'ranking', label: 'Ranking' },
-  { key: 'results', label: 'Results' }
-]
+const budgetSliderBounds = { min: 200000, max: 3000000, step: 10000 }
+const riskToleranceBounds = { min: 1, max: 10 }
 
-const currentStepIndex = ref(props.view === 'results' ? steps.length - 1 : 0)
-const transitionDirection = ref('forward')
 const activeResultKey = ref(null)
-const draftConfig = reactive(createDraftConfig(props.scoutConfig))
+const resultsViewMode = ref('list')
+const draftConfig = reactive(normaliseRegionScoutConfig(props.scoutConfig))
+const budgetUi = ref(draftConfig.budget)
 const locationPreference = ref(draftConfig.locationKey ? 'specific' : 'broad')
 const isCalculating = ref(props.view === 'results')
 const calculationToken = ref(0)
 const appliedConfig = ref(normaliseRegionScoutConfig(props.scoutConfig))
 const resultsModel = ref(createEmptyResultsModel(appliedConfig.value))
 const resultFilters = reactive({
-  mode: 'affordable',
+  mode: 'budget',
   minPrice: 0,
   maxPrice: 0,
   searchQuery: ''
 })
-const scoutPortfolioDraft = reactive(createPortfolioConfigDraft(props.form.portfolioConfig))
-const committedScoutPortfolio = reactive(createPortfolioConfigDraft(props.form.portfolioConfig))
 const draftMinPrice = ref(0)
 const draftMaxPrice = ref(0)
 const resultsVisibleCount = ref(10)
 let priceCommitTimer = null
-let targetYearsCommitTimer = null
-let portfolioCommitTimer = null
+let budgetCommitTimer = null
 let syncingConfig = false
+
 const viewMode = computed(() => props.view === 'results' ? 'results' : 'inputs')
-const activeStep = computed(() => steps[currentStepIndex.value])
-const transitionName = computed(() =>
-  transitionDirection.value === 'forward' ? 'wealth-scout-slide-next' : 'wealth-scout-slide-back'
-)
 
 const regionOptions = computed(() =>
   (props.suburbSearchContext?.areaOptions || []).filter((option) => option.type === 'region')
 )
 
-const previewConfig = computed(() => normaliseRegionScoutConfig(draftConfig))
-const targetYearsUi = ref(Number(draftConfig.targetYears) || 0)
-
-const previewModel = computed(() => buildRegionScoutPreviewModel({
-  form: buildPreviewForm(),
-  suburbSearchContext: props.suburbSearchContext,
-  config: previewConfig.value
-}))
-
-const fixedDepositPctUi = computed({
-  get: () => Math.round((Number(draftConfig.fixedDepositPct) || 0.2) * 100),
-  set: (value) => {
-    draftConfig.fixedDepositPct = Math.max(0.05, Math.min(0.95, (Number(value) || 20) / 100))
-  }
-})
-
-const sliderTimingLabel = computed(() => yearLabel(targetYearsUi.value))
-const buyTimingLabel = computed(() =>
-  draftConfig.buyFlexibility === 'whenever'
-    ? 'Whenever I can afford to'
-    : sliderTimingLabel.value
-)
-const savingsPathLabel = computed(() =>
-  draftConfig.savingsMode === 'cash'
-    ? 'High-interest cash savings'
-    : 'Invested portfolio savings'
-)
-const depositModeLabel = computed(() =>
-  draftConfig.depositMode === 'fixed'
-    ? `${Math.round(draftConfig.fixedDepositPct * 100)}% fixed deposit`
-    : 'Auto-scaled strongest deposit'
-)
 const propertyTypeLabel = computed(() =>
   draftConfig.propertyType === 'house' ? 'House' : 'Apartment'
 )
+const formattedBudget = computed(() => formatGroupedNumber(budgetUi.value))
+// Size the field to its own digits so the "$" never floats away from the number.
+const budgetInputStyle = computed(() => ({
+  width: `${Math.max(1, formattedBudget.value.length)}ch`
+}))
+const budgetSliderStyle = computed(() => ({
+  '--fill': `${toSliderFillPercent(budgetUi.value, budgetSliderBounds.min, budgetSliderBounds.max)}%`
+}))
+const budgetScaleTicks = computed(() => {
+  const span = budgetSliderBounds.max - budgetSliderBounds.min
+  return Array.from({ length: 5 }, (_unused, index) => {
+    const value = budgetSliderBounds.min + ((span / 4) * index)
+    return {
+      value,
+      label: index === 4 ? `${formatCompactCurrency(value)}+` : formatCompactCurrency(value)
+    }
+  })
+})
+
+const suburbPrices = computed(() =>
+  Object.values(props.suburbSearchContext?.areasByKey || {})
+    .filter((area) => area?.type === 'suburb')
+    .map((area) => {
+      const property = area?.[draftConfig.propertyType]
+      return Math.max(0, Number(property?.currentPriceEstimate ?? property?.latestActualPrice) || 0)
+    })
+    .filter((price) => price > 0)
+)
+const medianSuburbPrice = computed(() => calculateMedian(suburbPrices.value))
+const suburbsWithinBudget = computed(() =>
+  suburbPrices.value.filter((price) => price <= budgetUi.value).length
+)
+const medianHeadline = computed(() =>
+  medianSuburbPrice.value > 0
+    ? `NSW median ${propertyTypeLabel.value.toLowerCase()} price is ~${formatCompactCurrency(medianSuburbPrice.value)}`
+    : `No ${propertyTypeLabel.value.toLowerCase()} medians loaded yet`
+)
+const medianSubline = computed(() => {
+  if (!suburbPrices.value.length) return 'Suburb medians will appear once the market data loads.'
+  const comparison = budgetUi.value >= medianSuburbPrice.value ? 'at or above' : 'below'
+  return `Your budget is ${comparison} the state median. ${formatGroupedNumber(suburbsWithinBudget.value)} of ${formatGroupedNumber(suburbPrices.value.length)} suburbs sit within it.`
+})
+
+const rankingSliderStyle = computed(() => ({
+  '--fill': `${toSliderFillPercent(draftConfig.rentalYieldWeight, 0, 1)}%`
+}))
+const rankingFlagStyle = computed(() => buildFlagStyle(toSliderFillPercent(draftConfig.rentalYieldWeight, 0, 1)))
+
+const riskAppetiteIndex = computed({
+  get: () => clampToRange(draftConfig.riskAppetite, riskToleranceBounds.min, riskToleranceBounds.max),
+  set: (value) => {
+    draftConfig.riskAppetite = clampToRange(value, riskToleranceBounds.min, riskToleranceBounds.max)
+  }
+})
+const riskAppetiteLabel = computed(() => `${riskAppetiteIndex.value} / ${riskToleranceBounds.max}`)
+const riskSliderStyle = computed(() => ({
+  '--fill': `${toSliderFillPercent(riskAppetiteIndex.value, riskToleranceBounds.min, riskToleranceBounds.max)}%`
+}))
+const riskFlagStyle = computed(() => buildFlagStyle(
+  toSliderFillPercent(riskAppetiteIndex.value, riskToleranceBounds.min, riskToleranceBounds.max)
+))
+
 const searchScopeLabel = computed(() => {
   if (locationPreference.value === 'specific') {
     const match = regionOptions.value.find((option) => option.key === draftConfig.locationKey)
-    return match?.label ? `Best suburbs in ${match.label}` : 'Pick a region'
+    return match?.label ? `Suburbs in ${match.label}` : 'Pick a region'
   }
-  return draftConfig.granularity === 'suburb' ? 'All individual suburbs' : 'Top regions'
+  return 'All NSW suburbs'
 })
-const locationSummaryLabel = computed(() =>
-  locationPreference.value === 'specific'
-    ? 'Scoped to suburbs in one region'
-    : draftConfig.granularity === 'suburb'
-      ? 'Statewide suburb ranking'
-      : 'Statewide region ranking'
-)
 const resultPriceBounds = computed(() => buildResultPriceBounds(resultsModel.value.allRecommendations))
-const filteredPriceRangeLabel = computed(() => formatPriceRange({
-  minPrice: resultFilters.mode === 'all' ? resultFilters.minPrice : resultPriceBounds.value.min,
-  maxPrice: resultFilters.mode === 'all' ? resultFilters.maxPrice : resultPriceBounds.value.max
-}))
 const filteredResultsModel = computed(() => buildFilteredResultsModel(resultsModel.value, resultFilters))
 const formattedDraftMinPrice = computed(() => formatGroupedNumber(draftMinPrice.value))
 const formattedDraftMaxPrice = computed(() => formatGroupedNumber(draftMaxPrice.value))
 const visibleRecommendations = computed(() => filteredResultsModel.value.recommendations.slice(0, resultsVisibleCount.value))
 const canLoadMoreResults = computed(() => visibleRecommendations.value.length < filteredResultsModel.value.totalMatches)
+const mapRecommendations = computed(() =>
+  (resultsModel.value.scoreReferenceRecommendations || resultsModel.value.allRecommendations || [])
+    .map((recommendation, index) => ({
+      ...recommendation,
+      rank: index + 1
+    }))
+)
 const priceHistogramBins = computed(() => buildPriceHistogramBins(resultsModel.value.allRecommendations, resultPriceBounds.value))
 const priceSelectionStyle = computed(() => buildPriceSelectionStyle({
   minPrice: draftMinPrice.value,
@@ -781,77 +630,13 @@ const relativeScoreBounds = computed(() => buildRelativeScoreBounds(
   resultsModel.value.scoreReferenceRecommendations || resultsModel.value.allRecommendations
 ))
 
-const questionProgressLabel = computed(() => {
-  const questionKeys = ['timing', 'savings', 'power', 'location', 'property', 'ranking']
-  const visibleIndex = Math.max(1, questionKeys.indexOf(activeStep.value.key) + 1)
-  return `Question ${visibleIndex}/${questionKeys.length}`
-})
-
 const rankingPreferenceLabel = computed(() => {
   const yieldWeight = Math.round((draftConfig.rentalYieldWeight || 0) * 100)
-  const growthWeight = 100 - yieldWeight
-  return `${growthWeight}% growth / ${yieldWeight}% rent yield`
+  if (yieldWeight === 0) return 'Growth only'
+  if (yieldWeight === 100) return 'Yield only'
+  if (yieldWeight === 50) return 'Balanced'
+  return `${100 - yieldWeight}% growth / ${yieldWeight}% yield`
 })
-
-const furthestUnlockedStep = computed(() => {
-  let unlocked = 0
-  for (let index = 0; index < steps.length - 1; index += 1) {
-    if (!isStepValid(index)) return index
-    unlocked = index + 1
-  }
-  return Math.min(unlocked, steps.length - 1)
-})
-
-const canMoveForward = computed(() => isStepValid(currentStepIndex.value))
-
-const buyYearMarker = computed(() => {
-  const markerYear = previewConfig.value.buyFlexibility === 'target' ? previewConfig.value.targetYears : null
-  return Number.isFinite(markerYear)
-    ? [{ year: markerYear, label: previewConfig.value.buyFlexibility === 'target' ? 'Buy target' : 'Best timing', color: '#0f766e' }]
-    : []
-})
-
-const purchasingPowerChartSeries = computed(() => ([
-  {
-    id: 'power',
-    label: 'Purchasing power',
-    color: '#0f766e',
-    accent: 'rgba(15, 118, 110, 0.15)',
-    points: previewModel.value.affordabilityTimeline.map((point) => ({
-      year: point.year,
-      low: point.affordablePrice,
-      mid: point.affordablePrice,
-      high: point.affordablePrice
-    }))
-  }
-]))
-
-const depositChartSeries = computed(() => ([
-  {
-    id: 'saved',
-    label: 'Sell-off savings',
-    color: '#2563eb',
-    accent: 'rgba(37, 99, 235, 0.16)',
-    points: previewModel.value.affordabilityTimeline.map((point) => ({
-      year: point.year,
-      low: point.liquidSavings,
-      mid: point.liquidSavings,
-      high: point.liquidSavings
-    }))
-  },
-  {
-    id: 'required',
-    label: 'Required deposit cash',
-    color: '#f97316',
-    accent: 'rgba(249, 115, 22, 0.14)',
-    points: previewModel.value.affordabilityTimeline.map((point) => ({
-      year: point.year,
-      low: point.requiredCash,
-      mid: point.requiredCash,
-      high: point.requiredCash
-    }))
-  }
-]))
 
 watch(resultsModel, (nextModel) => {
   syncResultFiltersForNewResults(nextModel)
@@ -875,10 +660,6 @@ watch(() => [
   resultsModel.value.allRecommendations.length
 ], () => {
   resultsVisibleCount.value = 10
-}, { immediate: true })
-
-watch(() => draftConfig.savingsMode, (mode) => {
-  props.form.propertyConfig.investWhileSavingForDeposit = mode === 'defaultPortfolio'
 }, { immediate: true })
 
 watch(draftMinPrice, (minPrice) => {
@@ -907,106 +688,65 @@ watch(draftMaxPrice, (maxPrice) => {
 
 watch(() => props.scoutConfig, (nextConfig) => {
   syncingConfig = true
-  Object.assign(draftConfig, createDraftConfig(nextConfig))
-  targetYearsUi.value = Number(nextConfig?.targetYears) || 0
-  locationPreference.value = nextConfig?.locationKey ? 'specific' : 'broad'
+  Object.assign(draftConfig, normaliseRegionScoutConfig(nextConfig))
+  budgetUi.value = draftConfig.budget
+  locationPreference.value = draftConfig.locationKey ? 'specific' : 'broad'
   syncingConfig = false
 }, { deep: true })
 
-watch(() => props.form.portfolioConfig, (nextPortfolioConfig) => {
-  syncPortfolioDrafts(nextPortfolioConfig)
-}, { deep: true })
-
-watch(() => draftConfig.targetYears, (nextYears) => {
-  const normalisedYears = Number(nextYears) || 0
-  if (targetYearsUi.value !== normalisedYears) {
-    targetYearsUi.value = normalisedYears
-  }
+watch(budgetUi, () => {
+  scheduleBudgetCommit()
 })
 
 watch(draftConfig, () => {
   if (viewMode.value !== 'inputs' || syncingConfig) return
-  commitCurrentStep()
+  commitDraftConfig()
 }, { deep: true })
 
 onMounted(() => {
   if (viewMode.value === 'results') {
-    currentStepIndex.value = steps.length - 1
     void calculateResults()
     return
   }
-  commitCurrentStep()
+  commitDraftConfig()
 })
 
 onBeforeUnmount(() => {
   if (priceCommitTimer) window.clearTimeout(priceCommitTimer)
-  if (targetYearsCommitTimer) window.clearTimeout(targetYearsCommitTimer)
-  if (portfolioCommitTimer) window.clearTimeout(portfolioCommitTimer)
+  if (budgetCommitTimer) window.clearTimeout(budgetCommitTimer)
 })
-
-function isStepValid(index) {
-  const stepKey = steps[index]?.key
-  if (stepKey === 'savings') return draftConfig.savingsMode === 'cash' || portfolioTotalPct() === 100
-  if (stepKey === 'location') return locationPreference.value === 'specific' ? Boolean(draftConfig.locationKey) : ['region', 'suburb'].includes(draftConfig.granularity)
-  return true
-}
-
-function goToStep(index) {
-  if (index < 0 || index >= steps.length) return
-  if (index > furthestUnlockedStep.value) return
-  transitionDirection.value = index >= currentStepIndex.value ? 'forward' : 'back'
-  currentStepIndex.value = index
-}
-
-async function goNext() {
-  if (!canMoveForward.value || currentStepIndex.value >= steps.length - 1 || isCalculating.value) return
-  if (steps[currentStepIndex.value + 1]?.key === 'results') {
-    await calculateResults()
-    return
-  }
-  commitCurrentStep()
-  goToStep(currentStepIndex.value + 1)
-}
-
-function goBack() {
-  if (currentStepIndex.value <= 0) return
-  goToStep(currentStepIndex.value - 1)
-}
-
-function setTargetBuyMode() {
-  draftConfig.buyFlexibility = 'target'
-}
-
-function setWheneverMode() {
-  draftConfig.buyFlexibility = 'whenever'
-}
-
-function selectSavingsMode(mode) {
-  draftConfig.savingsMode = mode
-}
 
 function selectLocationPreference(mode) {
   locationPreference.value = mode === 'specific' ? 'specific' : 'broad'
-  if (locationPreference.value === 'specific') draftConfig.granularity = 'suburb'
-  else draftConfig.locationKey = null
+  if (locationPreference.value !== 'specific') {
+    draftConfig.locationKey = null
+    return
+  }
+  // Default to a real region so the search is always runnable once this card is picked.
+  if (!draftConfig.locationKey) {
+    draftConfig.locationKey = regionOptions.value[0]?.key || null
+  }
 }
 
-function setBroadSearchMode(mode) {
-  draftConfig.locationKey = null
-  draftConfig.granularity = mode === 'suburb' ? 'suburb' : 'region'
+function handleBudgetTextInput(event) {
+  const digitsOnly = String(event?.target?.value || '').replace(/[^\d]/g, '')
+  budgetUi.value = digitsOnly ? Number(digitsOnly) : 0
 }
 
-function setRiskAppetite(value) {
-  draftConfig.riskAppetite = value
+function scheduleBudgetCommit() {
+  if (budgetCommitTimer) window.clearTimeout(budgetCommitTimer)
+  budgetCommitTimer = window.setTimeout(() => {
+    budgetCommitTimer = null
+    flushPendingBudgetCommit()
+  }, 600)
 }
 
-function handleTargetYearsInput() {
-  draftConfig.buyFlexibility = 'target'
-  if (targetYearsCommitTimer) window.clearTimeout(targetYearsCommitTimer)
-  targetYearsCommitTimer = window.setTimeout(() => {
-    draftConfig.targetYears = Number(targetYearsUi.value) || 0
-    targetYearsCommitTimer = null
-  }, 1000)
+function flushPendingBudgetCommit() {
+  if (budgetCommitTimer) {
+    window.clearTimeout(budgetCommitTimer)
+    budgetCommitTimer = null
+  }
+  draftConfig.budget = normaliseRegionScoutConfig({ ...draftConfig, budget: budgetUi.value }).budget
 }
 
 function toggleResult(resultKey) {
@@ -1030,36 +770,6 @@ function handlePriceTextInput(boundary, event) {
   draftMaxPrice.value = clampToRange(parsedValue, draftMinPrice.value, resultPriceBounds.value.max)
 }
 
-function handleAllocationInput(key, event) {
-  setPortfolioAllocation(scoutPortfolioDraft, key, event?.target?.value)
-  if (event?.target) {
-    event.target.value = String(getAllocationPct(key))
-  }
-  schedulePortfolioCommit()
-}
-
-function getAllocationPct(key) {
-  return Math.round((Math.max(0, Number(scoutPortfolioDraft[key]) || 0) * 100))
-}
-
-function portfolioTotalPct() {
-  return portfolioAllocationFields.reduce((sum, field) => sum + getAllocationPct(field.key), 0)
-}
-
-function toggleAllocationLock(key) {
-  togglePortfolioWeightLock(scoutPortfolioDraft, key)
-  schedulePortfolioCommit()
-}
-
-function isAllocationLocked(key) {
-  return isPortfolioWeightLocked(scoutPortfolioDraft, key)
-}
-
-function hasUnlockedAllocationPeers(key) {
-  const lockedKeys = new Set(getLockedWeightKeys(scoutPortfolioDraft))
-  return portfolioAllocationFields.some((field) => field.key !== key && !lockedKeys.has(field.key))
-}
-
 function buildMonteCarloChartSeries(recommendation) {
   return [{
     id: 'mc',
@@ -1068,48 +778,6 @@ function buildMonteCarloChartSeries(recommendation) {
     accent: 'rgba(15, 118, 110, 0.16)',
     points: recommendation.monteCarloSeries
   }]
-}
-
-function buildResultPowerSeries(recommendation) {
-  return [
-    {
-      id: 'power',
-      label: 'Your purchasing power',
-      color: '#2563eb',
-      accent: 'rgba(37, 99, 235, 0.16)',
-      points: recommendation.purchasingPowerSeries.map((point) => ({ year: point.year, low: point.affordablePrice, mid: point.affordablePrice, high: point.affordablePrice }))
-    },
-    {
-      id: 'required',
-      label: 'Required property value',
-      color: '#f97316',
-      accent: 'rgba(249, 115, 22, 0.14)',
-      points: recommendation.purchasingPowerSeries.map((point) => ({ year: point.year, low: point.requiredPrice, mid: point.requiredPrice, high: point.requiredPrice }))
-    }
-  ]
-}
-
-function buildResultDepositSeries(recommendation) {
-  return [
-    {
-      id: 'saved',
-      label: 'Sell-off savings',
-      color: '#2563eb',
-      accent: 'rgba(37, 99, 235, 0.16)',
-      points: recommendation.depositSeries.map((point) => ({ year: point.year, low: point.sellOffSavings, mid: point.sellOffSavings, high: point.sellOffSavings }))
-    },
-    {
-      id: 'deposit',
-      label: 'Required deposit',
-      color: '#f97316',
-      accent: 'rgba(249, 115, 22, 0.14)',
-      points: recommendation.depositSeries.map((point) => ({ year: point.year, low: point.requiredDeposit, mid: point.requiredDeposit, high: point.requiredDeposit }))
-    }
-  ]
-}
-
-function buildResultMarkers(recommendation) {
-  return Number.isFinite(recommendation.selectedYear) ? [{ year: recommendation.selectedYear, label: 'Buy line', color: '#0f766e' }] : []
 }
 
 function formatRelativeResultScore(recommendation) {
@@ -1122,25 +790,29 @@ function formatRelativeResultScore(recommendation) {
   return clampToRange(relativeScore, 0, 10).toFixed(1)
 }
 
+function formatBudgetGap(recommendation) {
+  const gap = Number(recommendation?.budgetGap) || 0
+  if (gap === 0) return 'On budget'
+  if (gap > 0) return `${formatCurrency(gap)} under`
+  return `${formatCurrency(Math.abs(gap))} over`
+}
+
 async function calculateResults() {
-  commitCurrentStep()
+  commitDraftConfig()
   const nextConfig = normaliseRegionScoutConfig(props.scoutConfig)
   const token = calculationToken.value + 1
   calculationToken.value = token
   isCalculating.value = true
   appliedConfig.value = nextConfig
   activeResultKey.value = null
-  currentStepIndex.value = steps.length - 1
   await nextTick()
   await waitForNextPaint()
   if (calculationToken.value !== token) return
 
   try {
     const nextResults = buildRegionScoutResultsModel({
-      form: props.form,
       suburbSearchContext: props.suburbSearchContext,
-      config: nextConfig,
-      previewModel: previewModel.value
+      config: nextConfig
     })
     if (calculationToken.value !== token) return
     resultsModel.value = nextResults
@@ -1151,81 +823,20 @@ async function calculateResults() {
   }
 }
 
-function commitCurrentStep() {
-  flushPendingPortfolioCommit()
-  if (draftConfig.buyFlexibility === 'target') {
-    if (targetYearsCommitTimer) {
-      window.clearTimeout(targetYearsCommitTimer)
-      targetYearsCommitTimer = null
-    }
-    draftConfig.targetYears = Number(targetYearsUi.value) || 0
-  }
+function commitDraftConfig() {
+  flushPendingBudgetCommit()
   Object.assign(props.scoutConfig, normaliseRegionScoutConfig(draftConfig))
-}
-
-function createDraftConfig(config) {
-  return {
-    ...normaliseRegionScoutConfig(config)
-  }
-}
-
-function createPortfolioConfigDraft(config) {
-  return {
-    qqqWeight: Number(config?.qqqWeight) || 0,
-    asxWeight: Number(config?.asxWeight) || 0,
-    vgsWeight: Number(config?.vgsWeight) || 0,
-    vgeWeight: Number(config?.vgeWeight) || 0,
-    dbpWeight: Number(config?.dbpWeight) || 0,
-    bondWeight: Number(config?.bondWeight) || 0,
-    cashWeight: Number(config?.cashWeight) || 0,
-    bitcoinWeight: Number(config?.bitcoinWeight) || 0,
-    lockedWeights: Array.isArray(config?.lockedWeights) ? [...config.lockedWeights] : [],
-    cashReturnMean: Number(config?.cashReturnMean) || 0
-  }
-}
-
-function syncPortfolioDrafts(config) {
-  const nextDraft = createPortfolioConfigDraft(config)
-  Object.assign(scoutPortfolioDraft, nextDraft)
-  Object.assign(committedScoutPortfolio, nextDraft)
-}
-
-function schedulePortfolioCommit() {
-  if (portfolioCommitTimer) window.clearTimeout(portfolioCommitTimer)
-  portfolioCommitTimer = window.setTimeout(() => {
-    flushPendingPortfolioCommit()
-  }, 1000)
-}
-
-function flushPendingPortfolioCommit() {
-  if (portfolioCommitTimer) {
-    window.clearTimeout(portfolioCommitTimer)
-    portfolioCommitTimer = null
-  }
-  Object.assign(committedScoutPortfolio, createPortfolioConfigDraft(scoutPortfolioDraft))
-  Object.assign(props.form.portfolioConfig, createPortfolioConfigDraft(scoutPortfolioDraft))
-}
-
-function buildPreviewForm() {
-  return {
-    ...props.form,
-    portfolioConfig: committedScoutPortfolio
-  }
 }
 
 function createEmptyResultsModel(config) {
   return {
-    ...buildRegionScoutPreviewModel({
-      form: props.form,
-      suburbSearchContext: props.suburbSearchContext,
-      config
-    }),
+    config,
+    location: null,
     allRecommendations: [],
     scoreReferenceRecommendations: [],
     recommendations: [],
     totalMatches: 0,
-    hasRecommendations: false,
-    bestTiming: null
+    hasRecommendations: false
   }
 }
 
@@ -1246,26 +857,19 @@ function buildRelativeScoreBounds(recommendations = []) {
 
 function buildFilteredResultsModel(model, filters) {
   const rankedRecommendations = (model?.allRecommendations || []).filter((recommendation) => {
-    if (filters.mode === 'all' && !matchesPriceRange(recommendation, filters)) return false
-    if (filters.mode === 'affordable' && !matchesAffordableMode(recommendation, appliedConfig.value)) return false
-    return true
+    if (filters.mode === 'all') return matchesPriceRange(recommendation, filters)
+    return Boolean(recommendation?.withinBudget)
   }).map((recommendation, index) => ({
     ...recommendation,
     rank: index + 1
   }))
   const recommendations = rankedRecommendations.filter((recommendation) => matchesSearchQuery(recommendation, filters.searchQuery))
 
-  const bestTiming = recommendations
-    .map((candidate) => candidate.selectedYear)
-    .filter((year) => Number.isFinite(year))
-    .sort((left, right) => left - right)[0] ?? null
-
   return {
     ...model,
     recommendations,
     totalMatches: recommendations.length,
-    hasRecommendations: recommendations.length > 0,
-    bestTiming
+    hasRecommendations: recommendations.length > 0
   }
 }
 
@@ -1289,7 +893,7 @@ function buildResultPriceBounds(recommendations = []) {
 
 function syncResultFiltersForNewResults(model) {
   const bounds = buildResultPriceBounds(model?.allRecommendations)
-  resultFilters.mode = 'affordable'
+  resultFilters.mode = 'budget'
   resultFilters.minPrice = bounds.min
   resultFilters.maxPrice = bounds.max
   draftMinPrice.value = bounds.min
@@ -1301,7 +905,7 @@ function syncResultFiltersForNewResults(model) {
 }
 
 function setResultsMode(mode) {
-  resultFilters.mode = mode === 'all' ? 'all' : 'affordable'
+  resultFilters.mode = mode === 'all' ? 'all' : 'budget'
   if (resultFilters.mode === 'all') {
     draftMinPrice.value = resultFilters.minPrice
     draftMaxPrice.value = resultFilters.maxPrice
@@ -1339,20 +943,6 @@ function matchesSearchQuery(recommendation, query) {
   return haystack.includes(normalizedQuery)
 }
 
-function isAffordableWithinHorizon(recommendation, horizon) {
-  if (!recommendation) return false
-  const limit = Math.max(0, Math.min(30, Number(horizon) || 0))
-  return recommendation.priceRequirementSeries?.some((point) => point.affordable && point.year <= limit) || false
-}
-
-function matchesAffordableMode(recommendation, config) {
-  if (!recommendation) return false
-  if (config?.buyFlexibility === 'target') {
-    return recommendation.priceRequirementSeries?.some((point) => point.year === config.targetYears && point.affordable) || false
-  }
-  return isAffordableWithinHorizon(recommendation, 20)
-}
-
 function buildPriceHistogramBins(recommendations = [], bounds = { min: 0, max: 0 }) {
   const binCount = 56
   const span = Math.max(1, (bounds.max || 0) - (bounds.min || 0))
@@ -1387,6 +977,29 @@ function buildPriceSelectionStyle(filters, bounds) {
   }
 }
 
+function toSliderFillPercent(value, min, max) {
+  const span = Math.max(1e-9, (Number(max) || 0) - (Number(min) || 0))
+  const ratio = ((Number(value) || 0) - (Number(min) || 0)) / span
+  return Math.round(clampToRange(ratio, 0, 1) * 1000) / 10
+}
+
+function buildFlagStyle(fillPercent) {
+  return {
+    left: `${fillPercent}%`,
+    // Nudge the flag back toward the track as it approaches either end so it never overhangs.
+    transform: `translateX(calc(-50% + ${((50 - fillPercent) / 50) * 0.55}rem))`
+  }
+}
+
+function calculateMedian(values = []) {
+  if (!values.length) return 0
+  const sorted = [...values].sort((left, right) => left - right)
+  const middle = Math.floor(sorted.length / 2)
+  return sorted.length % 2
+    ? sorted[middle]
+    : Math.round((sorted[middle - 1] + sorted[middle]) / 2)
+}
+
 function clampToRange(value, min, max) {
   return Math.min(max, Math.max(min, Number(value) || 0))
 }
@@ -1399,19 +1012,13 @@ function formatCurrency(value) {
   return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(Number(value) || 0)
 }
 
+function formatCompactCurrency(value) {
+  return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', notation: 'compact', maximumFractionDigits: 1 }).format(Number(value) || 0)
+}
+
 function formatPercent(value) {
   if (!Number.isFinite(Number(value))) return 'n/a'
   return `${(Number(value) * 100).toFixed(1)}% p.a.`
-}
-
-function formatPriceRange(config) {
-  if (!config) return 'Open range'
-  if (Number.isFinite(config.minPrice) && Number.isFinite(config.maxPrice)) {
-    return `${formatCurrency(config.minPrice)} to ${formatCurrency(config.maxPrice)}`
-  }
-  if (Number.isFinite(config.minPrice)) return `${formatCurrency(config.minPrice)}+`
-  if (Number.isFinite(config.maxPrice)) return `Up to ${formatCurrency(config.maxPrice)}`
-  return 'Open range'
 }
 
 function waitForNextPaint() {
@@ -1423,10 +1030,6 @@ function waitForNextPaint() {
     window.requestAnimationFrame(() => window.requestAnimationFrame(resolve))
   })
 }
-
-function yearLabel(year) {
-  return Number(year) === 0 ? 'Now' : `In ${year} years`
-}
 </script>
 
 <style scoped>
@@ -1437,26 +1040,467 @@ function yearLabel(year) {
   background: linear-gradient(180deg, rgba(253, 254, 255, 0.96), rgba(243, 248, 255, 0.94));
 }
 
-.wealth-scout__hero,
-.wealth-scout__question-head,
-.wealth-scout__result-head,
-.wealth-scout__slider-head,
-.wealth-scout__allocation-top,
-.wealth-scout__footer,
-.wealth-scout__toggle-row,
-.wealth-scout__result-main,
-.wealth-scout__result-metrics,
-.wealth-scout__detail-metrics {
+.wealth-scout__panel {
+  display: grid;
+  gap: 1rem;
+  min-height: calc(100vh - 18rem);
+  padding: 1.6rem 0.4rem 1rem;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* The search form is its own card, so the surrounding shell stays invisible. */
+.wealth-scout--bare {
+  padding: 0;
+  background: transparent;
+}
+
+.wealth-scout__panel--form {
+  min-height: 0;
+  padding: 0;
+}
+
+/* ---------- Search form ---------- */
+
+.scout-form {
+  --scout-accent: #2563eb;
+  --scout-ink: #12233c;
+  --scout-muted: #64748b;
+  --scout-line: rgba(148, 163, 184, 0.24);
+  display: grid;
+  gap: 0;
+  width: min(100%, var(--wealth-scout-max, 64rem));
+  margin-inline: auto;
+  padding: clamp(1.4rem, 1rem + 1.6vw, 2.6rem);
+  border-radius: 26px;
+  border: 1px solid rgba(165, 184, 213, 0.3);
+  background: #ffffff;
+  box-shadow: 0 24px 52px rgba(71, 109, 154, 0.12);
+}
+
+.scout-form__head {
+  display: grid;
+  gap: 0.4rem;
+  padding-bottom: 1.6rem;
+}
+
+.scout-form__eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--scout-accent);
+}
+
+.scout-form__head h2 {
+  margin: 0.1rem 0 0;
+  font-size: clamp(1.9rem, 1.5rem + 1.5vw, 2.85rem);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  color: var(--scout-ink);
+}
+
+.scout-form__lede {
+  margin: 0.15rem 0 0;
+  max-width: 32rem;
+  color: var(--scout-muted);
+  line-height: 1.6;
+}
+
+.scout-form__block {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--scout-line);
+}
+
+.scout-form__question {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--scout-ink);
+}
+
+.scout-form__hint {
+  margin: -0.55rem 0 0;
+  color: var(--scout-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+/* Budget */
+
+.scout-form__budget-head {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   gap: 1rem;
+  margin-bottom: 0.15rem;
 }
+
+.scout-form__budget-value {
+  display: flex;
+  align-items: baseline;
+  color: var(--scout-ink);
+}
+
+.scout-form__budget-value::before {
+  content: attr(data-prefix);
+  font-size: clamp(1.4rem, 1.1rem + 1vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.scout-form__budget-value input {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: clamp(1.4rem, 1.1rem + 1vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-align: left;
+  box-shadow: none;
+  appearance: none;
+}
+
+.scout-form__budget-value input:focus {
+  outline: none;
+  color: var(--scout-accent);
+}
+
+.scout-form__scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: -0.35rem;
+  color: #94a3b8;
+  font-size: 0.76rem;
+}
+
+.scout-form__callout {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 0.35rem;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--scout-line);
+  background: #f8fafc;
+}
+
+.scout-form__callout-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--scout-accent) 12%, white);
+  color: var(--scout-accent);
+}
+
+.scout-form__callout-icon svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.scout-form__callout-copy {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.scout-form__callout-copy strong {
+  color: var(--scout-ink);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.scout-form__callout-copy span {
+  color: var(--scout-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+/* Option cards */
+
+.scout-form__option-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.scout-form__option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1.5px solid rgba(165, 184, 213, 0.4);
+  background: #ffffff;
+  color: var(--scout-ink);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.scout-form__option:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--scout-accent) 34%, rgba(165, 184, 213, 0.4));
+}
+
+.scout-form__option.is-active {
+  border-color: var(--scout-accent);
+  background: color-mix(in srgb, var(--scout-accent) 5%, white);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--scout-accent) 26%, transparent);
+}
+
+.scout-form__option-icon {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 14px;
+  background: #f1f5f9;
+  color: #64748b;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.scout-form__option.is-active .scout-form__option-icon {
+  background: color-mix(in srgb, var(--scout-accent) 12%, white);
+  color: var(--scout-accent);
+}
+
+.scout-form__option-icon svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.scout-form__option-copy {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.scout-form__option-copy strong {
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.scout-form__option-copy span {
+  color: var(--scout-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.scout-form__radio {
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  border: 1.5px solid rgba(148, 163, 184, 0.6);
+  background: #ffffff;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.scout-form__option.is-active .scout-form__radio {
+  border-color: var(--scout-accent);
+  background: var(--scout-accent);
+  box-shadow: inset 0 0 0 3px #ffffff;
+}
+
+.scout-form__field {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 24rem;
+  color: var(--scout-muted);
+  font-size: 0.82rem;
+}
+
+.scout-form__field select {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 14px;
+  border: 1px solid rgba(165, 184, 213, 0.44);
+  background: #ffffff;
+  color: var(--scout-ink);
+  font: inherit;
+}
+
+.scout-form__field select:focus {
+  outline: none;
+  border-color: var(--scout-accent);
+}
+
+/* Balance sliders */
+
+.scout-form__balance {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(8rem, 1fr) minmax(0, auto);
+  align-items: center;
+  gap: 1.1rem;
+  padding: 1rem 1.15rem;
+  border-radius: 18px;
+  border: 1px solid var(--scout-line);
+  background: #f8fafc;
+}
+
+.scout-form__balance-side {
+  display: grid;
+  gap: 0.1rem;
+  max-width: 9rem;
+}
+
+.scout-form__balance-side--end {
+  text-align: right;
+  justify-items: end;
+}
+
+.scout-form__balance-side strong {
+  color: var(--scout-ink);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.scout-form__balance-side span {
+  color: var(--scout-muted);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.scout-form__balance-track {
+  position: relative;
+  padding-top: 1.5rem;
+}
+
+.scout-form__balance-track--risk {
+  padding-bottom: 1.25rem;
+}
+
+.scout-form__balance-flag {
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
+  color: var(--scout-accent);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.scout-form__risk-scale {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  justify-content: space-between;
+  color: #94a3b8;
+  font-size: 0.65rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Shared range styling */
+
+.scout-form__slider {
+  --fill: 50%;
+  width: 100%;
+  height: 1.2rem;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.scout-form__slider:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--scout-accent) 55%, transparent);
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+
+.scout-form__slider::-webkit-slider-runnable-track {
+  height: 0.4rem;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--scout-accent) 0 var(--fill), #e2e8f0 var(--fill) 100%);
+}
+
+.scout-form__slider::-moz-range-track {
+  height: 0.4rem;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--scout-accent) 0 var(--fill), #e2e8f0 var(--fill) 100%);
+}
+
+.scout-form__slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: -0.375rem;
+  border-radius: 999px;
+  border: 3px solid #ffffff;
+  background: var(--scout-accent);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.38);
+}
+
+.scout-form__slider::-moz-range-thumb {
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  border: 3px solid #ffffff;
+  background: var(--scout-accent);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.38);
+}
+
+/* Summary footer */
+
+.scout-form__summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--scout-line);
+}
+
+.scout-form__summary div {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.scout-form__summary span {
+  color: #94a3b8;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.scout-form__summary strong {
+  color: var(--scout-ink);
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Shared bits ---------- */
 
 .wealth-scout__metric-label {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
 }
 
 .wealth-scout__metric-tooltip {
@@ -1490,6 +1534,7 @@ function yearLabel(year) {
   border: 1px solid rgba(148, 163, 184, 0.22);
   color: rgba(248, 250, 252, 0.94);
   font-size: 0.75rem;
+  font-weight: 400;
   line-height: 1.35;
   letter-spacing: 0.01em;
   box-shadow: 0 14px 36px rgba(15, 23, 42, 0.28);
@@ -1533,7 +1578,17 @@ function yearLabel(year) {
   transition: opacity 0.16s ease, visibility 0s;
 }
 
-.wealth-scout__kicker,
+/* ---------- Results ---------- */
+
+.wealth-scout__question-head,
+.wealth-scout__result-head,
+.wealth-scout__result-main,
+.wealth-scout__result-metrics {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .wealth-scout__eyebrow {
   margin: 0;
   text-transform: uppercase;
@@ -1542,7 +1597,6 @@ function yearLabel(year) {
   color: #5d7ba3;
 }
 
-.wealth-scout__hero h2,
 .wealth-scout__question-head h3,
 .wealth-scout__result-head h4,
 .wealth-scout__empty h4,
@@ -1551,25 +1605,6 @@ function yearLabel(year) {
   color: #173050;
 }
 
-.wealth-scout__hero {
-  display: grid;
-  align-content: start;
-  justify-items: start;
-  min-height: 0;
-  max-width: 70rem;
-  margin: 0 auto;
-  text-align: left;
-}
-
-.wealth-scout__hero h2 {
-  font-size: clamp(1.9rem, 1.6rem + 1vw, 2.7rem);
-  line-height: 0.96;
-  letter-spacing: -0.05em;
-  max-width: none;
-  white-space: nowrap;
-}
-
-.wealth-scout__copy,
 .wealth-scout__question-head p,
 .wealth-scout__result-head p,
 .wealth-scout__empty p,
@@ -1579,25 +1614,11 @@ function yearLabel(year) {
   line-height: 1.55;
 }
 
-.wealth-scout__choice-grid,
-.wealth-scout__summary-grid,
 .wealth-scout__charts,
-.wealth-scout__results,
-.wealth-scout__portfolio,
-.wealth-scout__range-grid {
+.wealth-scout__results {
   display: grid;
   gap: 0.85rem;
   min-width: 0;
-}
-
-.wealth-scout__panel {
-  display: grid;
-  gap: 1rem;
-  min-height: calc(100vh - 18rem);
-  padding: 1.6rem 0.4rem 1rem;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
 }
 
 .wealth-scout__question-head {
@@ -1617,50 +1638,39 @@ function yearLabel(year) {
   align-items: center;
 }
 
-.wealth-scout__question-head--stacked {
-  min-height: 0;
-  padding-inline: 0;
-}
-
-.wealth-scout__inputs {
-  display: grid;
-  gap: 2.4rem;
-  width: min(100%, 70rem);
-  margin: 0 auto;
-}
-
-.wealth-scout__input-section {
-  display: grid;
-  gap: 1.2rem;
-}
-
-.wealth-scout__question-index {
-  position: absolute;
-  top: -0.4rem;
-  right: 0;
-  margin: 0;
-  color: #6a819f;
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.wealth-scout__choice-grid--two,
-.wealth-scout__summary-grid,
-.wealth-scout__charts,
-.wealth-scout__detail-metrics,
-.wealth-scout__range-grid {
+.wealth-scout__view-switch {
+  display: inline-grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(100%, 20rem);
+  margin: 0 auto;
+  padding: 0.3rem;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 14px;
+  background: #edf2f7;
 }
 
-.wealth-scout__choice-grid--three {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.wealth-scout__view-switch button {
+  min-height: 2.65rem;
+  padding: 0.6rem 0.9rem;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: color 140ms ease, background 140ms ease, box-shadow 140ms ease;
 }
 
-.wealth-scout__selection-stage {
-  display: grid;
-  gap: 1rem;
+.wealth-scout__view-switch button.is-active {
+  background: #fff;
+  color: #173050;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.wealth-scout__charts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .wealth-scout__results-filters {
@@ -1733,13 +1743,6 @@ function yearLabel(year) {
   margin: 0.35rem auto 0;
 }
 
-.wealth-scout__results-search span {
-  color: #6481a6;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
 .wealth-scout__results-search input {
   min-height: 3.5rem;
   padding: 0.95rem 1rem;
@@ -1769,10 +1772,6 @@ function yearLabel(year) {
   height: 4.08rem;
   padding: 0 0.35rem;
   overflow: hidden;
-}
-
-.wealth-scout__histogram::before {
-  display: none;
 }
 
 .wealth-scout__histogram-bars {
@@ -1939,24 +1938,13 @@ function yearLabel(year) {
   cursor: pointer;
 }
 
-.wealth-scout__selection-detail {
-  min-height: 10.5rem;
-  width: min(100%, 70rem);
-  margin-inline: auto;
-}
-
-.wealth-scout__choice,
-.wealth-scout__summary-card,
-.wealth-scout__slider-card,
-.wealth-scout__allocation,
-.wealth-scout__toggle-row,
 .wealth-scout__result-card,
-.wealth-scout__detail-card,
 .wealth-scout__empty,
 .wealth-scout__loading {
   border-radius: 22px;
   border: 1px solid rgba(154, 174, 204, 0.16);
-  background: rgba(247, 250, 255, 0.88);
+  background: rgba(247, 250, 255, 0.68);
+  box-shadow: none;
   min-width: 0;
 }
 
@@ -1967,6 +1955,7 @@ function yearLabel(year) {
   min-height: 22rem;
   padding: 2.2rem;
   text-align: center;
+  background: rgba(247, 250, 255, 0.88);
 }
 
 .wealth-scout__loading-spinner {
@@ -1978,8 +1967,6 @@ function yearLabel(year) {
   animation: wealth-scout-spin 0.85s linear infinite;
 }
 
-.wealth-scout__choice,
-.wealth-scout__toggle-row,
 .wealth-scout__result-main {
   width: 100%;
   text-align: left;
@@ -1988,106 +1975,11 @@ function yearLabel(year) {
   cursor: pointer;
 }
 
-.wealth-scout__choice {
-  display: grid;
-  gap: 0.35rem;
-  min-height: 7.4rem;
-  padding: 0.82rem 0.95rem;
-  align-content: center;
-  justify-items: start;
-  border: 1.5px solid rgba(23, 48, 80, 0.22);
-  background: rgba(255, 255, 255, 0.96);
-}
-
-.wealth-scout__choice--compact {
-  min-height: 0;
-  padding: 0.78rem 0.92rem;
-}
-
-.wealth-scout__choice strong,
-.wealth-scout__toggle-row strong,
-.wealth-scout__summary-card strong,
-.wealth-scout__detail-card strong {
-  color: #173050;
-  line-height: 1.2;
-  font-weight: 700;
-}
-
-.wealth-scout__choice span,
-.wealth-scout__toggle-row small,
-.wealth-scout__summary-card small,
-.wealth-scout__detail-card small {
-  color: #5d7394;
-  line-height: 1.5;
-}
-
-.wealth-scout__choice.is-active,
-.wealth-scout__toggle-row.is-active {
-  border-color: rgba(23, 48, 80, 0.9);
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: inset 0 0 0 1px rgba(23, 48, 80, 0.22);
-}
-
-.wealth-scout__slider-card,
-.wealth-scout__summary-card,
-.wealth-scout__detail-card {
-  display: grid;
-  gap: 0.45rem;
-  padding: 1rem;
-}
-
-.wealth-scout__question-head h3 {
-  font-size: clamp(1.2rem, 1.08rem + 0.45vw, 1.55rem);
-  line-height: 1.14;
-  letter-spacing: -0.04em;
-  max-width: 42ch;
-  margin-inline: 0;
-}
-
-.wealth-scout__question-head p {
-  max-width: 48rem;
-  font-size: 1rem;
-}
-
-.wealth-scout__choice-grid,
-.wealth-scout__slider-card,
-.wealth-scout__summary-grid,
 .wealth-scout__charts,
-.wealth-scout__ranking,
-.wealth-scout__custom-range,
-.wealth-scout__portfolio,
-.wealth-scout__range-grid,
 .wealth-scout__results,
 .wealth-scout__empty {
   width: min(100%, 70rem);
   margin-inline: auto;
-}
-
-.wealth-scout__choice-grid--two {
-  grid-template-columns: repeat(2, minmax(18rem, 24rem));
-  justify-content: center;
-}
-
-.wealth-scout__choice-grid--three {
-  grid-template-columns: repeat(3, minmax(14rem, 18rem));
-  justify-content: center;
-}
-
-.wealth-scout__ranking {
-  display: grid;
-  gap: 0.8rem;
-}
-
-.wealth-scout__mini-head {
-  display: grid;
-  gap: 0.25rem;
-  margin-top: 0.35rem;
-  color: #173050;
-}
-
-.wealth-scout__mini-head strong {
-  font-size: 1.08rem;
-  line-height: 1.25;
 }
 
 .wealth-scout__charts--stacked {
@@ -2098,165 +1990,15 @@ function yearLabel(year) {
   min-height: 360px;
 }
 
-.wealth-scout__ranking-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: center;
-  color: #5d7394;
-}
-
-.wealth-scout__ranking-head strong {
-  color: #173050;
-}
-
-.wealth-scout__choice,
-.wealth-scout__summary-card,
-.wealth-scout__slider-card,
-.wealth-scout__allocation,
-.wealth-scout__toggle-row,
-.wealth-scout__result-card,
-.wealth-scout__detail-card,
-.wealth-scout__empty {
-  background: rgba(247, 250, 255, 0.68);
-  box-shadow: none;
-}
-
-.wealth-scout__choice {
-  border: 1.5px solid rgba(23, 48, 80, 0.22);
-  background: rgba(255, 255, 255, 0.96);
-}
-
-.wealth-scout__slider-card--compact {
-  max-width: 32rem;
-}
-
-.wealth-scout__slider-head span,
-.wealth-scout__summary-card span,
-.wealth-scout__result-metrics span,
-.wealth-scout__detail-card span {
+.wealth-scout__result-metrics span {
   color: #6481a6;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
 
-.wealth-scout__slider {
-  width: 100%;
-}
-
-.wealth-scout__slider-scale {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  color: #6a819f;
-  font-size: 0.8rem;
-}
-
-.wealth-scout__portfolio {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.wealth-scout__allocation {
-  display: grid;
-  gap: 0.6rem;
-  padding: 0.95rem;
-}
-
-.wealth-scout__allocation.is-locked {
-  border-color: rgba(23, 48, 80, 0.32);
-}
-
-.wealth-scout__allocation-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  color: #173050;
-}
-
-.wealth-scout__allocation-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-}
-
-.wealth-scout__lock-btn {
-  border: 1px solid rgba(154, 174, 204, 0.28);
-  border-radius: 999px;
-  padding: 0.28rem 0.7rem;
-  background: rgba(255, 255, 255, 0.96);
-  color: #48627f;
-  font: inherit;
-  font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.wealth-scout__lock-btn.is-active {
-  border-color: rgba(23, 48, 80, 0.9);
-  background: rgba(232, 242, 255, 0.96);
-  color: #173050;
-}
-
-.wealth-scout__swatch {
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 999px;
-}
-
-.wealth-scout__allocation-controls {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 88px;
-  gap: 0.75rem;
-}
-
-.wealth-scout__allocation-controls input,
-.wealth-scout__range-grid select,
-.wealth-scout__price-input-grid input {
-  width: 100%;
-  min-height: 3rem;
-  padding: 0.75rem 0.85rem;
-  border-radius: 16px;
-  border: 1px solid rgba(154, 174, 204, 0.2);
-  background: rgba(255, 255, 255, 0.96);
-  color: #173050;
-  font: inherit;
-}
-
-.wealth-scout__allocation-controls input[type='range'] {
-  min-height: 0;
-  padding-inline: 0;
-}
-
-.wealth-scout__custom-range {
-  display: grid;
-  gap: 0.8rem;
-}
-
-.wealth-scout__toggle-row {
-  align-items: center;
-  padding: 1rem 1.05rem;
-}
-
-.wealth-scout__toggle-row span {
-  display: grid;
-  gap: 0.2rem;
-}
-
-.wealth-scout__range-grid label {
-  display: grid;
-  gap: 0.35rem;
-  color: #5b7192;
-  font-size: 0.84rem;
-}
-
-.wealth-scout__range-grid--single {
-  max-width: 28rem;
-}
-
 .wealth-scout__result-card {
   overflow: hidden;
-  min-width: 0;
 }
 
 .wealth-scout__result-main {
@@ -2334,52 +2076,9 @@ function yearLabel(year) {
   padding: 1.1rem;
 }
 
-.wealth-scout__footer {
-  align-items: center;
-}
-
-.wealth-scout__nav {
-  border: 1px solid rgba(154, 174, 204, 0.22);
-  border-radius: 999px;
-  padding: 0.78rem 1.05rem;
-  font: inherit;
-  cursor: pointer;
-}
-
-.wealth-scout__nav--secondary {
-  background: rgba(244, 248, 255, 0.96);
-  color: #27415f;
-}
-
-.wealth-scout__nav--primary {
-  background: linear-gradient(135deg, #8fd3ff, #bce4ff);
-  color: #0f2848;
-}
-
-.wealth-scout__nav:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.wealth-scout-slide-next-enter-active,
-.wealth-scout-slide-next-leave-active,
-.wealth-scout-slide-back-enter-active,
-.wealth-scout-slide-back-leave-active,
 .wealth-scout-reveal-enter-active,
 .wealth-scout-reveal-leave-active {
   transition: opacity 220ms ease, transform 220ms ease, max-height 220ms ease;
-}
-
-.wealth-scout-slide-next-enter-from,
-.wealth-scout-slide-back-leave-to {
-  opacity: 0;
-  transform: translateX(26px);
-}
-
-.wealth-scout-slide-next-leave-to,
-.wealth-scout-slide-back-enter-from {
-  opacity: 0;
-  transform: translateX(-26px);
 }
 
 .wealth-scout-reveal-enter-from,
@@ -2399,30 +2098,40 @@ function yearLabel(year) {
   }
 }
 
+@media (min-width: 1200px) {
+  .scout-form__head {
+    padding-bottom: 2rem;
+  }
+
+  .scout-form__block {
+    gap: 1rem;
+    padding: 1.9rem 0;
+  }
+
+  .scout-form__option-grid {
+    gap: 1.1rem;
+  }
+
+  .scout-form__option {
+    padding: 1.15rem 1.25rem;
+  }
+
+  .scout-form__summary {
+    padding-top: 1.8rem;
+  }
+}
+
 @media (max-width: 980px) {
-  .wealth-scout__hero,
   .wealth-scout__question-head,
-  .wealth-scout__result-head,
-  .wealth-scout__result-main,
-  .wealth-scout__footer,
-  .wealth-scout__detail-metrics,
-  .wealth-scout__charts,
-  .wealth-scout__summary-grid,
-  .wealth-scout__price-input-grid,
-  .wealth-scout__portfolio,
-  .wealth-scout__choice-grid--three,
-  .wealth-scout__choice-grid--two,
-  .wealth-scout__range-grid {
+.wealth-scout__result-head,
+.wealth-scout__result-main,
+.wealth-scout__charts {
     grid-template-columns: 1fr;
     display: grid;
   }
 
   .wealth-scout__panel {
     min-height: calc(100vh - 16rem);
-  }
-
-  .wealth-scout__question-head {
-    padding-inline: 1rem;
   }
 
   .wealth-scout__result-rank {
@@ -2441,38 +2150,59 @@ function yearLabel(year) {
     min-height: calc(100vh - 14rem);
   }
 
-  .wealth-scout__allocation-controls {
+  .wealth-scout__panel--form {
+    min-height: 0;
+    padding: 0;
+  }
+
+  .scout-form {
+    border-radius: 20px;
+  }
+
+  .scout-form__option-grid,
+  .scout-form__summary {
     grid-template-columns: 1fr;
   }
 
-  .wealth-scout__question-index {
-    right: 1rem;
+  .scout-form__balance {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
   }
 
-  .wealth-scout__hero h2,
+  .scout-form__balance-side {
+    max-width: none;
+  }
+
+  .scout-form__balance-side--end {
+    text-align: left;
+    justify-items: start;
+    order: 3;
+  }
+
+  .scout-form__balance-track {
+    order: 2;
+  }
+
   .wealth-scout__result-head strong {
     white-space: normal;
   }
 
   .wealth-scout__result-card,
-  .wealth-scout__detail,
-  .wealth-scout__charts {
+.wealth-scout__detail,
+.wealth-scout__charts {
     min-width: 0;
     overflow: hidden;
   }
 
-  .wealth-scout__selection-detail,
   .wealth-scout__results-filters,
-  .wealth-scout__results-search,
-  .wealth-scout__results-more {
+.wealth-scout__results-search,
+.wealth-scout__results-more {
     width: 100%;
   }
 
   .wealth-scout__results-filters-head,
-  .wealth-scout__ranking-head,
-  .wealth-scout__result-main,
-  .wealth-scout__result-head,
-  .wealth-scout__footer {
+.wealth-scout__result-main,
+.wealth-scout__result-head {
     display: grid;
     grid-template-columns: 1fr;
   }
@@ -2483,9 +2213,9 @@ function yearLabel(year) {
   }
 
   .wealth-scout__result-copy,
-  .wealth-scout__result-head > div,
-  .wealth-scout__result-metrics,
-  .wealth-scout__result-metrics div {
+.wealth-scout__result-head > div,
+.wealth-scout__result-metrics,
+.wealth-scout__result-metrics div {
     min-width: 0;
   }
 
@@ -2494,13 +2224,13 @@ function yearLabel(year) {
   }
 
   .wealth-scout__result-head h4,
-  .wealth-scout__result-head p {
+.wealth-scout__result-head p {
     overflow-wrap: anywhere;
   }
 
   .wealth-scout__price-field-box input,
-  .wealth-scout__price-field-value input,
-  .wealth-scout__price-field-value::before {
+.wealth-scout__price-field-value input,
+.wealth-scout__price-field-value::before {
     font-size: 1.05rem !important;
   }
 

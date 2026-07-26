@@ -77,11 +77,8 @@ const profileLinks = [
   display: inline-block;
   max-width: 0;
   overflow: hidden;
-  opacity: 0;
   white-space: nowrap;
-  transition:
-    max-width 360ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 180ms ease 60ms;
+  transition: max-width 600ms steps(5, end);
 }
 
 .brand-surname {
@@ -97,7 +94,6 @@ const profileLinks = [
 .brand:hover .brand-reveal,
 .brand:focus-visible .brand-reveal {
   max-width: 3.3em;
-  opacity: 1;
 }
 
 .brand:focus-visible {

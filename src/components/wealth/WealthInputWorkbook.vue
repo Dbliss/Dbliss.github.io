@@ -1,7 +1,11 @@
 <template>
   <section class="wealth-workbook">
     <Transition name="wealth-sheet-slide" mode="out-in">
-      <section :key="activeSheet" class="wealth-workbook__panel">
+      <section
+        :key="activeSheet"
+        class="wealth-workbook__panel"
+        :class="{ 'wealth-workbook__panel--bare': activeSheet === 'regionScout' }"
+      >
         <template v-if="activeSheet === 'stock'">
           <div class="wealth-workbook__panel-head">
             <h3>Stock assumptions</h3>
@@ -75,7 +79,6 @@
         <template v-else-if="activeSheet === 'regionScout'">
           <WealthRegionScoutStep
             view="inputs"
-            :form="form"
             :scout-config="regionScoutConfig"
             :suburb-search-context="suburbSearchContext"
           />
@@ -702,13 +705,12 @@ const props = defineProps({
   regionScoutConfig: {
     type: Object,
     default: () => ({
-      targetYears: 5,
+      budget: 800000,
       propertyType: 'apartment',
-      granularity: 'region',
+      granularity: 'suburb',
       locationKey: null,
-      savingsMode: 'defaultPortfolio',
-      minPrice: null,
-      maxPrice: null
+      rentalYieldWeight: 0,
+      riskAppetite: 5
     })
   },
   suburbSearchContext: { type: Object, required: true },
@@ -1134,6 +1136,15 @@ function estimatePurchasingPower(propertyKey, occupancyMode) {
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(154, 174, 204, 0.22);
   box-shadow: 0 18px 38px rgba(95, 122, 160, 0.12);
+}
+
+/* The region scout renders its own centred card, so it drops the panel shell. */
+.wealth-workbook__panel--bare {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .wealth-workbook__panel-head h3 {

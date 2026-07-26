@@ -1,14 +1,34 @@
 <template>
-  <section class="wealth-interest card">
-    <div class="wealth-interest__header">
-      <div>
+  <section class="wealth-interest">
+    <header class="wealth-interest__header">
+      <div class="wealth-interest__intro">
         <p class="wealth-interest__kicker">Interests</p>
         <h2>Choose the comparison path first</h2>
+        <p class="wealth-interest__copy">
+          Pick the broad pathway you want to explore. Detailed portfolio
+          and property setup happens later in Inputs.
+        </p>
       </div>
-      <p class="wealth-interest__copy">
-        Pick the broad comparison you want here. The detailed portfolio and property setup happens later in Inputs.
-      </p>
-    </div>
+
+      <svg class="wealth-interest__header-art" viewBox="0 0 320 96" aria-hidden="true">
+        <path
+          d="M4 74 C58 94 92 30 146 34 C200 38 214 20 314 14"
+          fill="none"
+          stroke="#cbd5e1"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-dasharray="2 9"
+        />
+        <g fill="none" stroke="#cbd5e1" stroke-width="2.5">
+          <path
+            v-for="pin in headerPins"
+            :key="pin.id"
+            d="M0 0 c-6 -8 -9 -12 -9 -16.5 a9 9 0 1 1 18 0 c0 4.5 -3 8.5 -9 16.5 z"
+            :transform="`translate(${pin.x} ${pin.y}) scale(${pin.scale})`"
+          />
+        </g>
+      </svg>
+    </header>
 
     <div class="wealth-interest__mode-grid">
       <button
@@ -22,24 +42,30 @@
         :style="getModeStyle(mode)"
         @click="$emit('select-mode', mode.key)"
       >
-        <div class="wealth-interest__mode-top">
-          <span class="wealth-interest__mode-count">{{ mode.stat }}</span>
-        </div>
+        <span v-if="selectedMode === mode.key" class="wealth-interest__mode-check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12.5 L10 17.5 L19 7" />
+          </svg>
+        </span>
+
+        <span class="wealth-interest__mode-badge">{{ mode.badge }}</span>
 
         <div class="wealth-interest__mode-main">
           <strong>{{ mode.title }}</strong>
-          <p>{{ mode.description }}</p>
+          <p>
+            <span
+              v-for="(segment, index) in mode.description"
+              :key="index"
+              :class="{ 'is-accent': segment.accent }"
+            >{{ segment.text }}</span>
+          </p>
         </div>
 
-        <div class="wealth-interest__mode-preview">
-          <span class="wealth-interest__mode-preview-label">What you see</span>
-          <ul class="wealth-interest__mode-preview-list">
-            <li v-for="item in mode.preview" :key="item">{{ item }}</li>
-          </ul>
-        </div>
+        <WealthInterestIllustration :mode="mode.key" />
 
         <div class="wealth-interest__mode-includes">
-          <span v-for="item in mode.includes" :key="item">{{ item }}</span>
+          <span v-for="item in getVisibleIncludes(mode)" :key="item">{{ item }}</span>
+          <span v-if="mode.includes.length > maxVisibleIncludes" class="is-more">+ more</span>
         </div>
       </button>
     </div>
@@ -48,11 +74,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import {
-  wealthDefaultStockBaselineKey,
-  wealthHousingStrategyKeys,
-  wealthStockStrategyKeys
-} from '../../data/wealthDefaults.js'
+import WealthInterestIllustration from './WealthInterestIllustration.vue'
 
 const props = defineProps({
   scenarioSelection: { type: Object, required: true },
@@ -61,68 +83,51 @@ const props = defineProps({
 
 defineEmits(['select-mode'])
 
-const comparisonModeScenarioKeys = {
-  portfolioDeepDive: [...wealthStockStrategyKeys],
-  propertyVsStocks: [wealthDefaultStockBaselineKey, ...wealthHousingStrategyKeys],
-  propertyInvestmentVsLiving: [...wealthHousingStrategyKeys]
-}
+const maxVisibleIncludes = 6
+
+const headerPins = [
+  { id: 'pin-1', x: 46, y: 72, scale: 0.5 },
+  { id: 'pin-2', x: 148, y: 36, scale: 0.62 },
+  { id: 'pin-3', x: 214, y: 28, scale: 0.72 },
+  { id: 'pin-4', x: 296, y: 22, scale: 1 }
+]
 
 const comparisonModes = [
   {
     key: 'portfolioDeepDive',
+    badge: 'Liquid strategies',
     title: 'Deep dive in portfolio options',
-    description: 'Compare Portfolio Mix against the pure liquid tracks so you can pressure-test concentrated and diversified investing paths.',
-    stat: '8 liquid strategies + portfolio mix',
-    preview: [
-      'Portfolio Mix beside each pure liquid strategy',
-      'A full stock-only workbook flow in Inputs',
-      'Results focused on liquid pathways only'
+    description: [
+      { text: 'Compare ' },
+      { text: 'portfolio mixes', accent: true },
+      { text: ' against pure liquid strategies.' }
     ],
     includes: ['Portfolio Mix', 'QQQ', 'ASX200', 'VGS', 'VGE', 'DBP', 'Bonds', 'Cash', 'Bitcoin'],
-    color: '#2563eb',
-    accent: 'rgba(37, 99, 235, 0.16)'
+    color: '#2563eb'
   },
   {
     key: 'propertyVsStocks',
+    badge: 'Market comparison',
     title: 'Property vs stocks',
-    description: 'Compare the combined Portfolio Mix path against buying a house or apartment to live in, plus the investment-property versions of both.',
-    stat: 'Portfolio + 4 property paths',
-    preview: [
-      'Portfolio Mix against owner-occupier and rentvest paths',
-      'Stock and housing sheets both appear in Inputs',
-      'Best for deciding between investing and buying'
-    ],
-    includes: ['Portfolio Mix', 'House live-in', 'Apartment live-in', 'Rentvest house', 'Rentvest apartment'],
-    color: '#0f766e',
-    accent: 'rgba(15, 118, 110, 0.16)'
+    description: [{ text: 'Compare the investment potential of property and stocks.' }],
+    includes: ['Portfolio Mix', 'Stocks', 'Property', 'Rentvest', 'House live-in'],
+    color: '#0f766e'
   },
   {
     key: 'propertyInvestmentVsLiving',
-    title: 'Property as an investment vs living',
-    description: 'Focus purely on the housing decision by comparing house and apartment owner-occupier paths against their investment-property alternatives.',
-    stat: '4 property paths',
-    preview: [
-      'House and apartment live-in paths side by side',
-      'House and apartment investment-property paths',
-      'Inputs focused purely on property setup'
-    ],
-    includes: ['House live-in', 'Apartment live-in', 'Rentvest house', 'Rentvest apartment'],
-    color: '#ea580c',
-    accent: 'rgba(234, 88, 12, 0.16)'
+    badge: 'Use case',
+    title: 'Property as investment vs living',
+    description: [{ text: 'See the difference between investment property and living in a home.' }],
+    includes: ['Investment Property', 'Owner Occupier', 'House', 'Apartment'],
+    color: '#ea580c'
   },
   {
     key: 'regionScout',
-    title: 'Best regions to target',
-    description: 'Estimate what you could buy in a chosen number of years, pick house or apartment, and let the tool rank the strongest areas by affordability and growth.',
-    stat: 'Budget-led area finder',
-    preview: [
-      'Target year, property type, and optional region focus',
-      'Projected buying budget from your household profile',
-      'A ranked list of affordable regions and subregions'
-    ],
-    includes: ['Budget estimate', 'Area ranking', 'Growth-led shortlist'],
-    color: '#7c3aed',
-    accent: 'rgba(124, 58, 237, 0.14)'
+    badge: 'Area finder',
+    title: 'Best suburbs to target',
+    description: [{ text: 'Search the market on budget, growth, yield, and volatility.' }],
+    includes: ['Budget Search', 'Suburb Ranking', 'Growth Score', 'Rental Yield'],
+    color: '#7c3aed'
   }
 ]
 
@@ -132,37 +137,42 @@ const selectedMode = computed(() =>
     : null
 )
 
+function getVisibleIncludes(mode) {
+  return mode.includes.slice(0, maxVisibleIncludes)
+}
+
 function getModeStyle(mode) {
   return {
-    '--mode-color': mode.color,
-    '--mode-accent': mode.accent
+    '--mode-color': mode.color
   }
 }
 </script>
 
 <style scoped>
 .wealth-interest {
-  --wealth-interest-border: rgba(154, 174, 204, 0.18);
-  --wealth-interest-ink: #173050;
+  --wealth-interest-ink: #12233c;
   display: grid;
-  gap: 1.35rem;
-  padding: 1.45rem;
-  background:
-    radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.92));
+  gap: 1.75rem;
 }
 
 .wealth-interest__header {
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
+  align-items: center;
+  gap: 2rem;
+}
+
+.wealth-interest__intro {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 44rem;
 }
 
 .wealth-interest__header h2 {
-  margin: 0.15rem 0 0;
-  font-size: clamp(1.8rem, 1.4rem + 1.15vw, 2.45rem);
-  line-height: 0.98;
-  letter-spacing: -0.04em;
+  margin: 0.1rem 0 0.35rem;
+  font-size: clamp(2rem, 1.5rem + 1.85vw, 3.15rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
   color: var(--wealth-interest-ink);
 }
 
@@ -171,175 +181,148 @@ function getModeStyle(mode) {
   text-transform: uppercase;
   letter-spacing: 0.16em;
   font-size: 0.74rem;
-  color: #5d7ba3;
+  font-weight: 600;
+  color: #2f6bd8;
 }
 
 .wealth-interest__copy {
   margin: 0;
-  max-width: 31rem;
-  color: #577190;
-  line-height: 1.5;
+  max-width: 30rem;
+  color: #64748b;
+  line-height: 1.6;
+  font-size: 1.02rem;
+}
+
+.wealth-interest__header-art {
+  flex: 0 1 26rem;
+  max-width: 26rem;
+  height: auto;
+  align-self: flex-start;
 }
 
 .wealth-interest__mode-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1.15rem;
+  gap: 1.5rem;
   align-items: stretch;
 }
 
 .wealth-interest__mode {
   --mode-color: #2563eb;
-  --mode-accent: rgba(37, 99, 235, 0.16);
   position: relative;
   display: grid;
-  gap: 1rem;
-  min-height: 24rem;
-  padding: 1.2rem;
-  border-radius: 32px;
-  border: 1px solid rgba(165, 184, 213, 0.22);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(246, 250, 255, 0.9)),
-    var(--mode-accent);
+  grid-template-rows: auto auto 1fr auto;
+  gap: 1.1rem;
+  min-height: 31rem;
+  padding: 1.4rem;
+  border-radius: 24px;
+  border: 1px solid rgba(165, 184, 213, 0.28);
+  background: #ffffff;
   color: var(--wealth-interest-ink);
   text-align: left;
   font: inherit;
   cursor: pointer;
-  overflow: hidden;
-  isolation: isolate;
-  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
-}
-
-.wealth-interest__mode::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.26), transparent 48%);
-  pointer-events: none;
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
 }
 
 .wealth-interest__mode:hover {
   transform: translateY(-4px);
   box-shadow: 0 22px 44px rgba(71, 109, 154, 0.14);
-  border-color: color-mix(in srgb, var(--mode-color) 18%, rgba(165, 184, 213, 0.32));
+  border-color: color-mix(in srgb, var(--mode-color) 24%, rgba(165, 184, 213, 0.32));
 }
 
 .wealth-interest__mode.is-active {
-  border-color: color-mix(in srgb, var(--mode-color) 44%, white 24%);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(243, 249, 255, 0.94)),
-    var(--mode-accent);
+  border-color: color-mix(in srgb, var(--mode-color) 55%, white);
   box-shadow:
-    0 26px 48px rgba(71, 109, 154, 0.18),
-    0 0 0 1px color-mix(in srgb, var(--mode-color) 16%, transparent);
+    0 22px 44px rgba(71, 109, 154, 0.16),
+    0 0 0 1px color-mix(in srgb, var(--mode-color) 32%, transparent);
 }
 
-.wealth-interest__mode-top,
-.wealth-interest__mode-footer {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.65rem;
-  flex-wrap: wrap;
-}
-
-.wealth-interest__mode-kicker-badge,
-.wealth-interest__mode-count,
-.wealth-interest__mode-includes span {
+.wealth-interest__mode-check {
+  position: absolute;
+  top: 1.15rem;
+  right: 1.15rem;
   display: inline-flex;
   align-items: center;
-  min-height: 1.9rem;
-  padding: 0.35rem 0.62rem;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
   border-radius: 999px;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
+  background: var(--mode-color);
+  color: #ffffff;
 }
 
-.wealth-interest__mode-kicker-badge {
-  background: rgba(255, 255, 255, 0.82);
-  color: #567192;
+.wealth-interest__mode-check svg {
+  width: 0.95rem;
+  height: 0.95rem;
 }
 
-.wealth-interest__mode-count {
+.wealth-interest__mode-badge {
+  justify-self: start;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
   background: color-mix(in srgb, var(--mode-color) 12%, white);
-  color: color-mix(in srgb, var(--mode-color) 74%, #173050);
+  color: color-mix(in srgb, var(--mode-color) 78%, #0f172a);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .wealth-interest__mode-main {
-  position: relative;
-  z-index: 1;
   display: grid;
-  gap: 0.55rem;
+  gap: 0.6rem;
 }
 
 .wealth-interest__mode-main strong {
-  font-size: clamp(1.18rem, 1.08rem + 0.2vw, 1.35rem);
-  line-height: 1.04;
-  letter-spacing: -0.035em;
+  font-size: 1.35rem;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
 }
 
 .wealth-interest__mode-main p {
   margin: 0;
-  color: #5d7394;
-  line-height: 1.52;
-  font-size: 0.94rem;
+  color: #64748b;
+  line-height: 1.5;
+  font-size: 0.92rem;
 }
 
-.wealth-interest__mode-preview {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  gap: 0.55rem;
-  padding: 0.9rem 0.95rem;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.56);
-  border: 1px solid rgba(255, 255, 255, 0.48);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
-}
-
-.wealth-interest__mode-preview-label {
-  color: color-mix(in srgb, var(--mode-color) 68%, #355474);
-  font-size: 0.76rem;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-}
-
-.wealth-interest__mode-preview-list {
-  margin: 0;
-  padding-left: 1rem;
-  display: grid;
-  gap: 0.45rem;
-  color: #4f6a87;
-  font-size: 0.9rem;
-  line-height: 1.45;
+.wealth-interest__mode-main p .is-accent {
+  color: var(--mode-color);
+  font-weight: 500;
 }
 
 .wealth-interest__mode-includes {
-  position: relative;
-  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  align-content: start;
+  align-content: end;
 }
 
 .wealth-interest__mode-includes span {
-  background: rgba(255, 255, 255, 0.66);
-  color: #486783;
+  padding: 0.36rem 0.72rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.74rem;
+  line-height: 1.3;
 }
 
-.wealth-interest__mode-next {
-  color: #45627f;
-  font-size: 0.84rem;
-  line-height: 1.4;
+.wealth-interest__mode-includes .is-more {
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: #64748b;
 }
 
 @media (max-width: 1280px) {
   .wealth-interest__mode-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1024px) {
+  .wealth-interest__header-art {
+    display: none;
   }
 }
 
@@ -350,17 +333,6 @@ function getModeStyle(mode) {
 
   .wealth-interest__mode {
     min-height: 0;
-  }
-}
-
-@media (max-width: 820px) {
-  .wealth-interest__header {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .wealth-interest {
-    padding: 1.05rem;
   }
 }
 </style>

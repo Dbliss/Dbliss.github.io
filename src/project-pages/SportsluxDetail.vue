@@ -84,7 +84,20 @@
       </div>
 
       <div class="slx-hero-right">
+        <video
+          v-if="videos.walkthrough"
+          class="image"
+          :src="videos.walkthrough"
+          :poster="login"
+          aria-label="Sportslux walkthrough: sign in, set up a field, run the optimiser and download the report."
+          muted
+          autoplay
+          loop
+          playsinline
+          preload="metadata"
+        ></video>
         <img
+          v-else
           class="image"
           :src="login"
           alt="Sportslux secure login screen."
@@ -213,7 +226,19 @@
       <!-- Evolving optimisation result visual -->
       <div class="slx-engine-result">
         <div class="slx-engine-result-grid">
+          <video
+            v-if="videos.liveOptimisation"
+            class="image"
+            :src="videos.liveOptimisation"
+            aria-label="Live optimisation: the best design found so far improves until it meets the lighting targets."
+            muted
+            autoplay
+            loop
+            playsinline
+            preload="metadata"
+          ></video>
           <img
+            v-else
             class="image"
             :src="currentResultFrame.image"
             :alt="`Optimisation stage ${currentResultFrame.id}`"
@@ -245,7 +270,15 @@
             <p class="section-sub">
               To minimise hardware, the search is staged: begin with one luminaire per pole, then increase the count only when targets can’t be met.
               Each stage is cached so the next depth can warm-start from previous best candidates, keeping runtimes low while reliably converging to a minimum-fitting design.
-              A technique I learned from my work on chess engines, known as iterative deepening.
+              A technique I learned from my work on chess engines, known as iterative deepening. If the best lux per fitting seen so far shows
+              a field would need more than the 20-fittings-per-pole limit, the job is declined early with the reason, rather than after trying every count.
+            </p>
+
+            <div style="margin-bottom: 0.8rem;"></div>
+
+            <p class="section-sub">
+              The search is visible while it runs. The loading screen shows the current stage, the fittings being tried and a live heatmap
+              of the best design so far against the targets, so users watch the solution converge instead of staring at a spinner.
             </p>
           </div>
         </div>
@@ -257,7 +290,20 @@
       <div class="slx-section-block">
         <div class="slx-gallery-card" role="group" aria-label="Sportslux UI examples">
           <figure class="slx-gallery-item">
+            <video
+              v-if="videos.polePlacement"
+              class="slx-gallery-img"
+              :src="videos.polePlacement"
+              :poster="dashboardPreview"
+              aria-label="Pole placement: invalid positions update as the sport and field size change."
+              muted
+              autoplay
+              loop
+              playsinline
+              preload="metadata"
+            ></video>
             <img
+              v-else
               class="slx-gallery-img"
               :src="dashboardPreview"
               alt="UI of pole position selection."
@@ -269,14 +315,29 @@
           </figure>
 
           <figure class="slx-gallery-item">
+            <video
+              v-if="videos.manualMode"
+              class="slx-gallery-img"
+              :src="videos.manualMode"
+              :poster="resultsHeatmap"
+              aria-label="Manual mode: adjusting fitting tilt and orientation updates the heatmap and metrics."
+              muted
+              autoplay
+              loop
+              playsinline
+              preload="metadata"
+            ></video>
             <img
+              v-else
               class="slx-gallery-img"
               :src="resultsHeatmap"
               alt="Result of a simple configuration leading to a lighting design with all metrics passing."
               loading="lazy"
             />
             <figcaption class="slx-gallery-caption">
-              Result from a simple user setup, with all metrics meeting requirements
+              {{ videos.manualMode
+                ? 'Manual mode: tweak any fitting’s tilt or orientation and the heatmap and metrics update'
+                : 'Result from a simple user setup, with all metrics meeting requirements' }}
             </figcaption>
           </figure>
         </div>
@@ -294,9 +355,10 @@
           <h2 class="section-title">Technical Challenges</h2>
 
           <p class="section-sub">
-            Computers are excellent are forcefully computing millions of possibilities and finding the very best solution.
-            However, this problem quickly grows beyond brute force. With up to nine luminaires per design, each with a unique orientation (0–360°), tilt (−10° to +15°),
-            and luminaire model, the full combinatorial space exceeds <strong>10<sup>40</sup> possible configurations</strong>.
+            Computers are excellent at brute-force computing millions of possibilities and finding the very best solution.
+            However, this problem quickly grows beyond brute force. Every luminaire has its own orientation (0–360°), tilt (−10° to +15°)
+            and model, so a design with just nine luminaires already exceeds <strong>10<sup>40</sup> possible configurations</strong>.
+            With up to 20 luminaires on each of four poles, the space passes <strong>10<sup>350</sup></strong>.
           </p>
 
           <p class="section-sub">
@@ -334,12 +396,18 @@
                 <li>Each luminaire footprint is pre-computed on file upload for every supported tilt angle.</li>
                 <li>The optimiser caches all evaluated orientations so repeated configurations can be pulled directly from memory rather than recalculated.</li>
                 <li>Complete solutions are cached in the database, enabling instant retrieval for repeated use cases (e.g. common sports presets).</li>
+                <li>Prepared photometry is shared between jobs with matching geometry, cutting a ~12 s preparation step to under 0.1 s when warm.</li>
               </ul>
             </div>
 
             <div class="slx-feature-item">
-              <strong>Parallel computation: </strong>
-              <span>The model utilises all available CPU cores, allowing many candidate solutions to run simultaneously, drastically reducing optimisation time.</span>
+              <strong>Batched integer search: </strong>
+              <span>Rather than scoring candidates one at a time across CPU cores, the whole population is scored in a single vectorised batch using whole-number decisions. This was 3–11× faster than the previous four-core solver, with identical results.</span>
+            </div>
+
+            <div class="slx-feature-item">
+              <strong>Bounded memory: </strong>
+              <span>Luminaire footprints are streamed into fixed-size sample banks and only the winning design is rebuilt at full resolution, cutting peak memory from 7–19 GB to under 300 MB.</span>
             </div>
 
             <div class="slx-feature-item">
@@ -354,7 +422,7 @@
 
             <div class="slx-feature-item">
               <strong>Algorithm tuning and evaluation: </strong>
-              <span>Multiple optimisation methods were tested, ultimately converging on SciPy’s Differential Evolution algorithm as the best balance of reliability and performance for this problem.</span>
+              <span>Multiple optimisation methods were tested, ultimately converging on SciPy’s Differential Evolution algorithm as the best balance of reliability and performance for this problem. Every later change was benchmarked against the previous version across 170+ seeded trials, which checked that scores and lighting grids were identical.</span>
             </div>
 
             <div class="slx-feature-item">
@@ -364,7 +432,7 @@
 
             <div class="slx-feature-item">
               <strong>Infrastructure choices: </strong>
-              <span>AWS instances were selected based on memory and CPU performance to meet processing requirements while maintaining cost efficiency.</span>
+              <span>The memory work let each calculation fit in a small 1 vCPU / 2 GB ARM container that only runs while a job needs it (see the cloud architecture below).</span>
             </div>
           </div>
         </div>
@@ -398,6 +466,9 @@
           <p class="section-sub">
             <strong>*Advanced mode</strong> searches more extensively to find the very best solution.
           </p>
+          <p class="section-sub">
+            <strong>Latest solver rework:</strong> a 48-fitting AFL oval went from 37.6 s to 8.6 s end-to-end, with identical results.
+          </p>
         </div>
       </div>
     </section>
@@ -418,12 +489,12 @@
         </p>
         <p class="section-sub">
           All customer information is secured using bcrypt and JWT tokens. Passwords are securely hashed and salted before storage, following
-          modern industry practices.
+          modern industry practices. Users who forget their password can reset it themselves through an emailed link.
         </p>
         <p class="section-sub">
-          Cloud hosting lets Schreder teams and selected customers log in from anywhere with a browser. Specific IP addresses are whitelisted to ensure 
-          only authorised users can access the system. The entire system only runs during extended working hours to minimise attack surface and reduce
-          operational costs.
+          Cloud hosting lets Schreder teams and selected customers log in from anywhere with a browser, on a custom domain served over HTTPS
+          with HSTS and standard security headers. Compute only exists while a calculation needs it, which keeps both the attack surface
+          and the running costs low.
         </p>
       </div>
 
@@ -496,21 +567,46 @@
       </div>
     </section>
 
-    <!-- BACKEND ARCHITECTURE -->
+    <!-- CLOUD ARCHITECTURE -->
     <section class="slx-section slx-impact" v-reveal>
       <div class="slx-section-block">
-        <p class="section-label">Backend architecture</p>
+        <p class="section-label">Cloud architecture</p>
         <h2 class="section-title">
-          How the service is structured
+          Serverless on AWS: nothing runs until someone needs it
         </h2>
+        <p class="section-sub">
+          Sportslux started on a single always-on server. It now runs as an on-demand, serverless AWS stack: the frontend is served from the edge,
+          the API scales to zero between requests, and each calculation gets its own ARM container that shuts itself down when the work dries up.
+          The whole stack is one CloudFormation template, deployed automatically on every merge.
+        </p>
 
-        <div class="slx-section-block">
-          <img
-            class="image"
-            :src="backendStructure"
-            alt="Diagram of backend structure."
-            loading="lazy"
-          />
+        <div
+          class="slx-arch"
+          role="img"
+          aria-label="AWS architecture: CloudFront and S3 serve the frontend; API Gateway and a Lambda API handle requests and dispatch jobs to ARM Fargate workers; PostgreSQL holds job state, S3 holds reports, and a scheduled reconciler recovers stalled jobs."
+        >
+          <div
+            v-for="col in awsArchitecture"
+            :key="col.title"
+            class="slx-arch-col"
+          >
+            <div class="slx-arch-col-title">{{ col.title }}</div>
+            <div
+              v-for="node in col.nodes"
+              :key="node.name"
+              class="slx-arch-node"
+            >
+              <span class="slx-arch-node-name mono">{{ node.name }}</span>
+              <span class="slx-arch-node-detail">{{ node.detail }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slx-arch-pipeline">
+          <span class="slx-small-heading">Deploy</span>
+          <ol class="slx-arch-steps mono">
+            <li v-for="step in deployPipeline" :key="step">{{ step }}</li>
+          </ol>
         </div>
 
         <div class="slx-roadmap-grid">
@@ -535,12 +631,25 @@
 
         <div style="margin-top: 1rem;"></div>
 
-        <h3 class="slx-small-heading">Operational guarantees</h3>
-        <ul class="slx-list">
-          <li v-for="item in backendOps" :key="item">
-            {{ item }}
-          </li>
-        </ul>
+        <div class="slx-roadmap-grid">
+          <div>
+            <h3 class="slx-small-heading">Why it’s efficient</h3>
+            <ul class="slx-list">
+              <li v-for="item in awsEfficiency" :key="item">
+                {{ item }}
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="slx-small-heading">Operational guarantees</h3>
+            <ul class="slx-list">
+              <li v-for="item in backendOps" :key="item">
+                {{ item }}
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -599,7 +708,17 @@ import reportImage from '../assets/sportslux/report.png'
 import login from '../assets/sportslux/login.png'
 import admin from '../assets/sportslux/admin.png'
 import devBoard from '../assets/sportslux/devboard.png'
-import backendStructure from '../assets/sportslux/structure.png'
+
+/* Optional clips: drop an .mp4 with one of these names into assets/sportslux/videos/
+   and it replaces the matching still image. Missing files fall back to the image. */
+const videoFiles = import.meta.glob('../assets/sportslux/videos/*.mp4', { eager: true, import: 'default' })
+const videoFile = name => videoFiles[`../assets/sportslux/videos/${name}.mp4`] || null
+const videos = {
+  walkthrough: videoFile('walkthrough'),
+  liveOptimisation: videoFile('live-optimisation'),
+  polePlacement: videoFile('pole-placement'),
+  manualMode: videoFile('manual-mode')
+}
 
 import result1 from '../assets/sportslux/results/1.png'
 import result2 from '../assets/sportslux/results/2.png'
@@ -635,7 +754,7 @@ const lightTrails = Array.from({ length: TRAIL_COUNT }, (_, i) => {
   }
 })
 
-const currentVersion = computed(() => props.project?.currentVersion || 'V2.0.3')
+const currentVersion = computed(() => props.project?.currentVersion || 'V2.0.4')
 
 function isCurrentVersion(event) {
   return event.version === currentVersion.value
@@ -685,27 +804,77 @@ const performance = [
   { fittings: 8, fast: '15 sec', advanced: '1 min' }
 ]
 
+const awsArchitecture = [
+  {
+    title: 'Edge',
+    nodes: [
+      { name: 'CloudFront', detail: 'Custom domain, HTTPS, HSTS + security headers' },
+      { name: 'S3 · frontend', detail: 'Private bucket, readable only by CloudFront' }
+    ]
+  },
+  {
+    title: 'API',
+    nodes: [
+      { name: 'API Gateway', detail: 'HTTP API in front of the backend' },
+      { name: 'Lambda · FastAPI', detail: 'arm64 container: auth, validation, job control' }
+    ]
+  },
+  {
+    title: 'Compute',
+    nodes: [
+      { name: 'ECS Fargate', detail: 'ARM worker per job, 1 vCPU / 2 GB, kept warm 5 min' },
+      { name: 'EventBridge → Lambda', detail: 'Reconciler every minute recovers stalled jobs' }
+    ]
+  },
+  {
+    title: 'Data',
+    nodes: [
+      { name: 'PostgreSQL · RDS', detail: 'Users, run history, cached solutions, job state' },
+      { name: 'S3 · artifacts', detail: 'Reports + images, expired by lifecycle rule' },
+      { name: 'Secrets Manager', detail: 'DB, JWT and SMTP settings' }
+    ]
+  }
+]
+
+const deployPipeline = [
+  'Merge to main',
+  'GitHub Actions builds arm64 images',
+  'ECR (pinned by digest)',
+  'CloudFormation stack update',
+  'DB migration',
+  'Frontend upload + CloudFront invalidation'
+]
+
 const backendRequestPath = [
-  'The UI sends a design request to NGINX, which serves the frontend and forwards API calls to FastAPI.',
-  'FastAPI validates inputs and checks authentication/roles before the solver runs, so bad or unauthorised requests never reach compute.',
-  'The solver runs and either reuses cached results or computes a new solution, then stores the run + outputs for later reuse.',
-  '"In progress" and a loading screen come back to the UI immediately, with the ability to cancel a job midway', 
-  'Once a solution is reached, all results and exports are stored locally with persistence, meaning a user can refresh the page or changes tabs without re-running the job.'
+  'The Vue app is served from a private S3 bucket through CloudFront, so pages load from the edge with no server involved.',
+  'API calls go through API Gateway to FastAPI on Lambda, which validates inputs and checks authentication/roles, so bad or unauthorised requests never reach compute.',
+  'A valid calculation is written to a jobs table in PostgreSQL and handed to an idle warm worker if one is waiting. Otherwise Lambda starts a new Fargate task.',
+  'The worker runs the optimiser and publishes a live snapshot about once a second (stage, fittings tried, best heatmap so far) that the loading screen polls. Jobs can be cancelled midway.',
+  'Results, images and PDF reports land in S3 and the job record in PostgreSQL, so a user can refresh the page or change tabs without re-running the job.'
 ]
 
 const backendCoreComponents = [
-  'NGINX: a well-known fast static delivery for the UI, plus a clean reverse proxy to the API.',
-  'Gunicorn + FastAPI: handles real traffic reliably with multiple workers, and keeps the API strict and predictable with typed requests.',
-  'Optimisation engine: kept separate from the web layer so it stays testable and easier for the user to get progress on.',
-  'Postgres (RDS): an industry standard way to record user actions. Tables are separated per user features and functionality for easy management and future migrations.',
-  'S3 storage: keeps generated reports/exports durable and lightweight to serve, without bloating the database.'
+  'CloudFront + S3: fast static delivery of the UI from the edge, with both buckets fully private.',
+  'API Gateway + Lambda: the FastAPI app packaged as an ARM container image. Strict typed requests, and it scales to zero between requests.',
+  'Optimisation engine on Fargate: kept in its own container, separate from the web layer, so it stays testable and can report progress independently.',
+  'Postgres (RDS): records users, runs and job state. Job hand-off uses row locks, so two jobs can never claim the same worker.',
+  'S3 artifacts: keeps generated reports/exports durable and lightweight to serve, without bloating the database.'
+]
+
+const awsEfficiency = [
+  'Pay per use: there is no always-on application server. The API and workers scale to zero when idle and scale out automatically when several designers run jobs at once.',
+  'ARM (Graviton) throughout: both the API and the workers run on arm64, which costs less per unit of compute than x86.',
+  'Cold starts hidden from the user: opening the calculation form pre-starts a worker, and finished workers stay warm for 5 minutes, so follow-up runs and manual-mode tweaks skip the 30–60 s container start-up.',
+  'Right-sized compute: cutting the solver’s peak memory from gigabytes to a few hundred megabytes is what lets every calculation fit in a 2 GB container.',
+  'Least privilege: each component has its own IAM role scoped to just the buckets, secret and ECS actions it needs, and compute runs in private subnets with no public IPs.'
 ]
 
 const backendOps = [
   'Every run is logged with enough metadata to reproduce issues, which makes debugging much faster than guessing from screenshots.',
   'Caching is built in, so repeated runs with the same inputs return instantly instead of burning compute again.',
   'Validation happens at the API boundary, so the solver and databases are protected.',
-  'The system can be monitored through usage and health signals, automations are in place to ping a health point, with alerts on abnormality.'
+  'A scheduled reconciler re-dispatches jobs whose worker disappeared and cleans up stale workers, so a failed container never leaves a user stuck on a loading screen.',
+  'Infrastructure is code: one CloudFormation template defines the stack, every merge deploys automatically, and images are pinned by digest so rolling back is a redeploy of the previous build.'
 ]
 
 const learnings = [
@@ -715,13 +884,14 @@ const learnings = [
   'I learned to iterate with the end-user in mind: collecting real feedback from customers, turning it into clear tickets, and planning sprints so we ship improvements without breaking what already works.',
   'How to properly future proof code, designing the database so new luminaire models and new constraints can be added without needing a schema rewrite or breaking existing projects.',
   'I learned the value of proper observability by storing API calls and run metadata. This made issues easily diagnosable, made solver runs reproducible, enabled monitoring of usage/health, and allowed for result caching.',
-  'Documentation is what keeps momentum in a intermittent project, so I documented features, decisions, and backend structure, and kept commits clear enough that rollbacks and version tracking are easy.',
+  'Documentation is what keeps momentum in an intermittent project, so I documented features, decisions, and backend structure, and kept commits clear enough that rollbacks and version tracking are easy.',
+  'Moving from an always-on server to serverless taught me to design around cost and cold starts: job state lives in the database, workers stay warm briefly, and compute is started just before a user needs it.',
 ]
 
 
 const benefits = [
   'Turned early sports-field design from hours of manual work into seconds-long solver runs for typical scopes. Each use saves about 2 hours of designer time.',
-  'Since launch, designers have run Sportslux over 240 times. On average, about 11 times a week. 240 uses x 2 hours = 480 hours saved (at $150/hour) ~ $72 000 of business value within the first 6 months of use.',
+  'Since launch, designers have run Sportslux over 480 times. 480 uses x 2 hours = 960 hours saved (at $150/hour) ~ $144 000 of business value to date.',
   'Sales teams can now build and iterate lighting concepts live in front of customers, lifting perceived technical maturity. Salespeople who use the tool report increased sales rate. However, this is anecdotal.',
   'Streamlines the handoff between sales teams and lighting designers, as initial designs are now formatted in the exact form a lighting designer desires, reducing rework and miscommunication.',
   'Customers now immediately receive a detailed report of their initial design automatically generated by the system, improving customer experience and professionalism.',
@@ -741,7 +911,9 @@ const keyDates = [
   { date: '11/08/2025', version: 'V2.0.2', title: 'Additional stability pass and defect fixes in production.' },
   { date: '18/08/2025', version: 'V2.0.2', title: 'DGI calculator migrated into the Sportslux service.' },
   { date: '01/10/2025', version: 'V2.0.3', title: 'Further maintenance and bug-fix release.' },
-  { date: 'Q1 2026', version: 'V3.0.0', title: 'V3 roadmap items tracked and prioritised in the backlog.' }
+  { date: '12/10/2026', version: 'V2.0.3', title: 'Solver rework: batched integer search and bounded memory, up to 4× faster with peak RAM cut from GBs to MBs.' },
+  { date: '20/10/2026', version: 'V2.0.3', title: 'Moved to on-demand serverless AWS, with live optimisation progress, warm workers and automatic deploys.' },
+  { date: '29/10/2026', version: 'V2.0.4', title: 'Custom domain, self-service password reset, security headers and pre-warmed calculations.' }
 ]
 
 /* --------- OPTIMISATION RESULT FRAMES (IMAGE + METRICS) --------- */
@@ -1106,7 +1278,8 @@ const vReveal = {
 }
 
 /* Image must fill the panel perfectly */
-.slx-hero-right > img {
+.slx-hero-right > img,
+.slx-hero-right > video {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -1373,6 +1546,10 @@ const vReveal = {
   display: block;
   border-radius: 0.85rem;
   background: linear-gradient(145deg, #05081f, #050b2a);
+}
+
+video.slx-gallery-img {
+  object-fit: cover;
 }
 
 .slx-gallery-caption {
@@ -1752,6 +1929,128 @@ const vReveal = {
   letter-spacing: 0.18em;
   margin: 0 0 0.4rem;
   color: #90b3ff;
+}
+
+/* Cloud architecture diagram */
+.slx-arch {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.6rem;
+  margin: 0.8rem 0 0.4rem;
+}
+
+.slx-arch-col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem 0.8rem;
+  border-radius: 1rem;
+  background: rgba(8, 16, 46, 0.6);
+  border: 1px solid rgba(174, 199, 255, 0.22);
+}
+
+/* Arrow from each column into the next */
+.slx-arch-col + .slx-arch-col::before {
+  content: '';
+  position: absolute;
+  left: -1.45rem;
+  top: 50%;
+  width: 1.3rem;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(141, 177, 255, 0.2), #8db1ff);
+}
+
+.slx-arch-col + .slx-arch-col::after {
+  content: '';
+  position: absolute;
+  left: -0.35rem;
+  top: calc(50% - 4px);
+  border: 5px solid transparent;
+  border-left-color: #8db1ff;
+  border-right: 0;
+}
+
+.slx-arch-col-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #8db1ff;
+}
+
+.slx-arch-node {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.7rem;
+  background: rgba(10, 21, 66, 0.9);
+  border: 1px solid rgba(173, 199, 255, 0.35);
+  box-shadow: 0 0 18px rgba(80, 130, 255, 0.12);
+}
+
+.slx-arch-node-name {
+  font-size: 0.8rem;
+  color: #e6f0ff;
+}
+
+.slx-arch-node-detail {
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: #a4b3d4;
+}
+
+.slx-arch-pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 0.9rem;
+  margin: 0.6rem 0 1rem;
+}
+
+.slx-arch-pipeline .slx-small-heading {
+  margin: 0;
+}
+
+.slx-arch-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.76rem;
+  color: #c8d4f4;
+}
+
+.slx-arch-steps li + li::before {
+  content: '→';
+  margin-right: 0.35rem;
+  color: #8db1ff;
+}
+
+@media (max-width: 960px) {
+  .slx-arch {
+    grid-template-columns: 1fr;
+    gap: 1.4rem;
+  }
+
+  /* Arrows point down when columns stack */
+  .slx-arch-col + .slx-arch-col::before {
+    left: 50%;
+    top: -1.3rem;
+    width: 2px;
+    height: 1.1rem;
+    background: linear-gradient(180deg, rgba(141, 177, 255, 0.2), #8db1ff);
+  }
+
+  .slx-arch-col + .slx-arch-col::after {
+    left: calc(50% - 4px);
+    top: -0.3rem;
+    border: 5px solid transparent;
+    border-top-color: #8db1ff;
+    border-bottom: 0;
+  }
 }
 
 /* TIMELINE (horizontal, compact) */

@@ -11,7 +11,6 @@ const ProjectDetail = () => import('../pages/ProjectDetail.vue')
 const About = () => import('../pages/About.vue')
 const Contact = () => import('../pages/Contact.vue')
 const CityEditor = () => import('../pages/CityEditor.vue')
-const Frontier = () => import('../pages/Frontier.vue')
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -32,12 +31,6 @@ const router = createRouter({
       path: '/city-editor',
       name: 'city-editor',
       component: CityEditor,
-      meta: { hideNav: true, hideFooter: true, fullBleed: true, navReveal: false }
-    },
-    {
-      path: '/frontier',
-      name: 'frontier',
-      component: Frontier,
       meta: { hideNav: true, hideFooter: true, fullBleed: true, navReveal: false }
     },
     { path: '/projects', name: 'projects', component: Projects },

@@ -85,10 +85,6 @@ export const skillDescriptions = {
 }
 
 export const projectSkillMap = {
-  frontier: [
-    'JavaScript', 'Vue.js', 'HTML', 'CSS', 'Vite', 'Three.js', 'WebGL',
-    'Algorithms', 'System Design', 'Git', 'GitHub'
-  ],
   'lol-match-predictor': [
     'Python', 'Pandas', 'NumPy', 'scikit-learn', 'Bayesian', 'Random Forests',
     'Regression', 'Classification', 'Data Cleaning', 'Web scraping', 'Algorithms'

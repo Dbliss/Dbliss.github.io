@@ -1,36 +1,5 @@
 export const projects = [
   {
-    slug: 'frontier',
-    title: 'Frontier — Tower-Defence Roguelike',
-    tagline: 'Build a civilisation that evolves faster than the world can destroy it',
-    excerpt:
-      'A browser game where your tower layout is a living city: gather by day, survive waves by night, and watch the settlement leap from campfires to a neon metropolis.',
-    description: `
-Frontier is a 3D tower-defence roguelike built in the browser with three.js, using the same low-poly asset pipeline as this site's interactive city homepage (Kenney kits + CC0 farm models).
-
-You play in first person as the settlement's commander — sword, axe, pickaxe and build hammer on keys 1–4 — with a tactical bird's-eye view a keypress away.
-
-Each run lasts around 20–30 minutes across 12 nightly waves:
-- **By day** you chop trees and mine stone by hand (or automate it with camps), raise buildings, and train militia who follow you and hold positions at your banner.
-- **By night** enemies path dynamically through your city — walls redirect them, flyers ignore them, siege units shell your towers from range.
-- **After each wave** you pick one of three roguelike mutations (twin arrows, exploding walls, compost cycles, chain lightning...) that push each run toward a different build identity.
-- **Every four waves** the whole settlement leaps an era and every building physically transforms: barn-and-palisade farm camp → suburban town with roads and cars → commercial metropolis with skyscrapers and tesla towers.
-
-Under the hood:
-- a weighted Dijkstra flow field re-routes every enemy whenever the city layout changes, so mazes work but can be chewed through
-- a lightweight economy sim (population, worker allocation, node depletion, market and road auras)
-- the scene reconciles game state into three.js objects each frame, so era transitions just swap models
-- auto-tiling Kenney road pieces with ambient cars that navigate the road network you build
-- day/night lighting cycle and a tiny WebAudio synth — zero audio assets
-    `,
-    stack: ['Vue 3', 'three.js', 'JavaScript', 'WebAudio', 'Dijkstra flow fields'],
-    tags: ['Game Dev', 'Roguelike', 'Simulation'],
-    category: 'Personal project',
-    repoUrl: 'https://github.com/Dbliss/Dbliss.github.io',
-    liveUrl: '#/frontier',
-    featured: true
-  },
-  {
     slug: 'lol-match-predictor',
     title: 'Bayesian Predictor for Esports',
     tagline: 'Side project to price pro esports matches like a bookmaker',
@@ -85,10 +54,11 @@ The images here are two of the main diagnostics I use:
 Sportslux is a full-stack tool for engineers to rapidly design compliant sports field lighting layouts.
 It ingests field requirements, fixture photometry, and pole placement rules to generate optimised aiming plans, preview heatmaps, and PDFs.
 
-The platform supports two optimisation modes (fast vs advanced), interactive manual overrides, and uploads of custom IES files to extend the luminaire library.
+The platform supports two optimisation modes (fast vs advanced), interactive manual overrides with live optimisation progress, and uploads of custom IES files to extend the luminaire library.
+It runs on an on-demand serverless AWS stack (CloudFront, Lambda, ARM Fargate), so compute only exists while a calculation needs it.
 I led the UX, data model, and optimisation orchestration work to make it practical for day-to-day design teams.
     `,
-    stack: ['Vue', 'JavaScript', 'CSS', 'HTML', 'Python', 'FastAPI', 'PostgreSQL'],
+    stack: ['Vue', 'JavaScript', 'CSS', 'HTML', 'Python', 'FastAPI', 'PostgreSQL', 'AWS'],
     tags: ['Photometry', 'Optimisation', 'Full-stack'],
     category: 'Internal',
     repoUrl: '',
@@ -138,6 +108,28 @@ The product includes role-based administration, subtenancy delegation, recurring
     featured: true,
     hideFooter: true,
     hideNav: true
+  },
+  {
+    slug: 'curated-wellness',
+    title: 'Curated Wellness AI Commerce Platform',
+    tagline: 'Bella, an AI supplement guide with memory, guardrails and a full operations backend',
+    excerpt:
+      'Built the backend, AI chatbot, customer memory, affiliate programme and super admin behind a live Shopify supplement store.',
+    description: `
+Curated Wellness is a New Zealand supplement brand selling on Shopify. The storefront design came from the brand's design team;
+I built everything behind it:
+- Bella, an OpenAI-powered chat guide with ranked markdown retrieval, request guardrails and deterministic response guards
+- visitor, customer and purchase memory linked through verified Shopify logins and order webhooks
+- an affiliate and personal-trainer programme with lifetime attribution and refund clawback
+- a super admin for chats, orders, payouts, site health and editing the chatbot's knowledge
+- AWS infrastructure (EC2, RDS Postgres, SES, Secrets Manager) with health probes and incident alerts
+    `,
+    stack: ['Node.js', 'PostgreSQL (AWS RDS)', 'OpenAI Responses API', 'Shopify App (React Router 7, Prisma)', 'Theme app extensions', 'AWS EC2 / SES / Secrets Manager'],
+    tags: ['Applied AI', 'E-commerce', 'Full-stack', 'Data modelling'],
+    category: 'External',
+    repoUrl: '',
+    liveUrl: 'https://curatedwellness.co.nz',
+    featured: true
   },
   {
     slug: 'asset-data-integration',

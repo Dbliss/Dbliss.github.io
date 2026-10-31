@@ -205,30 +205,6 @@ function makeCircuit(materials) {
   return g
 }
 
-function makeLaptop(materials) {
-  const g = new THREE.Group()
-  const screenMat = new THREE.MeshStandardMaterial({ map: labelTexture('FRONTIER', 'BUILD  /  DEFEND  /  EVOLVE'), roughness: 0.45, emissive: '#15130d', emissiveIntensity: 0.6 })
-  const screen = roundedBox(4.2, 2.55, 0.18, 0.18, materials.charcoal)
-  screen.position.set(0, 2.35, -0.7); g.add(screen)
-  const display = new THREE.Mesh(new THREE.PlaneGeometry(3.78, 2.1), screenMat)
-  display.position.set(0, 2.36, -0.6); g.add(display)
-  const neck = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.2, 0.38), materials.metal)
-  neck.position.set(0, 0.92, -0.72); g.add(neck)
-  const foot = roundedBox(1.8, 0.75, 0.12, 0.12, materials.charcoal)
-  foot.rotation.x = -Math.PI / 2; foot.position.set(0, 0.22, -0.52); g.add(foot)
-
-  const keyboardBase = roundedBox(3.45, 1.25, 0.12, 0.12, materials.cream)
-  keyboardBase.rotation.x = -Math.PI / 2; keyboardBase.position.set(-0.25, 0.26, 1.08); g.add(keyboardBase)
-  for (let row = 0; row < 4; row++) for (let col = 0; col < 12; col++) {
-    const accent = (row === 0 && col > 8) || (row === 3 && col > 9)
-    const key = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.045, 0.19), accent ? materials.orange : materials.keyLight)
-    key.position.set(-1.4 + col * 0.245, 0.36, 0.72 + row * 0.245); g.add(key)
-  }
-  const mouse = roundedBox(0.55, 0.82, 0.16, 0.22, materials.cream)
-  mouse.rotation.x = -Math.PI / 2; mouse.position.set(2.05, 0.26, 1.18); g.add(mouse)
-  return g
-}
-
 function makePaper(kind, materials) {
   const g = new THREE.Group()
   const paperMat = new THREE.MeshStandardMaterial({ map: paperTexture(kind), roughness: 0.95 })
@@ -511,7 +487,7 @@ export function createDeskScene(canvas, { onNavigate, mobile = false } = {}) {
   const materials = {
     orange: mat('#7463df', 0.55), orangeGlow: new THREE.MeshStandardMaterial({ color: '#8f7cff', emissive: '#5f4bdd', emissiveIntensity: 1.35, flatShading: true }),
     red: mat('#9b7bb7', 0.72), charcoal: mat('#292a43', 0.58, 0.04), metal: mat('#9a9bb2', 0.46, 0.35),
-    key: mat('#4d4d73', 0.7), keyLight: mat('#ddd8e8', 0.76), cream: mat('#e9e3dc', 0.82), blue: mat('#58619a', 0.7), green: mat('#618f7c', 0.7),
+    key: mat('#4d4d73', 0.7), cream: mat('#e9e3dc', 0.82), blue: mat('#58619a', 0.7), green: mat('#618f7c', 0.7),
     copper: mat('#d39b74', 0.55, 0.22), woodDark: mat('#817b96', 0.8), coffee: mat('#3a3150', 0.45), plant: mat('#47764f', 0.78),
     lampGlow: new THREE.MeshStandardMaterial({ color: '#ffd1a1', emissive: '#ff8a3d', emissiveIntensity: 4.5, roughness: 0.35 }),
     rgbCyan: new THREE.MeshStandardMaterial({ color: '#48cfe0', emissive: '#20b8db', emissiveIntensity: 5, roughness: 0.4 }),
@@ -528,7 +504,6 @@ export function createDeskScene(canvas, { onNavigate, mobile = false } = {}) {
     { id: 'chess', x: -14.5, z: 1.45, rot: 0.08, route: '/projects/chessEngine', label: 'C++ Chess Engine', object: makeChessModel() },
     { id: 'notebook', x: -8.5, z: -1.15, rot: -0.15, route: '/projects/wealth-pathways-au', label: 'Wealth Pathways', object: makeNotebook(materials) },
     { id: 'circuit', x: -2.5, z: 1.3, rot: 0.08, route: '/projects/sports-booking', label: 'Sports Booking', object: makeCircuit(materials) },
-    { id: 'laptop', x: 4, z: -0.35, rot: 0, route: '/frontier', label: 'Frontier', object: makeLaptop(materials) },
     { id: 'graphs', x: 10.5, z: 1.05, rot: -0.13, route: '/projects/sportslux', label: 'Sportslux Optimiser', object: makePaper('graph', materials) },
     { id: 'api', x: 16.5, z: -1.15, rot: 0.14, route: '/projects/asset-data-integration', label: 'Asset Data Integration', object: makePaper('api', materials) },
     { id: 'mug', x: 22.5, z: 1.25, rot: 0, route: '/projects/lol-match-predictor', label: 'Bayesian Predictor', object: makeMug(materials) }

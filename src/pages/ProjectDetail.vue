@@ -34,6 +34,7 @@ const componentMap = {
   sportslux: defineAsyncComponent(() => import('../project-pages/SportsluxDetail.vue')),
   chessEngine: defineAsyncComponent(() => import('../project-pages/ChessEngineDetail.vue')),
   'sports-booking': defineAsyncComponent(() => import('../project-pages/SportsBookingDetail.vue')),
+  'curated-wellness': defineAsyncComponent(() => import('../project-pages/CuratedWellnessDetail.vue')),
   'asset-data-integration': defineAsyncComponent(() => import('../project-pages/AssetDataIntegrationDetail.vue')),
   drone: defineAsyncComponent(() => import('../project-pages/DroneDetail.vue')),
   'wealth-pathways-au': defineAsyncComponent(() => import('../project-pages/WealthPathwaysWorkbookDetail.vue'))

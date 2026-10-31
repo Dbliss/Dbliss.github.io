@@ -15,7 +15,3 @@ The landing-page city is built from these assets:
 - ["Drone"](https://poly.pizza/m/DNbUoMtG3H) by NateGazzard (CC-BY 3.0) via poly.pizza
 - Night HDRI + PBR ground textures from [Poly Haven](https://polyhaven.com) / [ambientCG](https://ambientcg.com) (CC0)
 
-The Frontier game (`/#/frontier`) additionally uses:
-
-- [Kenney](https://kenney.nl) — Survival Kit (tents, tools, camp props) and Nature Kit (trees, rocks, crops) (CC0)
-- Sword from [KayKit Character Pack: Adventurers](https://kaylousberg.itch.io/kaykit-adventurers) by Kay Lousberg (CC0)

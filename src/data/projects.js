@@ -39,6 +39,7 @@ The images here are two of the main diagnostics I use:
     `,
     stack: ['Python', 'pandas', 'scikit-learn', 'UKF', 'Random forests', 'Gradient Boosting'],
     tags: ['Machine Learning', 'Sports Analytics', 'Statistics'],
+    groups: ['AI & ML', 'Data engineering'],
     category: 'Personal project',
     repoUrl: 'https://github.com/Dbliss/LoLPredictor',
     liveUrl: '',
@@ -54,12 +55,14 @@ The images here are two of the main diagnostics I use:
 Sportslux is a full-stack tool for engineers to rapidly design compliant sports field lighting layouts.
 It ingests field requirements, fixture photometry, and pole placement rules to generate optimised aiming plans, preview heatmaps, and PDFs.
 
-The platform supports two optimisation modes (fast vs advanced), interactive manual overrides with live optimisation progress, and uploads of custom IES files to extend the luminaire library.
+Designers can locate the real ground on satellite imagery, place up to 10 poles anywhere, watch the optimiser's best design update live, and review results in a 3D night view.
+It also supports interactive manual overrides and uploads of custom IES files to extend the luminaire library.
 It runs on an on-demand serverless AWS stack (CloudFront, Lambda, ARM Fargate), so compute only exists while a calculation needs it.
 I led the UX, data model, and optimisation orchestration work to make it practical for day-to-day design teams.
     `,
-    stack: ['Vue', 'JavaScript', 'CSS', 'HTML', 'Python', 'FastAPI', 'PostgreSQL', 'AWS'],
+    stack: ['Vue', 'three.js', 'JavaScript', 'CSS', 'HTML', 'Python', 'FastAPI', 'PostgreSQL', 'AWS'],
     tags: ['Photometry', 'Optimisation', 'Full-stack'],
+    groups: ['In production', 'Full-stack & web', 'Algorithms & optimisation'],
     category: 'Internal',
     repoUrl: '',
     liveUrl: '',
@@ -82,6 +85,7 @@ and master key software fundamentals such as hashing, search trees, bit operatio
     `,
     stack: ['C++', 'Visual Studio executable code', 'Caching'],
     tags: ['Optimisation', 'Game-Tree'],
+    groups: ['Systems & embedded', 'Algorithms & optimisation'],
     category: 'Personal project',
     repoUrl: 'https://github.com/Dbliss/Chess-Engine-cpp',
     liveUrl: '',
@@ -102,6 +106,7 @@ The product includes role-based administration, subtenancy delegation, recurring
     `,
     stack: ['Vue 3', 'Node.js', 'PostgreSQL', 'JWT Auth', 'SMTP', 'EXEDRA API'],
     tags: ['Multi-tenant', 'RBAC', 'Automation', 'Scheduling'],
+    groups: ['In production', 'Full-stack & web'],
     category: 'External',
     repoUrl: '',
     liveUrl: '',
@@ -126,6 +131,7 @@ I built everything behind it:
     `,
     stack: ['Node.js', 'PostgreSQL (AWS RDS)', 'OpenAI Responses API', 'Shopify App (React Router 7, Prisma)', 'Theme app extensions', 'AWS EC2 / SES / Secrets Manager'],
     tags: ['Applied AI', 'E-commerce', 'Full-stack', 'Data modelling'],
+    groups: ['In production', 'AI & ML', 'Full-stack & web'],
     category: 'External',
     repoUrl: '',
     liveUrl: 'https://curatedwellness.co.nz',
@@ -140,6 +146,7 @@ I built everything behind it:
     description: 'Documentation pending',
     stack: ['Python', 'Node.js', 'ETL', 'REST API'],
     tags: ['Data integration', 'Automation', 'ETL'],
+    groups: ['In production', 'Data engineering'],
     category: 'External',
     repoUrl: '',
     liveUrl: '',
@@ -154,6 +161,7 @@ I built everything behind it:
     description: 'Documentation pending',
     stack: ['Raspberry Pi', 'C++', 'Python', 'PID Control'],
     tags: ['Robotics', 'Control systems', 'Embedded'],
+    groups: ['Systems & embedded', 'Algorithms & optimisation'],
     category: 'Personal project',
     repoUrl: '',
     liveUrl: '',
@@ -181,10 +189,37 @@ The goal is not to give personal advice, but to make the trade-offs and drivers 
     `,
     stack: ['Vue', 'Vite', 'Web Workers', 'Monte Carlo Simulation'],
     tags: ['Finance Modelling', 'Interactive UI', 'Australia'],
+    groups: ['Full-stack & web', 'Algorithms & optimisation'],
     category: 'Personal project',
     repoUrl: '',
     liveUrl: '',
     featured: false,
     hideFooter: true
+  },
+  {
+    slug: 'super-move',
+    title: 'Super Move Quote Builder',
+    tagline: 'Static Vue app with a voxel truck packer, embedded in a Wix site',
+    excerpt:
+      'Removals quote builder for a Sydney removalist. It runs entirely in the browser, packs the inventory into trucks with a 3D voxel search, and sends quote requests into the client\'s Wix site.',
+    description: `
+Hosting: a Vue 3 + Vite multi-page build, deployed to GitHub Pages by a GitHub Actions workflow on every push to main.
+There is no server. All computation runs in the browser, including a time-budgeted packing search in a Web Worker.
+
+Integration: the app is embedded in the client's Wix site as an HTML iframe. On submit it sends the quote to the parent page with postMessage.
+Wix page code listens with $w(...).onMessage and calls a Velo backend web module, which inserts the quote into a QuoteRequests CMS collection.
+A Wix Automation on that collection emails the business, so no keys or email logic ever reach the browser.
+
+Packing: a 10 cm voxel grid with per-item stack levels, open-top flags, allowed rest poses and a 70% support rule.
+A three-phase search finds the fewest trucks, then the cheapest mixed fleet, then the best-looking layout within the time budget.
+    `,
+    stack: ['Vue 3', 'Vite', 'three.js', 'Web Workers', 'GitHub Actions', 'GitHub Pages', 'Wix Velo'],
+    tags: ['3D bin packing', 'Static hosting', 'Wix integration'],
+    groups: ['In production', 'Full-stack & web', 'Algorithms & optimisation'],
+    category: 'External',
+    repoUrl: 'https://github.com/Dbliss/Super-Move',
+    liveUrl: 'https://dbliss.github.io/Super-Move/',
+    featured: true,
+    hideNav: true
   }
 ]

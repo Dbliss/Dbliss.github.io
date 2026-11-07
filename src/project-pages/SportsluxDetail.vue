@@ -81,6 +81,13 @@
         <p class="slx-hero-footnote mono">
           From hours of rudimentary selection of light positions to instant perfect solutions with live photometry.
         </p>
+
+        <ul class="slx-hero-stats" aria-label="Sportslux headline numbers">
+          <li v-for="stat in heroStats" :key="stat.label">
+            <span class="slx-hero-stat-value mono">{{ stat.value }}</span>
+            <span class="slx-hero-stat-label">{{ stat.label }}</span>
+          </li>
+        </ul>
       </div>
 
       <div class="slx-hero-right">
@@ -96,15 +103,139 @@
           playsinline
           preload="metadata"
         ></video>
-        <img
-          v-else
-          class="image"
-          :src="login"
-          alt="Sportslux secure login screen."
-          loading="eager"
-          decoding="async"
-          fetchpriority="high"
-        />
+        <template v-else>
+          <video
+            v-autoplay-visible
+            class="image"
+            :src="video3d"
+            :poster="poster3d"
+            muted
+            loop
+            playsinline
+            preload="metadata"
+            aria-label="3D night render of Waverley Park, Melbourne, lit by the Sportslux design, with photometric haze showing each beam."
+          ></video>
+          <span class="slx-video-badge mono">Live 3D render · Waverley Park, Melbourne</span>
+        </template>
+      </div>
+    </section>
+
+    <!-- LATEST RELEASE: SATELLITE FIELD LOCATION -->
+    <section class="slx-section" v-reveal>
+      <p class="section-label">Latest release · V2.1</p>
+      <div class="slx-video-grid">
+        <div class="slx-section-block">
+          <h2 class="section-title">Start from the real ground, not a rectangle</h2>
+          <p class="section-sub">
+            Designers can now search for a venue, outline it on satellite imagery and have an oval fitted through
+            the points. The measured size, orientation and location flow straight into the design. The pole step then
+            shades the standard's recommended pole zones over the real surroundings, so poles can be dragged to
+            places they could actually stand.
+          </p>
+          <ul class="slx-list">
+            <li v-for="item in releaseHighlights" :key="item">{{ item }}</li>
+          </ul>
+        </div>
+
+        <figure class="slx-video-figure">
+          <video
+            v-autoplay-visible
+            class="slx-video"
+            :src="videoSatellite"
+            :poster="posterSatellite"
+            muted
+            loop
+            playsinline
+            preload="none"
+            aria-label="Searching for Waverley Park, outlining the oval on satellite imagery and fitting an oval through the points."
+          ></video>
+          <figcaption class="slx-gallery-caption">
+            Waverley Park located, outlined on satellite imagery and fitted as an oval (1.5× speed)
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- LIVE OPTIMISER -->
+    <section class="slx-section" v-reveal>
+      <p class="section-label">Live optimisation</p>
+      <div class="slx-video-grid slx-video-grid-reverse">
+        <figure class="slx-video-figure">
+          <video
+            v-autoplay-visible
+            class="slx-video"
+            :src="videoLoading"
+            :poster="posterLoading"
+            muted
+            loop
+            playsinline
+            preload="none"
+            aria-label="The Sportslux loading screen showing the best design found so far updating live during a calculation."
+          ></video>
+          <figcaption class="slx-gallery-caption">
+            A real 8-pole AFL calculation for Waverley Park. The search section is shown at 3× speed.
+          </figcaption>
+        </figure>
+
+        <div class="slx-section-block">
+          <h2 class="section-title">The loading screen shows the search as it runs</h2>
+          <p class="section-sub">
+            Rather than a spinner, the loading screen shows the best design found so far, drawn as the
+            final results will be. That includes isolux bands, each fitting's aiming line, 1/5/10 lux spill
+            contours, and live statistics against the targets.
+          </p>
+          <ul class="slx-list">
+            <li v-for="item in liveProgressPoints" :key="item">{{ item }}</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESULT VIEWS -->
+    <section class="slx-section" v-reveal>
+      <p class="section-label">Results</p>
+      <h2 class="section-title">One design, five ways to read it</h2>
+      <p class="section-sub slx-section-intro">
+        The results can be viewed as a 3D night scene, a false-colour heatmap, isolux bands, or the lux at every grid
+        point (hover to zoom in). Aiming points, grid values and isolux lines can each be switched on and off. The 3D
+        view uses three.js and places the lit field in its surroundings. Its haze option shapes each beam from that
+        luminaire's real photometry. The view loads only when it is opened and is kept once built, so switching back
+        to it is instant.
+      </p>
+      <div class="slx-video-pair">
+        <figure class="slx-video-figure">
+          <video
+            v-autoplay-visible
+            class="slx-video"
+            :src="videoOverlays"
+            :poster="posterOverlays"
+            muted
+            loop
+            playsinline
+            preload="none"
+            aria-label="The 3D results view with isolux lines and then grid values drawn over the lit field."
+          ></video>
+          <figcaption class="slx-gallery-caption">
+            3D view with isolux lines, then the lux at every grid point
+          </figcaption>
+        </figure>
+
+        <figure class="slx-video-figure">
+          <video
+            v-autoplay-visible
+            class="slx-video"
+            :src="videoResults"
+            :poster="posterResults"
+            muted
+            loop
+            playsinline
+            preload="none"
+            aria-label="Switching the Sportslux results between the heatmap, isolux and an interactive lux grid with hover zoom."
+          ></video>
+          <figcaption class="slx-gallery-caption">
+            Heatmap, isolux and grid views. Hovering the grid zooms in on the values.
+          </figcaption>
+        </figure>
       </div>
     </section>
 
@@ -310,7 +441,9 @@
               loading="lazy"
             />
             <figcaption class="slx-gallery-caption">
-              Pole-position UI: invalid positions update as you change field size + sport
+              {{ videos.polePlacement
+                ? 'Pole placement over the real ground: shaded zones follow AS 2560.2.3, and poles can be added and dragged into place'
+                : 'Pole-position UI: invalid positions update as you change field size + sport' }}
             </figcaption>
           </figure>
 
@@ -358,7 +491,7 @@
             Computers are excellent at brute-force computing millions of possibilities and finding the very best solution.
             However, this problem quickly grows beyond brute force. Every luminaire has its own orientation (0–360°), tilt (−10° to +15°)
             and model, so a design with just nine luminaires already exceeds <strong>10<sup>40</sup> possible configurations</strong>.
-            With up to 20 luminaires on each of four poles, the space passes <strong>10<sup>350</sup></strong>.
+            With up to 20 luminaires on each of up to ten poles, the space passes <strong>10<sup>350</sup></strong>.
           </p>
 
           <p class="section-sub">
@@ -411,6 +544,11 @@
             </div>
 
             <div class="slx-feature-item">
+              <strong>Symmetry detection: </strong>
+              <span>The optimiser finds the field reflections that map a pole layout onto itself. Mirrored poles share fittings, so the search space shrinks while asymmetric layouts still optimise every pole independently.</span>
+            </div>
+
+            <div class="slx-feature-item">
               <strong>High-efficiency data handling: </strong>
               <span>NumPy arrays and vectorised operations are used throughout the computation pipeline to manage large datasets with minimal overhead.</span>
             </div>
@@ -422,7 +560,7 @@
 
             <div class="slx-feature-item">
               <strong>Algorithm tuning and evaluation: </strong>
-              <span>Multiple optimisation methods were tested, ultimately converging on SciPy’s Differential Evolution algorithm as the best balance of reliability and performance for this problem. Every later change was benchmarked against the previous version across 170+ seeded trials, which checked that scores and lighting grids were identical.</span>
+              <span>Multiple optimisation methods were tested, ultimately converging on SciPy’s Differential Evolution algorithm as the best balance of reliability and performance for this problem. Every later change was benchmarked against the previous version across 170+ seeded trials, which checked that scores and lighting grids were identical. The settings were then tuned in a 900-trial study (nine jobs × five seeds × 20 variants). The adopted combination of a bounded score with a uniformity bonus, a Latin hypercube start, local search and population 20 beat the previous optimiser on 43 of 45 paired runs.</span>
             </div>
 
             <div class="slx-feature-item">
@@ -439,32 +577,30 @@
 
         <!-- RIGHT / ROW 2 -->
         <div class="slx-section-block slx-feature-right-bottom">
-          <h2 class="section-title">Resulting speed</h2>
+          <h2 class="section-title">Measured, not guessed</h2>
 
           <div class="table-wrapper slx-table">
             <table class="mono">
               <thead>
                 <tr>
-                  <th>Fittings</th>
-                  <th>Fast mode</th>
-                  <th>Advanced mode</th>
+                  <th>Workload</th>
+                  <th>Peak RAM</th>
+                  <th>Pipeline</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="row in performance" :key="row.fittings">
-                  <td>{{ row.fittings }}</td>
-                  <td>{{ row.fast }}</td>
-                  <td>{{ row.advanced }}</td>
+                <tr v-for="row in benchmarks" :key="row.workload">
+                  <td>{{ row.workload }}</td>
+                  <td>{{ row.memory }}</td>
+                  <td>{{ row.time }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <p class="section-sub">
-            <strong>*Fast mode</strong> finds the minimum hardware requirements for a field.
-          </p>
-          <p class="section-sub">
-            <strong>*Advanced mode</strong> searches more extensively to find the very best solution.
+            Before → after the first round of performance work. Medians of repeated runs, measured with a harness that asserts
+            every score, winning fitting, illuminance grid and glare value is identical to the original code.
           </p>
           <p class="section-sub">
             <strong>Latest solver rework:</strong> a 48-fitting AFL oval went from 37.6 s to 8.6 s end-to-end, with identical results.
@@ -709,6 +845,17 @@ import login from '../assets/sportslux/login.png'
 import admin from '../assets/sportslux/admin.png'
 import devBoard from '../assets/sportslux/devboard.png'
 
+import video3d from '../assets/sportslux/videos/3d-night-render.mp4'
+import poster3d from '../assets/sportslux/videos/3d-night-render.jpg'
+import videoSatellite from '../assets/sportslux/videos/satellite-locate.mp4'
+import posterSatellite from '../assets/sportslux/videos/satellite-locate.jpg'
+import videoLoading from '../assets/sportslux/videos/live-optimiser.mp4'
+import posterLoading from '../assets/sportslux/videos/live-optimiser.jpg'
+import videoResults from '../assets/sportslux/videos/result-views.mp4'
+import videoOverlays from '../assets/sportslux/videos/result-3d-overlays.mp4'
+import posterOverlays from '../assets/sportslux/videos/result-3d-overlays.jpg'
+import posterResults from '../assets/sportslux/videos/result-views.jpg'
+
 /* Optional clips: drop an .mp4 with one of these names into assets/sportslux/videos/
    and it replaces the matching still image. Missing files fall back to the image. */
 const videoFiles = import.meta.glob('../assets/sportslux/videos/*.mp4', { eager: true, import: 'default' })
@@ -754,7 +901,36 @@ const lightTrails = Array.from({ length: TRAIL_COUNT }, (_, i) => {
   }
 })
 
-const currentVersion = computed(() => props.project?.currentVersion || 'V2.0.4')
+const currentVersion = computed(() => props.project?.currentVersion || 'V2.1.2')
+
+const heroStats = [
+  { value: '3–6×', label: 'faster design search' },
+  { value: '19 GB → 288 MB', label: 'peak memory' },
+  { value: '10 × 20', label: 'poles × fittings per pole' }
+]
+
+const releaseHighlights = [
+  'Up to 10 poles placed anywhere. Layouts no longer need to be four matching corner poles.',
+  'Each pole has its own height, and the form suggests one based on where the pole stands.',
+  'Fitting counts can be chosen automatically for the whole field or pole by pole, up to 20 per pole.',
+  'Designs no longer carry extra fittings. Poles with more light than they need lose fittings as long as the design still meets the standard.',
+  'When no design meets the standard, the closest one is shown, ranked by the most important requirements first.',
+  'Field markings follow the rules: AS 2560.2.3 rugby in-goals and FIFA-sized soccer areas, scaled to smaller pitches.'
+]
+
+const liveProgressPoints = [
+  'The worker sends a snapshot about once a second: the best candidate\'s illuminance as compact uint16 lux (~18 KB) plus its decoded fittings and aim points. It uses the same decoding as the final render.',
+  'The colour scale is fixed from 0 to the required lux for the whole run, so you can watch successive designs fill in. The scale never rescales under you.',
+  'Progress is weighted by stage. Within a search it follows convergence on a log scale, it never moves backwards, and it does not stall in background tabs.',
+  'For UI work, a dev page replays recorded optimiser runs through the real loading screen without a backend or login.'
+]
+
+const benchmarks = [
+  { workload: 'Soccer · 36 fittings', memory: '7.0 GB → 196 MB', time: '12.5 s → 8.4 s' },
+  { workload: 'AFL · 48 fittings', memory: '7.0 GB → 245 MB', time: '37.6 s → 18.3 s' },
+  { workload: 'AFL · 3 optics', memory: '19.2 GB → 288 MB', time: '59.5 s → 27.1 s' },
+  { workload: '16 poles · 192 fittings', memory: '159 MB → 159 MB', time: '20.6 s → 1.1 s' }
+]
 
 function isCurrentVersion(event) {
   return event.version === currentVersion.value
@@ -792,17 +968,6 @@ onMounted(async () => {
   await nextTick()
   centerTimelineOnCurrent()
 })
-
-const performance = [
-  { fittings: 1, fast: '< 1 sec', advanced: '< 1 sec' },
-  { fittings: 2, fast: '1 sec', advanced: '1 sec' },
-  { fittings: 3, fast: '2 sec', advanced: '3 sec' },
-  { fittings: 4, fast: '2 sec', advanced: '7 sec' },
-  { fittings: 5, fast: '3 sec', advanced: '10 sec' },
-  { fittings: 6, fast: '5 sec', advanced: '25 sec' },
-  { fittings: 7, fast: '10 sec', advanced: '40 sec' },
-  { fittings: 8, fast: '15 sec', advanced: '1 min' }
-]
 
 const awsArchitecture = [
   {
@@ -886,6 +1051,7 @@ const learnings = [
   'I learned the value of proper observability by storing API calls and run metadata. This made issues easily diagnosable, made solver runs reproducible, enabled monitoring of usage/health, and allowed for result caching.',
   'Documentation is what keeps momentum in an intermittent project, so I documented features, decisions, and backend structure, and kept commits clear enough that rollbacks and version tracking are easy.',
   'Moving from an always-on server to serverless taught me to design around cost and cold starts: job state lives in the database, workers stay warm briefly, and compute is started just before a user needs it.',
+  'Performance work needs proof. Every optimisation shipped with a harness showing seeded results were identical to the old code, and tuning decisions were made from a 900-trial study rather than a handful of runs.',
 ]
 
 
@@ -913,7 +1079,9 @@ const keyDates = [
   { date: '01/10/2025', version: 'V2.0.3', title: 'Further maintenance and bug-fix release.' },
   { date: '12/10/2026', version: 'V2.0.3', title: 'Solver rework: batched integer search and bounded memory, up to 4× faster with peak RAM cut from GBs to MBs.' },
   { date: '20/10/2026', version: 'V2.0.3', title: 'Moved to on-demand serverless AWS, with live optimisation progress, warm workers and automatic deploys.' },
-  { date: '29/10/2026', version: 'V2.0.4', title: 'Custom domain, self-service password reset, security headers and pre-warmed calculations.' }
+  { date: '29/10/2026', version: 'V2.0.4', title: 'Custom domain, self-service password reset, security headers and pre-warmed calculations.' },
+  { date: '03/11/2026', version: 'V2.1.0', title: 'Up to 10 poles anywhere, 20 fittings per pole, satellite field location and a 3D night view.' },
+  { date: '03/11/2026', version: 'V2.1.2', title: 'Rugby in-goals, FIFA soccer markings and a live-site standards fix.' }
 ]
 
 /* --------- OPTIMISATION RESULT FRAMES (IMAGE + METRICS) --------- */
@@ -1084,6 +1252,39 @@ const vReveal = {
       }
     )
     observer.observe(el)
+  }
+}
+
+/**
+ * Plays a muted looping video only while it is on screen, so off-screen
+ * clips neither download (preload="none") nor burn CPU. Users who prefer
+ * reduced motion get the poster plus native controls instead.
+ */
+const vAutoplayVisible = {
+  mounted(el) {
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (reduceMotion) {
+      el.controls = true
+      return
+    }
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const p = el.play()
+            if (p && p.catch) p.catch(() => { el.controls = true })
+          } else {
+            el.pause()
+          }
+        })
+      },
+      { threshold: 0.35 }
+    )
+    observer.observe(el)
+    el._slxObserver = observer
+  },
+  unmounted(el) {
+    el._slxObserver?.disconnect()
   }
 }
 </script>
@@ -1550,6 +1751,125 @@ const vReveal = {
 
 video.slx-gallery-img {
   object-fit: cover;
+}
+
+/* Hero badge + stats */
+
+.slx-hero-right {
+  position: relative;
+}
+
+.slx-video-badge {
+  position: absolute;
+  left: 0.9rem;
+  bottom: 0.9rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  color: #dbe6ff;
+  background: rgba(3, 6, 22, 0.72);
+  border: 1px solid rgba(188, 214, 255, 0.25);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.slx-hero-stats {
+  list-style: none;
+  margin: 1.4rem 0 1.6rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.slx-hero-stats li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.8rem;
+  background: rgba(10, 22, 72, 0.55);
+  border: 1px solid rgba(177, 206, 255, 0.18);
+}
+
+.slx-hero-stat-value {
+  font-size: 1.05rem;
+  color: #8cd5ff;
+  white-space: nowrap;
+}
+
+.slx-hero-stat-label {
+  font-size: 0.74rem;
+  color: #9eb0d7;
+  line-height: 1.3;
+}
+
+/* Video sections */
+
+.slx-video-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 1.8rem;
+  align-items: center;
+  margin-top: 0.6rem;
+}
+
+.slx-video-grid-reverse {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+}
+
+.slx-video-figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.slx-video {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 0.85rem;
+  background: linear-gradient(145deg, #05081f, #050b2a);
+  border: 1px solid rgba(188, 214, 255, 0.18);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55);
+}
+
+.slx-section-intro {
+  margin: 0.6rem 0 1.2rem;
+  max-width: 60rem;
+}
+
+.slx-video-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 1.2rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .slx-video-pair {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 960px) {
+  .slx-video-grid,
+  .slx-video-grid-reverse {
+    grid-template-columns: 1fr;
+  }
+
+  /* keep text before video on mobile for the reversed layout */
+  .slx-video-grid-reverse .slx-video-figure {
+    order: 2;
+  }
+}
+
+@media (max-width: 720px) {
+  .slx-hero-stats {
+    grid-template-columns: 1fr;
+  }
 }
 
 .slx-gallery-caption {

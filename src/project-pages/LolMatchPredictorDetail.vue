@@ -75,6 +75,18 @@
       </div>
     </section>
 
+    <!-- Animated walkthrough of the algorithm -->
+    <section class="algo">
+      <div class="section-label">How the model works</div>
+      <h2 class="algo-title">One match, from raw rows to a priced bet</h2>
+      <p class="algo-intro">
+        Step through one example match, T1 vs Gen.G, then zoom out to see how ratings carry across a
+        career and how the same model prices every team against every other. The numbers are
+        illustrative, but each stage follows the real code. Press <strong>Next</strong> (or →) to continue.
+      </p>
+      <LolAlgorithmAnimation />
+    </section>
+
     <!-- Second row: probability distribution (left) + pipeline (right) -->
     <section class="row grid cols-2">
       <!-- Left: probability distribution image -->
@@ -275,6 +287,7 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import CategoryTag from '../components/CategoryTag.vue'
+import LolAlgorithmAnimation from '../components/LolAlgorithmAnimation.vue'
 import calibrationCurve from '../assets/lol-match-predictor/calibration_curve.png'
 import probDistribution from '../assets/lol-match-predictor/prob_distribution.png'
 import featureImportance from '../assets/lol-match-predictor/feature_importance.png'
@@ -346,6 +359,25 @@ defineProps({
 
 .row {
   margin-top: 18px;
+}
+
+.algo {
+  margin: 56px 0 48px;
+}
+
+.algo-title {
+  margin: 8px 0 10px;
+  font-size: clamp(1.6rem, 2.6vw, 2.4rem);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+}
+
+.algo-intro {
+  color: var(--muted);
+  max-width: 72ch;
+  margin: 0 0 28px;
+  line-height: 1.7;
 }
 
 .section-title.small {

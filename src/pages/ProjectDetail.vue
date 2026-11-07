@@ -37,6 +37,7 @@ const componentMap = {
   'curated-wellness': defineAsyncComponent(() => import('../project-pages/CuratedWellnessDetail.vue')),
   'asset-data-integration': defineAsyncComponent(() => import('../project-pages/AssetDataIntegrationDetail.vue')),
   drone: defineAsyncComponent(() => import('../project-pages/DroneDetail.vue')),
+  'super-move': defineAsyncComponent(() => import('../project-pages/SuperMoveDetail.vue')),
   'wealth-pathways-au': defineAsyncComponent(() => import('../project-pages/WealthPathwaysWorkbookDetail.vue'))
 }
 

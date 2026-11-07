@@ -64,18 +64,26 @@ const overHotzone = ref(false)
 const overNav = ref(false)
 const isAtTop = ref(true)
 const hasScrolledDown = ref(false)
+const scrollingUp = ref(false)
+let lastScrollY = 0
 
 function onScroll() {
   const y = window.scrollY || 0
   isAtTop.value = y <= 2
   if (y > 8) hasScrolledDown.value = true
+  // Direction with a small dead zone so trackpad jitter doesn't flicker the nav.
+  const dy = y - lastScrollY
+  if (dy < -4) scrollingUp.value = true
+  else if (dy > 4) scrollingUp.value = false
+  lastScrollY = y
 }
 
-// Show nav if user mouses near top OR hovers nav OR scrolls fully back to top (after scrolling down)
+// Show nav if user mouses near top OR hovers nav OR scrolls up OR scrolls fully back to top
+// (after scrolling down). Scrolling down hides it again.
 const navShown = computed(() => {
   if (!hideNavBase.value) return true
   const showByScrollTop = isAtTop.value && hasScrolledDown.value
-  return overHotzone.value || overNav.value || showByScrollTop
+  return overHotzone.value || overNav.value || scrollingUp.value || showByScrollTop
 })
 
 onMounted(() => {

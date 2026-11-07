@@ -33,7 +33,7 @@ const router = createRouter({
       component: CityEditor,
       meta: { hideNav: true, hideFooter: true, fullBleed: true, navReveal: false }
     },
-    { path: '/projects', name: 'projects', component: Projects },
+    { path: '/projects', name: 'projects', component: Projects, meta: { fullBleed: true } },
     { path: '/projects/:slug', name: 'project', component: ProjectDetail, props: true },
     { path: '/about', name: 'about', component: About, meta: { hideFooter: true } },
     { path: '/contact', name: 'contact', component: Contact },

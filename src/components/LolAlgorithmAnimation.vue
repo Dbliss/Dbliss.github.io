@@ -3,7 +3,7 @@
     ref="root"
     class="lol-anim"
     tabindex="0"
-    aria-label="Step-through animation of the prediction pipeline. Use the left and right arrow keys to move between steps."
+    aria-label="Looping animation of the prediction pipeline. Each step repeats while you read. Use the left and right arrow keys to move between steps."
     @keydown.right.prevent="next"
     @keydown.left.prevent="back"
   >
@@ -42,7 +42,7 @@
       <div class="say-wrap" aria-live="polite">
         <div class="say-meta mono">
           <span>{{ String(scene + 1).padStart(2, '0') }} · {{ SCENES[scene].title }}</span>
-          <span class="count">step {{ beat + 1 }} / {{ SCENES[scene].beats.length }}</span>
+          <span v-if="SCENES[scene].beats.length > 1" class="count">step {{ beat + 1 }} / {{ SCENES[scene].beats.length }}</span>
         </div>
         <Transition name="say" mode="out-in">
           <p :key="`${scene}-${beat}`" class="say">{{ beatText }}</p>
@@ -52,7 +52,6 @@
       <button
         class="nav-btn next"
         type="button"
-        :class="{ waiting }"
         :aria-label="nextLabel"
         @click="next"
       >
@@ -62,7 +61,7 @@
     </div>
 
     <div class="foot">
-      <div class="beats" role="group" aria-label="Steps in this stage">
+      <div v-if="SCENES[scene].beats.length > 1" class="beats" role="group" aria-label="Steps in this stage">
         <button
           v-for="(b, i) in SCENES[scene].beats"
           :key="i"
@@ -87,7 +86,7 @@
 // is carried over a career (idle variance by tier, transfers, region offsets) and how the same ratings
 // price every team against every other (team_ratings, win_prob_matrix, bestof_prob).
 // Numbers are illustrative; shapes follow the code.
-// Each subtitle "beat" animates once, then waits for the reader to press Next.
+// Each caption stays in place while its animation loops; Next advances immediately.
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 // ---------- palette (matches the site's light theme) ----------
@@ -283,15 +282,20 @@ const spot = match.players[SPOT.ti][SPOT.i]
 // ---------- script ----------
 const SCENES = [
   {
+    short: 'The match',
+    title: 'Two teams, five roles',
+    code: 'TOP / JNG / MID / BOT / SUP',
+    beats: [
+      { at: 0, t: () => 'Five players face five opponents, then take their positions: Top, Jungle, Mid, and the Bot-Support duo. Each player then moves into their role row, ready for match data.' }
+    ]
+  },
+  {
     short: 'Match data',
     title: 'Match data',
     code: 'golddiffat15 · xpdiffat15 · csdiffat15 · vspm',
     beats: [
-      { at: 0, t: () => 'Each match is split into ten player records, five per team.' },
-      { at: 0.05, t: () => 'Start with one T1 player. At 15 minutes they’re ahead of their opponent on every early stat.' },
-      { at: 0.3, t: () => 'Each stat fills a bar on the player’s card.' },
-      { at: 0.48, t: () => 'The other nine players follow.' },
-      { at: 0.88, t: () => 'Ten clean stat lines, ready to score.' }
+      { at: 0.05, t: () => 'Start with one T1 player. Each metric flows into the player’s card and fills its corresponding bar.' },
+      { at: 0.48, t: () => 'The other nine players follow. Metrics flow into every player card, producing ten clean stat lines, ready to score.' }
     ]
   },
   {
@@ -299,7 +303,7 @@ const SCENES = [
     title: 'Performance scores',
     code: 'performance_score = f_position(early, middle, late) − expected',
     beats: [
-      { at: 0, t: () => 'Raw stats don’t show who played well, so each position gets its own model.' },
+      { at: 0, t: () => 'Different roles have different jobs. For a fair comparison, players are scored within their role, separately for early, middle and late game.' },
       { at: 0.06, t: () => `The early-game model ranks them against every other mid player: ${ordinal(SPOT_PCT[0])} percentile.` },
       { at: 0.2, t: () => `The middle and late stages are ranked the same way: ${ordinal(SPOT_PCT[1])} and ${ordinal(SPOT_PCT[2])} percentile.` },
       { at: 0.42, t: () => `Weighted together that’s ${Math.round(SPOT_COMP)}, against ${Math.round(OPP_COMP)} for Gen.G’s mid. Expected is the average of the two (${Math.round(GAME_AVG)}), so T1’s mid scores ${signed(spot.perf * PERF_SCALE, 0)}.` },
@@ -333,13 +337,12 @@ const SCENES = [
   {
     short: 'Over time',
     title: 'Ratings over time',
-    code: 'σ² += q_day · idle days · tier (×1 · ×1.5 · ×2)   ·   transfer: μ += offset_old − offset_new',
+    code: 'σ² += q_day · idle days · tier (×1 · ×1.5 · ×2)',
     beats: [
       { at: 0, t: () => `Ratings are never rebuilt from scratch. A new player starts at their league’s average with a wide band (± ${Math.round(TL.sd0)}), and carries one rating forward from there.` },
-      { at: 0.22, t: () => `Every game nudges the rating and narrows the band. After a season it’s down to ± ${Math.round(TL.sdSeason)}.` },
+      { at: 0.22, t: () => 'Each game updates the team’s rating. Over a season, confidence grows and the uncertainty band narrows.' },
       { at: 0.45, t: () => `Time off widens it again. Uncertainty grows every idle day, twice as fast in tier-2 leagues, so this break takes it back to ± ${Math.round(TL.sdIdle)}.` },
-      { at: 0.66, t: () => 'When a player changes league, their strength carries over. Only the league offset underneath it changes.' },
-      { at: 0.84, t: () => 'League offsets are learned separately and only move in cross-region games like MSI and Worlds, when the leagues actually meet.' }
+      { at: 0.66, t: () => 'League offsets are learned separately and only move in cross-region games like MSI and Worlds, when the leagues actually meet.' }
     ]
   },
   {
@@ -349,7 +352,7 @@ const SCENES = [
     beats: [
       { at: 0, t: () => 'Everything becomes head-to-head gaps between the teams.' },
       { at: 0.2, t: () => 'The team rating gap is the strongest signal.' },
-      { at: 0.28, t: () => 'Each tree asks a few yes/no questions about those gaps.' },
+      { at: 0.28, t: () => 'The model uses 400 trees. Each asks a few yes/no questions about the gaps between teams.' },
       { at: 0.46, t: () => `Tree 1 lands on ${signed(match.forest[0].val, 2)}. Each later tree corrects the ones before it.` },
       { at: 0.68, t: () => 'The trees’ outputs add up to one score.' },
       { at: 0.86, t: () => `That score gives a raw win chance of ${pct(match.pRaw)} for T1.` }
@@ -390,7 +393,7 @@ const SCENES = [
 ]
 
 // total animation length of each stage if every step were played back to back
-const DUR = [15000, 15000, 12500, 19000, 17000, 16500, 14500, 14000]
+const DUR = [22000 / 1.3, 15000, 15000, 12500, 19000, 17000, 16500, 14500, 14000]
 const FADE_MS = 600
 
 // ---------- component state ----------
@@ -399,7 +402,6 @@ const wrap = ref(null)
 const canvas = ref(null)
 const scene = ref(0)
 const beat = ref(0)
-const waiting = ref(false)
 const progress = ref(0)
 const beatText = computed(() => SCENES[scene.value].beats[beat.value].t())
 const nextLabel = computed(() => {
@@ -421,6 +423,10 @@ let bgCache = null
 let prevScene = null
 let elapsed = 0
 let target = 0
+let flowTime = 0
+let loopAge = 0
+let loopDuration = 0
+let repeated = false
 let last = 0
 let clock = 0
 let raf = 0
@@ -600,6 +606,144 @@ function spotRing (c, a = 1) {
   txt('EXAMPLE', c.x + c.w, c.y - 9, { size: 8, color: C.hi, mono: true, weight: 700, align: 'right', alpha: a })
 }
 
+// ---------- opening: teams fan out into their map positions ----------
+function sceneMatch (p, M) {
+  const size = Math.min(H * 0.83, W * (NARROW ? 0.76 : 0.43))
+  const x = (W - size) / 2
+  const y = (H - size) / 2 + 8
+  const point = (u, v) => ({ x: x + u * size, y: y + v * size })
+  const reveal = easeOut(seg(p, 0.18, 0.38))
+  const settle = ease(seg(p, 0.72, 0.94))
+  const pair = easeOut(seg(p, 0.61, 0.7)) * (1 - settle)
+  const mapAlpha = reveal * (1 - ease(seg(p, 0.73, 0.9)))
+  const cards = cardRects()
+
+  // A luminous arena with the familiar three lanes and diagonal river.
+  A(mapAlpha)
+  softShadow(true)
+  rr(x, y, size, size, 22)
+  const terrain = ctx.createLinearGradient(x, y + size, x + size, y)
+  terrain.addColorStop(0, '#f4e9ee')
+  terrain.addColorStop(0.5, '#edf5f3')
+  terrain.addColorStop(1, '#f8f1dd')
+  ctx.fillStyle = terrain
+  ctx.fill()
+  softShadow(false)
+  ctx.strokeStyle = rgba(C.hi, 0.18)
+  ctx.lineWidth = 1
+  ctx.stroke()
+
+  const path = (coords, color, width, alpha) => {
+    A(alpha)
+    ctx.beginPath()
+    coords.forEach(([u, v], i) => {
+      const q = point(u, v)
+      if (i === 0) ctx.moveTo(q.x, q.y)
+      else ctx.lineTo(q.x, q.y)
+    })
+    ctx.strokeStyle = color
+    ctx.lineWidth = width
+    ctx.lineJoin = 'round'
+    ctx.lineCap = 'round'
+    ctx.stroke()
+    ctx.lineCap = 'butt'
+  }
+  path([[0.14, 0.16], [0.38, 0.38], [0.6, 0.62], [0.84, 0.86]], C.accent, size * 0.055, 0.15 * mapAlpha)
+  const lanes = [
+    [[0.12, 0.86], [0.12, 0.14], [0.86, 0.14]],
+    [[0.12, 0.86], [0.86, 0.14]],
+    [[0.12, 0.86], [0.86, 0.86], [0.86, 0.14]]
+  ]
+  lanes.forEach((lane) => {
+    path(lane, '#ffffff', size * 0.042, mapAlpha)
+    path(lane, C.faint, 1, mapAlpha * 0.65)
+  })
+  // Small jungle groves keep the spaces between lanes legible.
+  for (const [u, v] of [[0.27, 0.4], [0.32, 0.48], [0.39, 0.28], [0.62, 0.72], [0.7, 0.57], [0.74, 0.65]]) {
+    const q = point(u, v)
+    dot(q.x, q.y, size * 0.055, '#91b6a3', mapAlpha * 0.18)
+    dot(q.x - 3, q.y - 2, size * 0.025, '#699c83', mapAlpha * 0.24)
+  }
+  const bases = [point(0.12, 0.86), point(0.86, 0.14)]
+  bases.forEach((q, ti) => {
+    glow(q.x, q.y, size * 0.025, M.color[ti], mapAlpha)
+    A(mapAlpha * 0.4)
+    ctx.strokeStyle = M.color[ti]
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.arc(q.x, q.y, size * (0.046 + 0.006 * Math.sin(clock / 600)), 0, TAU)
+    ctx.stroke()
+  })
+
+  // Five distinct people on each side, then those same people take their roles.
+  M.name.forEach((name, ti) => {
+    const cx = W * (ti ? 0.82 : 0.18)
+    txt(name, cx, H * 0.12, { size: NARROW ? 18 : 24, weight: 800, color: M.color[ti], align: 'center', alpha: 1 - settle })
+  })
+  txt('VS', W / 2, H * 0.49, { size: NARROW ? 26 : 40, weight: 800, color: C.hi, align: 'center', alpha: 1 - reveal })
+
+  const positions = [
+    [[0.12, 0.36], [0.27, 0.43], [0.42, 0.57], [0.65, 0.86], [0.49, 0.86]],
+    [[0.35, 0.14], [0.48, 0.25], [0.59, 0.4], [0.86, 0.63], [0.86, 0.46]]
+  ]
+  const destinations = positions.map((team) => team.map(([u, v]) => point(u, v)))
+  // Draw the five comparisons beneath the player markers.
+  destinations[0].forEach((q, i) => {
+    const other = destinations[1][i]
+    line(q.x, q.y, other.x, other.y, C.hi, 1.5, pair * 0.45, [3, 5])
+    if (pair > 0) {
+      const t = (clock / 2200 + i * 0.17) % 1
+      dot(lerp(q.x, other.x, t), lerp(q.y, other.y, t), 2.5, C.hi, pair * 0.75)
+    }
+  })
+  // Reveal the exact empty-row layout used by the following Match Data stage.
+  const layoutAlpha = easeOut(seg(p, 0.76, 0.96))
+  if (layoutAlpha > 0) {
+    const parentAlpha = GA
+    GA *= layoutAlpha
+    scene0(0, M)
+    GA = parentAlpha
+  }
+  destinations.forEach((team, ti) => team.forEach((dest, i) => {
+    const travel = ease(seg(p, 0.3 + i * 0.02, 0.5 + i * 0.02))
+    const base = bases[ti]
+    const start = { x: W * (ti ? 0.82 : 0.18), y: H * (0.25 + i * 0.135) }
+    const onMap = qb(start, { x: ti ? dest.x : start.x, y: ti ? start.y : dest.y }, dest, travel)
+    const row = cards[ti][i]
+    const arrive = ease(seg(p, 0.72 + i * 0.018, 0.86 + i * 0.018))
+    const landing = { x: row.x + 24, y: row.y + row.h * 0.3 }
+    const q = qb(onMap, { x: (onMap.x + landing.x) / 2, y: landing.y }, landing, arrive)
+    const alpha = easeOut(seg(p, i * 0.012, 0.045 + i * 0.012)) * (1 - easeOut(seg(arrive, 0.8, 1)))
+    // A short coloured trail follows each role into its own row.
+    if (arrive > 0 && arrive < 1) {
+      const tail = qb(onMap, { x: (onMap.x + landing.x) / 2, y: landing.y }, landing, Math.max(0, arrive - 0.12))
+      line(tail.x, tail.y, q.x, q.y, M.color[ti], 2, alpha * 0.6)
+    }
+    line(base.x, base.y, q.x, q.y, M.color[ti], 1, alpha * travel * (1 - travel) * 0.5)
+    const radius = NARROW ? 11 : 14
+    glow(q.x, q.y, radius * 0.65, M.color[ti], alpha * 0.3)
+    // The person silhouette morphs into a labelled map marker as it arrives.
+    const marker = easeOut(seg(travel, 0.65, 1))
+    const personAlpha = alpha * (1 - marker)
+    dot(q.x, q.y - 8, NARROW ? 4 : 5, M.color[ti], personAlpha)
+    A(personAlpha)
+    rr(q.x - 8, q.y - 1, 16, 15, 6)
+    ctx.fillStyle = M.color[ti]
+    ctx.fill()
+    line(q.x - 4, q.y + 10, q.x - 4, q.y + 19, M.color[ti], 3, personAlpha)
+    line(q.x + 4, q.y + 10, q.x + 4, q.y + 19, M.color[ti], 3, personAlpha)
+    dot(q.x, q.y, radius, C.surface, alpha * marker)
+    A(alpha * marker)
+    ctx.beginPath()
+    ctx.arc(q.x, q.y, radius, 0, TAU)
+    ctx.strokeStyle = M.color[ti]
+    ctx.lineWidth = 1.5
+    ctx.stroke()
+    txt(ROLES[i], q.x, q.y, { size: NARROW ? 7 : 8, color: M.color[ti], weight: 800, align: 'center', alpha: alpha * marker })
+  }))
+  txt("SUMMONER'S RIFT", W / 2, y - 10, { size: 9, color: C.dim, mono: true, align: 'center', alpha: mapAlpha })
+}
+
 // ---------- scene 1: ingest ----------
 const INGEST = (() => {
   const ev = []
@@ -700,6 +844,162 @@ function scene0 (p, M) {
   })
 }
 
+// A conveyor of illustrative metrics: rows leave the clipped viewport before recycling.
+const PLAYER_METRICS = [
+  ['Gold lead @15', '+412', 0.76], ['XP lead @15', '+260', 0.74],
+  ['CS lead @15', '+9', 0.73], ['Gold lead @10', '+235', 0.67],
+  ['XP lead @10', '+180', 0.66], ['CS lead @10', '+6', 0.65],
+  ['Damage / min', '624', 0.78], ['Damage share', '28.4%', 0.71],
+  ['Gold / min', '438', 0.75], ['CS / min', '9.2', 0.82],
+  ['Kills', '5', 0.69], ['Assists', '8', 0.72],
+  ['Kill participation', '72.2%', 0.79], ['Vision / min', '1.42', 0.61],
+  ['Wards / min', '0.38', 0.64], ['Control wards', '4', 0.7],
+  ['Wards cleared', '6', 0.73], ['CS lead @20', '+14', 0.8],
+  ['Gold lead @20', '+680', 0.83], ['XP lead @20', '+390', 0.77]
+]
+const continuousScene = (i) => i === 1 || i === 2 || i === 3 || i === 6
+
+function flowingPath (points, offset = 0, color = C.hi, alpha = 1) {
+  const lengths = polyLen(points)
+  const phase = reduceMotion ? 0.5 : (flowTime / 2800 + offset) % 1
+  const fade = Math.sin(Math.PI * phase) * alpha
+  for (let k = 4; k >= 0; k--) {
+    const t = phase - k * 0.018
+    if (t < 0) continue
+    const q = along(points, lengths, t)
+    dot(q.x, q.y, k ? 1.5 : 2.8, color, fade * (1 - k / 6))
+  }
+}
+
+// Keep the conveyor, pending dots and received scores alive across the two captions.
+let metricScroll = 0
+let nextMetricOrdinal = 0
+let metricRows = []
+let metricBag = []
+let metricRandom = rng(4217)
+let metricBars = []
+
+function resetMetricStream () {
+  metricScroll = 0
+  nextMetricOrdinal = 0
+  metricRows = []
+  metricBag = []
+  metricRandom = rng(4217)
+  metricBars = Array.from({ length: 2 }, () => Array.from({ length: 5 }, () =>
+    Array.from({ length: 4 }, () => ({ from: 0, to: 0, at: 0 }))))
+}
+
+function metricBarValue (bar, time = flowTime) {
+  return lerp(bar.from, bar.to, easeOut(seg(time, bar.at, bar.at + 800)))
+}
+
+function nextMetric (ordinal, allPlayers) {
+  let ti = SPOT.ti
+  let role = SPOT.i
+  let slot = ordinal % 4
+  let index = ordinal % PLAYER_METRICS.length
+  if (allPlayers) {
+    // Shuffle complete batches so every player's four bars receive data, in a new order.
+    if (!metricBag.length) {
+      metricBag = Array.from({ length: 40 }, (_, i) => i)
+      for (let i = metricBag.length - 1; i > 0; i--) {
+        const j = Math.floor(metricRandom() * (i + 1))
+        ;[metricBag[i], metricBag[j]] = [metricBag[j], metricBag[i]]
+      }
+    }
+    const id = metricBag.pop()
+    ti = Math.floor(id / 20)
+    role = Math.floor((id % 20) / 4)
+    slot = id % 4
+    index = Math.floor(metricRandom() * 5) * 4 + slot
+  }
+  return { ordinal, ti, role, slot, index, launchedAt: null, received: false }
+}
+
+function updateMetricStream (dt) {
+  const previousScroll = metricScroll
+  metricScroll += dt / (beat.value >= 1 ? 220 : 1100)
+  while (nextMetricOrdinal <= Math.floor(metricScroll)) {
+    metricRows.push(nextMetric(nextMetricOrdinal++, beat.value >= 1))
+  }
+  metricRows.forEach((row) => {
+    if (row.launchedAt === null && metricScroll >= row.ordinal + 1.8) {
+      const crossed = clamp((row.ordinal + 1.8 - previousScroll) / (metricScroll - previousScroll))
+      row.launchedAt = flowTime - dt + crossed * dt
+    }
+    if (row.launchedAt !== null && !row.received && flowTime >= row.launchedAt + 950) {
+      const bar = metricBars[row.ti][row.role][row.slot]
+      const arrivalTime = row.launchedAt + 950
+      bar.from = metricBarValue(bar, arrivalTime)
+      bar.to = PLAYER_METRICS[row.index][2]
+      bar.at = arrivalTime
+      row.received = true
+    }
+  })
+  // Retain enough off-screen rows for every in-flight dot to complete.
+  metricRows = metricRows.filter((row) => metricScroll - row.ordinal < 32 || !row.received)
+}
+
+function sceneData (p, M) {
+  const cards = cardRects()
+  const allPlayers = beat.value >= 1
+  const cx = W * 0.5
+  const width = W * (NARROW ? 0.34 : 0.36)
+  const left = cx - width / 2
+  const top = H * 0.17
+  const height = H * 0.78
+  panel(left, top, width, height, 1, C.faint)
+  txt(NARROW ? 'METRICS' : 'PLAYER METRICS / ILLUSTRATIVE', cx, top - 12, { size: NARROW ? 8 : 9, color: C.dim, mono: true, align: 'center' })
+  const rowHeight = NARROW ? 39 : 34
+  const staticCount = Math.ceil(height / rowHeight)
+  const rows = reduceMotion
+    ? Array.from({ length: staticCount }, (_, i) => ({ ordinal: i, ti: allPlayers ? i % 2 : SPOT.ti, role: allPlayers ? i % 5 : SPOT.i, slot: i % 4, index: i % PLAYER_METRICS.length }))
+    : metricRows
+  ctx.save()
+  rr(left + 1, top + 1, width - 2, height - 2, 9)
+  ctx.clip()
+  rows.forEach((row) => {
+    const metric = PLAYER_METRICS[row.index]
+    const y = reduceMotion ? top + (row.ordinal + 0.5) * rowHeight : top + height - (metricScroll - row.ordinal - 1) * rowHeight
+    if (y < top - rowHeight || y > top + height + rowHeight) return
+    const fade = clamp((y - top) / 22) * clamp((top + height - y) / 22)
+    txt(`${M.tag[row.ti]} ${ROLES[row.role]}`, left + 10, y - 7, { size: 8, color: M.color[row.ti], mono: true, weight: 700, alpha: fade })
+    txt(metric[0], left + 10, y + 7, { size: NARROW ? 7 : 10, color: C.muted, alpha: fade })
+    txt(metric[1], left + width - 9, y + (NARROW ? -7 : 3), { size: NARROW ? 8 : 11, color: C.hi, align: 'right', mono: true, weight: 700, alpha: fade })
+  })
+  ctx.restore()
+  cards.forEach((team, ti) => team.forEach((c, i) => {
+    const active = allPlayers || (ti === SPOT.ti && i === SPOT.i)
+    const alpha = active ? 1 : 0.4
+    drawCard(c, M, ti, M.players[ti][i], alpha)
+    for (let j = 0; j < 4; j++) {
+      const value = reduceMotion ? PLAYER_METRICS[j][2] : metricBarValue(metricBars[ti][i][j])
+      const by = c.y + c.h * (0.52 + j * 0.11)
+      A(alpha)
+      ctx.fillStyle = C.track
+      ctx.fillRect(c.x + 11, by, c.w - 22, Math.max(1.8, c.h * 0.05))
+      if (active) {
+        ctx.fillStyle = j === 3 ? C.accent : M.color[ti]
+        ctx.fillRect(c.x + 11, by, (c.w - 22) * value, Math.max(1.8, c.h * 0.05))
+      }
+    }
+    if (ti === SPOT.ti && i === SPOT.i && !allPlayers) spotRing(c, 0.7)
+  }))
+  if (!reduceMotion) metricRows.forEach((row) => {
+    if (row.launchedAt === null) return
+    const age = flowTime - row.launchedAt
+    if (age < 0 || age > 1250) return
+    const metric = PLAYER_METRICS[row.index]
+    const card = cards[row.ti][row.role]
+    const from = { x: row.ti ? left + width - 8 : left + 8, y: top + height - rowHeight * 0.8 }
+    const to = { x: card.x + 11 + (card.w - 22) * metric[2], y: card.y + card.h * (0.52 + row.slot * 0.11) }
+    flight(from, to, age / 950, M.color[row.ti], 3, 24)
+    glow(from.x, from.y, 3, M.color[row.ti], 1 - clamp(age / 260))
+    const arrival = clamp((age - 800) / 150) * (1 - clamp((age - 950) / 300))
+    glow(to.x, to.y, 3.5, M.color[row.ti], arrival)
+  })
+}
+
 // ---------- scene 2: per-role performance model ----------
 const PERF_ORDER = (() => {
   const out = [{ ti: SPOT.ti, i: SPOT.i, st: 0.06, dur: 0.36, spot: true }]
@@ -724,7 +1024,64 @@ function spotEt (p, L) {
   return earlyLeaf + (1 - earlyLeaf) * seg(p, 0.2, 0.42)
 }
 
+function sceneRoleModels () {
+  const time = reduceMotion ? 9000 : flowTime
+  const group = ease(seg(time, 400, 2200))
+  const split = easeOut(seg(time, 2800, 4600))
+  const focus = ease(seg(time, 2400, 3400))
+  const rowY = H * 0.35
+  const cardW = W * 0.16
+  const cardH = H * 0.27
+  txt('Compare the same role', W / 2, H * 0.1, { size: NARROW ? 13 : 17, weight: 750, align: 'center' })
+
+  // Ten players become five simple pairs. No model internals yet.
+  ROLES.forEach((role, i) => {
+    const cx = W * (0.1 + i * 0.2)
+    const alpha = i === SPOT.i ? 1 : 1 - focus * 0.55
+    panel(cx - cardW / 2, rowY - cardH / 2, cardW, cardH, group * alpha, i === SPOT.i ? C.hi : C.faint)
+    txt(NARROW ? role : ROLE_NAMES[i], cx, rowY - cardH * 0.25, { size: NARROW ? 9 : 11, weight: 700, color: i === SPOT.i ? C.hi : C.muted, align: 'center', alpha: group * alpha })
+    for (let ti = 0; ti < 2; ti++) {
+      const px = lerp(cx, cx + (ti ? 1 : -1) * cardW * 0.2, group)
+      const py = lerp(H * (ti ? 0.55 : 0.23), rowY + cardH * 0.14, group)
+      // A head and shoulders keep the two teams recognisable as people.
+      dot(px, py - 5, NARROW ? 4 : 5, match.color[ti], alpha)
+      A(alpha)
+      rr(px - 7, py + 2, 14, 11, 5)
+      ctx.fillStyle = match.color[ti]
+      ctx.fill()
+    }
+  })
+
+  // Zoom into one pair's match, divided into three comparable time windows.
+  const origin = { x: W / 2, y: rowY + cardH / 2 }
+  const timelineY = H * 0.72
+  const timelineX = W * 0.12
+  const timelineW = W * 0.76
+  const gap = 5
+  const segmentW = (timelineW - gap * 2) / 3
+  line(origin.x, origin.y, origin.x, timelineY - H * 0.06, C.hi, 1.5, split * 0.45)
+  txt('Compare the same stage', W / 2, H * 0.59, { size: NARROW ? 12 : 15, weight: 750, align: 'center', alpha: split })
+  ;['Early', 'Middle', 'Late'].forEach((label, j) => {
+    const x = timelineX + j * (segmentW + gap)
+    const appear = easeOut(seg(time, 3000 + j * 250, 3800 + j * 250))
+    panel(x, timelineY - H * 0.045, segmentW, H * 0.16, appear, C.hi)
+    txt(label, x + segmentW / 2, timelineY + H * 0.01, { size: NARROW ? 11 : 14, weight: 650, align: 'center', alpha: appear })
+    // Both players pass through the same time window together.
+    const phase = reduceMotion ? 0.5 : (flowTime / 3500 + j / 3) % 1
+    for (let ti = 0; ti < 2; ti++) {
+      const px = x + 10 + (segmentW - 20) * phase
+      const py = timelineY + H * (ti ? 0.085 : 0.06)
+      line(x + 10, py, x + segmentW - 10, py, match.color[ti], 1, appear * 0.15)
+      dot(px, py, 2.5, match.color[ti], appear * Math.sin(Math.PI * phase))
+    }
+  })
+}
+
 function scene1 (p, M) {
+  if (p < SCENES[2].beats[1].at) {
+    sceneRoleModels()
+    return
+  }
   const cards = cardRects()
   const gap = NARROW ? W * 0.115 : W * 0.11
   const tw = NARROW ? W * 0.095 : W * 0.09
@@ -738,6 +1095,11 @@ function scene1 (p, M) {
   txt(NARROW ? 'MID MODEL' : 'ONE MODEL PER POSITION · 3 GAME STAGES', W / 2, H * 0.14, { size: 9.5, color: C.dim, mono: true, weight: 600, align: 'center' })
   trees.forEach((lv, k) => {
     drawTree(lv)
+    const activeTree = p >= 0.2 || k === 0
+    if (scene.value === 2 && activeTree) {
+      const path = treePath(lv, M.players[SPOT.ti][SPOT.i].leaves[k])
+      flowingPath(path, k * 0.31, C.hi, easeOut(seg(p, 0.02, 0.06)))
+    }
     txt(stage[k], lv[0][0].x, ttop - 30, { size: 9.5, color: C.muted, mono: true, weight: 700, align: 'center' })
     txt(win[k], lv[0][0].x, ttop - 16, { size: 8.5, color: C.dim, mono: true, align: 'center' })
   })
@@ -835,6 +1197,31 @@ function scene1 (p, M) {
 }
 
 // ---------- scene 3: skill EMAs ----------
+function skillGame (M, ti, game) {
+  if (game < M.hist[ti].length) return M.hist[ti][game]
+  const random = rng(7301 + ti * 100003 + game * 7919)
+  const elapsedGames = game - 15
+  return M.ema[ti][15].map((baseline, axis) => {
+    // Form drifts over many games; individual performances remain much noisier.
+    const phase = axis * 1.37 + ti * 2.1
+    const drift = 0.14 * (Math.sin(elapsedGames / 22 + phase) - Math.sin(phase)) +
+      0.06 * (Math.sin(elapsedGames / 47 + phase * 2) - Math.sin(phase * 2))
+    return clamp(baseline + drift + (random() - 0.5) * 0.36, 0.12, 0.92)
+  })
+}
+
+function skillAverage (M, ti, game) {
+  if (game < M.ema[ti].length) return M.ema[ti][game]
+  // Reconstruct the span-5 EMA with bounded work, however long the viewer stays.
+  const start = Math.max(16, game - 47)
+  let values = M.ema[ti][15].slice()
+  for (let k = start; k <= game; k++) {
+    const sample = skillGame(M, ti, k)
+    values = values.map((value, axis) => lerp(value, sample[axis], 2 / 6))
+  }
+  return values
+}
+
 function scene2 (p, M) {
   const AX = NARROW ? ['VIS', 'CON', 'VER', 'AGG', 'SUR'] : ['vision', 'consistency', 'versatility', 'aggression', 'survivability']
   const R0 = NARROW ? W * 0.16 : Math.min(H * 0.29, W * 0.15)
@@ -870,8 +1257,9 @@ function scene2 (p, M) {
     }
   }
   const appear = easeOut(seg(p, 0, 0.08))
-  const visionFocus = seg(p, 0.02, 0.06) * (1 - seg(p, 0.12, 0.16))
-  const hn = seg(p, 0.12, 0.74) * 15
+  const visionFocus = 0
+  const infiniteGames = scene.value === 3 && (beat.value === 1 || beat.value === 2) && !reduceMotion
+  const hn = infiniteGames ? 1 + flowTime / 700 : seg(p, 0.12, 0.74) * 15
   const R = lerp(R0, r, q)
   const cy = lerp(cy0, slots[2].y, q)
 
@@ -889,24 +1277,26 @@ function scene2 (p, M) {
       txt(AX[a], lq.x, lq.y, { size: NARROW ? 8.5 : 9.5, color: hiAx > 0.5 ? C.hi : C.muted, mono: true, weight: hiAx > 0.5 ? 700 : 500, align: 'center', alpha: appear * fadeBig })
     }
 
-    const hist = M.hist[ti]
     if (hn > 0 && fadeBig > 0) {
-      for (let k = 0; k <= Math.min(15, Math.floor(hn)); k++) {
-        const grow = k === Math.floor(hn) ? backOut(hn - k) : 1
+      for (let k = Math.max(0, Math.floor(hn) - 10); k <= Math.floor(hn); k++) {
+        const grow = infiniteGames ? 1 : k === Math.floor(hn) ? backOut(hn - k) : 1
         const age = hn - k
-        A(clamp(0.1 + 0.6 * Math.exp(-age / 2.5)) * fadeBig)
-        polyAt(cx, cy, R, hist[k], grow)
+        const trailFade = infiniteGames ? clamp((10 - age) / 3) : 1
+        // Fade new observations in at their actual size; never regrow the graph from zero.
+        const arrivalFade = infiniteGames ? easeOut(clamp(age / 0.45)) : 1
+        A(clamp(0.1 + 0.6 * Math.exp(-age / 2.5)) * fadeBig * trailFade * arrivalFade)
+        polyAt(cx, cy, R, skillGame(M, ti, k), grow)
         ctx.strokeStyle = col
         ctx.lineWidth = 1
         ctx.stroke()
       }
     }
 
-    const ema = M.ema[ti]
     const k0 = Math.floor(hn)
-    const k1 = Math.min(15, k0 + 1)
+    const k1 = infiniteGames ? k0 + 1 : Math.min(15, k0 + 1)
     const fr = hn - k0
-    const cur = ema[k0].map((v, a) => lerp(v, ema[k1][a], ease(fr)))
+    const nextAverage = skillAverage(M, ti, k1)
+    const cur = skillAverage(M, ti, k0).map((v, a) => lerp(v, nextAverage[a], ease(fr)))
     const emaA = appear * (0.35 + 0.65 * seg(p, 0.36, 0.44))
     A(emaA)
     polyAt(cx, cy, R, cur)
@@ -921,7 +1311,6 @@ function scene2 (p, M) {
     })
 
     txt(`${M.name[ti]} mid`, cx, cy + R * 1.42, { size: 12, color: col, weight: 700, align: 'center', alpha: appear * fadeBig })
-    txt(hn > 0 ? `game ${Math.min(16, Math.floor(hn) + 1)} of 16` : 'skill profile', cx, cy + R * 1.42 + 16, { size: 9, color: C.dim, mono: true, align: 'center', alpha: appear * fadeBig })
   }
 
   // the other four match-ups pop in
@@ -1173,10 +1562,8 @@ function scene3 (p, M) {
 }
 
 // ---------- scene 5: ratings carried over time ----------
-// One player's career run through the same per-game update as predictor/ratings.py (run_ratings):
-// a Laplace step on win/loss, then the gold-diff-at-15 margin step, with variance growing by
-// q_day × idle days × tier multiplier between games. Parameters are the tuned values in
-// predictor/output/best_config.json. The player starts in LCK CL (tier 2) and is promoted to LCK.
+// Illustrative career: outcomes and performance adjust the rating, observations contract
+// uncertainty, and idle days widen it. The player stays in the same tier-2 league.
 const TL = (() => {
   const r = rng(4242)
   const g = () => Math.sqrt(-2 * Math.log(r() + 1e-12)) * Math.cos(TAU * r())
@@ -1185,7 +1572,8 @@ const TL = (() => {
   const MSIG = 3.438
   const QDAY = 197
   const V0 = 365576
-  const PROMO = 390
+  const GAME_VARIANCE_RETENTION = 0.92
+  const MIN_VARIANCE = 55 ** 2
   const END = 520
   const GAP = [165, 300]
   const sched = []
@@ -1199,17 +1587,15 @@ const TL = (() => {
   const idle = (to, tier) => {
     for (let d = last + 10; d < to; d += 10) pts.push({ d, m, sd: Math.sqrt(Math.min(v + QDAY * tier * (d - last), 2e6)) })
   }
-  let sdSeason = 0
+  let sdSeason = null
   let sdIdle = 0
-  let atPromo = m
   for (const gm of sched) {
-    const tier = gm.d < PROMO ? 2 : 1
+    const tier = 2
     idle(gm.d, tier)
-    if (gm.d < PROMO) atPromo = m
     v = Math.min(v + QDAY * tier * (gm.d - last), 2e6)
-    if (last < GAP[0] && gm.d >= GAP[1]) { sdSeason = games[games.length - 1].sd; sdIdle = Math.sqrt(v) }
+    if (sdSeason === null && gm.d >= GAP[1]) { sdSeason = games[games.length - 1].sd; sdIdle = Math.sqrt(v) }
     const truth = 1500 + 250 * Math.min(1, gm.d / 420)
-    const opp = (gm.d < PROMO ? 1450 : gm.intl ? 1600 : 1715) + g() * 40
+    const opp = (gm.intl ? 1600 : 1450) + g() * 40
     const y = r() < sigmoid((truth - opp) / 400) ? 1 : 0
     const p0 = sigmoid((m - opp) / 400)
     const w = p0 * (1 - p0)
@@ -1220,12 +1606,14 @@ const TL = (() => {
     const S = MSIG ** 2 + BETA ** 2 * 10 * HP * HP * v
     m += v * HP * BETA * (z - BETA * (m - opp) / 400) / S
     v -= (v * HP * BETA) ** 2 / S
+    // Make accumulated evidence visibly narrow the illustrative uncertainty band.
+    v = Math.max(MIN_VARIANCE, v * GAME_VARIANCE_RETENTION)
     pts.push({ d: gm.d, m, sd: Math.sqrt(v) })
     games.push({ d: gm.d, m, sd: Math.sqrt(v), intl: gm.intl })
     last = gm.d
   }
-  idle(END + 1, 1)
-  return { pts, games, END, PROMO, GAP, sd0: Math.sqrt(V0), sdSeason, sdIdle, atPromo: Math.round(atPromo) }
+  idle(END + 1, 2)
+  return { pts, games, END, GAP, sd0: Math.sqrt(V0), sdSeason, sdIdle }
 })()
 
 function tlAt (d) {
@@ -1264,9 +1652,7 @@ function sceneTime (p) {
       ? lerp(24, TL.GAP[0], ease(seg(p, 0.22, 0.41)))
       : p < 0.66
         ? lerp(TL.GAP[0], TL.GAP[1], ease(seg(p, 0.45, 0.62)))
-        : p < 0.84
-          ? lerp(TL.GAP[1], 470, ease(seg(p, 0.66, 0.8)))
-          : lerp(470, TL.END, ease(seg(p, 0.84, 0.95)))
+        : lerp(TL.GAP[1], TL.END, ease(seg(p, 0.66, 0.95)))
   const fs = NARROW ? 8.5 : 9.5
 
   // axes
@@ -1278,7 +1664,7 @@ function sceneTime (p) {
 
   // league strip under the chart
   const sy = G.y1 + (NARROW ? 12 : 16)
-  const strip = [[0, TL.PROMO, 'LCK CL · tier 2', C.dim], [TL.PROMO, TL.END, 'LCK · major', C.t1]]
+  const strip = [[0, TL.END, 'LCK CL · tier 2', C.dim]]
   strip.forEach(([d0, d1, label, col]) => {
     A(a0 * 0.18)
     ctx.fillStyle = col
@@ -1296,7 +1682,7 @@ function sceneTime (p) {
     ctx.fillRect(xOf(TL.GAP[0]), G.y0, xOf(TL.GAP[1]) - xOf(TL.GAP[0]), G.y1 - G.y0)
     txt(`${TL.GAP[1] - TL.GAP[0]} days off`, (xOf(TL.GAP[0]) + xOf(TL.GAP[1])) / 2, G.y0 + 10, { size: fs, color: C.pink, mono: true, weight: 700, align: 'center', alpha: ga })
   }
-  const ia = easeOut(seg(p, 0.85, 0.9))
+  const ia = easeOut(seg(day, 470, 478))
   if (ia > 0) {
     A(0.08 * ia)
     ctx.fillStyle = C.accent
@@ -1318,6 +1704,15 @@ function sceneTime (p) {
   ctx.closePath()
   ctx.fillStyle = rgba(C.hi, 0.13)
   ctx.fill()
+  // Outline both limits so the contraction remains clear at the compact chart size.
+  for (const side of [-1, 1]) {
+    A(a0 * 0.4)
+    ctx.beginPath()
+    shown.forEach((q, k) => (k ? ctx.lineTo(xOf(q.d), yOf(q.m + side * q.sd)) : ctx.moveTo(xOf(q.d), yOf(q.m + side * q.sd))))
+    ctx.strokeStyle = C.hi
+    ctx.lineWidth = 1
+    ctx.stroke()
+  }
   A(a0)
   ctx.beginPath()
   shown.forEach((q, k) => (k ? ctx.lineTo(xOf(q.d), yOf(q.m)) : ctx.moveTo(xOf(q.d), yOf(q.m))))
@@ -1333,17 +1728,10 @@ function sceneTime (p) {
   const head = tlAt(day)
   glow(xOf(head.d), yOf(head.m), 3.2, C.hi, a0)
 
-  // promotion marker
-  const ta = easeOut(seg(p, 0.68, 0.72))
-  if (ta > 0) {
-    line(xOf(TL.PROMO), G.y0, xOf(TL.PROMO), G.y1, C.t1, 1.4, ta, [4, 3])
-    txt(NARROW ? 'promoted' : 'promoted to LCK', xOf(TL.PROMO) - 6, G.y1 - 10, { size: fs, color: C.t1, mono: true, weight: 700, align: 'right', alpha: ta })
-  }
-
   // live readout
   const RD = NARROW ? { x: G.x1, y: G.y0 + 10, align: 'right' } : { x: W * 0.69, y: H * 0.18, align: 'left' }
   if (NARROW) {
-    txt(`${Math.round(head.m)} ± ${Math.round(head.sd)}`, RD.x - 4, G.y1 - 12, { size: 10, color: C.hi, mono: true, weight: 700, align: 'right', alpha: a0 * (1 - ta) })
+    txt(`${Math.round(head.m)} ± ${Math.round(head.sd)}`, RD.x - 4, G.y1 - 12, { size: 10, color: C.hi, mono: true, weight: 700, align: 'right', alpha: a0 })
   } else {
     txt('RATING NOW', RD.x, RD.y, { size: 9, color: C.dim, mono: true, weight: 700, alpha: a0 })
     txt(String(Math.round(head.m)), RD.x, RD.y + 26, { size: 24, color: C.ink, weight: 750, alpha: a0 })
@@ -1359,8 +1747,7 @@ function sceneTime (p) {
   const cards = [
     { a: easeOut(seg(p, 0.06, 0.12)) * (1 - seg(p, 0.45, 0.48)), draw: cardGames },
     { a: easeOut(seg(p, 0.48, 0.53)) * (1 - seg(p, 0.66, 0.69)), draw: cardIdle },
-    { a: easeOut(seg(p, 0.69, 0.74)) * (1 - seg(p, 0.84, 0.87)), draw: cardTransfer },
-    { a: easeOut(seg(p, 0.87, 0.92)), draw: cardOffsets }
+    { a: easeOut(seg(p, 0.69, 0.74)), draw: cardOffsets }
   ]
   cards.forEach((c) => { if (c.a > 0) { panel(K.x, K.y, K.w, K.h, c.a); c.draw(K, c.a, p) } })
 }
@@ -1407,21 +1794,10 @@ function cardIdle (K, a) {
   txt(`this break: ± ${Math.round(TL.sdSeason)} → ± ${Math.round(TL.sdIdle)}`, K.x + 12, K.y + K.h - 14, { size: fs, color: C.pink, mono: true, weight: 700, alpha: a })
 }
 
-function cardTransfer (K, a) {
-  const E = TL.atPromo
-  cardRows(K, a, 'STRENGTH CARRIES ACROSS A MOVE', [
-    ['LCK CL', '', C.dim, true],
-    [`  ${E + 50} − 50 offset`, `= ${E}`],
-    ['LCK', '', C.t1, true],
-    [`  ${E - 215} + 215 offset`, `= ${E}`],
-    [NARROW ? 'same strength, new baseline' : 'same strength, new league baseline', '', C.green, true]
-  ])
-}
-
 function cardOffsets (K, a, p) {
   const fs = NARROW ? 8.5 : 9.5
   txt(NARROW ? 'LEAGUE OFFSETS · INTL GAMES ONLY' : 'LEAGUE OFFSETS · MOVED BY INTL GAMES ONLY', K.x + 12, K.y + 16, { size: NARROW ? 8 : 8.5, color: C.hi, mono: true, weight: 700, alpha: a })
-  const t = ease(seg(p, 0.9, 0.98))
+  const t = ease(seg(p, 0.78, 0.98))
   const rh = Math.min(22, (K.h - 34) / OFFSETS.length)
   const ax = K.x + K.w * 0.52
   const half = K.w * 0.3
@@ -1439,7 +1815,146 @@ function cardOffsets (K, a, p) {
 }
 
 // ---------- scene 5: features -> LightGBM ----------
+const PREDICTION_TREE_COUNT = 400
+
+function forestField (box, time, alpha = 1, highlight = 0) {
+  const cols = 20
+  const rows = PREDICTION_TREE_COUNT / cols
+  const cellW = box.w / cols
+  const cellH = box.h / rows
+  const sweep = reduceMotion ? 0.5 : (time / 5200) % 1
+  for (let i = 0; i < PREDICTION_TREE_COUNT; i++) {
+    const x = box.x + (i % cols + 0.5) * cellW
+    const y = box.y + (Math.floor(i / cols) + 0.5) * cellH
+    const reveal = reduceMotion ? 1 : easeOut(seg(time, i * 2.5, 450 + i * 2.5))
+    const distance = Math.abs(i / PREDICTION_TREE_COUNT - sweep)
+    const active = Math.max(0, 1 - distance / 0.06)
+    const color = i === highlight ? C.hi : active > 0.1 ? C.accent : C.dim
+    const a = alpha * reveal * (i === highlight ? 1 : 0.35 + active * 0.65)
+    const dx = Math.min(5, cellW * 0.3)
+    const dy = Math.min(4, cellH * 0.32)
+    line(x, y - dy, x, y, color, 1, a)
+    line(x, y, x - dx, y + dy, color, 1, a)
+    line(x, y, x + dx, y + dy, color, 1, a)
+    if (i === highlight) {
+      A(alpha * reveal)
+      rr(x - cellW * 0.46, y - cellH * 0.47, cellW * 0.92, cellH * 0.94, 2)
+      ctx.strokeStyle = C.hi
+      ctx.lineWidth = 1.5
+      ctx.stroke()
+    }
+  }
+}
+
+// One continuous world: camera movement reveals scale without changing layouts.
+const FOREST_GRAPHS = Array.from({ length: PREDICTION_TREE_COUNT }, (_, i) => {
+  const random = rng(2909 + i * 97)
+  const x = (i % 20) * 240
+  const y = Math.floor(i / 20) * 180
+  const levels = treeLayout(x, y - 46, 166, 98)
+  const path = treePath(levels, Math.floor(random() * 8))
+  return { x, y, levels, path, lengths: polyLen(path), color: i % 3 ? C.hi : C.accent }
+})
+
+function sceneForest () {
+  const time = reduceMotion ? 10000 : flowTime
+  const pan = ease(seg(time, 800, 3500))
+  const zoom = ease(seg(time, 3500, 6800))
+  const initialScale = Math.min(W * 0.7 / 166, H * 0.55 / 110, 2.2)
+  const finalScale = Math.min(W * 0.94 / 4800, H * 0.77 / 3600)
+  const scale = Math.exp(lerp(Math.log(initialScale), Math.log(finalScale), zoom))
+  const cameraX = lerp(lerp(7 * 240, 11 * 240, pan), 9.5 * 240, zoom)
+  const cameraY = lerp(9 * 180, 9.5 * 180, zoom)
+  const centerY = H * 0.53
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(0, H * 0.14, W, H * 0.8)
+  ctx.clip()
+  ctx.translate(W / 2, centerY)
+  ctx.scale(scale, scale)
+  ctx.translate(-cameraX, -cameraY)
+  FOREST_GRAPHS.forEach((tree, i) => {
+    if (Math.abs(tree.x - cameraX) > W / (2 * scale) + 110 ||
+        Math.abs(tree.y - cameraY) > H * 0.42 / scale + 90) return
+    const alpha = 0.55 + 0.45 * Math.exp(-Math.hypot(tree.x - cameraX, tree.y - cameraY) / 1200)
+    drawTree(tree.levels, alpha * 0.65)
+    for (let k = 1; k < tree.path.length; k++) {
+      line(tree.path[k - 1].x, tree.path[k - 1].y, tree.path[k].x, tree.path[k].y, tree.color, 1.8, alpha * 0.75)
+    }
+    if (!reduceMotion) {
+      const phase = (time / 2300 + i * 0.137) % 1
+      const point = along(tree.path, tree.lengths, phase)
+      dot(point.x, point.y, 3, tree.color, alpha * Math.sin(Math.PI * phase))
+    }
+    if (scale > 0.35) txt(`Tree ${i + 1}`, tree.x, tree.y - 68, { size: 11, color: tree.color, mono: true, weight: 700, align: 'center', alpha })
+  })
+  ctx.restore()
+  const titleAlpha = 1 - ease(seg(time, 3500, 4400))
+  txt('One tree is part of a much bigger model', W / 2, H * 0.08, { size: NARROW ? 12 : 18, weight: 700, align: 'center', alpha: titleAlpha })
+  txt('400 trees. One prediction.', W / 2, H * 0.08, { size: NARROW ? 17 : 23, weight: 750, align: 'center', alpha: 1 - titleAlpha })
+}
+
+function sceneScoreSum (p, M) {
+  const contributions = M.forest.map((tree) => Math.round(tree.val * 1000))
+  const totals = [0]
+  contributions.forEach((value) => totals.push(totals[totals.length - 1] + value))
+  const number = (value) => (value / 1000).toFixed(3)
+  const delta = (value) => `${value < 0 ? '−' : '+'}${number(Math.abs(value))}`
+  const left = W * 0.05
+  const right = W * 0.95
+  const rowH = H * 0.095
+  const top = H * 0.23
+  const contributionX = W * 0.47
+  const totalX = W * 0.84
+  txt('400 contributions. One total.', W / 2, H * 0.08, { size: NARROW ? 15 : 20, weight: 750, align: 'center' })
+  txt('TREE', left + 10, H * 0.175, { size: 9, color: C.dim, mono: true, weight: 700 })
+  txt('ADD / SUBTRACT', contributionX, H * 0.175, { size: NARROW ? 7 : 9, color: C.dim, mono: true, weight: 700, align: 'center' })
+  txt('RUNNING TOTAL', totalX, H * 0.175, { size: NARROW ? 7 : 9, color: C.hi, mono: true, weight: 700, align: 'center' })
+  contributions.forEach((value, k) => {
+    const start = 0.686 + k * 0.024
+    const added = easeOut(seg(p, start, start + 0.019))
+    const y = top + k * rowH
+    const color = value >= 0 ? C.green : C.pink
+    const alpha = 0.3 + added * 0.7
+    A(added * 0.06)
+    rr(left, y - rowH * 0.4, right - left, rowH * 0.88, 7)
+    ctx.fillStyle = color
+    ctx.fill()
+    txt(k === 5 ? '395 more trees' : `Tree ${k + 1}`, left + 10, y, { size: NARROW ? 10 : 14, weight: 650, alpha })
+    txt(delta(value), contributionX, y, { size: NARROW ? 13 : 17, color, mono: true, weight: 700, align: 'center', alpha })
+    const from = { x: contributionX + W * 0.08, y }
+    const to = { x: totalX - W * 0.09, y }
+    line(from.x, y, to.x, y, color, 1.3, added * 0.35)
+    if (added > 0 && added < 1) glow(lerp(from.x, to.x, added), y, 3, color)
+    if (added > 0) {
+      const running = Math.round(lerp(totals[k], totals[k + 1], added))
+      txt(number(running), totalX, y, { size: NARROW ? 14 : 19, color: C.hi, mono: true, weight: 750, align: 'center' })
+    } else txt('—', totalX, y, { size: 13, color: C.faint, align: 'center' })
+    if (k < contributions.length - 1) line(totalX, y + rowH * 0.32, totalX, y + rowH * 0.65, C.hi, 1, added * 0.35)
+  })
+  const done = easeOut(seg(p, 0.827, 0.85))
+  line(left, H * 0.82, right, H * 0.82, C.faint, 1)
+  txt(`FINAL SCORE = ${number(totals[6])}`, W / 2, H * 0.89, { size: NARROW ? 17 : 24, color: C.hi, mono: true, weight: 750, align: 'center', alpha: done })
+}
+
 function scene4 (p, M) {
+  if (p >= 0.28 && p < 0.46) {
+    sceneForest(M)
+    return
+  }
+  if (p >= 0.68 && p < 0.86) {
+    sceneScoreSum(p, M)
+    return
+  }
+  if (p >= 0.86) {
+    forestField({ x: W * 0.08, y: H * 0.17, w: W * 0.84, h: H * 0.39 }, reduceMotion ? 9000 : flowTime + 2000, 0.7)
+    txt('400 TREE OUTPUTS → ONE SCORE', W / 2, H * 0.1, { size: NARROW ? 11 : 15, color: C.hi, mono: true, weight: 700, align: 'center' })
+    const displayedScore = M.forest.reduce((sum, tree) => sum + Math.round(tree.val * 1000), 0) / 1000
+    txt(`score ${signed(displayedScore, 3)}`, W / 2, H * 0.67, { size: NARROW ? 17 : 23, color: C.hi, mono: true, weight: 700, align: 'center' })
+    txt(`${pct(M.pRaw)} chance for T1`, W / 2, H * 0.82, { size: NARROW ? 24 : 36, color: C.ink, weight: 750, align: 'center' })
+    return
+  }
+  if (p >= 0.46) txt('6 ENLARGED EXAMPLES / 400 TREES', W / 2, H * 0.065, { size: NARROW ? 8 : 10, color: C.hi, mono: true, weight: 700, align: 'center' })
   const F = NARROW
     ? { x0: W * 0.02, x1: W * 0.52, y0: H * 0.12, y1: H * 0.64 }
     : { x0: W * 0.01, x1: W * 0.35, y0: H * 0.12, y1: H * 0.95 }
@@ -1494,6 +2009,9 @@ function scene4 (p, M) {
   const ta = easeOut(seg(p, 0.06, 0.14))
   trees.forEach((t, k) => {
     drawTree(t.lv, ta * (k === 0 ? 1 : 1 - 0.5 * tree1))
+    if (p >= 0.28 && (k === 0 || p >= 0.54)) {
+      flowingPath(t.path, k * 0.17, k === 0 ? C.hi : C.accent, ta)
+    }
     txt(`tree ${k + 1}`, t.cx - cw * 0.39, t.top + chh * 0.04, { size: 8.5, color: k === 0 && tree1 > 0.5 ? C.hi : C.dim, mono: true, weight: k === 0 ? 700 : 500, alpha: ta })
   })
 
@@ -1516,7 +2034,7 @@ function scene4 (p, M) {
     const { st, dur } = walkT(k)
     const lt = seg(p, st, st + dur)
     if (lt <= 0) return
-    const val = M.forest[k].val
+    const val = k === 5 ? M.forest[k].val / 395 : M.forest[k].val
     const col = val >= 0 ? M.color[0] : M.color[1]
     const L = polyLen(t.path)
     const et = k === 0 ? lt : ease(lt)
@@ -1894,20 +2412,29 @@ function scene7 (p, M) {
   }
 }
 
-const DRAW = [scene0, scene1, scene2, scene3, sceneTime, scene4, scene5, scene7]
+const DRAW = [sceneMatch, sceneData, scene1, scene2, scene3, sceneTime, scene4, scene5, scene7]
 
 // ---------- stepping ----------
 const beatStart = (s, b) => SCENES[s].beats[b].at * DUR[s]
 const beatEnd = (s, b) => (b + 1 < SCENES[s].beats.length ? SCENES[s].beats[b + 1].at : 1) * DUR[s]
 
 function play (s, b, fromScene = null) {
+  const continueMetrics = s === 1 && scene.value === 1 && b !== beat.value
+  const continueSkills = s === 3 && scene.value === 3 &&
+    (beat.value === 1 || beat.value === 2) && (b === 1 || b === 2) && b !== beat.value
   prevScene = fromScene
   scene.value = s
   beat.value = b
   elapsed = beatStart(s, b)
   target = beatEnd(s, b)
+  if (!continueMetrics && !continueSkills) {
+    flowTime = 0
+    resetMetricStream()
+  }
+  loopAge = 0
+  repeated = false
+  loopDuration = Math.max(4500, target - elapsed)
   if (reduceMotion) elapsed = target
-  waiting.value = elapsed >= target
   kick()
 }
 
@@ -1924,14 +2451,6 @@ function ensureVisible () {
 
 function next () {
   ensureVisible()
-  if (!waiting.value) {
-    // finish the current step instantly
-    elapsed = target
-    prevScene = null
-    waiting.value = true
-    kick()
-    return
-  }
   const s = scene.value
   if (beat.value + 1 < SCENES[s].beats.length) play(s, beat.value + 1)
   else play((s + 1) % SCENES.length, 0, s)
@@ -1991,10 +2510,16 @@ function render () {
   }
   GA = 1
   header(match)
-  GA = f
+  // Blend the completed step into its replay instead of snapping back or freezing.
+  const replayFade = repeated && !reduceMotion && !continuousScene(i) ? clamp(loopAge / 450) : 1
+  if (replayFade < 1) {
+    GA = f * (1 - replayFade)
+    DRAW[i](clamp(target / DUR[i]), match)
+  }
+  GA = f * replayFade
   DRAW[i](p, match)
   GA = 1
-  progress.value = p
+  progress.value = (beat.value + 1) / SCENES[i].beats.length
 }
 
 function frame (now) {
@@ -2002,12 +2527,28 @@ function frame (now) {
   clock = now
   const dt = last ? Math.min(64, now - last) : 16
   last = now
-  if (elapsed < target) {
-    elapsed = Math.min(target, elapsed + dt)
-    if (elapsed >= target) waiting.value = true
+  if (visible && !reduceMotion) {
+    flowTime += dt
+    if (scene.value === 1) updateMetricStream(dt)
+    loopAge += dt
+    if (scene.value === 5) {
+      // Ratings over time plays once, then holds until the reader advances.
+      elapsed = lerp(beatStart(scene.value, beat.value), target, clamp(loopAge / loopDuration))
+    } else if (continuousScene(scene.value)) {
+      // Reveal each diagram once, then keep its data flowing without rewinding it.
+      const end = target - DUR[scene.value] * 0.001
+      elapsed = lerp(beatStart(scene.value, beat.value), end, clamp(loopAge / loopDuration))
+    } else {
+      if (loopAge >= loopDuration) {
+        loopAge %= loopDuration
+        repeated = true
+        prevScene = null
+      }
+      elapsed = lerp(beatStart(scene.value, beat.value), target, loopAge / loopDuration)
+    }
   }
   render()
-  if (visible && elapsed < target) raf = requestAnimationFrame(frame)
+  if (visible && !reduceMotion && !(scene.value === 5 && elapsed >= target)) raf = requestAnimationFrame(frame)
   else last = 0
 }
 
@@ -2023,9 +2564,9 @@ function resize () {
   NARROW = W < 620
   // fit the whole widget (chapters + canvas + subtitles + controls) in one viewport
   const vh = window.innerHeight || 800
-  const chrome = NARROW ? 320 : 310
-  const ideal = W * (NARROW ? 0.95 : 0.45)
-  H = Math.round(Math.min(ideal, Math.max(NARROW ? 320 : 270, vh - chrome)))
+  const chrome = NARROW ? 360 : 300
+  const ideal = Math.min(NARROW ? 350 : 380, W * (NARROW ? 0.85 : 0.36))
+  H = Math.round(Math.min(ideal, Math.max(NARROW ? 260 : 250, vh - chrome)))
   DPR = Math.min(2, window.devicePixelRatio || 1)
   cv.width = Math.round(W * DPR)
   cv.height = Math.round(H * DPR)
@@ -2059,7 +2600,8 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .lol-anim {
-  margin: 0;
+  margin: 0 auto;
+  max-width: 1080px;
   outline: none;
 }
 
@@ -2072,7 +2614,7 @@ onBeforeUnmount(() => {
 /* chapter timeline */
 .chapters {
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-columns: repeat(9, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 10px;
 }
@@ -2150,14 +2692,14 @@ canvas {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 20px;
-  margin-top: 10px;
+  gap: 16px;
+  margin-top: 4px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
 }
 
 .say-wrap {
-  min-height: 4em;
+  min-height: 5.5em;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -2246,19 +2788,6 @@ canvas {
   background: var(--accent-2);
 }
 
-.nav-btn.next:not(.waiting) {
-  opacity: 0.72;
-}
-
-.nav-btn.next.waiting {
-  animation: nudge 1.8s ease-in-out infinite;
-}
-
-@keyframes nudge {
-  0%, 100% { box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 28%, transparent), 0 0 0 0 color-mix(in srgb, var(--accent) 35%, transparent); }
-  50% { box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 28%, transparent), 0 0 0 8px color-mix(in srgb, var(--accent) 0%, transparent); }
-}
-
 .foot {
   display: flex;
   flex-wrap: wrap;
@@ -2299,7 +2828,8 @@ canvas {
 }
 
 .cap-code {
-  font-size: 0.76rem;
+  font-size: 0.7rem;
+  overflow-wrap: anywhere;
   padding: 4px 10px;
   border-radius: 8px;
   background: color-mix(in srgb, var(--accent) 7%, transparent);
@@ -2327,7 +2857,7 @@ canvas {
 
 @media (max-width: 720px) {
   .chapters {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     row-gap: 12px;
   }
 
@@ -2362,8 +2892,5 @@ canvas {
     transition: none;
   }
 
-  .nav-btn.next.waiting {
-    animation: none;
-  }
 }
 </style>

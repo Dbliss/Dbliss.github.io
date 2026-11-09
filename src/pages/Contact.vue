@@ -25,7 +25,7 @@
 import BrandIcon from '../components/BrandIcon.vue'
 import { socials } from '../data/socials'
 
-const email = 'you@example.com'
+const email = 'dillon.bliss@outlook.com'
 </script>
 
 <style scoped>

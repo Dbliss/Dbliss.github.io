@@ -17,13 +17,20 @@
     </header>
 
     <TransitionGroup tag="div" name="pj" class="pj-grid">
-      <ProjectCard v-for="p in list" :key="p.slug" :project="p" />
+      <ProjectCard
+        v-for="p in list"
+        :key="p.slug"
+        :ref="card => setCard(p.slug, card)"
+        :project="p"
+        :mobile-preview="mobilePreview"
+        :playback-active="activePreview === p.slug"
+      />
     </TransitionGroup>
   </section>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { projects as all } from '../data/projects'
 import ProjectCard from '../components/ProjectCard.vue'
 
@@ -38,6 +45,65 @@ const filters = computed(() => [
 const active = ref(ALL)
 
 const list = computed(() => (active.value === ALL ? all : all.filter((p) => p.groups?.includes(active.value))))
+
+const mobilePreview = ref(false)
+const activePreview = ref(null)
+const cards = new Map()
+let previewQuery
+let frame = 0
+
+function setCard(slug, card) {
+  if (card) cards.set(slug, card.$el)
+  else cards.delete(slug)
+  schedulePreview()
+}
+
+function updatePreview() {
+  frame = 0
+  let closest = null
+  let distance = Infinity
+  if (mobilePreview.value && !document.hidden) {
+    const center = window.innerHeight / 2
+    for (const project of list.value) {
+      const rect = cards.get(project.slug)?.getBoundingClientRect()
+      if (!rect || rect.bottom <= 0 || rect.top >= window.innerHeight) continue
+      const delta = Math.abs(rect.top + rect.height / 2 - center)
+      if (delta < distance) {
+        closest = project.slug
+        distance = delta
+      }
+    }
+  }
+  activePreview.value = closest
+}
+
+function schedulePreview() {
+  if (!frame) frame = requestAnimationFrame(updatePreview)
+}
+
+function updatePreviewMode() {
+  mobilePreview.value = previewQuery.matches
+  schedulePreview()
+}
+
+watch(list, schedulePreview, { flush: 'post' })
+
+onMounted(() => {
+  previewQuery = window.matchMedia('(max-width: 760px), (hover: none)')
+  updatePreviewMode()
+  previewQuery.addEventListener('change', updatePreviewMode)
+  window.addEventListener('scroll', schedulePreview, { passive: true })
+  window.addEventListener('resize', schedulePreview)
+  document.addEventListener('visibilitychange', schedulePreview)
+})
+
+onBeforeUnmount(() => {
+  cancelAnimationFrame(frame)
+  previewQuery?.removeEventListener('change', updatePreviewMode)
+  window.removeEventListener('scroll', schedulePreview)
+  window.removeEventListener('resize', schedulePreview)
+  document.removeEventListener('visibilitychange', schedulePreview)
+})
 </script>
 
 <style scoped>

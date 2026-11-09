@@ -83,42 +83,6 @@
         </button>
       </div>
 
-      <div class="sphere-controls" aria-label="Sphere rotation controls">
-        <label class="rotation-speed">
-          <span class="speed-icon" aria-hidden="true">🐢︎</span>
-          <input
-            v-model.number="rotationSpeed"
-            type="range"
-            min="0"
-            max="2"
-            step="0.1"
-            :style="{ '--speed-progress': `${rotationSpeed * 50}%` }"
-            aria-label="Sphere rotation speed"
-          />
-          <span class="speed-icon" aria-hidden="true">🐇︎</span>
-        </label>
-
-        <span class="control-divider" aria-hidden="true"></span>
-
-        <div class="rotation-direction" aria-label="Rotation direction">
-          <div class="direction-grid">
-            <button
-              v-for="direction in rotationDirections"
-              :key="direction.id"
-              type="button"
-              :class="{ active: rotationDirection === direction.id }"
-              :style="{ gridRow: direction.row, gridColumn: direction.column }"
-              :aria-label="`Rotate ${direction.label}`"
-              :aria-pressed="rotationDirection === direction.id"
-              @click="rotationDirection = direction.id"
-            >
-              {{ direction.arrow }}
-            </button>
-            <span class="direction-centre" aria-hidden="true"></span>
-          </div>
-        </div>
-      </div>
-
       <article
         v-if="selectedSkill"
         class="skill-detail"
@@ -336,8 +300,6 @@ links.forEach(link => {
 const activeFilter = ref('all')
 const selectedSkillId = ref(null)
 const selectedSkillSide = ref(null)
-const rotationSpeed = ref(1)
-const rotationDirection = ref('NE')
 const detailNeedsShift = ref(false)
 const detailWidth = ref(350)
 const detailLeftOffset = ref(0)
@@ -375,17 +337,17 @@ let pendingDragY = 0
 let renderNeeded = true
 const RENDER_INTERVAL = 1000 / 30
 const DIAGONAL = 1 / Math.sqrt(2)
-const rotationDirections = [
-  { id: 'NW', label: 'north west', arrow: '↖', x: DIAGONAL, y: DIAGONAL, row: 1, column: 1 },
-  { id: 'N', label: 'north', arrow: '↑', x: 1, y: 0, row: 1, column: 2 },
-  { id: 'NE', label: 'north east', arrow: '↗', x: DIAGONAL, y: -DIAGONAL, row: 1, column: 3 },
-  { id: 'W', label: 'west', arrow: '←', x: 0, y: 1, row: 2, column: 1 },
-  { id: 'E', label: 'east', arrow: '→', x: 0, y: -1, row: 2, column: 3 },
-  { id: 'SW', label: 'south west', arrow: '↙', x: -DIAGONAL, y: DIAGONAL, row: 3, column: 1 },
-  { id: 'S', label: 'south', arrow: '↓', x: -1, y: 0, row: 3, column: 2 },
-  { id: 'SE', label: 'south east', arrow: '↘', x: -DIAGONAL, y: -DIAGONAL, row: 3, column: 3 }
-]
-const rotationDirectionById = new Map(rotationDirections.map(option => [option.id, option]))
+// Radians per millisecond.
+const SPIN_CRUISE_SPEED = 0.000084
+const SPIN_MAX_SPEED = 0.004
+const SPIN_SETTLE_MS = 700
+const SPIN_RELEASE_WINDOW_MS = 100
+let spinAxisX = DIAGONAL
+let spinAxisY = DIAGONAL
+let spinSpeed = SPIN_CRUISE_SPEED
+let dragVelocityX = 0
+let dragVelocityY = 0
+let lastDragTime = 0
 const sphereRotation = new Float64Array(9)
 const axisMatrix = new Float64Array(9)
 const rotationProduct = new Float64Array(9)
@@ -393,11 +355,6 @@ sphereRotation.set(axisRotationMatrix(0, 1, 0, 0.35, rotationProduct))
 rotateSphere(1, 0, -0.12)
 
 const selectedSkill = computed(() => skillById.get(selectedSkillId.value))
-const rotationSpeedMultiplier = computed(() =>
-  rotationSpeed.value <= 1
-    ? rotationSpeed.value
-    : 1 + (rotationSpeed.value - 1) * 4
-)
 const detailLayoutStyle = computed(() => ({
   '--detail-width': `${detailWidth.value}px`,
   '--detail-left-offset': `${detailLeftOffset.value}px`,
@@ -770,6 +727,10 @@ function startDrag(event, skillId = null) {
   pendingDragX = 0
   pendingDragY = 0
   dragDistance = 0
+  dragVelocityX = 0
+  dragVelocityY = 0
+  lastDragTime = event.timeStamp
+  spinSpeed = SPIN_CRUISE_SPEED
   isDragging.value = true
   sphereCanvas.value?.setPointerCapture(event.pointerId)
 }
@@ -783,6 +744,13 @@ function dragSphere(event) {
   pendingDragY += deltaY
   pointerX = event.clientX
   pointerY = event.clientY
+
+  // Smoothed so the release direction reflects the last moments of the drag.
+  const elapsed = Math.max(event.timeStamp - lastDragTime, 1)
+  const blend = 1 - Math.exp(-elapsed / 60)
+  dragVelocityX += (-deltaY * 0.005 / elapsed - dragVelocityX) * blend
+  dragVelocityY += (-deltaX * 0.006 / elapsed - dragVelocityY) * blend
+  lastDragTime = event.timeStamp
 }
 
 function endDrag(event) {
@@ -797,6 +765,15 @@ function endDrag(event) {
     pendingDragX = 0
     pendingDragY = 0
     renderNeeded = true
+  }
+  const dragSpeed = Math.hypot(dragVelocityX, dragVelocityY)
+  if (wasDrag && !wasCancelled && dragSpeed) {
+    spinAxisX = dragVelocityX / dragSpeed
+    spinAxisY = dragVelocityY / dragSpeed
+    const releasedWhileMoving = event.timeStamp - lastDragTime < SPIN_RELEASE_WINDOW_MS
+    spinSpeed = releasedWhileMoving
+      ? Math.min(Math.max(dragSpeed, SPIN_CRUISE_SPEED), SPIN_MAX_SPEED)
+      : SPIN_CRUISE_SPEED
   }
   isDragging.value = false
   if (sphereCanvas.value?.hasPointerCapture(event.pointerId)) {
@@ -843,18 +820,17 @@ function animate(time) {
     renderNeeded = true
   }
 
+  // A node drifting under the cursor shouldn't kill a spin the user just threw.
+  const isCoasting = spinSpeed > SPIN_CRUISE_SPEED * 3
   if (
     !isDragging.value &&
     !prefersReducedMotion.value &&
     !selectedSkillId.value &&
-    !hoveredSkillId.value
+    (!hoveredSkillId.value || isCoasting)
   ) {
-    const direction = rotationDirectionById.get(rotationDirection.value)
-    const rotationStep = elapsed * 0.000084 * rotationSpeedMultiplier.value
-    if (direction && rotationStep) {
-      rotateSphere(direction.x, -direction.y, rotationStep)
-      renderNeeded = true
-    }
+    spinSpeed += (SPIN_CRUISE_SPEED - spinSpeed) * (1 - Math.exp(-elapsed / SPIN_SETTLE_MS))
+    rotateSphere(spinAxisX, spinAxisY, elapsed * spinSpeed)
+    renderNeeded = true
   }
 
   if (renderNeeded && time - lastRenderFrame >= RENDER_INTERVAL) {
@@ -1037,162 +1013,6 @@ onBeforeUnmount(() => {
 
 .sphere-canvas.dragging{cursor:grabbing}
 .sphere-canvas:focus-visible{outline:2px solid rgba(101,84,238,.5);outline-offset:5px}
-
-.sphere-controls{
-  position:absolute;
-  z-index:90;
-  left:50%;
-  bottom:-34px;
-  display:flex;
-  align-items:center;
-  gap:16px;
-  padding:0;
-  color:#706a7c;
-  background:transparent;
-  transform:translateX(-50%);
-}
-.rotation-speed{
-  display:grid;
-  grid-template-areas:
-    "slow fast"
-    "slider slider";
-  grid-template-columns:1fr 1fr;
-  align-items:center;
-  gap:5px 0;
-}
-.rotation-speed input{
-  grid-area:slider;
-  width:142px;
-  height:20px;
-  margin:0;
-  appearance:none;
-  background:transparent;
-  cursor:pointer;
-}
-.rotation-speed input::-webkit-slider-runnable-track{
-  height:6px;
-  border:1px solid rgba(101,84,238,.13);
-  border-radius:999px;
-  background:linear-gradient(
-    to right,
-    #7259ff 0,
-    #7259ff var(--speed-progress),
-    rgba(255,255,255,.86) var(--speed-progress),
-    rgba(255,255,255,.86) 100%
-  );
-  box-shadow:inset 0 1px 2px rgba(44,35,102,.12);
-}
-.rotation-speed input::-webkit-slider-thumb{
-  width:20px;
-  height:20px;
-  margin-top:-8px;
-  appearance:none;
-  border:4px solid #fff;
-  border-radius:50%;
-  background:#7259ff;
-  box-shadow:0 2px 6px rgba(44,35,102,.35),0 0 0 1px rgba(101,84,238,.12);
-}
-.rotation-speed input::-moz-range-track{
-  height:6px;
-  border:1px solid rgba(101,84,238,.13);
-  border-radius:999px;
-  background:rgba(255,255,255,.86);
-  box-shadow:inset 0 1px 2px rgba(44,35,102,.12);
-}
-.rotation-speed input::-moz-range-progress{
-  height:6px;
-  border-radius:999px;
-  background:#7259ff;
-}
-.rotation-speed input::-moz-range-thumb{
-  width:13px;
-  height:13px;
-  border:4px solid #fff;
-  border-radius:50%;
-  background:#7259ff;
-  box-shadow:0 2px 6px rgba(44,35,102,.35),0 0 0 1px rgba(101,84,238,.12);
-}
-.rotation-speed input:focus-visible{
-  outline:2px solid rgba(101,84,238,.4);
-  outline-offset:3px;
-  border-radius:999px;
-}
-.speed-icon{
-  width:24px;
-  color:#5d587c;
-  font-family:"Segoe UI Symbol","Noto Sans Symbols 2",sans-serif;
-  font-size:1.25rem;
-  line-height:1;
-  text-align:center;
-  filter:grayscale(1) contrast(.8);
-}
-.speed-icon:first-child{
-  grid-area:slow;
-  justify-self:start;
-  font-size:1.875rem;
-}
-.speed-icon:last-child{
-  grid-area:fast;
-  justify-self:end;
-}
-.control-divider{
-  align-self:stretch;
-  width:1px;
-  min-height:72px;
-  background:rgba(101,84,238,.18);
-}
-.rotation-direction{
-  min-width:0;
-}
-.direction-grid{
-  display:grid;
-  grid-template-columns:repeat(3,32px);
-  grid-template-rows:repeat(3,32px);
-  gap:4px;
-}
-.direction-grid button{
-  display:grid;
-  width:32px;
-  height:32px;
-  place-items:center;
-  padding:0;
-  border:1px solid rgba(101,84,238,.11);
-  border-radius:9px;
-  color:#625d82;
-  background:rgba(255,255,255,.72);
-  box-shadow:0 3px 8px rgba(60,48,117,.1);
-  font:inherit;
-  font-family:Arial,sans-serif;
-  font-size:1.18rem;
-  font-weight:400;
-  line-height:1;
-  cursor:pointer;
-  transition:color 160ms ease,background 160ms ease,border-color 160ms ease,box-shadow 160ms ease,transform 160ms ease;
-}
-.direction-grid button:hover,
-.direction-grid button:focus-visible{
-  outline:none;
-  color:#4e3fe0;
-  background:#fff;
-  border-color:rgba(101,84,238,.26);
-  box-shadow:0 5px 12px rgba(60,48,117,.15);
-  transform:translateY(-1px);
-}
-.direction-grid button.active{
-  color:#fff;
-  border-color:#6554ee;
-  background:linear-gradient(145deg,#7154ff,#5536eb);
-  box-shadow:0 6px 14px rgba(83,57,222,.3);
-}
-.direction-centre{
-  grid-row:2;
-  grid-column:2;
-  width:4px;
-  height:4px;
-  place-self:center;
-  border-radius:50%;
-  background:#8f87ad;
-}
 
 .link-layer{
   position:absolute;
@@ -1453,14 +1273,6 @@ onBeforeUnmount(() => {
   .skill-node{max-width:86px;min-height:28px;padding:5px 7px;gap:4px;font-size:.49rem;line-height:1.08;white-space:normal;text-align:left}
   .node-glyph{width:17px;height:17px;border-radius:5px}
   .node-glyph :deep(svg){width:10px;height:10px}
-  .sphere-controls{bottom:-26px;gap:8px;padding:0}
-  .rotation-speed{gap:3px 0}
-  .rotation-speed input{width:88px}
-  .speed-icon{width:18px;font-size:1rem}
-  .speed-icon:first-child{font-size:1.5rem}
-  .control-divider{min-height:64px}
-  .direction-grid{grid-template-columns:repeat(3,28px);grid-template-rows:repeat(3,28px);gap:3px}
-  .direction-grid button{width:28px;height:28px;border-radius:8px;font-size:1rem}
   .skill-stage .skill-detail{
     position:absolute;
     top:50%;

@@ -1,20 +1,29 @@
 <template>
   <article
     class="pt"
+    :class="{ 'is-expanded': expanded }"
     :data-category="project.category || null"
     @mouseenter="hovered = true"
     @mouseleave="hovered = false"
   >
-    <ProjectMedia :slug="project.slug" :active="hovered" class="pt-media" />
+    <ProjectMedia :slug="project.slug" :active="mobilePreview ? playbackActive : hovered" class="pt-media" />
 
-    <!-- Whole tile is the link to the case study -->
-    <RouterLink class="pt-link" :to="caseStudy">
+    <button
+      v-if="mobilePreview"
+      class="pt-link pt-toggle"
+      type="button"
+      :aria-expanded="expanded"
+      :aria-controls="`details-${project.slug}`"
+      :aria-label="`${expanded ? 'Hide' : 'Show'} details for ${project.title}`"
+      @click="expanded = !expanded"
+    />
+    <RouterLink v-else class="pt-link" :to="caseStudy">
       <span class="pt-sr">{{ project.title }} case study</span>
     </RouterLink>
 
     <div class="pt-label" aria-hidden="true">{{ project.title }}</div>
 
-    <div class="pt-details" aria-hidden="true">
+    <div :id="`details-${project.slug}`" class="pt-details" :aria-hidden="mobilePreview ? !expanded : undefined">
       <dl class="pt-meta">
         <dt>Project</dt><dd class="pt-title">{{ project.title }}</dd>
         <dt>Type</dt><dd>{{ typeLabel }}</dd>
@@ -22,7 +31,8 @@
         <dt>Stack</dt><dd>{{ project.stack.slice(0, 4).join(', ') }}</dd>
       </dl>
       <p class="pt-excerpt">{{ project.excerpt }}</p>
-      <span class="pt-cta">View case study →</span>
+      <RouterLink v-if="mobilePreview" class="pt-docs" :to="caseStudy">Explore documentation →</RouterLink>
+      <span v-else class="pt-cta">View case study →</span>
     </div>
 
     <div v-if="project.repoUrl || project.liveUrl" class="pt-ext">
@@ -37,12 +47,15 @@ import { computed, ref } from 'vue'
 import ProjectMedia from './ProjectMedia.vue'
 
 const props = defineProps({
-  project: { type: Object, required: true }
+  project: { type: Object, required: true },
+  mobilePreview: { type: Boolean, default: false },
+  playbackActive: { type: Boolean, default: false }
 })
 
 // Tracked on the whole tile: the link and detail overlays sit on top of the media,
 // so the media element itself never receives the pointer.
 const hovered = ref(false)
+const expanded = ref(false)
 
 const caseStudy = computed(() => ({ name: 'project', params: { slug: props.project.slug } }))
 
@@ -67,6 +80,7 @@ const typeLabel = computed(() => TYPE[props.project.category] || props.project.c
 
 /* Stretched link covering the tile */
 .pt-link { position: absolute; inset: 0; z-index: 2; }
+.pt-toggle { width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; cursor: pointer; }
 .pt-link:focus-visible { outline: 2px solid #fff; outline-offset: -6px; }
 .pt-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
@@ -156,19 +170,26 @@ const typeLabel = computed(() => TYPE[props.project.category] || props.project.c
 .pt-meta > :nth-child(5), .pt-meta > :nth-child(6) { transition-delay: .08s; }
 .pt-meta > :nth-child(7), .pt-meta > :nth-child(8) { transition-delay: .12s; }
 
-/* Touch screens can't hover: keep the details visible along the bottom */
-@media (hover: none) {
-  .pt-label { display: none; }
+/* Touch cards reveal details on tap, with a separate case-study link. */
+@media (max-width: 760px), (hover: none) {
+  .pt:not(.is-expanded) .pt-label { display: block; opacity: 1; }
+  .pt.is-expanded .pt-label { display: none; }
+  .pt:not(.is-expanded) .pt-details,
+  .pt:not(.is-expanded) .pt-ext { opacity: 0; visibility: hidden; }
+  .pt.is-expanded .pt-details,
+  .pt.is-expanded .pt-ext { opacity: 1; visibility: visible; }
   .pt-details {
-    opacity: 1;
+    z-index: 3;
     justify-content: flex-end;
     padding: 18px;
     font-size: 11px;
-    background: linear-gradient(0deg, rgba(8, 8, 16, .85), rgba(8, 8, 16, .2) 65%, transparent);
+    background: linear-gradient(0deg, rgba(8, 8, 16, .96), rgba(8, 8, 16, .8) 70%, transparent);
   }
   .pt-meta > *, .pt-cta { opacity: 1; transform: none; }
-  .pt-excerpt { display: none; }
+  .pt-excerpt { display: block; opacity: 1; }
   .pt-cta { margin-top: 10px; }
+  .pt-docs { align-self: flex-start; display: inline-flex; align-items: center; min-height: 44px; margin-top: 12px; padding: 0 14px; border-radius: 8px; background: #fff; color: #111632; font-weight: 700; text-decoration: none; pointer-events: auto; }
+  .pt-docs:focus-visible { outline: 2px solid #a79fff; outline-offset: 3px; }
   .pt-ext { opacity: 1; top: 12px; right: 12px; }
 }
 

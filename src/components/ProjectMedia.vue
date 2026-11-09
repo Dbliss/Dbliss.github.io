@@ -24,7 +24,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import ProjectPreview3d from './ProjectPreview3d.vue'
 import BellaPreview from './previews/BellaPreview.vue'
 import HoverCanvas from './previews/HoverCanvas.vue'
@@ -38,7 +38,7 @@ import curatedWellness from '../assets/curated-wellness/curated-wellness.png'
 
 const props = defineProps({
   slug: { type: String, required: true },
-  // Everything animated on a tile only plays while this is true (the parent card is hovered).
+  // The parent activates hovered desktop cards or the centered mobile card.
   active: { type: Boolean, default: false }
 })
 
@@ -79,16 +79,19 @@ useHoverClock(() => props.active, () => {
   if (v.currentTime < trimStart || v.currentTime >= v.duration - trimEnd) v.currentTime = trimStart
 })
 
-watch(() => props.active, (active) => {
+watch([() => props.active, video], ([active]) => {
   const v = video.value
   if (!v) return
   if (active && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    v.muted = true
     v.playbackRate = media.value.rate ?? 1
     v.play().catch(() => {})
   } else {
     v.pause()
   }
-})
+}, { flush: 'post' })
+
+onBeforeUnmount(() => video.value?.pause())
 </script>
 
 <style scoped>

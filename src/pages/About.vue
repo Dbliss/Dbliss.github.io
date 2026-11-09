@@ -46,7 +46,7 @@
         </div>
       </div>
 
-      <div class="gantt-scroll" :aria-label="`Career and education timeline from ${timelineStartYear} to today`">
+      <div ref="ganttScroll" class="gantt-scroll" :aria-label="`Career and education timeline from ${timelineStartYear} to today`">
         <div class="gantt-chart" :style="{ '--gantt-year-columns': ganttYearColumns }">
           <div class="gantt-axis">
             <span class="axis-label">Role</span>
@@ -147,6 +147,7 @@ const titlePhrases = [
 
 ]
 const typedTitle = ref('')
+const ganttScroll = ref(null)
 let titlePhraseIndex = 0
 let titleCharacterIndex = 0
 let titleIsDeleting = false
@@ -177,6 +178,9 @@ const runTitleTypewriter = () => {
 }
 
 onMounted(() => {
+  // Open the mobile timeline on the most recent roles.
+  if (ganttScroll.value) ganttScroll.value.scrollLeft = ganttScroll.value.scrollWidth
+
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     typedTitle.value = titlePhrases[0]
     return
@@ -668,8 +672,13 @@ h1 span { color: var(--about-purple); }
   .about-hero { gap: 36px; }
   .gantt-heading { align-items: flex-start; flex-direction: column; }
   .gantt-heading-meta { justify-items: start; text-align: left; }
-  .gantt-axis, .gantt-row { grid-template-columns: minmax(150px, 42%) minmax(0, 1fr); }
-  .axis-years span { padding-left: 4px; font-size: .58rem; }
+  .gantt-scroll { overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+  .gantt-chart { width: 830px; }
+  .gantt-axis, .gantt-row { grid-template-columns: 150px minmax(0, 1fr); }
+  .axis-label { padding: 0 10px; }
+  .gantt-role { padding: 6px 10px; }
+  .gantt-role h3 { font-size: .68rem; line-height: 1.25; }
+  .gantt-organisation { font-size: .64rem; line-height: 1.2; }
 }
 
 @media (prefers-reduced-motion: reduce) {

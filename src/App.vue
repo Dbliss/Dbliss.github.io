@@ -7,6 +7,7 @@
     <template v-else-if="route.meta?.navReveal !== false">
       <!-- Hotzone: moving mouse near top reveals nav -->
       <div
+        v-if="!mobileBettingNav"
         class="nav-hotzone"
         @pointerenter="overHotzone = true"
         @pointerleave="overHotzone = false"
@@ -33,13 +34,20 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import SiteNav from './components/SiteNav.vue'
 import SiteFooter from './components/SiteFooter.vue'
 import { projects } from './data/projects'
 
 const route = useRoute()
+const mobileViewport = ref(false)
+const mobileBettingNav = computed(() => mobileViewport.value && route.name === 'project' && route.params.slug === 'lol-match-predictor')
+let mobileQuery
+
+function updateMobileViewport() {
+  mobileViewport.value = mobileQuery.matches
+}
 
 // Footer rule (unchanged)
 const hideFooter = computed(() => {
@@ -52,6 +60,7 @@ const hideFooter = computed(() => {
 
 // Nav hide base rule (same idea as footer)
 const hideNavBase = computed(() => {
+  if (mobileBettingNav.value) return true
   if (route.meta?.hideNav) return true
   if (route.name !== 'project') return false
   const slug = route.params.slug
@@ -82,16 +91,30 @@ function onScroll() {
 // (after scrolling down). Scrolling down hides it again.
 const navShown = computed(() => {
   if (!hideNavBase.value) return true
+  if (mobileBettingNav.value) return scrollingUp.value
   const showByScrollTop = isAtTop.value && hasScrolledDown.value
   return overHotzone.value || overNav.value || scrollingUp.value || showByScrollTop
 })
 
+watch(() => route.fullPath, () => {
+  overHotzone.value = false
+  overNav.value = false
+  scrollingUp.value = false
+  hasScrolledDown.value = false
+  lastScrollY = window.scrollY || 0
+  isAtTop.value = lastScrollY <= 2
+})
+
 onMounted(() => {
+  mobileQuery = window.matchMedia('(max-width: 760px)')
+  updateMobileViewport()
+  mobileQuery.addEventListener('change', updateMobileViewport)
   onScroll()
   window.addEventListener('scroll', onScroll, { passive: true })
 })
 
 onBeforeUnmount(() => {
+  mobileQuery?.removeEventListener('change', updateMobileViewport)
   window.removeEventListener('scroll', onScroll)
 })
 </script>

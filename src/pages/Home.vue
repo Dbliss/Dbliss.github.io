@@ -1,50 +1,54 @@
 <template>
   <section class="home-hero">
     <div class="hero-copy">
-      <div class="name-lockup">
-        <span class="name-hint" aria-hidden="true">
-          Click to learn more about me
-          <svg viewBox="0 0 54 34" role="presentation">
-            <path d="M49 3C43 9 42 19 31 23C22 27 13 26 4 24" />
-            <path d="M11 18L4 24L12 29" />
-          </svg>
-        </span>
-        <h1>
-          <RouterLink class="name-link" to="/about" data-text="Dillon Bliss">Dillon Bliss</RouterLink>
-        </h1>
-      </div>
-      <h2 class="eyebrow">Software Engineer</h2>
-      <p class="summary">I design and build robust systems across backend, frontend and cloud infrastructure with a focus on reliability and performance.</p>
-      <div class="hero-actions">
-        <RouterLink class="hero-button hero-button--primary" to="/projects">View projects <span>&rarr;</span></RouterLink>
-        <RouterLink class="hero-button hero-button--secondary" to="/contact">Contact me <span>&#9993;</span></RouterLink>
-      </div>
-      <div
-        ref="skillsMarquee"
-        class="skills-marquee"
-        :class="{ 'is-dragging': isDragging }"
-        aria-label="Core technologies"
-        @pointerenter="pauseSkills"
-        @pointerleave="resumeSkills"
-        @pointerdown="startSkillsDrag"
-        @pointermove="moveSkillsDrag"
-        @pointerup="endSkillsDrag"
-        @pointercancel="endSkillsDrag"
-      >
-        <div ref="skillsTrack" class="skills-track">
-          <ul class="skills">
-            <li v-for="skill in skills" :key="skill.label"><BrandIcon :name="skill.icon" /> {{ skill.label }}</li>
-          </ul>
-          <ul class="skills" aria-hidden="true">
-            <li v-for="skill in skills" :key="'duplicate-' + skill.label"><BrandIcon :name="skill.icon" /> {{ skill.label }}</li>
-          </ul>
+      <div class="hero-identity">
+        <div class="name-lockup">
+          <span class="name-hint" aria-hidden="true">
+            Click to learn more about me
+            <svg viewBox="0 0 54 34" role="presentation">
+              <path d="M49 3C43 9 42 19 31 23C22 27 13 26 4 24" />
+              <path d="M11 18L4 24L12 29" />
+            </svg>
+          </span>
+          <h1>
+            <RouterLink class="name-link" to="/about" data-text="Dillon Bliss">Dillon Bliss</RouterLink>
+          </h1>
         </div>
+        <h2 class="eyebrow">Software Engineer</h2>
+        <p class="summary">I design and build robust systems across backend, frontend and cloud infrastructure with a focus on reliability and performance.</p>
       </div>
-      <nav class="social-links" aria-label="Social links">
-        <a href="https://github.com/Dbliss" target="_blank" rel="noreferrer noopener"><BrandIcon name="github" /> GitHub</a>
-        <a href="https://www.linkedin.com/in/dillon-bliss-770704184/" target="_blank" rel="noreferrer noopener"><BrandIcon name="linkedin" /> LinkedIn</a>
-        <a href="/resume.pdf" download><BrandIcon name="resume" /> Resume</a>
-      </nav>
+      <div class="hero-links">
+        <div class="hero-actions">
+          <RouterLink class="hero-button hero-button--primary" to="/projects">View projects <span>&rarr;</span></RouterLink>
+          <RouterLink class="hero-button hero-button--secondary" to="/contact">Contact me <span>&#9993;</span></RouterLink>
+        </div>
+        <div
+          ref="skillsMarquee"
+          class="skills-marquee"
+          :class="{ 'is-dragging': isDragging }"
+          aria-label="Core technologies"
+          @pointerenter="pauseSkills"
+          @pointerleave="resumeSkills"
+          @pointerdown="startSkillsDrag"
+          @pointermove="moveSkillsDrag"
+          @pointerup="endSkillsDrag"
+          @pointercancel="endSkillsDrag"
+        >
+          <div ref="skillsTrack" class="skills-track">
+            <ul class="skills">
+              <li v-for="skill in skills" :key="skill.label"><BrandIcon :name="skill.icon" /> {{ skill.label }}</li>
+            </ul>
+            <ul class="skills" aria-hidden="true">
+              <li v-for="skill in skills" :key="'duplicate-' + skill.label"><BrandIcon :name="skill.icon" /> {{ skill.label }}</li>
+            </ul>
+          </div>
+        </div>
+        <nav class="social-links" aria-label="Social links">
+          <a href="https://github.com/Dbliss" target="_blank" rel="noreferrer noopener"><BrandIcon name="github" /> GitHub</a>
+          <a href="https://www.linkedin.com/in/dillon-bliss-770704184/" target="_blank" rel="noreferrer noopener"><BrandIcon name="linkedin" /> LinkedIn</a>
+          <a href="/resume.pdf" download><BrandIcon name="resume" /> Resume</a>
+        </nav>
+      </div>
     </div>
     <div class="portrait-column">
       <div class="portrait-panel">
@@ -58,6 +62,9 @@
           fetchpriority="high"
         />
         <div class="portrait-crop" aria-hidden="true"></div>
+        <RouterLink class="portrait-about" to="/about">
+          <span class="portrait-about__label">About me <span aria-hidden="true">&rarr;</span></span>
+        </RouterLink>
       </div>
     </div>
   </section>
@@ -200,6 +207,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.portrait-about{display:none}
 .home-hero{width:min(1420px,100%);min-height:100svh;margin:0 auto;padding:clamp(48px,8vh,112px) clamp(24px,8vw,120px) clamp(32px,6vh,72px);display:grid;grid-template-columns:minmax(0,1.1fr) minmax(420px,.9fr);align-items:center;gap:clamp(48px,8vw,132px);background:#fff;color:#111632}
 .hero-copy{max-width:720px;min-width:0}.eyebrow{margin:10px 0 28px;color:#6f68f5;font-family:inherit;font-size:clamp(1.45rem,2.2vw,2.15rem);font-weight:720;line-height:1.05;letter-spacing:-.035em}
 .name-lockup{position:relative;width:max-content;max-width:100%}.name-hint{position:absolute;right:-6rem;bottom:calc(100% + 13px);display:block;color:#6f68f5;font-size:clamp(.68rem,.8vw,.79rem);font-weight:650;letter-spacing:.01em;line-height:1;white-space:nowrap;transform:rotate(15deg);transform-origin:right bottom}.name-hint svg{position:absolute;top:calc(100% + 8px);left:2rem;width:46px;height:29px;overflow:visible;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transform:rotate(-30deg)}
@@ -215,39 +223,39 @@ h1{margin:0;font-size:clamp(3.375rem,5.58vw,6.03rem);line-height:.95;letter-spac
 .social-links :deep(.brand-icon){width:22px;height:22px;color:#080b16}
 .portrait-column{display:flex;align-items:center;justify-content:center}.portrait-panel{position:relative;isolation:isolate;width:min(145.6%,910px);aspect-ratio:1.08}.portrait-frame,.portrait-crop{position:absolute;inset:8% 2% 2%;transform:rotate(4deg);transform-origin:center}.portrait-frame{z-index:0;border-radius:15%;background:linear-gradient(135deg,#f4f2ff 0%,#eeecff 100%)}.portrait-panel img{position:absolute;z-index:1;left:50%;bottom:0;width:109.2%;max-height:129.6%;object-fit:contain;object-position:center bottom;transform:translateX(-50%)}.portrait-crop{z-index:2;pointer-events:none}.portrait-crop::after{content:attr(data-mask);position:absolute;top:calc(100% - 1px);left:-25%;width:150%;height:35%;background:#fff}
 @media(max-width:900px){.home-hero{grid-template-columns:1fr;min-height:auto;gap:64px;padding-top:72px}.hero-copy{max-width:680px}.portrait-column{grid-row:1}.portrait-panel{width:min(130%,676px)}}
-@media(max-width:600px){
-  .home-hero{position:relative;display:block;width:100%;height:100svh;min-height:0;padding:max(22px,env(safe-area-inset-top)) 18px max(16px,env(safe-area-inset-bottom));overflow:hidden}
-  .hero-copy{position:relative;z-index:2;display:flex;flex-direction:column;width:100%;height:100%;max-width:none}
-  .name-lockup{z-index:2}
+@media(max-width:760px){
+  .home-hero{--hero-space:clamp(10px,2.9svh,28px);--hero-top:max(16px,env(safe-area-inset-top));--hero-bottom:max(22px,env(safe-area-inset-bottom));--hero-third:calc((100svh - var(--hero-top) - var(--hero-bottom)) / 3);grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(170px,var(--hero-third)) repeat(2,minmax(max-content,var(--hero-third)));align-items:stretch;gap:0;width:100%;height:auto;min-height:100svh;padding:var(--hero-top) max(22px,env(safe-area-inset-right)) var(--hero-bottom) max(22px,env(safe-area-inset-left));overflow:hidden}
+  .hero-copy{display:contents}
+  .hero-identity{grid-row:2;align-self:center;min-width:0}
+  .hero-links{grid-row:3;align-self:center;min-width:0}
   .name-hint{display:none}
-  h1{font-size:clamp(2.72rem,13.1vw,4rem);line-height:.9}
+  h1{font-size:clamp(2.25rem,min(15.5vw,8svh),4.6rem);line-height:1}
   .name-link{white-space:nowrap}
-  .eyebrow{margin:6px 0 10px;font-size:clamp(1.05rem,4.8vw,1.35rem)}
-  .summary{position:relative;z-index:2;width:58vw;max-width:245px;margin:8px 0 0;font-size:clamp(.82rem,3.45vw,.96rem);line-height:1.42}
-  .portrait-column{position:absolute;z-index:1;top:clamp(66px,10.5svh,92px);right:-8vw;display:block;width:clamp(190px,58vw,280px);pointer-events:none}
-  .portrait-panel{width:100%;aspect-ratio:1.08}
-  .hero-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:auto}
-  .hero-button{width:100%;min-width:0;min-height:46px;padding:0 12px;gap:10px;border-radius:9px;font-size:.83rem;white-space:nowrap}
+  .eyebrow{margin:8px 0 0;font-size:clamp(1.15rem,min(5.8vw,2.9svh),1.8rem)}
+  .summary{max-width:none;margin:clamp(10px,1.9svh,18px) 0 0;font-size:clamp(.92rem,min(4.8vw,2.25svh),1.3rem);line-height:1.6}
+  .portrait-column{grid-row:1;align-items:stretch;min-height:0}
+  .portrait-panel{flex:1;width:100%;aspect-ratio:auto;overflow:hidden;border-radius:24px;background:linear-gradient(135deg,#f4f2ff,#e4dfff)}
+  .portrait-frame,.portrait-crop{display:none}
+  .portrait-panel img{top:14%;left:50%;bottom:auto;width:auto;max-width:none;height:105%;max-height:none;object-fit:fill;transform:translateX(-48%)}
+  .portrait-about{position:absolute;z-index:2;inset:0;display:flex;align-items:flex-end;justify-content:flex-end;padding:12px;border-radius:inherit}
+  .portrait-about:focus-visible{outline:2px solid #6f68f5;outline-offset:-4px}
+  .portrait-about__label{min-height:38px;padding:0 14px;border-radius:10px;display:inline-flex;align-items:center;gap:8px;color:#29225f;background:#fff;font-size:.82rem;font-weight:700;box-shadow:0 6px 18px rgba(17,22,50,.18)}
+  .portrait-about__label span{color:#6f68f5;font-size:1.05rem;line-height:1}
+  .hero-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0}
+  .hero-button{width:100%;min-width:0;min-height:clamp(48px,7svh,60px);padding:0 10px;gap:8px;border-radius:10px;font-size:clamp(.85rem,3.9vw,1rem);white-space:nowrap}
   .hero-button--primary{min-width:0}
   .hero-button--primary span{font-size:1.25rem}
   .hero-button--secondary span{font-size:1.05rem}
-  .skills-marquee{margin-top:14px}
+  .skills-marquee{margin-top:var(--hero-space)}
   .skills{gap:8px;padding-right:8px}
-  .skills li{min-height:36px;padding:0 12px;border-radius:8px;font-size:.8rem}
-  .skills :deep(.brand-icon){width:17px;height:17px}
-  .social-links{flex-wrap:nowrap;justify-content:space-between;gap:8px;margin-top:14px}
-  .social-links a{gap:6px;padding-bottom:4px;font-size:.77rem}
-  .social-links :deep(.brand-icon){width:18px;height:18px}
+  .skills li{min-height:clamp(36px,5.4svh,46px);padding:0 12px;border-radius:8px;font-size:clamp(.8rem,3.6vw,.95rem)}
+  .skills :deep(.brand-icon){width:16px;height:16px}
+  .social-links{flex-wrap:wrap;justify-content:space-between;gap:8px 16px;margin-top:var(--hero-space);padding-top:clamp(8px,1.7svh,16px);border-top:1px solid #ececf4}
+  .social-links a{min-height:clamp(36px,4.7svh,42px);gap:6px;padding-bottom:4px;font-size:clamp(.8rem,min(3.8vw,1.8svh),1rem)}
+  .social-links :deep(.brand-icon){width:20px;height:20px}
 }
-@media(max-width:600px) and (max-height:700px){
-  .home-hero{padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(12px,env(safe-area-inset-bottom))}
-  h1{font-size:clamp(2.55rem,12.5vw,3.5rem)}
-  .eyebrow{margin:4px 0 6px}
-  .summary{margin-top:5px;font-size:clamp(.78rem,3.3vw,.9rem);line-height:1.36}
-  .portrait-column{top:58px;width:clamp(180px,55vw,250px)}
-  .hero-button{min-height:42px}
-  .skills-marquee,.social-links{margin-top:11px}
-  .skills li{min-height:33px}
+@media(max-width:340px){
+  .hero-actions{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){.name-link::after{transition:none}.skills-marquee{mask-image:none;-webkit-mask-image:none}}
 @media(prefers-reduced-motion:reduce){.hero-button::after{transition:none}}

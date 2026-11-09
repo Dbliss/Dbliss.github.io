@@ -86,38 +86,43 @@ const typeLabel = computed(() => TYPE[props.project.category] || props.project.c
   transition: opacity .35s ease;
 }
 
-/* Hover details */
+/* Hover details: a band along the bottom, so the animation stays visible above it */
 .pt-details {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding: 8% 10%;
+  padding: 60px 20px 16px;
   color: #fff;
-  font: 500 13px/1.45 var(--mono);
+  font: 500 12px/1.4 var(--mono);
   letter-spacing: .03em;
-  background: linear-gradient(90deg, rgba(8, 8, 16, .82), rgba(8, 8, 16, .55) 60%, rgba(8, 8, 16, .35));
+  background: linear-gradient(0deg, rgba(8, 8, 16, .94), rgba(8, 8, 16, .84) 62%, transparent);
   opacity: 0;
   pointer-events: none;
   transition: opacity .45s ease;
 }
-.pt-meta { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 4px 22px; max-width: 560px; text-transform: uppercase; }
+.pt-meta { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr) max-content minmax(0, 1fr); gap: 3px 14px; text-transform: uppercase; }
 .pt-meta dt { color: rgba(255, 255, 255, .5); }
 .pt-meta dd { margin: 0; }
 .pt-meta > * { opacity: 0; transform: translateY(6px); transition: opacity .45s ease, transform .45s ease; }
 .pt-title { font-weight: 700; }
 .pt-excerpt {
-  margin: 22px 0 0;
-  max-width: 520px;
-  font: 400 14px/1.55 system-ui, sans-serif;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  margin: 10px 0 0;
+  font: 400 13px/1.45 system-ui, sans-serif;
   letter-spacing: 0;
   color: rgba(255, 255, 255, .82);
   opacity: 0;
   transition: opacity .45s ease .12s;
 }
-.pt-cta { margin-top: 20px; text-transform: uppercase; font-size: 12px; opacity: 0; transition: opacity .45s ease .18s; }
+.pt-cta { margin-top: 8px; text-transform: uppercase; font-size: 11px; opacity: 0; transition: opacity .45s ease .18s; }
 
 /* External links sit above the stretched link */
 .pt-ext { position: absolute; top: 18px; right: 20px; z-index: 3; display: flex; gap: 8px; opacity: 0; transition: opacity .35s ease; }
@@ -167,8 +172,8 @@ const typeLabel = computed(() => TYPE[props.project.category] || props.project.c
   .pt-ext { opacity: 1; top: 12px; right: 12px; }
 }
 
-@media (max-width: 640px) {
-  .pt-meta { gap: 2px 14px; }
+@media (max-width: 1000px) {
+  .pt-meta { grid-template-columns: max-content minmax(0, 1fr); gap: 2px 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -75,79 +75,15 @@
       </div>
     </section>
 
-    <!-- Animated walkthrough of the algorithm -->
+    <!-- Scroll-driven walkthrough of the algorithm -->
     <section class="algo">
       <div class="section-label">How the model works</div>
       <h2 class="algo-title">One match, from raw rows to a priced bet</h2>
-      <LolAlgorithmAnimation />
+      <p class="algo-intro">Each stage starts as you reach it, then plays on its own. Select any step to watch it again.</p>
+      <LolModelStory />
     </section>
 
-    <!-- Second row: probability distribution (left) + pipeline (right) -->
-    <section class="row grid cols-2">
-      <!-- Left: probability distribution image -->
-      <div class="card">
-        <div class="image-wrapper large">
-          <img
-            class="image"
-            :src="probDistribution"
-            alt="Histogram of predicted win probabilities across matches."
-            loading="lazy"
-          />
-        </div>
-        <div class="image-wrapper large">
-            <img
-              class="image"
-              :src="featureImportance"
-              alt="Feature importance chart for the model."
-              loading="lazy"
-            />
-          </div>
-      </div>
-
-        <!-- Right: pipeline box -->
-        <section class="card pipeline">
-        <div class="section-label">Data Pipeline</div>
-        <h2 class="section-title small">
-            From raw match logs to calibrated probabilities
-        </h2>
-
-        <p class="section-intro">
-            To get from raw match data into reliable win probabilities, I had to build a full data pipeline with several key steps:
-        </p>
-
-        <ol class="pipeline-list">
-            <li>Names are standardised, ultra–low–sample teams are removed, and incomplete matches are filtered out. </li>
-            <li>Columns are created to track patch tags, roster changes, and region strength so the
-            model can react to meta shifts rather than blindly inferring.</li>
-            <li>
-            Build rolling features for each team and position, including: recent form, opponent strength, side selection, and
-            player-level trends.
-            </li>
-            <li>Utilise a random forest to capture non-linear performance scores of individual players. This creates another rich feature for the model to consume. </li>
-            <li>
-            Build a high-performing Elo model using performance scores and match outcomes to track player strength and variance over time.
-            </li>
-            <li>
-            Run a Bayesian state-space rating model with an Unscented Kalman Filter (UKF) and stochastic variance to
-            update team and player strength over time, instead of using a static Elo.
-            </li>
-            <li>
-            Feed Elo-style and UKF features into tree ensembles (Random Forests and gradient-boosted machines) to
-            predict match win probability.
-            </li>
-            <li>
-            Evaluate on time-based splits to avoid look-ahead leakage, then post-hoc calibrate the probabilities and
-            backtest them against historical bookmaker odds.
-            </li>
-            <li>
-            Ensemble multiple models with bookmaker predictions to maximise model strength and minimise variance.
-            </li>
-        </ol>
-        </section>
-
-    </section>
-
-    <!-- Third row: model outcomes + feature/edge visuals -->
+    <!-- Model outcomes + edge visuals -->
     <section class="card outcomes">
     <div class="section-label">Model outcomes</div>
     <h2 class="section-title small">
@@ -282,10 +218,8 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import CategoryTag from '../components/CategoryTag.vue'
-import LolAlgorithmAnimation from '../components/LolAlgorithmAnimation.vue'
+import LolModelStory from '../components/LolModelStory.vue'
 import calibrationCurve from '../assets/lol-match-predictor/calibration_curve.png'
-import probDistribution from '../assets/lol-match-predictor/prob_distribution.png'
-import featureImportance from '../assets/lol-match-predictor/feature_importance.png'
 import roc from '../assets/lol-match-predictor/roc.png'
 import edgeOverTime from '../assets/lol-match-predictor/edge_over_time.png'
 
@@ -352,20 +286,23 @@ defineProps({
   align-items: center;
 }
 
-.row {
-  margin-top: 18px;
-}
-
 .algo {
-  margin: 36px 0 32px;
+  margin: 72px 0 40px;
 }
 
 .algo-title {
-  margin: 6px 0 18px;
-  font-size: clamp(1.4rem, 2.2vw, 1.9rem);
-  line-height: 1.1;
-  letter-spacing: -0.035em;
+  margin: 8px 0 10px;
+  font-size: clamp(2.2rem, 4.2vw, 3.6rem);
+  line-height: 1.04;
+  letter-spacing: -0.045em;
   color: var(--ink);
+}
+
+.algo-intro {
+  margin: 0;
+  max-width: 56ch;
+  font-size: 1.05rem;
+  color: var(--muted);
 }
 
 .section-title.small {
@@ -376,13 +313,6 @@ defineProps({
 .section-intro {
   color: var(--muted);
   margin-bottom: 10px;
-}
-
-.pipeline-list {
-  padding-left: 20px;
-  color: var(--muted);
-  line-height: 1.5;
-  margin: 8px 0;
 }
 
 .outcomes {

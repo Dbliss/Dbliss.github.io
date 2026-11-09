@@ -1,11 +1,6 @@
 <template>
   <section class="pj">
     <header class="pj-head">
-      <p class="pj-intro">
-        Software, data and AI work, from client platforms in production to research side projects.
-        Hover a project for the details.
-      </p>
-
       <div class="pj-bar">
         <h1 class="pj-count">Selected projects({{ list.length }})</h1>
         <div class="pj-filters" role="group" aria-label="Filter projects">
@@ -53,15 +48,6 @@ const list = computed(() => (active.value === ALL ? all : all.filter((p) => p.gr
 }
 
 .pj-head { padding: 72px 20px 18px; }
-.pj-intro {
-  margin: 0 0 72px;
-  max-width: 520px;
-  color: #111;
-  font: 500 13px/1.6 var(--mono);
-  letter-spacing: .02em;
-  text-transform: uppercase;
-}
-
 .pj-bar {
   display: flex;
   align-items: baseline;
@@ -106,7 +92,6 @@ const list = computed(() => (active.value === ALL ? all : all.filter((p) => p.gr
 
 @media (max-width: 760px) {
   .pj-head { padding: 40px 16px 14px; }
-  .pj-intro { margin-bottom: 40px; }
   .pj-grid { grid-template-columns: 1fr; }
   .pj-grid > :last-child:nth-child(odd) { aspect-ratio: 16 / 11; }
 }

@@ -134,7 +134,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import maplibregl from 'maplibre-gl'
+import { Map as MapLibreMap, NavigationControl } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import WealthLineChart from './WealthLineChart.vue'
 import WealthPropertyTrendChart from './WealthPropertyTrendChart.vue'
@@ -247,7 +247,7 @@ onBeforeUnmount(() => {
 })
 
 function initialiseMap() {
-  map = new maplibregl.Map({
+  map = new MapLibreMap({
     container: mapContainer.value,
     style: MAP_STYLE_URL,
     center: [147.2, -32.6],
@@ -257,7 +257,7 @@ function initialiseMap() {
     attributionControl: true
   })
 
-  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
+  map.addControl(new NavigationControl({ showCompass: false }), 'top-right')
   map.once('error', (event) => {
     if (!isLoading.value) return
     console.error('Unable to load the map style', event.error)

@@ -1,0 +1,1968 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>O’Brien–Fleming Boundaries</title>
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<script src="vendor/katex/katex.min.js"></script>
+<script src="note-math.js"></script>
+<style>
+:root {
+  --bg: #fafaff; --ink: #111632; --muted: #626980; --line: #e2e4ee; --faint: #c9cde0; --accent: #6858e8;
+  --stage-h: min(calc(100vh - 48px), 640px);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+.page { width: min(1240px, 100% - 48px); margin: 0 auto; }
+html, body { overflow-x: clip; }
+.opening { position: relative; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(220px, .65fr); align-items: center; column-gap: clamp(32px, 6vw, 96px); min-height: 100svh; padding: 84px 0 84px; }
+.back { position: absolute; top: 28px; left: 0; font-size: .9rem; font-weight: 650; color: var(--muted); text-decoration: none; opacity: 0; transition: opacity .6s ease .1s, color .2s ease; }
+.opening-kicker { font-size: .8rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); opacity: 0; translate: 0 10px; transition: opacity .6s ease, translate .6s cubic-bezier(.2, .7, .2, 1); }
+.opening-title { margin: 14px 0 0; font-size: clamp(2.8rem, 7vw, 6.2rem); font-weight: 800; line-height: .98; letter-spacing: -.055em; overflow-wrap: anywhere; }
+.opening-title .ow { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .1em; margin-bottom: -.1em; }
+.opening-title .ow > span { display: inline-block; translate: 0 105%; transition: translate .95s cubic-bezier(.2, .8, .2, 1); }
+.opening-rule { display: block; width: min(220px, 40%); height: 3px; margin-top: 30px; border-radius: 3px; background: var(--accent); transform: scaleX(0); transform-origin: left center; transition: transform 1s cubic-bezier(.65, 0, .35, 1) .55s; }
+.opening-map { position: relative; margin: 0; padding: 0 0 0 24px; list-style: none; }
+.opening-map::before { content: ''; position: absolute; left: 4px; top: 14px; bottom: 14px; border-left: 1px solid var(--faint); transform: scaleY(0); transform-origin: top center; transition: transform 1.2s cubic-bezier(.65, 0, .35, 1) .6s; }
+.map-item { position: relative; display: flex; align-items: baseline; gap: 12px; width: 100%; padding: 6px 0; border: 0; background: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer; opacity: 0; translate: -10px 0; transition: opacity .5s ease, translate .5s cubic-bezier(.2, .7, .2, 1), color .2s ease; transition-delay: calc(700ms + var(--i) * 70ms), calc(700ms + var(--i) * 70ms), 0s; }
+.map-item::before { content: ''; position: absolute; left: -24px; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border: 1.5px solid var(--faint); border-radius: 50%; background: var(--bg); transition: border-color .2s ease, background .2s ease; }
+.map-num { font-size: .74rem; color: var(--muted); }
+.map-label { font-weight: 600; }
+.map-item:hover, .map-item:focus-visible { color: var(--accent); }
+.map-item:hover::before, .map-item:focus-visible::before { border-color: var(--accent); background: var(--accent); }
+.map-item:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; border-radius: 6px; }
+.opening-cue { position: absolute; left: 0; bottom: 28px; display: flex; align-items: center; gap: 12px; font-size: .8rem; color: var(--muted); opacity: 0; transition: opacity .8s ease 1.4s; }
+.opening-cue i { display: block; width: 1px; height: 28px; background: linear-gradient(var(--accent), transparent); transform-origin: top center; animation: cue 1.8s ease-in-out infinite; }
+@keyframes cue { 0% { transform: scaleY(0); opacity: 1; } 60% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(1); opacity: 0; } }
+.opening.play .back, .opening.play .opening-cue { opacity: 1; }
+.opening.play .opening-kicker, .opening.play .map-item { opacity: 1; translate: 0 0; }
+.opening.play .opening-title .ow > span { translate: 0 0; }
+.opening.play .opening-rule, .opening.play .opening-map::before { transform: none; }
+@media (max-width: 900px) {
+  .opening { grid-template-columns: minmax(0, 1fr); align-content: center; row-gap: 40px; padding: 72px 0 48px; }
+  .opening-map { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); column-gap: 16px; padding-left: 0; }
+  .opening-map::before, .map-item::before { display: none; }
+  .map-item { padding: 4px 0; font-size: .92rem; }
+  .opening-cue { display: none; }
+}
+.back:hover, .back:focus-visible { color: var(--accent); }
+.story { margin-top: 44px; }
+.chapter { display: grid; grid-template-columns: minmax(0, 1.42fr) minmax(0, 1fr); column-gap: clamp(36px, 6vw, 84px); }
+.chapter + .chapter { margin-top: clamp(72px, 14vh, 150px); }
+.chapter.flip { grid-template-columns: minmax(0, 1fr) minmax(0, 1.42fr); }
+.chapter.flip .stage-col { grid-column: 2; grid-row: 1; }
+.chapter.flip .copy { grid-column: 1; grid-row: 1; }
+.chapter { position: relative; }
+.stage-col { position: relative; z-index: 2; transition: translate .95s cubic-bezier(.65, 0, .35, 1); }
+.copy { position: relative; z-index: 1; }
+.pages { display: grid; }
+@property --fade { syntax: '<percentage>'; inherits: false; initial-value: 150%; }
+.pg { grid-area: 1 / 1; align-self: center; min-width: 0; --fade: 150%; -webkit-mask-image: linear-gradient(var(--fade-dir, 90deg), #000 calc(var(--fade) - 35%), transparent var(--fade)); mask-image: linear-gradient(var(--fade-dir, 90deg), #000 calc(var(--fade) - 35%), transparent var(--fade)); transition: translate .95s cubic-bezier(.65, 0, .35, 1), opacity .7s ease, --fade .95s cubic-bezier(.65, 0, .35, 1); }
+.chapter-cont { display: block; margin-bottom: 14px; font-size: .78rem; font-weight: 700; letter-spacing: .12em; color: var(--muted); }
+.stage {
+  position: sticky; top: calc((100vh - var(--stage-h)) / 2); height: var(--stage-h);
+  display: flex; flex-direction: column; overflow: hidden;
+  border: 1px solid var(--line); border-radius: 24px;
+  background: radial-gradient(rgba(104, 88, 232, .13) 1px, transparent 1.4px) 0 0 / 22px 22px, linear-gradient(160deg, #fff 0%, #fbfaff 100%);
+  box-shadow: 0 28px 70px rgba(27, 31, 69, .1);
+  opacity: 0; transform: translateY(26px) scale(.985);
+  transition: opacity .7s ease, transform .9s cubic-bezier(.2, .7, .2, 1);
+}
+.chapter.seen .stage { opacity: 1; transform: none; }
+.canvas-box { position: relative; flex: 1 1 0; min-height: 0; margin: 10px 10px 0; }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ticks { flex: 0 0 auto; display: flex; justify-content: center; gap: 6px; padding: 10px 0 12px; }
+.tick { width: 22px; height: 3px; border-radius: 3px; background: var(--line); transition: background .35s ease; }
+.tick.on { background: var(--accent); }
+.copy { align-self: center; min-width: 0; }
+.chapter-head { margin-bottom: 20px; }
+.chapter-num { display: block; margin-bottom: 8px; font-size: .86rem; font-weight: 700; letter-spacing: .12em; color: var(--accent); }
+.chapter-title { margin: 0; font-size: clamp(1.9rem, 3vw, 2.7rem); font-weight: 750; line-height: 1.04; letter-spacing: -.04em; }
+.chapter-code { display: inline-block; margin-top: 12px; padding: 4px 10px; border-radius: 8px; font-size: .72rem; overflow-wrap: anywhere; background: color-mix(in srgb, var(--accent) 7%, transparent); color: var(--accent); }
+.beat-text i { font-family: KaTeX_Math, "Cambria Math", "STIX Two Math", "Latin Modern Math", "Times New Roman", serif; font-style: italic; }
+.beat-text i { font-size: 1.08em; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 .12em; font-size: .88em; line-height: 1.15; }
+.frac > :first-child { padding: 0 .25em .12em; border-bottom: 1px solid currentColor; }
+.frac > :last-child { padding: .12em .25em 0; }
+.sqrt { display: inline-block; padding: .06em .12em 0; border-top: 1px solid currentColor; }
+sub, sup { font-size: .7em; line-height: 0; }
+.steps { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.beat { display: grid; grid-template-columns: 3px minmax(0, 1fr); column-gap: 14px; width: 100%; padding: 8px 8px 8px 0; border: 0; background: none; font: inherit; text-align: left; color: var(--ink); cursor: pointer; opacity: .42; transition: opacity .5s ease; }
+.beat:hover, .beat.active, .copy.done .beat { opacity: 1; }
+.beat:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; border-radius: 6px; }
+.beat-bar { display: block; border-radius: 3px; background: var(--line); overflow: hidden; }
+.beat-fill { display: block; height: 100%; background: var(--accent); transform-origin: top center; transform: scaleY(0); }
+.beat.active .beat-fill { transform: scaleY(var(--fill, 0)); }
+.beat.past .beat-fill { transform: scaleY(1); }
+.beat-text { font-size: clamp(1.02rem, 1.25vw, 1.14rem); line-height: 1.45; letter-spacing: -.01em; }
+.mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.rail { position: fixed; right: 20px; top: 50%; z-index: 5; display: none; flex-direction: column; align-items: flex-end; gap: 2px; transform: translateY(-50%); opacity: 0; pointer-events: none; transition: opacity .3s ease; }
+.rail.shown { opacity: 1; pointer-events: auto; }
+.rail-item { display: flex; align-items: center; gap: 10px; height: 22px; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: .78rem; cursor: pointer; }
+.rail-label { opacity: 0; transform: translateX(4px); transition: opacity .2s ease, transform .2s ease; }
+.rail-mark { display: block; width: 14px; height: 3px; border-radius: 3px; background: var(--faint); transition: width .25s ease, background .25s ease; }
+.rail-item:hover .rail-label, .rail-item:focus-visible .rail-label, .rail-item.on .rail-label { opacity: 1; transform: none; }
+.rail-item.on { color: var(--ink); font-weight: 650; }
+.rail-item.on .rail-mark { width: 28px; background: var(--accent); }
+@media (min-width: 1360px) { .rail { display: flex; } }
+@media (max-width: 900px) {
+  :root { --stage-h: min(46svh, 400px); }
+  .page { width: calc(100% - 32px); }
+  .chapter, .chapter.flip { display: block; }
+  .stage-col { display: contents; }
+  .stage { top: 8px; z-index: 2; border-radius: 18px; background: radial-gradient(rgba(104, 88, 232, .13) 1px, transparent 1.4px) 0 0 / 22px 22px, #fff; }
+  .canvas-box { margin: 6px 6px 0; }
+  .ticks { padding: 6px 0 8px; }
+  .copy { margin-top: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage, .beat, .tick, .rail, .rail-label, .rail-mark, .stage-col, .pg, .opening * { transition: none; }
+  .opening-cue i { animation: none; }
+  .stage { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <section class="opening" aria-label="Introduction">
+    <a class="back" href="../#/notes">← Study notes</a>
+    <div class="opening-body">
+      <div class="opening-kicker">Statistics · Clinical trials · AI model testing</div>
+      <h1 class="opening-title">O’Brien–Fleming boundaries</h1>
+      <span class="opening-rule" aria-hidden="true"></span>
+    </div>
+    <ol class="opening-map" aria-label="Chapters"></ol>
+    <div class="opening-cue"><i aria-hidden="true"></i>Scroll to begin · ← → to step through</div>
+  </section>
+  <main id="story" class="story"></main>
+</div>
+
+<script>
+// ===== DRAWING HELPERS (keep these; add more in the content section if needed) =====
+const C = {
+  ink: '#111632', muted: '#626980', dim: '#8a90ad', faint: '#c9cde0',
+  one: '#e4002b', two: '#c08a12', accent: '#1aa3c2', hi: '#6858e8',
+  green: '#0e9f6e', pink: '#d63d8f', surface: '#ffffff', track: 'rgba(17,22,50,0.07)'
+}
+const MONO = "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+const MATH = 'KaTeX_Main, "Cambria Math", "STIX Two Math", "Latin Modern Math", "Times New Roman", serif'
+const TAU = Math.PI * 2
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v))
+const lerp = (a, b, t) => a + (b - a) * t
+const seg = (p, a, b) => clamp((p - a) / (b - a))
+const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+const easeOut = (t) => 1 - Math.pow(1 - t, 3)
+const backOut = (t) => { const c = 1.70158; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2) }
+function rng (seed) {
+  let a = seed >>> 0
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0
+    let t = a
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+let ctx = null
+let W = 0
+let H = 0
+let NARROW = false
+let U = 1
+let GA = 1
+let FONT = 'system-ui, sans-serif'
+let T = 0
+let LIVE = false
+
+const fz = (n) => Math.max(8.5, n * U)
+const cycle = (period, offset = 0) => (T / period + offset) % 1
+const pulse = (period = 1800, offset = 0) => (LIVE ? 0.5 + 0.5 * Math.sin(TAU * cycle(period, offset)) : 1)
+const bob = (seed, amount = 2) => (LIVE ? Math.sin(T / 520 + seed) * amount : 0)
+function A (a = 1) { ctx.globalAlpha = clamp(GA * a) }
+function group (a, fn) {
+  if (a <= 0) return
+  const parent = GA
+  GA = parent * a
+  fn()
+  GA = parent
+}
+function rgba (hex, a) {
+  const n = parseInt(hex.slice(1), 16)
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`
+}
+function txt (s, x, y, o = {}) {
+  const { size = 11, color = C.ink, align = 'left', weight = 500, mono = false, math = false, base = 'middle', alpha = 1 } = o
+  if (math) return drawMath(s, x, y, { size: size * 1.12, color, align, weight, alpha, base })
+  A(alpha)
+  ctx.font = `${weight} ${size}px ${mono ? MONO : FONT}`
+  ctx.fillStyle = color
+  ctx.textAlign = align
+  ctx.textBaseline = base
+  ctx.fillText(s, x, y)
+}
+// Typeset a small maths expression: single letters italic, numbers and longer words upright,
+// `_x` / `^x` (or `_{xy}`) as subscripts and superscripts.
+function mathRuns (s) {
+  const runs = []
+  const push = (t, level) => {
+    const re = /([A-Za-zα-ωΑ-Ω]+)|([^A-Za-zα-ωΑ-Ω]+)/g
+    let m
+    while ((m = re.exec(t))) {
+      if (m[1]) {
+        // A single letter straight after a number and a space is a unit (4 m), so it stays upright.
+        const prev = runs[runs.length - 1]
+        const unit = m[1].length === 1 && prev && prev.level === level && /\d\s$/.test(prev.t)
+        runs.push({ t: m[1], italic: m[1].length < 3 && !unit, level })
+      }
+      else runs.push({ t: m[2], italic: false, level })
+    }
+  }
+  let i = 0
+  while (i < s.length) {
+    const c = s[i]
+    if ((c === '_' || c === '^') && i + 1 < s.length) {
+      const level = c === '_' ? -1 : 1
+      if (s[i + 1] === '{') {
+        const j = s.indexOf('}', i + 2)
+        push(s.slice(i + 2, j < 0 ? s.length : j), level)
+        i = j < 0 ? s.length : j + 1
+      } else {
+        push(s[i + 1], level)
+        i += 2
+      }
+    } else {
+      let j = i
+      while (j < s.length && s[j] !== '_' && s[j] !== '^') j++
+      push(s.slice(i, j), 0)
+      i = j
+    }
+  }
+  return runs
+}
+function drawMath (s, x, y, o) {
+  const runs = mathRuns(s)
+  const fontFor = (r) => `${r.italic ? 'italic ' : ''}${o.weight} ${r.level ? o.size * 0.68 : o.size}px ${MATH}`
+  let total = 0
+  runs.forEach((r) => {
+    ctx.font = fontFor(r)
+    r.w = ctx.measureText(r.t).width + (r.italic && !r.level ? o.size * 0.04 : 0)
+    total += r.w
+  })
+  let cx = o.align === 'center' ? x - total / 2 : o.align === 'right' ? x - total : x
+  A(o.alpha)
+  ctx.fillStyle = o.color
+  ctx.textAlign = 'left'
+  ctx.textBaseline = o.base
+  runs.forEach((r) => {
+    ctx.font = fontFor(r)
+    ctx.fillText(r.t, cx, y + (r.level < 0 ? o.size * 0.3 : r.level > 0 ? -o.size * 0.36 : 0))
+    cx += r.w
+  })
+}
+function measure (s, size, weight = 500, mono = false) {
+  ctx.font = `${weight} ${size}px ${mono ? MONO : FONT}`
+  return ctx.measureText(s).width
+}
+function rr (x, y, w, h, r) {
+  ctx.beginPath()
+  ctx.roundRect(x, y, Math.max(0, w), Math.max(0, h), r)
+}
+function line (x1, y1, x2, y2, color, w = 1, a = 1, dash = null) {
+  A(a)
+  ctx.strokeStyle = color
+  ctx.lineWidth = w
+  if (dash) ctx.setLineDash(dash)
+  ctx.beginPath()
+  ctx.moveTo(x1, y1)
+  ctx.lineTo(x2, y2)
+  ctx.stroke()
+  if (dash) ctx.setLineDash([])
+}
+function dot (x, y, r, color, a = 1) {
+  A(a)
+  ctx.fillStyle = color
+  ctx.beginPath()
+  ctx.arc(x, y, Math.max(0.1, r), 0, TAU)
+  ctx.fill()
+}
+function glow (x, y, r, color, a = 1) {
+  A(a)
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r * 4)
+  g.addColorStop(0, rgba(color, 0.3))
+  g.addColorStop(1, rgba(color, 0))
+  ctx.fillStyle = g
+  ctx.beginPath()
+  ctx.arc(x, y, r * 4, 0, TAU)
+  ctx.fill()
+  dot(x, y, r, color, a)
+  dot(x, y, r * 0.42, '#ffffff', a)
+}
+function softShadow (on) {
+  ctx.shadowColor = on ? 'rgba(27,31,69,0.08)' : 'transparent'
+  ctx.shadowBlur = on ? 14 : 0
+  ctx.shadowOffsetY = on ? 4 : 0
+}
+function panel (x, y, w, h, a = 1, border = C.hi) {
+  A(a)
+  softShadow(true)
+  rr(x, y, w, h, 12)
+  ctx.fillStyle = C.surface
+  ctx.fill()
+  softShadow(false)
+  ctx.strokeStyle = rgba(border, 0.4)
+  ctx.lineWidth = 1
+  ctx.stroke()
+}
+function qb (a, c, b, t) {
+  const u = 1 - t
+  return { x: u * u * a.x + 2 * u * t * c.x + t * t * b.x, y: u * u * a.y + 2 * u * t * c.y + t * t * b.y }
+}
+// A glowing dot with a tail, arcing from a to b as t goes 0..1.
+function flight (a, b, t, color, r = 2.4, lift = 40) {
+  if (t <= 0 || t >= 1.25) return
+  const c = { x: (a.x + b.x) / 2, y: Math.min(a.y, b.y) - lift }
+  for (let k = 6; k >= 0; k--) {
+    const tt = t - k * 0.04
+    if (tt < 0 || tt > 1) continue
+    const q = qb(a, c, b, ease(tt))
+    if (k === 0) glow(q.x, q.y, r, color)
+    else dot(q.x, q.y, r * (1 - k / 9), color, 0.45 * (1 - k / 7))
+  }
+}
+function polyLen (pts) {
+  const L = [0]
+  for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y))
+  return L
+}
+function along (pts, L, t) {
+  const d = clamp(t) * L[L.length - 1]
+  let i = 1
+  while (i < L.length - 1 && L[i] < d) i++
+  const s = (d - L[i - 1]) / ((L[i] - L[i - 1]) || 1)
+  return { x: lerp(pts[i - 1].x, pts[i].x, s), y: lerp(pts[i - 1].y, pts[i].y, s) }
+}
+// Draws a path up to t (0..1) and returns its leading point.
+function tracePath (pts, t, color, width = 2.2, a = 1) {
+  const L = polyLen(pts)
+  const total = L[L.length - 1] || 1
+  for (let s = 1; s < pts.length; s++) {
+    if (t * total < L[s - 1]) break
+    const end = t * total < L[s] ? along(pts, L, t) : pts[s]
+    line(pts[s - 1].x, pts[s - 1].y, end.x, end.y, color, width, a)
+  }
+  return along(pts, L, t)
+}
+// Looping: small dots travelling along a path.
+function runner (pts, offset = 0, color = C.hi, alpha = 1, period = 2600) {
+  if (!LIVE || alpha <= 0 || pts.length < 2) return
+  const L = polyLen(pts)
+  const t = cycle(period, offset)
+  const fade = Math.sin(Math.PI * t) * alpha
+  for (let k = 4; k >= 0; k--) {
+    const tail = t - k * 0.018
+    if (tail < 0) continue
+    const q = along(pts, L, tail)
+    dot(q.x, q.y, k ? 1.5 : 2.8, color, fade * (1 - k / 6))
+  }
+}
+// Looping: an expanding ring.
+function ripple (x, y, r0, r1, color, a = 1, period = 2000, offset = 0) {
+  if (!LIVE || a <= 0) return
+  const t = cycle(period, offset)
+  A(a * (1 - t) * 0.55)
+  ctx.beginPath()
+  ctx.arc(x, y, lerp(r0, r1, t), 0, TAU)
+  ctx.strokeStyle = color
+  ctx.lineWidth = 1.4
+  ctx.stroke()
+}
+function treeLayout (cx, top, w, h, depth = 3) {
+  const lv = []
+  for (let l = 0; l <= depth; l++) {
+    const n = 1 << l
+    lv.push(Array.from({ length: n }, (_, i) => ({ x: cx - w / 2 + (i + 0.5) * w / n, y: top + l * h / depth })))
+  }
+  return lv
+}
+const treePath = (lv, leaf) => lv.map((nodes, l) => nodes[leaf >> (lv.length - 1 - l)])
+function drawTree (lv, a = 1, r = 2.2) {
+  for (let l = 0; l < lv.length - 1; l++) {
+    lv[l].forEach((n, i) => {
+      line(n.x, n.y, lv[l + 1][2 * i].x, lv[l + 1][2 * i].y, C.faint, 1, a)
+      line(n.x, n.y, lv[l + 1][2 * i + 1].x, lv[l + 1][2 * i + 1].y, C.faint, 1, a)
+    })
+  }
+  lv.forEach((nodes) => nodes.forEach((n) => dot(n.x, n.y, r, C.faint, a)))
+}
+// A code listing. `active` is a line index and may be fractional, so the highlight can slide between lines.
+function codeBlock (lines, x, y, w, h, active, a = 1) {
+  panel(x, y, w, h, a, C.faint)
+  const lh = Math.min(fz(22), (h - 20) / lines.length)
+  const longest = Math.max(...lines.map((s) => s.length), 1)
+  const size = Math.min(lh * 0.64, (w - 28) / (longest * 0.62))
+  const top = y + (h - lh * lines.length) / 2
+  const at = clamp(active, 0, lines.length - 1)
+  A(a * 0.1)
+  ctx.fillStyle = C.hi
+  rr(x + 6, top + at * lh, w - 12, lh, 5)
+  ctx.fill()
+  lines.forEach((s, n) => {
+    const on = Math.abs(n - at) < 0.5
+    txt(s, x + 14, top + (n + 0.5) * lh, { size, mono: true, color: on ? C.ink : C.muted, weight: on ? 700 : 500, alpha: a })
+  })
+}
+
+// ===== CONTENT: O'Brien–Fleming group sequential boundaries =====
+// One example trial: 1,000 patients, five equally spaced looks, two-sided alpha = 0.05.
+// Constants for K = 5 are the standard tabulated values (Jennison & Turnbull, 2000).
+// Null-trial counts come from a seeded simulation, so text and drawing always agree.
+
+const K = 5
+const LOOKS = [1, 2, 3, 4, 5]
+const Z_FIX = 1.96
+const C_OBF = 2.040
+const C_POC = 2.413
+const R_OBF = 1.026 // maximum sample size relative to a single test, 90% power
+const R_POC = 1.207
+const OBF = LOOKS.map((k) => C_OBF * Math.sqrt(K / k))
+const SUB = ['₁', '₂', '₃', '₄', '₅']
+
+function Phi (x) {
+  const s = x < 0 ? -1 : 1
+  const z = Math.abs(x) / Math.SQRT2
+  const t = 1 / (1 + 0.3275911 * z)
+  const y = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-z * z)
+  return 0.5 * (1 + s * y)
+}
+const pTwo = (z) => 2 * (1 - Phi(z))
+const fmtP = (p) => (p < 0.0001 ? (NARROW ? `${Math.round(p * 1e6)}e-6` : p.toFixed(6)) : p < 0.01 ? p.toFixed(4) : p.toFixed(3))
+const fmtPText = (p) => (p < 0.0001 ? p.toFixed(6) : p < 0.01 ? p.toFixed(4) : p.toFixed(3))
+const spendOBF = (t) => (t <= 0 ? 0 : 2 - 2 * Phi(Z_FIX / Math.sqrt(t)))
+const spendPOC = (t) => 0.05 * Math.log(1 + (Math.E - 1) * t)
+const fmtA = (a) => (a < 0.0001 ? a.toFixed(5) : a.toPrecision(2))
+const fmtTick = (v) => (v === 0 ? '0' : Math.abs(v) < 1 ? v.toFixed(2) : String(v))
+
+// Our trial: Z at each look until it stops.
+const TRIAL = { z: [1.6, 2.3, 2.75], stop: 2 }
+TRIAL.b = TRIAL.z.map((z, k) => z * Math.sqrt((k + 1) / K))
+
+// 400 trials in which the drug does nothing.
+const SIM = (() => {
+  const r = rng(19791009)
+  const g = () => Math.sqrt(-2 * Math.log(r() + 1e-12)) * Math.cos(TAU * r())
+  const N = 400
+  const paths = []
+  for (let i = 0; i < N; i++) {
+    let s = 0
+    const z = []
+    const b = []
+    for (let k = 1; k <= K; k++) {
+      s += g()
+      z.push(s / Math.sqrt(k))
+      b.push(s / Math.sqrt(K))
+    }
+    const first = (bar) => {
+      for (let k = 0; k < K; k++) if (Math.abs(z[k]) > bar(k)) return k
+      return -1
+    }
+    paths.push({ z, b, naive: first(() => Z_FIX), obf: first((k) => OBF[k]), poc: first(() => C_POC), last: Math.abs(z[K - 1]) > Z_FIX })
+  }
+  const count = (key) => paths.filter((q) => q[key] >= 0).length
+  const byLook = (key) => LOOKS.map((_, k) => paths.filter((q) => q[key] === k).length)
+  const show = Math.max(0, paths.findIndex((q) => q.naive < 0 && Math.max(...q.z.map(Math.abs)) > 1.1))
+  return {
+    N, paths, show,
+    flip: Math.max(0, paths.findIndex((q) => q.naive >= 0 && q.naive <= 2 && q.z[q.naive] > 0 && !q.last)),
+    naive: count('naive'),
+    obf: count('obf'),
+    poc: count('poc'),
+    last: paths.filter((q) => q.last).length,
+    obfByLook: byLook('obf'),
+    pocByLook: byLook('poc')
+  }
+})()
+const pc = (n) => `${(100 * n / SIM.N).toFixed(1)}%`
+
+// ---------- shared chart pieces ----------
+function axes (yMin, yMax, ticks, a = 1, xKind = 'looks', yLabel = 'Z') {
+  const x0 = W * (NARROW ? 0.13 : 0.1)
+  const x1 = W * 0.96
+  const y0 = H * 0.14
+  const y1 = H * 0.8
+  const pos = xKind === 'looks' || xKind === 'days' ? (t) => (t * K - 0.5) / K : (t) => t
+  const X = (t) => lerp(x0, x1, pos(t))
+  const Y = (v) => lerp(y1, y0, (v - yMin) / (yMax - yMin))
+  if (a > 0) {
+    ticks.forEach((v) => {
+      line(x0, Y(v), x1, Y(v), C.faint, 1, a * (v === 0 ? 0.9 : 0.4))
+      txt(fmtTick(v), x0 - 8, Y(v), { size: fz(10), color: C.dim, mono: true, align: 'right', alpha: a })
+    })
+    txt(yLabel, x0, y0 - fz(20), { size: fz(11), color: C.muted, weight: 700, alpha: a })
+    if (xKind === 'percent') {
+      ;[0, 0.25, 0.5, 0.75, 1].forEach((t) => {
+        txt(`${t * 100}%`, X(t), y1 + fz(15), { size: fz(10), color: C.dim, mono: true, align: 'center', alpha: a })
+      })
+      txt('share of patients so far', (x0 + x1) / 2, y1 + fz(34), { size: fz(10.5), color: C.muted, align: 'center', alpha: a })
+    } else {
+      LOOKS.forEach((k) => {
+        line(X(k / K), y0, X(k / K), y1, C.faint, 1, a * 0.4, [3, 4])
+        txt(xKind === 'days' ? (NARROW ? `D${k}` : `Day ${k}`) : (NARROW ? `L${k}` : `Look ${k}`), X(k / K), y1 + fz(15), { size: fz(10.5), color: C.muted, weight: 600, align: 'center', alpha: a })
+      })
+    }
+  }
+  return { x0, x1, y0, y1, X, Y }
+}
+
+function clipTo (ax, fn) {
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(ax.x0, ax.y0 - 4, ax.x1 - ax.x0, ax.y1 - ax.y0 + 8)
+  ctx.clip()
+  fn()
+  ctx.restore()
+}
+
+// A boundary through the five looks. `shown` reveals points 0..5; `shade` fills the stop region above it.
+function boundary (ax, vals, color, shown, a = 1, shade = 0) {
+  const pts = vals.map((v, k) => ({ x: ax.X((k + 1) / K), y: ax.Y(v) }))
+  if (shade > 0) {
+    A(a * shade * 0.08)
+    ctx.fillStyle = color
+    ctx.beginPath()
+    ctx.moveTo(pts[0].x, ax.y0)
+    pts.forEach((q) => ctx.lineTo(q.x, q.y))
+    ctx.lineTo(pts[pts.length - 1].x, ax.y0)
+    ctx.closePath()
+    ctx.fill()
+  }
+  for (let k = 1; k < pts.length; k++) {
+    const t = clamp(shown - k)
+    if (t > 0) line(pts[k - 1].x, pts[k - 1].y, lerp(pts[k - 1].x, pts[k].x, t), lerp(pts[k - 1].y, pts[k].y, t), color, 2, a)
+  }
+  pts.forEach((q, k) => {
+    const t = clamp(shown - k)
+    if (t > 0) glow(q.x, q.y, 3.4, color, a * easeOut(t))
+  })
+  return pts
+}
+
+function chip (s, x, y, color, a = 1, filled = false) {
+  if (a <= 0) return
+  const size = fz(10.5)
+  const w = measure(s, size, 700, true) + 16
+  const h = size + 10
+  A(a)
+  rr(x - w / 2, y - h / 2, w, h, h / 2)
+  ctx.fillStyle = filled ? color : C.surface
+  ctx.fill()
+  ctx.strokeStyle = rgba(color, 0.5)
+  ctx.lineWidth = 1
+  ctx.stroke()
+  txt(s, x, y, { size, mono: true, weight: 700, color: filled ? '#ffffff' : color, align: 'center', alpha: a })
+}
+
+// ---------- 01 · the trial ----------
+function sceneTrial (p) {
+  const gap = W * 0.025
+  const bw = Math.min((W * 0.9 - gap * 4) / 5, H * 0.2)
+  const bh = bw * 2
+  const bx0 = (W - (bw * 5 + gap * 4)) / 2
+  const by = H * 0.13
+  const sp = bw / 10
+  const rad = Math.max(0.9, sp * 0.3)
+  const cx = (j) => bx0 + j * (bw + gap) + bw / 2
+
+  const lg = easeOut(seg(p, 0, 0.15))
+  const ly = H * 0.05
+  txt('new drug', W / 2 - 14, ly, { size: fz(11), color: C.ink, weight: 600, align: 'right', alpha: lg })
+  dot(W / 2 - 22 - measure('new drug', fz(11), 600), ly, 4, C.accent, lg)
+  dot(W / 2 + 18, ly, 4, C.dim, lg)
+  txt('standard care', W / 2 + 28, ly, { size: fz(11), color: C.ink, weight: 600, alpha: lg })
+
+  for (let j = 0; j < K; j++) {
+    const x = bx0 + j * (bw + gap)
+    const start = 0.12 + j * 0.13
+    const f = seg(p, start, start + 0.16)
+    A(lg * 0.6)
+    rr(x - 3, by - 3, bw + 6, bh + 6, 8)
+    ctx.strokeStyle = C.faint
+    ctx.lineWidth = 1
+    ctx.stroke()
+    const shown = Math.floor(200 * f)
+    for (let d = 0; d < shown; d++) {
+      const col = d % 10
+      const row = Math.floor(d / 10)
+      dot(x + (col + 0.5) * sp, by + (row + 0.5) * sp, rad, (col + row) % 2 ? C.dim : C.accent, 0.9)
+    }
+
+    const look = easeOut(seg(p, 1.05 + j * 0.1, 1.3 + j * 0.1))
+    const y = by + bh + 10
+    if (look > 0) {
+      line(x, y, x + bw * look, y, C.hi, 2, look)
+      txt(NARROW ? `L${j + 1}` : `Look ${j + 1}`, cx(j), y + fz(16), { size: fz(12), weight: 700, color: C.hi, align: 'center', alpha: look })
+      txt(`${(j + 1) * 200}${NARROW ? '' : ' pts'}`, cx(j), y + fz(32), { size: fz(10), color: C.dim, mono: true, align: 'center', alpha: look })
+      ripple(cx(j), y, 2, 14, C.hi, look * (1 - seg(p, 2, 2.2)), 2200, j / 5)
+    }
+
+    const zy = y + fz(60)
+    const finalOnly = ease(seg(p, 3.02, 3.3))
+    const zA = easeOut(seg(p, 2.05 + j * 0.08, 2.3 + j * 0.08))
+    const dim = j < K - 1 ? 1 - 0.5 * finalOnly : 1
+    chip(`Z${SUB[j]}`, cx(j), zy, C.hi, zA * dim, j === K - 1 && finalOnly > 0.5)
+    if (finalOnly > 0) {
+      txt(j === K - 1 ? '> 1.96' : '> ?', cx(j), zy + fz(24), { size: fz(11), mono: true, weight: 700, color: j === K - 1 ? C.ink : C.pink, align: 'center', alpha: finalOnly })
+    }
+  }
+}
+
+// ---------- foundations: what Z measures ----------
+// Look 1: 100 patients per group, 61 vs 50 recovered. Look 3: 300 per group, 65% vs 54%.
+// Standard error of the gap: about 7 points at look 1 and about 4 points at look 3.
+const ZEX = { drug: 61, std: 50, gap: 11, se1: 7, se3: 4 }
+const bell = (x) => Math.exp(-0.5 * x * x)
+
+function sceneZ (p) {
+  const toCurve = ease(seg(p, 2, 2.3))
+
+  group(1 - toCurve, () => {
+    const gw = Math.min(W * 0.36, H * 0.5)
+    const sp = gw / 10
+    const appear = easeOut(seg(p, 0, 0.15))
+    const colour = easeOut(seg(p, 1.05, 1.3))
+    ;[[ZEX.drug, C.accent, C.accent, 'New drug'], [ZEX.std, C.dim, C.muted, 'Standard care']].forEach(([rec, col, labelCol, name], g) => {
+      const x0 = W * (g ? 0.74 : 0.26) - gw / 2
+      const y0 = H * 0.17
+      txt(name, x0 + gw / 2, y0 - fz(16), { size: fz(13), weight: 700, color: labelCol, align: 'center', alpha: appear })
+      for (let d = 0; d < 100; d++) {
+        const x = x0 + (d % 10 + 0.5) * sp
+        const y = y0 + (Math.floor(d / 10) + 0.5) * sp
+        const a = easeOut(seg(p, 0.05 + d * 0.0025, 0.12 + d * 0.0025))
+        dot(x, y, sp * 0.3, C.faint, a)
+        if (d < rec) dot(x, y, sp * 0.3, col, a * colour)
+      }
+      txt(`${rec} of 100 recovered`, x0 + gw / 2, y0 + gw + fz(18), { size: fz(12), mono: true, weight: 700, color: C.ink, align: 'center', alpha: colour })
+    })
+    txt(`gap: ${ZEX.drug}% − ${ZEX.std}% = ${ZEX.gap} points`, W / 2, H * 0.9, { size: fz(15), weight: 750, color: C.accent, align: 'center', alpha: easeOut(seg(p, 1.3, 1.5)) })
+  })
+
+  group(toCurve, () => {
+    const x0 = W * 0.06
+    const x1 = W * 0.94
+    const base = H * 0.7
+    const top = H * 0.17
+    const X = (v) => lerp(x0, x1, (v + 22) / 44)
+    const shrink = ease(seg(p, 4.1, 4.5))
+    const se = lerp(ZEX.se1, ZEX.se3, shrink)
+    const peak = (base - top) * 0.55 * (ZEX.se1 / se)
+    const Yc = (v) => base - peak * bell(v / se)
+
+    txt(NARROW ? 'Chance gaps, if the drug does nothing' : 'Gaps that chance alone produces when the drug does nothing', W / 2, H * 0.06, { size: fz(12), color: C.muted, weight: 600, align: 'center' })
+    txt(shrink < 0.5 ? '100 patients per group' : '300 patients per group', x0, H * 0.13, { size: fz(10.5), color: C.dim, mono: true, weight: 600 })
+
+    A(0.1)
+    ctx.fillStyle = C.dim
+    ctx.beginPath()
+    ctx.moveTo(x0, base)
+    for (let i = 0; i <= 120; i++) { const v = -22 + 44 * i / 120; ctx.lineTo(X(v), Yc(v)) }
+    ctx.lineTo(x1, base)
+    ctx.closePath()
+    ctx.fill()
+    A(1)
+    ctx.strokeStyle = C.muted
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    for (let i = 0; i <= 120; i++) {
+      const v = -22 + 44 * i / 120
+      if (i) ctx.lineTo(X(v), Yc(v))
+      else ctx.moveTo(X(v), Yc(v))
+    }
+    ctx.stroke()
+    line(x0, base, x1, base, C.ink, 1, 0.5)
+    ;[-20, -10, 0, 10, 20].forEach((v) => txt(`${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v)}`, X(v), base + fz(14), { size: fz(10), color: C.dim, mono: true, align: 'center' }))
+    txt('gap in points (drug − standard care)', W / 2, base + fz(30), { size: fz(10.5), color: C.muted, align: 'center' })
+
+    // Beat 1: one standard error either side of zero.
+    const seA = easeOut(seg(p, 2.35, 2.6))
+    if (seA > 0) {
+      ;[-1, 1].forEach((s) => line(X(s * se), base, X(s * se), Yc(s * se), C.hi, 1.6, seA, [4, 3]))
+      const by = base - peak * 0.32
+      line(X(-se), by, X(se), by, C.hi, 1.6, seA)
+      txt(`±${Math.round(se)}`, X(0), by - fz(11), { size: fz(12), mono: true, weight: 700, color: C.hi, align: 'center', alpha: seA })
+      txt('standard error', X(0), by + fz(11), { size: fz(10), weight: 600, color: C.hi, align: 'center', alpha: seA })
+    }
+
+    // Beat 2: our gap, counted in standard errors.
+    const obsA = easeOut(seg(p, 3.05, 3.3))
+    if (obsA > 0) {
+      const ox = X(ZEX.gap)
+      line(ox, base, ox, top + fz(4), C.accent, 2.4, obsA)
+      glow(ox, base, 4, C.accent, obsA)
+      txt(`our gap: ${ZEX.gap}`, ox + 8, top + fz(4), { size: fz(12), color: C.accent, weight: 700, alpha: obsA })
+      const cnt = ease(seg(p, 3.3, 3.8))
+      for (let i = 0; i * se < ZEX.gap * cnt; i++) {
+        const a = i * se
+        const b = Math.min((i + 1) * se, ZEX.gap * cnt)
+        line(X(a), base, X(b), base, i % 2 ? C.accent : C.hi, 5, obsA)
+      }
+      const zA = easeOut(seg(p, 3.6, 3.85))
+      txt(`Z = 11 ÷ 7 ≈ 1.6`, W / 2, H * 0.92, { size: fz(17), weight: 750, color: C.hi, align: 'center', alpha: zA * (1 - shrink) })
+      txt(`Z = 11 ÷ 4 = 2.75`, W / 2, H * 0.92, { size: fz(17), weight: 750, color: C.hi, align: 'center', alpha: zA * shrink })
+      ripple(ox, base, 4, 18, C.accent, zA, 2000)
+    }
+  })
+}
+
+// ---------- foundations: false positives and 1.96 ----------
+function sceneFP (p) {
+  const x0 = W * 0.06
+  const x1 = W * 0.94
+  const base = H * 0.72
+  const top = H * 0.17
+  const X = (z) => lerp(x0, x1, (z + 4) / 8)
+  const Yc = (z) => base - (base - top) * bell(z)
+  const curve = (a, b, n = 60) => Array.from({ length: n + 1 }, (_, i) => {
+    const z = lerp(a, b, i / n)
+    return { x: X(z), y: Yc(z) }
+  })
+  const fillArea = (a, b, color, alpha) => {
+    if (alpha <= 0) return
+    A(alpha)
+    ctx.fillStyle = color
+    ctx.beginPath()
+    ctx.moveTo(X(a), base)
+    curve(a, b).forEach((q) => ctx.lineTo(q.x, q.y))
+    ctx.lineTo(X(b), base)
+    ctx.closePath()
+    ctx.fill()
+  }
+
+  txt(NARROW ? 'Z, if the drug does nothing' : 'Where Z lands when the drug does nothing', W / 2, H * 0.06, { size: fz(12), color: C.muted, weight: 600, align: 'center', alpha: easeOut(seg(p, 0, 0.2)) })
+  fillArea(-4, 4, C.dim, 0.1 * seg(p, 0.5, 0.8))
+  tracePath(curve(-4, 4, 120), ease(seg(p, 0.1, 0.7)), C.muted, 2)
+  line(x0, base, x1, base, C.ink, 1, 0.5)
+  ;[-3, -2, -1, 0, 1, 2, 3].forEach((z) => txt(`${z < 0 ? '−' : z > 0 ? '+' : ''}${Math.abs(z)}`, X(z), base + fz(14), { size: fz(10), color: C.dim, mono: true, align: 'center' }))
+  txt('Z', W / 2, base + fz(30), { size: fz(11), color: C.muted, weight: 700, align: 'center' })
+
+  // Beat 1: the tails are false positives.
+  const tail = easeOut(seg(p, 1.1, 1.4)) * (1 - 0.6 * seg(p, 3, 3.2))
+  fillArea(Z_FIX, 4, C.pink, 0.35 * tail)
+  fillArea(-4, -Z_FIX, C.pink, 0.35 * tail)
+  ;[-1, 1].forEach((s) => txt(NARROW ? 'false +' : 'false positive', X(s * 3), base - fz(40), { size: fz(11), color: C.pink, weight: 700, align: 'center', alpha: tail }))
+
+  // Beat 2: the cut-offs.
+  const nums = easeOut(seg(p, 2.05, 2.35))
+  ;[-1, 1].forEach((s) => {
+    line(X(s * Z_FIX), base, X(s * Z_FIX), top - fz(2), C.pink, 1.6, nums, [6, 5])
+    txt(`${s < 0 ? '−' : '+'}1.96`, X(s * Z_FIX), top - fz(12), { size: fz(11.5), color: C.pink, mono: true, weight: 700, align: 'center', alpha: nums })
+    txt('2.5%', X(s * 3), base - fz(20), { size: fz(11), color: C.pink, mono: true, weight: 700, align: 'center', alpha: nums * (1 - 0.6 * seg(p, 3, 3.2)) })
+  })
+  txt('95%', X(0), lerp(base, Yc(0), 0.45), { size: fz(20), weight: 750, color: C.ink, align: 'center', alpha: nums })
+
+  // Beat 3: p-values are tail areas beyond the observed Z.
+  const pv1 = easeOut(seg(p, 3.05, 3.3)) * (1 - seg(p, 3.55, 3.7))
+  const pv2 = easeOut(seg(p, 3.6, 3.85))
+  ;[[1.6, pv1, 0.3], [2.75, pv2, 0.5]].forEach(([z, a, fill]) => {
+    if (a <= 0) return
+    fillArea(z, 4, C.accent, fill * a)
+    fillArea(-4, -z, C.accent, fill * a)
+    line(X(z), base, X(z), lerp(base, top, 0.55), C.accent, 2.2, a)
+    glow(X(z), base, 4, C.accent, a)
+  })
+  txt(`Z = 1.6  →  p = ${pTwo(1.6).toFixed(2)}`, W / 2, H * 0.92, { size: fz(16), weight: 750, color: C.accent, align: 'center', alpha: pv1 })
+  txt(`Z = 2.75  →  p = ${pTwo(2.75).toFixed(3)}`, W / 2, H * 0.92, { size: fz(16), weight: 750, color: C.accent, align: 'center', alpha: pv2 })
+}
+
+// ---------- peeking ----------
+function sceneNull (p) {
+  const ax = axes(-4.2, 4.2, [-4, -2, 0, 2, 4], easeOut(seg(p, 0, 0.15)))
+  const { X, Y } = ax
+  const barA = easeOut(seg(p, 0.05, 0.25))
+  ;[1, -1].forEach((s) => line(ax.x0, Y(s * Z_FIX), ax.x1, Y(s * Z_FIX), C.pink, 1.6, barA, [6, 5]))
+  txt('±1.96', ax.x0 + 6, Y(Z_FIX) - fz(10), { size: fz(10.5), color: C.pink, mono: true, weight: 700, alpha: barA })
+  const pt = (q, k) => ({ x: X((k + 1) / K), y: Y(q.z[k]) })
+
+  const reveal = ease(seg(p, 1.05, 1.55))
+  const finalJudge = seg(p, 1.5, 1.6) * (1 - seg(p, 1.95, 2.05))
+  const scan = seg(p, 2.05, 2.8) * (K - 1)
+  const scanning = p >= 2.05
+  const focusOut = 1 - 0.75 * seg(p, 3, 3.2)
+  const hitAt = (q) => {
+    if (scanning) return q.naive >= 0 && q.naive <= scan + 0.001 ? q.naive : -1
+    return q.last && finalJudge > 0 ? K - 1 : -1
+  }
+
+  clipTo(ax, () => {
+    const manyA = seg(p, 1, 1.1)
+    if (manyA > 0) {
+      const upto = 1 + reveal * (K - 1)
+      A(manyA * 0.13 * focusOut)
+      ctx.strokeStyle = C.muted
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      SIM.paths.forEach((q) => {
+        if (hitAt(q) >= 0) return
+        q.z.forEach((v, k) => {
+          const a = pt(q, k)
+          if (k === 0) { ctx.moveTo(a.x, a.y); return }
+          const t = clamp(upto - k)
+          if (t <= 0) return
+          const b = pt(q, k - 1)
+          ctx.lineTo(lerp(b.x, a.x, t), lerp(b.y, a.y, t))
+        })
+      })
+      ctx.stroke()
+      SIM.paths.forEach((q) => {
+        const h = hitAt(q)
+        if (h < 0) return
+        const pts = q.z.map((_, k) => pt(q, k))
+        tracePath(pts, 1, C.pink, 1.2, manyA * 0.55 * (scanning ? 1 : finalJudge) * focusOut)
+        dot(pts[h].x, pts[h].y, 2.6, C.pink, manyA * (scanning ? 1 : finalJudge) * focusOut)
+      })
+    }
+
+    const one = SIM.paths[SIM.show]
+    const oneA = 1 - 0.75 * seg(p, 1, 1.15)
+    const head = tracePath(one.z.map((_, k) => pt(one, k)), ease(seg(p, 0.2, 0.85)), C.ink, 2.4, oneA)
+    if (p > 0.2 && p < 1) glow(head.x, head.y, 3.2, C.ink, oneA)
+  })
+
+  if (scanning) {
+    const cA = seg(p, 2.05, 2.12) * (1 - seg(p, 2.8, 2.9))
+    const x = X((scan + 1) / K)
+    line(x, ax.y0, x, ax.y1, C.hi, 2, cA)
+  }
+
+  const fl = easeOut(seg(p, 3.05, 3.3))
+  if (fl > 0) {
+    const q = SIM.paths[SIM.flip]
+    const pts = q.z.map((_, k) => pt(q, k))
+    tracePath(pts, ease(seg(p, 3.05, 3.6)), C.pink, 2.6, fl)
+    const c = pts[q.naive]
+    A(fl * (0.55 + 0.45 * pulse(1600)))
+    ctx.beginPath()
+    ctx.arc(c.x, c.y, 9, 0, TAU)
+    ctx.strokeStyle = C.pink
+    ctx.lineWidth = 1.6
+    ctx.stroke()
+    txt(NARROW ? 'stopped' : 'would stop here', c.x, c.y - fz(20), { size: fz(11), color: C.pink, weight: 700, align: 'center', alpha: fl })
+    const e = pts[K - 1]
+    const ea = easeOut(seg(p, 3.5, 3.7))
+    glow(e.x, e.y, 3.6, C.ink, ea)
+    txt(q.z[K - 1].toFixed(2), e.x - 10, e.y - fz(12), { size: fz(11), color: C.ink, mono: true, weight: 700, align: 'right', alpha: ea })
+  }
+
+  const cy = H * 0.94
+  const crossedNow = SIM.paths.filter((q) => q.naive >= 0 && q.naive <= scan + 0.001).length
+  const lastA = finalJudge
+  const anyA = seg(p, 2.05, 2.15)
+  txt(`${SIM.last} of ${SIM.N} end beyond ±1.96 (${pc(SIM.last)})`, W / 2, cy, { size: fz(13), weight: 700, color: C.ink, align: 'center', alpha: lastA })
+  txt(`${crossedNow} of ${SIM.N} beyond ±1.96 at some look (${pc(crossedNow)})`, W / 2, cy, { size: fz(13), weight: 700, color: C.pink, align: 'center', alpha: anyA * (1 - 0.6 * seg(p, 3, 3.2)) })
+}
+
+// ---------- 03 · the boundary ----------
+function sceneBoundary (p) {
+  const ax = axes(0, 5.2, [0, 1, 2, 3, 4, 5], easeOut(seg(p, 0, 0.15)))
+  const { X, Y } = ax
+  const fixA = easeOut(seg(p, 0.05, 0.2))
+  line(ax.x0, Y(Z_FIX), ax.x1, Y(Z_FIX), C.dim, 1.4, fixA * 0.8, [6, 5])
+  txt('1.96', ax.x0 + 6, Y(Z_FIX) + fz(11), { size: fz(10), color: C.dim, mono: true, alpha: fixA })
+
+  const shown = 5 * ease(seg(p, 0.2, 0.8))
+  const pts = boundary(ax, OBF, C.hi, shown, 1, seg(p, 1.05, 1.3))
+  txt(NARROW ? 'stop' : 'stop for benefit', X(0.8), Y(4.7), { size: fz(11), color: C.hi, weight: 700, align: 'center', alpha: easeOut(seg(p, 1.1, 1.3)) })
+
+  const fA = easeOut(seg(p, 2.02, 2.25))
+  txt(`b = ${C_OBF.toFixed(3)} × √(5 / k)`, W / 2, H * 0.055, { size: fz(15), color: C.hi, math: true, weight: 500, align: 'center', alpha: fA })
+  pts.forEach((q, k) => {
+    const a = easeOut(seg(p, 2.25 + k * 0.1, 2.45 + k * 0.1))
+    txt(OBF[k].toFixed(2), q.x + 10, q.y - fz(12), { size: fz(11.5), color: C.ink, mono: true, weight: 700, alpha: a })
+    if (a > 0 && a < 1) ripple(q.x, q.y, 3, 16, C.hi, 1)
+    const pa = easeOut(seg(p, 3.05 + k * 0.1, 3.3 + k * 0.1))
+    txt(`${NARROW ? '' : 'p < '}${fmtP(pTwo(OBF[k]))}`, q.x, ax.y1 + fz(34), { size: fz(NARROW ? 9 : 10), color: C.pink, mono: true, weight: 700, align: 'center', alpha: pa })
+  })
+}
+
+// ---------- 04 · our trial ----------
+function sceneOurs (p) {
+  const ax = axes(0, 5.2, [0, 1, 2, 3, 4, 5])
+  const { X, Y } = ax
+  const naiveFlash = seg(p, 1.3, 1.45) * (1 - seg(p, 1.9, 2.05))
+  line(ax.x0, Y(Z_FIX), ax.x1, Y(Z_FIX), naiveFlash > 0.02 ? C.pink : C.dim, 1.4 + naiveFlash, 0.8, [6, 5])
+  txt('1.96', ax.x0 + 6, Y(Z_FIX) + fz(11), { size: fz(10), color: C.dim, mono: true })
+
+  const after = ease(seg(p, 2.45, 2.75))
+  const pts = boundary(ax, OBF, C.hi, 5, 1, 1)
+  // Looks after the stop are not needed.
+  if (after > 0) {
+    A(after * 0.75)
+    ctx.fillStyle = C.surface
+    ctx.fillRect(X(3.5 / K), ax.y0 - 2, ax.x1 - X(3.5 / K), ax.y1 - ax.y0 + 4)
+    txt(NARROW ? 'not needed' : '400 patients not needed', X(4.5 / K), Y(1), { size: fz(11.5), color: C.muted, weight: 700, align: 'center', alpha: after })
+  }
+
+  const tp = TRIAL.z.map((z, k) => ({ x: X((k + 1) / K), y: Y(z) }))
+  TRIAL.z.forEach((z, k) => {
+    const a = easeOut(seg(p, k + 0.1, k + 0.35))
+    if (a <= 0) return
+    if (k > 0) {
+      const t = ease(seg(p, k + 0.05, k + 0.3))
+      line(tp[k - 1].x, tp[k - 1].y, lerp(tp[k - 1].x, tp[k].x, t), lerp(tp[k - 1].y, tp[k].y, t), C.accent, 2.4)
+    }
+    glow(tp[k].x, tp[k].y, 4, C.accent, a)
+    txt(z.toFixed(2), tp[k].x - 10, tp[k].y + (k === TRIAL.stop ? -fz(4) : 0), { size: fz(12), color: C.accent, mono: true, weight: 700, align: 'right', alpha: a })
+    txt(OBF[k].toFixed(2), pts[k].x + 10, pts[k].y + (k === TRIAL.stop ? fz(6) : 0), { size: fz(11), color: C.hi, mono: true, weight: 700, alpha: a })
+    const v = easeOut(seg(p, k + 0.45, k + 0.6))
+    const stop = k === TRIAL.stop
+    chip(stop ? 'stop' : 'continue', tp[k].x, Math.max(tp[k].y, pts[k].y) + fz(stop ? 34 : 28), stop ? C.green : C.muted, v, stop)
+    if (stop) ripple(tp[k].x, tp[k].y, 4, 22, C.green, v, 1800)
+  })
+
+  if (naiveFlash > 0) {
+    A(naiveFlash)
+    ctx.beginPath()
+    ctx.arc(tp[1].x, tp[1].y, 10, 0, TAU)
+    ctx.strokeStyle = C.pink
+    ctx.lineWidth = 1.6
+    ctx.stroke()
+    txt(NARROW ? 'naive: stop' : 'a naive test stops here', tp[1].x, Y(Z_FIX) + fz(14), { size: fz(10.5), color: C.pink, weight: 700, align: 'center', alpha: naiveFlash })
+  }
+
+  txt(`stopped at look 3 · ${600} of 1,000 patients`, W / 2, H * 0.94, { size: fz(13), color: C.green, weight: 700, align: 'center', alpha: easeOut(seg(p, 2.6, 2.85)) })
+}
+
+// ---------- 05 · why that shape ----------
+function sceneB (p) {
+  const ax = axes(-2.6, 3.2, [-2, -1, 0, 1, 2, 3], easeOut(seg(p, 0, 0.15)), 't', 'B  (running total)')
+  const { X, Y } = ax
+  const reveal = ease(seg(p, 0.15, 0.8))
+  const nullA = 1 - 0.7 * seg(p, 4, 4.2)
+
+  clipTo(ax, () => {
+    // fan: ±1.96·√t
+    const fanA = easeOut(seg(p, 1.05, 1.35)) * nullA
+    if (fanA > 0) {
+      A(fanA * 0.06)
+      ctx.fillStyle = C.ink
+      ctx.beginPath()
+      for (let i = 0; i <= 40; i++) ctx.lineTo(X(i / 40), Y(1.96 * Math.sqrt(i / 40)))
+      for (let i = 40; i >= 0; i--) ctx.lineTo(X(i / 40), Y(-1.96 * Math.sqrt(i / 40)))
+      ctx.fill()
+    }
+    A(0.12 * nullA * seg(p, 0.1, 0.2))
+    ctx.strokeStyle = C.muted
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    const upto = reveal * K
+    SIM.paths.forEach((q) => {
+      ctx.moveTo(X(0), Y(0))
+      for (let k = 0; k < K; k++) {
+        if (upto <= k) break
+        const t = clamp(upto - k)
+        const from = k ? q.b[k - 1] : 0
+        ctx.lineTo(X((k + t) / K), Y(lerp(from, q.b[k], t)))
+      }
+    })
+    ctx.stroke()
+
+    // the fixed 1.96 test on this scale is a rising curve
+    const curveA = easeOut(seg(p, 3.05, 3.35))
+    if (curveA > 0) {
+      const pts = Array.from({ length: 41 }, (_, i) => ({ x: X(i / 40), y: Y(1.96 * Math.sqrt(i / 40)) }))
+      ctx.setLineDash([6, 5])
+      tracePath(pts, ease(seg(p, 3.05, 3.5)), C.pink, 2, curveA * (1 - 0.6 * seg(p, 4, 4.2)))
+      ctx.setLineDash([])
+      LOOKS.forEach((k) => dot(X(k / K), Y(1.96 * Math.sqrt(k / K)), 3, C.pink, curveA * seg(p, 3.3 + k * 0.05, 3.4 + k * 0.05)))
+    }
+  })
+
+  // O'Brien–Fleming on this scale: flat at C
+  const flat = ease(seg(p, 2.05, 2.5))
+  if (flat > 0) {
+    line(X(1 / K), Y(C_OBF), lerp(X(1 / K), X(1), flat), Y(C_OBF), C.hi, 2.4)
+    LOOKS.forEach((k) => {
+      if (flat >= (k - 1) / (K - 1) - 0.001) glow(X(k / K), Y(C_OBF), 3.4, C.hi)
+    })
+    txt(`${C_OBF.toFixed(3)} at every look`, X(0.2), Y(C_OBF) - fz(14), { size: fz(11), color: C.hi, mono: true, weight: 700, alpha: easeOut(seg(p, 2.3, 2.5)) })
+  }
+  txt(NARROW ? '1.96 · √t' : 'fixed 1.96 test', X(0.2), Y(1.96 * Math.sqrt(0.2)) + fz(16), { size: fz(10.5), color: C.pink, weight: 700, alpha: easeOut(seg(p, 3.3, 3.5)) })
+
+  // our trial
+  const ours = [{ x: X(0), y: Y(0) }, ...TRIAL.b.map((b, k) => ({ x: X((k + 1) / K), y: Y(b) }))]
+  const tA = easeOut(seg(p, 4.05, 4.2))
+  if (tA > 0) {
+    const t = ease(seg(p, 4.1, 4.7))
+    const head = tracePath(ours, t, C.accent, 2.6, tA)
+    glow(head.x, head.y, 4, C.accent, tA)
+    const lA = easeOut(seg(p, 4.6, 4.8))
+    txt(TRIAL.b[TRIAL.stop].toFixed(2), ours[3].x - 10, ours[3].y - fz(4), { size: fz(12), color: C.accent, mono: true, weight: 700, align: 'right', alpha: lA })
+    ripple(ours[3].x, ours[3].y, 4, 20, C.green, lA)
+  }
+}
+
+// ---------- 06 · against Pocock ----------
+function scenePocock (p) {
+  const toBars = ease(seg(p, 2, 2.3))
+
+  group(1 - toBars, () => {
+    const ax = axes(0, 5.2, [0, 1, 2, 3, 4, 5])
+    const { X, Y } = ax
+    line(ax.x0, Y(Z_FIX), ax.x1, Y(Z_FIX), C.dim, 1.2, 0.6, [6, 5])
+    boundary(ax, OBF, C.hi, 5, 1)
+    const poc = boundary(ax, LOOKS.map(() => C_POC), C.two, 5 * ease(seg(p, 0.1, 0.6)), 1)
+    const lA = easeOut(seg(p, 0.5, 0.7))
+    txt(`Pocock ${C_POC.toFixed(3)}`, poc[0].x - 6, poc[0].y - fz(14), { size: fz(11), color: C.two, mono: true, weight: 700, alpha: lA })
+    txt('O’Brien–Fleming', X(1 / K) + 12, Y(OBF[0]), { size: fz(11), color: C.hi, weight: 700, alpha: lA })
+    const endA = easeOut(seg(p, 0.6, 0.85))
+    txt(C_OBF.toFixed(2), X(1) + 8, Y(C_OBF) + fz(9), { size: fz(10.5), color: C.hi, mono: true, weight: 700, alpha: endA })
+
+    // where the false positives land, one dot per null trial that stopped
+    const s = Math.max(3.4, 5 * U)
+    LOOKS.forEach((k) => {
+      const x = X(k / K)
+      ;[[SIM.obfByLook, C.hi, -1], [SIM.pocByLook, C.two, 1]].forEach(([counts, col, side]) => {
+        for (let d = 0; d < counts[k - 1]; d++) {
+          const a = easeOut(seg(p, 1.1 + k * 0.08 + d * 0.015, 1.3 + k * 0.08 + d * 0.015))
+          dot(x + side * s * 0.9, ax.y1 - s * 0.8 - d * s * 1.6, s * 0.55, col, a)
+        }
+      })
+    })
+    const cA = easeOut(seg(p, 1.5, 1.75))
+    txt(`O’Brien–Fleming ${SIM.obf}/${SIM.N}`, W * 0.3, H * 0.94, { size: fz(12), color: C.hi, weight: 700, align: 'center', alpha: cA })
+    txt(`Pocock ${SIM.poc}/${SIM.N}`, W * 0.72, H * 0.94, { size: fz(12), color: C.two, weight: 700, align: 'center', alpha: cA })
+  })
+
+  group(toBars, () => {
+    txt(NARROW ? 'Max patients, 90% power' : 'Maximum patients needed for 90% power', W / 2, H * 0.1, { size: fz(15), weight: 750, align: 'center' })
+    const rows = [
+      ['Single test', 1, C.dim],
+      ['O’Brien–Fleming', R_OBF, C.hi],
+      ['Pocock', R_POC, C.two]
+    ]
+    const x0 = W * (NARROW ? 0.08 : 0.26)
+    const x1 = W * 0.9
+    const scale = (x1 - x0) / 1.55
+    rows.forEach(([name, r, col], i) => {
+      const y = H * (0.3 + i * 0.2)
+      const f = ease(seg(p, 2.25 + i * 0.12, 2.6 + i * 0.12))
+      if (NARROW) txt(name, x0, y - fz(18), { size: fz(12), weight: 700, color: col })
+      else txt(name, x0 - 14, y, { size: fz(13), weight: 700, color: col, align: 'right' })
+      A(1)
+      ctx.fillStyle = C.track
+      rr(x0, y - 9, x1 - x0, 18, 9)
+      ctx.fill()
+      A(0.9)
+      ctx.fillStyle = col
+      rr(x0, y - 9, scale * r * f, 18, 9)
+      ctx.fill()
+      runner([{ x: x0, y }, { x: x0 + scale * r * f, y }], i * 0.3, '#ffffff', f, 2400)
+      const label = r === 1 ? '1,000' : `${Math.round(1000 * r).toLocaleString('en')}  (+${((r - 1) * 100).toFixed(1)}%)`
+      txt(label, x0 + scale * r * f + 10, y, { size: fz(11.5), mono: true, weight: 700, color: C.ink, alpha: easeOut(seg(f, 0.8, 1)) })
+    })
+    const hl = easeOut(seg(p, 3.05, 3.3))
+    if (hl > 0) {
+      const y = H * 0.5
+      A(hl * (0.55 + 0.45 * pulse(1600)))
+      rr(x0 - 6, y - 15, scale * R_OBF + 12, 30, 15)
+      ctx.strokeStyle = C.hi
+      ctx.lineWidth = 1.8
+      ctx.stroke()
+      txt(NARROW ? 'common default' : 'the common default', W / 2, H * 0.9, { size: fz(14), weight: 750, color: C.hi, align: 'center', alpha: hl })
+    }
+  })
+}
+
+// ---------- 07 · spending functions ----------
+function sceneSpend (p) {
+  const ax = axes(0, 0.055, [0, 0.01, 0.02, 0.03, 0.04, 0.05], easeOut(seg(p, 0, 0.15)), 'percent', 'α spent so far')
+  const { X, Y } = ax
+  const curve = (f) => Array.from({ length: 81 }, (_, i) => ({ x: X(i / 80), y: Y(f(i / 80)) }))
+  line(ax.x0, Y(0.05), ax.x1, Y(0.05), C.dim, 1.2, easeOut(seg(p, 0.05, 0.2)) * 0.7, [6, 5])
+  txt('budget 0.05', ax.x0 + 6, Y(0.05) - fz(10), { size: fz(10), color: C.dim, mono: true, alpha: easeOut(seg(p, 0.05, 0.2)) })
+
+  const pocA = easeOut(seg(p, 1.55, 1.8))
+  if (pocA > 0) {
+    ctx.setLineDash([6, 5])
+    tracePath(curve(spendPOC), ease(seg(p, 1.55, 2)), C.two, 2, pocA)
+    ctx.setLineDash([])
+    txt('Pocock-type', X(0.3), Y(spendPOC(0.3)) - fz(14), { size: fz(11), color: C.two, weight: 700, align: 'right', alpha: pocA })
+  }
+  const head = tracePath(curve(spendOBF), ease(seg(p, 0.2, 0.9)), C.hi, 2.6)
+  if (p < 0.95) glow(head.x, head.y, 3.4, C.hi)
+  txt('O’Brien–Fleming-type', X(0.97), Y(0.05) + fz(26), { size: fz(11), color: C.hi, weight: 700, align: 'right', alpha: easeOut(seg(p, 0.8, 1)) })
+
+  ;[0.2, 0.5].forEach((t, i) => {
+    const a = easeOut(seg(p, 1.05 + i * 0.2, 1.3 + i * 0.2)) * (1 - seg(p, 2, 2.15))
+    const q = { x: X(t), y: Y(spendOBF(t)) }
+    line(q.x, ax.y1, q.x, q.y, C.hi, 1, a * 0.6, [3, 3])
+    glow(q.x, q.y, 3.4, C.hi, a)
+    txt(fmtA(spendOBF(t)), q.x, q.y - fz(14), { size: fz(11), color: C.ink, mono: true, weight: 700, align: 'center', alpha: a })
+  })
+
+  // Looks at uneven, unplanned times: each spends the increment since the last.
+  const looks = [0.35, 0.6, 1]
+  looks.forEach((t, i) => {
+    const a = easeOut(seg(p, 2.1 + i * 0.18, 2.35 + i * 0.18))
+    if (a <= 0) return
+    const prev = i ? spendOBF(looks[i - 1]) : 0
+    const now = spendOBF(t)
+    const x = X(t)
+    line(x, ax.y1, x, Y(now), C.green, 1.4, a * 0.7)
+    A(a * 0.85)
+    ctx.fillStyle = C.green
+    rr(x - 4, Y(now), 8, Math.max(2, Y(prev) - Y(now)), 3)
+    ctx.fill()
+    txt(`+${fmtA(now - prev)}`, x - 9, (Y(now) + Y(prev)) / 2, { size: fz(10.5), color: C.green, mono: true, weight: 700, align: 'right', alpha: a })
+    ripple(x, Y(now), 3, 16, C.green, a, 2000, i / 3)
+  })
+}
+
+// ---------- application: A/B testing an AI model ----------
+// 2,000 conversations per model per day. The current model is rated helpful 70% of the time;
+// `gaps` is the new model's lead after each day. Z uses the usual two-proportion standard error.
+const AB = (() => {
+  const pA = 0.7
+  const gaps = [0.03, 0.021, 0.019, 0.02]
+  const z = gaps.map((g, k) => {
+    const n = 2000 * (k + 1)
+    const pB = pA + g
+    return g / Math.sqrt((pA * (1 - pA) + pB * (1 - pB)) / n)
+  })
+  return { pA, gaps, z, stop: 3 }
+})()
+const ROUTE = [1, 0, 1, 1, 0, 1, 0, 0]
+
+function sceneAI (p) {
+  const toChart = ease(seg(p, 2, 2.3))
+
+  group(1 - toChart, () => {
+    const src = { x: W * 0.14, y: H * 0.3 }
+    const sw = W * 0.18
+    const sh = H * 0.13
+    const pw = W * 0.42
+    const ph = H * 0.17
+    const px = W * 0.52
+    const panels = [
+      { y: H * 0.08, name: 'Current model', col: C.dim, label: C.muted, rate: AB.pA },
+      { y: H * 0.35, name: 'New model', col: C.accent, label: C.accent, rate: AB.pA + AB.gaps[0] }
+    ]
+    const appear = easeOut(seg(p, 0, 0.2))
+    panel(src.x - sw / 2, src.y - sh / 2, sw, sh, appear, C.hi)
+    txt(NARROW ? 'chats' : 'conversations', src.x, src.y, { size: fz(11.5), weight: 700, color: C.hi, align: 'center', alpha: appear })
+
+    panels.forEach((q, g) => {
+      const a = easeOut(seg(p, 0.15 + g * 0.1, 0.4 + g * 0.1))
+      panel(px, q.y, pw, ph, a, q.col)
+      txt(q.name, px + 12, q.y + fz(16), { size: fz(12), weight: 700, color: q.label, alpha: a })
+      // One dot per rated answer: filled means the user rated it helpful.
+      const n = 20
+      const sp = (pw - 24) / n
+      const res = easeOut(seg(p, 0.5 + g * 0.1, 0.8 + g * 0.1))
+      for (let d = 0; d < n; d++) {
+        const helpful = (d * 7 + g * 3) % 20 < Math.round(q.rate * 20)
+        dot(px + 12 + (d + 0.5) * sp, q.y + ph * 0.68, Math.min(sp * 0.32, 4), helpful ? q.col : C.faint, a * res)
+      }
+    })
+    txt(NARROW ? 'filled = helpful' : 'filled = rated helpful', px + pw, H * 0.57, { size: fz(10), color: C.dim, align: 'right', alpha: easeOut(seg(p, 0.7, 0.9)) })
+    if (LIVE) {
+      ROUTE.forEach((g, i) => {
+        const t = cycle(2600, i / ROUTE.length) * 1.2
+        flight({ x: src.x + sw / 2, y: src.y }, { x: px, y: panels[g].y + ph / 2 }, t, g ? C.accent : C.muted, 2.2, 8)
+      })
+    }
+
+    const rows = [['patient', 'conversation'], ['recovered', 'rated helpful'], ['new drug', 'new model']]
+    rows.forEach(([from, to], i) => {
+      const a = easeOut(seg(p, 1.1 + i * 0.15, 1.35 + i * 0.15))
+      const y = H * (0.66 + i * 0.1)
+      txt(from, W * 0.45, y, { size: fz(13), color: C.muted, align: 'right', alpha: a })
+      txt('→', W * 0.5, y, { size: fz(14), color: C.hi, weight: 700, align: 'center', alpha: a })
+      txt(to, W * 0.55, y, { size: fz(13), color: C.ink, weight: 700, alpha: a })
+    })
+    txt(NARROW ? '20,000 chats · 5 days' : 'plan: 20,000 conversations over 5 days', W / 2, H * 0.96, { size: fz(11), color: C.hi, mono: true, weight: 700, align: 'center', alpha: easeOut(seg(p, 1.6, 1.8)) })
+  })
+
+  group(toChart, () => {
+    const ax = axes(-5.2, 5.2, [-4, -2, 0, 2, 4], 1, 'days')
+    const { X, Y } = ax
+    txt(NARROW ? 'Z, new vs current' : 'Z for the new model against the current one', W / 2, H * 0.055, { size: fz(12), color: C.muted, weight: 600, align: 'center' })
+
+    // Beat 2: the tempting daily check at 1.96.
+    const naiveA = easeOut(seg(p, 2.25, 2.45)) * (1 - 0.65 * seg(p, 3, 3.2))
+    ;[1, -1].forEach((s) => line(ax.x0, Y(s * Z_FIX), ax.x1, Y(s * Z_FIX), C.pink, 1.4, naiveA, [6, 5]))
+    txt('±1.96', ax.x0 + 6, Y(Z_FIX) - fz(10), { size: fz(10), color: C.pink, mono: true, weight: 700, alpha: naiveA })
+
+    // Beat 3: the O’Brien–Fleming plan.
+    const up = boundary(ax, OBF, C.hi, 5 * ease(seg(p, 3.05, 3.4)), 1, seg(p, 3.3, 3.5))
+    txt(NARROW ? 'ship' : 'ship: new model better', X(0.8), Y(4.7), { size: fz(11), color: C.hi, weight: 700, align: 'center', alpha: easeOut(seg(p, 3.35, 3.5)) })
+    up.slice(0, 3).forEach((q, k) => {
+      txt(OBF[k].toFixed(2), q.x + 10, q.y, { size: fz(10.5), color: C.hi, mono: true, weight: 700, alpha: easeOut(seg(p, 3.4 + k * 0.1, 3.55 + k * 0.1)) })
+    })
+
+    const pts = AB.z.map((z, k) => ({ x: X((k + 1) / K), y: Y(z) }))
+    const appearAt = [2.3, 3.5, 3.75, 4.1]
+    pts.forEach((q, k) => {
+      const a = easeOut(seg(p, appearAt[k], appearAt[k] + 0.2))
+      if (a <= 0) return
+      if (k > 0) {
+        const t = ease(seg(p, appearAt[k] - 0.05, appearAt[k] + 0.15))
+        line(pts[k - 1].x, pts[k - 1].y, lerp(pts[k - 1].x, q.x, t), lerp(pts[k - 1].y, q.y, t), C.accent, 2.4)
+      }
+      glow(q.x, q.y, 4, C.accent, a)
+      txt(AB.z[k].toFixed(2), q.x - 10, q.y + (k === AB.stop ? -fz(5) : 0), { size: fz(11.5), color: C.accent, mono: true, weight: 700, align: 'right', alpha: a })
+    })
+    chip('ship?', pts[0].x, pts[0].y - fz(24), C.pink, easeOut(seg(p, 2.5, 2.7)) * (1 - seg(p, 3.2, 3.4)))
+
+    // Beat 4: the planned stop on day 4; day 5 is never needed.
+    const stopA = easeOut(seg(p, 4.3, 4.5))
+    if (stopA > 0) {
+      const after = ease(seg(p, 4.45, 4.7))
+      A(after * 0.75)
+      ctx.fillStyle = C.surface
+      ctx.fillRect(X(4.5 / K), ax.y0 - 2, ax.x1 - X(4.5 / K), ax.y1 - ax.y0 + 4)
+      txt(OBF[AB.stop].toFixed(2), up[AB.stop].x + 10, up[AB.stop].y + fz(7), { size: fz(10.5), color: C.hi, mono: true, weight: 700, alpha: stopA })
+      chip('ship', pts[AB.stop].x, up[AB.stop].y + fz(30), C.green, stopA, true)
+      ripple(pts[AB.stop].x, pts[AB.stop].y, 4, 22, C.green, stopA, 1800)
+    }
+
+    // Beat 5: the mirror-image bar rolls back a worse model.
+    const lowA = seg(p, 5.05, 5.4)
+    if (lowA > 0) {
+      const lo = OBF.map((v, k) => ({ x: X((k + 1) / K), y: Y(-v) }))
+      A(0.08 * seg(p, 5.3, 5.5))
+      ctx.fillStyle = C.pink
+      ctx.beginPath()
+      ctx.moveTo(lo[0].x, ax.y1)
+      lo.forEach((q) => ctx.lineTo(q.x, q.y))
+      ctx.lineTo(lo[lo.length - 1].x, ax.y1)
+      ctx.closePath()
+      ctx.fill()
+      boundary(ax, OBF.map((v) => -v), C.pink, 5 * ease(lowA), 1)
+      txt(NARROW ? 'roll back' : 'roll back: new model worse', X(0.8), Y(-4.7), { size: fz(11), color: C.pink, weight: 700, align: 'center', alpha: easeOut(seg(p, 5.3, 5.5)) })
+    }
+  })
+}
+
+
+const SCENES = [
+  {
+    short: 'Z-scores',
+    title: 'Measuring the gap: the Z-score',
+    formula: String.raw`Z = \dfrac{\hat{p}_{\text{drug}} - \hat{p}_{\text{std}}}{\mathrm{SE}}`,
+    where: [
+      [String.raw`\hat{p}_{\text{drug}},\ \hat{p}_{\text{std}}`, String.raw`the share of patients who recovered in each group`],
+      [String.raw`\mathrm{SE}`, String.raw`the standard error: how far chance alone typically moves the gap`]
+    ],
+    draw: sceneZ,
+    beats: [
+      { text: 'A trial is testing a new drug against standard care in 1,000 patients, split at random into two equal groups. Here are the first 100 patients in each group.' },
+      { text: `${ZEX.drug} recovered on the new drug and ${ZEX.std} on standard care, so the drug is ahead by ${ZEX.gap} percentage points. Is that gap real, or just luck?` },
+      { text: 'Even a drug that does nothing would rarely tie exactly, because patients vary. With 100 per group, chance alone typically moves the gap about 7 points either way. That typical chance wobble is called the standard error.' },
+      { text: 'The Z-score measures the gap in standard errors: <i>Z</i> = 11 ÷ 7 ≈ 1.6. So the gap is 1.6 times the typical chance wobble, which is something chance produces fairly often.' },
+      { text: 'More patients means less wobble. Once 300 patients in each group have results, the gap is still 11 points (65% against 54%), but the standard error is about 4. <i>Z</i> = 11 ÷ 4 = 2.75, so the same gap is far more convincing.' }
+    ]
+  },
+  {
+    short: '1.96',
+    title: 'False positives and 1.96',
+    formula: String.raw`P\bigl(|Z| > 1.96 \mid H_{0}\bigr) = 0.05 = \alpha`,
+    where: [
+      [String.raw`H_{0}`, String.raw`the null hypothesis: the drug does nothing`],
+      [String.raw`\alpha`, String.raw`the false positive risk the trial accepts`]
+    ],
+    draw: sceneFP,
+    beats: [
+      { text: 'Suppose the drug truly does nothing, which statisticians call the null hypothesis. If the trial were repeated many times, <i>Z</i> would land somewhere on this bell curve each time: usually near zero, occasionally far out.' },
+      { text: 'When <i>Z</i> lands far out, the trial declares that the drug has an effect, even though it has none. That mistake is a false positive. Trials normally accept a 5% chance of making it.' },
+      { text: '95% of the curve lies between −1.96 and +1.96, leaving 2.5% in each tail. Both tails count, because the drug could look harmful by chance too. That 5% risk is called alpha (<i>α</i>).' },
+      { text: `A p-value is the share of the curve at least as far from zero as the observed <i>Z</i>. The two Z-scores from the last chapter give p = ${pTwo(1.6).toFixed(2)} for <i>Z</i> = 1.6, which is not convincing, and p = ${pTwo(2.75).toFixed(3)} for <i>Z</i> = 2.75, well under 0.05.` }
+    ]
+  },
+  {
+    short: 'Looks',
+    title: 'Looking at the results early',
+    formula: String.raw`Z_{k}, \quad k = 1, \dots, K, \qquad K = 5`,
+    where: [
+      [String.raw`Z_{k}`, String.raw`the Z-score at look $k$, using every patient so far`],
+      [String.raw`K`, String.raw`the number of looks, one after every 200 patients`]
+    ],
+    draw: sceneTrial,
+    beats: [
+      { text: 'The trial’s 1,000 patients do not all arrive at once. They join in five batches of 200, over many months.' },
+      { text: 'Rather than waiting until the end, the trial pauses after each batch and analyses the results so far: it counts recoveries in each group and works out <i>Z</i>, as in the first chapter. Each of these pauses is called a look, so this trial has five looks.' },
+      { text: 'Looking early matters. If the drug is clearly better, or clearly harmful, it is unfair to keep giving patients the worse treatment. Each look produces its own Z-score, numbered <i>Z</i><sub>1</sub> to <i>Z</i><sub>5</sub>.' },
+      { text: 'With a single look at the end, the rule from the last chapter applies: declare an effect if <i>Z</i><sub>5</sub> is beyond ±1.96. The question is what bar the four earlier looks should use.' }
+    ]
+  },
+  {
+    short: 'Peeking',
+    title: 'Why peeking is a problem',
+    formula: String.raw`P\Bigl(\max_{k \le 5} |Z_{k}| > 1.96 \;\Big|\; H_{0}\Bigr) \approx 0.14`,
+    where: [
+      [String.raw`\max_{k \le 5} |Z_{k}|`, String.raw`the furthest from zero $Z$ gets at any of the five looks`],
+      [String.raw`H_{0}`, String.raw`the drug does nothing`]
+    ],
+    draw: sceneNull,
+    beats: [
+      { text: 'Back to a drug that does nothing, now followed across all five looks. Its <i>Z</i> wanders from look to look. Each look reuses all the earlier patients, so <i>Z</i> drifts rather than jumps.' },
+      { text: `Here are ${SIM.N} such trials. Tested once, at the end, ${SIM.last} of them finish with <i>Z</i> beyond ±1.96 purely by chance (${pc(SIM.last)}), and would wrongly declare an effect. That matches the 5% risk we signed up for.` },
+      { text: `Now test at every look and stop the first time <i>Z</i> goes beyond ±1.96. False positives pile up to ${SIM.naive} of ${SIM.N} (${pc(SIM.naive)}). Theory says about 14% for five looks, nearly three times the promised 5%.` },
+      { text: `Every look is a fresh chance for noise to stray past the line. This trial went above 1.96 at look ${SIM.paths[SIM.flip].naive + 1} and would have stopped there, yet by look 5 its <i>Z</i> was back at ${SIM.paths[SIM.flip].z[K - 1].toFixed(2)}. A single test at the end would have got it right.` }
+    ]
+  },
+  {
+    short: 'Boundary',
+    title: 'The O’Brien–Fleming boundary',
+    formula: String.raw`b_{k} = C\,\sqrt{\dfrac{5}{k}}, \qquad C = 2.040`,
+    where: [
+      [String.raw`b_{k}`, String.raw`the bar $Z$ must cross at look $k$ to stop the trial`],
+      [String.raw`C`, String.raw`the constant that brings the total false positive risk across five looks back to 5%`]
+    ],
+    draw: sceneBoundary,
+    beats: [
+      { text: 'The fix is to raise the bar at each look, high enough that the total false positive risk across all five looks is back to 5%. O’Brien and Fleming (1979) proposed bars that start very high and fall at each look.' },
+      { text: 'If <i>Z</i> rises into the shaded region at any look, the trial stops early and declares the drug better. Only the upper bar is drawn. A mirror-image bar below zero stops the trial for harm.' },
+      { text: `The bar at look <i>k</i> is <i>b<sub>k</sub></i> = <i>C</i> × √(5 / <i>k</i>). The square-root part is about 2.24 at look 1 and shrinks to 1 at look 5. <i>C</i> is calculated so the total risk is exactly 5%: for five looks <i>C</i> = 2.040, giving bars from ${OBF[0].toFixed(2)} down to ${OBF[4].toFixed(2)}.`, ms: 9500 },
+      { text: `As p-values, look 1 needs p &lt; ${fmtPText(pTwo(OBF[0]))}, about ${(Math.round(0.05 / pTwo(OBF[0]) / 1000) * 1000).toLocaleString('en')} times stricter than the usual 0.05. Look 5 needs p &lt; ${fmtPText(pTwo(OBF[4]))}, nearly back to normal. Early on, only an overwhelming result can stop the trial.` }
+    ]
+  },
+  {
+    short: 'Our trial',
+    title: 'Our trial against the boundary',
+    formula: String.raw`\begin{aligned} Z_{1} &= 1.60 < b_{1} = 4.56 \\ Z_{2} &= 2.30 < b_{2} = 3.23 \\ Z_{3} &= 2.75 > b_{3} = 2.63 \;\Longrightarrow\; \text{stop} \end{aligned}`,
+    where: [
+      [String.raw`Z_{k},\ b_{k}`, String.raw`our trial’s Z-score and the O’Brien–Fleming bar at look $k$`]
+    ],
+    draw: sceneOurs,
+    beats: [
+      { text: `Back to our trial, comparing each look’s <i>Z</i> with that look’s bar. At look 1, after 200 patients, <i>Z</i> = 1.60, the Z-score from the first chapter. It is far below the bar of ${OBF[0].toFixed(2)}, so the trial continues.` },
+      { text: `At look 2, <i>Z</i> = 2.30. A naive analysis would see it pass 1.96, stop, and declare success. O’Brien–Fleming asks for ${OBF[1].toFixed(2)}, so the trial continues.` },
+      { text: `At look 3, after 600 patients, <i>Z</i> = 2.75 is above the bar of ${OBF[2].toFixed(2)}. The trial stops early for benefit, and the last two looks are never needed.` }
+    ]
+  },
+  {
+    short: 'Shape',
+    title: 'Why the bar has this shape',
+    formula: [String.raw`B_{k} = Z_{k}\,\sqrt{\dfrac{k}{5}}`, String.raw`\text{stop when } B_{k} > C = 2.040`],
+    where: [
+      [String.raw`B_{k}`, String.raw`the evidence as a running total at look $k$`],
+      [String.raw`k/5`, String.raw`the share of patients with results so far`]
+    ],
+    draw: sceneB,
+    beats: [
+      { text: `Why should early bars be so high? Think of the evidence as a running total, <i>B</i>, that adds up each batch’s result. In the ${SIM.N} trials where the drug does nothing, the totals start at zero and drift randomly.` },
+      { text: 'The more batches are added, the further a total can drift, so the totals fan out over time. <i>Z</i> is this total rescaled to the same spread at every look, which hides how little data the early looks rest on.' },
+      { text: 'Measured as a running total, the O’Brien–Fleming bar is a flat line at <i>C</i> = 2.040. Every look asks for the same total evidence as the final look, so stopping early takes a very large effect.' },
+      { text: 'The fixed 1.96 test becomes a rising curve that starts low. Early in the trial it sits inside the noise, which is exactly where peeking found its false positives.' },
+      { text: `Our trial’s running total reaches ${TRIAL.b[TRIAL.stop].toFixed(2)} at look 3, just above the flat line. That is the same stop as before, seen another way.` }
+    ]
+  },
+  {
+    short: 'Pocock',
+    title: 'Against the Pocock boundary',
+    formula: String.raw`\begin{aligned} \text{Pocock:}\quad & b_{k} = 2.413 \\ \text{O'Brien--Fleming:}\quad & b_{k} = 2.040\,\sqrt{5/k}\,:\ 4.56 \to 2.04 \end{aligned}`,
+    where: [
+      [String.raw`b_{k}`, String.raw`the bar at look $k = 1, dots, 5$; both designs keep the total false positive risk at 5%`]
+    ],
+    draw: scenePocock,
+    beats: [
+      { text: 'Pocock (1977) proposed the main alternative: one flat bar of 2.413 at every look. Stopping early is easier, but the final look then needs 2.413 rather than 2.04.' },
+      { text: `Both designs keep the false positive risk at 5%. In the ${SIM.N} trials where the drug does nothing, O’Brien–Fleming wrongly stops ${SIM.obf} of them and Pocock ${SIM.poc}. Pocock’s stops spread across the looks, while O’Brien–Fleming’s come late.` },
+      { text: `Power is the chance of detecting a drug that really works. Higher bars cost power, so a design adds patients to win it back. If a single test needs 1,000 patients for 90% power, O’Brien–Fleming needs at most ${Math.round(1000 * R_OBF).toLocaleString('en')} and Pocock ${Math.round(1000 * R_POC).toLocaleString('en')}.` },
+      { text: 'That is why O’Brien–Fleming is the common default. A trial that never stops ends almost as a single test would. Pocock suits a trial expecting a large effect and wanting the best chance to stop early.' }
+    ]
+  },
+  {
+    short: 'Spending',
+    title: 'Spending functions',
+    formula: String.raw`\alpha(t) = 2 - 2\,\Phi\!\left(\dfrac{1.96}{\sqrt{t}}\right)`,
+    where: [
+      [String.raw`\alpha(t)`, String.raw`the false positive budget spent by time $t$ (Lan &amp; DeMets, 1983)`],
+      [String.raw`t`, String.raw`the share of patients with results so far, from 0 to 1`],
+      [String.raw`\Phi`, String.raw`the share of the standard bell curve below a value`]
+    ],
+    draw: sceneSpend,
+    beats: [
+      { text: 'Real trials rarely pause at exactly equal intervals. Lan and DeMets (1983) recast the design as a budget: the 5% false positive risk is used up gradually as patients accumulate, which statisticians call spending it.' },
+      { text: `The O’Brien–Fleming-type budget, <i>α</i>(<i>t</i>) = 2 − 2<i>Φ</i>(1.96 / √<i>t</i>), spends almost nothing early: ${fmtA(spendOBF(0.2))} after 20% of patients and ${fmtA(spendOBF(0.5))} by halfway. Here <i>t</i> is the share of patients so far, and <i>Φ</i> is the bell curve’s area to the left of a point. A Pocock-type budget, dashed, spends much faster.`, ms: 11000 },
+      { text: `Looks can now happen at any time, even unplanned. Each look’s bar is set so that the chance of first going beyond it at that look equals the newly spent part of the budget, such as ${fmtA(spendOBF(0.35))} at 35%. The bars come out close to the classic ones.` }
+    ]
+  },
+  {
+    short: 'AI models',
+    title: 'Testing AI models the same way',
+    formula: [String.raw`Z = \dfrac{\hat{p}_{\text{new}} - \hat{p}_{\text{current}}}{\mathrm{SE}}`, String.raw`\text{ship when } Z > b_{k}`],
+    where: [
+      [String.raw`\hat{p}`, String.raw`the share of conversations rated helpful for each model`],
+      [String.raw`b_{k}`, String.raw`the O’Brien–Fleming bar on day $k$`]
+    ],
+    draw: sceneAI,
+    beats: [
+      { text: 'The same problem appears when testing AI models. A team wants to know whether a new model answers better than the current one. Each incoming conversation goes at random to one of the two, and the user rates the answer as helpful or not.' },
+      { text: 'This is called an A/B test, and it maps directly onto the trial: conversations instead of patients, rated helpful instead of recovered, and the new model instead of the new drug. The plan is 20,000 conversations over five days.' },
+      { text: `Results dashboards update constantly, so it is tempting to check daily and ship as soon as the new model looks better. On day 1 it leads by ${(AB.gaps[0] * 100).toFixed(1)} points, <i>Z</i> = ${AB.z[0].toFixed(2)}. Shipping then is peeking, with the same 14% risk of shipping a model that is no better.`, ms: 10000 },
+      { text: `With an O’Brien–Fleming plan of five daily looks, day 1’s <i>Z</i> = ${AB.z[0].toFixed(2)} is far below the bar of ${OBF[0].toFixed(2)}. The lead then shrinks to about ${(AB.gaps[2] * 100).toFixed(0)} points by day 3. Early leads are often partly luck, which is exactly what high early bars guard against.` },
+      { text: `On day 4, <i>Z</i> = ${AB.z[AB.stop].toFixed(2)} is above the bar of ${OBF[AB.stop].toFixed(2)}. The team ships after ${(4000 * (AB.stop + 1)).toLocaleString('en')} conversations instead of 20,000, and its 5% risk of shipping a model that is no better still holds.` },
+      { text: 'The lower bar matters as much. If the new model is clearly worse, the mirror-image bar stops the test early and rolls the model back. Spending functions let the team check whenever it likes, and many experimentation platforms offer sequential tests built this way.' }
+    ]
+  }
+]
+
+// ===== RUNTIME: do not change =====
+function drawScene (context, index, p, { width, height, dpr, font }, time = 0) {
+  ctx = context
+  T = time
+  LIVE = time > 0
+  W = width
+  H = height
+  NARROW = width < 520
+  U = clamp(Math.min(width, height) / 600, 0.55, 1.15)
+  GA = 1
+  if (font) FONT = font
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  ctx.globalAlpha = 1
+  ctx.clearRect(0, 0, W, H)
+  SCENES[index].draw(p)
+}
+
+;(() => {
+  const START_LINE = 0.45
+  const MS_PER_WORD = 210
+  const BEAT_PADDING_MS = 1300
+  const MIN_BEAT_MS = 3600
+  const MAX_BEAT_MS = 8200
+  const DAMPING_MS = 140
+  const SNAP_EPSILON = 4
+  const SNAP_PADDING = 24
+  const ENTRY_REACH = 0.6
+  const MIN_GLIDE_MS = 900
+  const MAX_GLIDE_MS = 1500
+  const GLIDE_MS_PER_PX = 0.6
+  const WHEEL_THRESHOLD = 24
+  const WHEEL_QUIET_MS = 110
+  const SWIPE_THRESHOLD = 36
+  const KEY_DIRECTION = { ArrowDown: 1, PageDown: 1, ArrowUp: -1, PageUp: -1 }
+
+  const root = document.getElementById('story')
+  const reduceMotion = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  const font = getComputedStyle(root).fontFamily
+  let raf = 0
+  let lastFrame = 0
+  let inView = false
+  let activeChapter = -1
+  let railShown = false
+  let glideRaf = 0
+  let settling = false
+  let lastWheelAt = 0
+  let lastWheelSize = 0
+  let wheelTotal = 0
+  let touch = null
+
+  const make = (tag, cls, text) => {
+    const node = document.createElement(tag)
+    if (cls) node.className = cls
+    if (text !== undefined) node.textContent = text
+    return node
+  }
+  const beatDuration = ({ text, ms }) => {
+    if (ms) return ms
+    const words = text.replace(/<[^>]+>/g, ' ').trim().split(/\s+/).length
+    return Math.min(MAX_BEAT_MS, Math.max(MIN_BEAT_MS, words * MS_PER_WORD + BEAT_PADDING_MS))
+  }
+
+  const rail = make('nav', 'rail')
+  rail.setAttribute('aria-label', 'Stages')
+  const railItems = SCENES.map((s, i) => {
+    const item = make('button', 'rail-item')
+    item.type = 'button'
+    item.append(make('span', 'rail-label', s.short), make('span', 'rail-mark'))
+    item.addEventListener('click', () => jump(i))
+    rail.append(item)
+    return item
+  })
+  root.append(rail)
+
+  // The opening: the topic name rises in word by word, and the chapters draw in as a map.
+  const opening = document.querySelector('.opening')
+  if (opening) {
+    const title = opening.querySelector('.opening-title')
+    if (title) {
+      const words = title.textContent.trim().split(/\s+/)
+      title.setAttribute('aria-label', words.join(' '))
+      title.textContent = ''
+      words.forEach((w, n) => {
+        const outer = make('span', 'ow')
+        outer.setAttribute('aria-hidden', 'true')
+        const inner = make('span', '', w)
+        inner.style.transitionDelay = `${120 + n * 90}ms`
+        outer.append(inner)
+        title.append(outer, ' ')
+      })
+    }
+    const map = opening.querySelector('.opening-map')
+    if (map) {
+      SCENES.forEach((s, i) => {
+        const li = make('li')
+        const btn = make('button', 'map-item')
+        btn.type = 'button'
+        btn.style.setProperty('--i', i)
+        btn.append(make('span', 'map-num mono', String(i + 1).padStart(2, '0')), make('span', 'map-label', s.short))
+        btn.addEventListener('click', () => jump(i))
+        li.append(btn)
+        map.append(li)
+      })
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => opening.classList.add('play')))
+  }
+
+  const chapters = SCENES.map((s, i) => {
+    const el = make('section', i % 2 ? 'chapter flip' : 'chapter')
+    const col = make('div', 'stage-col')
+    const stage = make('div', 'stage')
+    const box = make('div', 'canvas-box')
+    const canvas = make('canvas')
+    canvas.setAttribute('role', 'img')
+    canvas.setAttribute('aria-label', `Animation: ${s.title}. The steps are described in the text alongside.`)
+    box.append(canvas)
+    const ticks = make('div', 'ticks')
+    ticks.setAttribute('aria-hidden', 'true')
+    const tickEls = s.beats.map(() => ticks.appendChild(make('span', 'tick')))
+    stage.append(box, ticks)
+    col.append(stage)
+
+    const copy = make('div', 'copy')
+    const head = make('header', 'chapter-head')
+    head.append(make('span', 'chapter-num mono', String(i + 1).padStart(2, '0')), make('h2', 'chapter-title', s.title))
+    if (s.formula) head.append(noteFormula(s.formula, s.where, i + 1))
+    if (s.code) head.append(make('code', 'chapter-code', s.code))
+    const pagesEl = make('div', 'pages')
+    const firstPage = make('div', 'pg')
+    const steps = make('ol', 'steps')
+    const lis = []
+    const beatEls = s.beats.map((b, bi) => {
+      const li = make('li')
+      const btn = make('button', 'beat')
+      btn.type = 'button'
+      const bar = make('span', 'beat-bar')
+      bar.setAttribute('aria-hidden', 'true')
+      bar.append(make('span', 'beat-fill'))
+      const text = make('span', 'beat-text')
+      text.innerHTML = b.text
+      btn.append(bar, text)
+      btn.addEventListener('click', () => seek(i, bi))
+      li.append(btn)
+      steps.append(li)
+      lis.push(li)
+      return btn
+    })
+    firstPage.append(head, steps)
+    pagesEl.append(firstPage)
+    copy.append(pagesEl)
+    el.append(col, copy)
+    root.append(el)
+
+    const durations = s.beats.map(beatDuration)
+    let elapsed = 0
+    const starts = durations.map((d) => { const at = elapsed; elapsed += d; return at })
+    return {
+      el, canvas, box, copy, beatEls, tickEls, durations, starts,
+      col, stage, head, pagesEl, lis,
+      flip: i % 2 === 1,
+      num: String(i + 1).padStart(2, '0'),
+      pages: [{ el: firstPage, list: steps }],
+      pageOf: s.beats.map(() => 0),
+      page: -1,
+      ctx: canvas.getContext('2d'),
+      total: elapsed,
+      time: reduceMotion ? elapsed : 0,
+      near: false,
+      seen: false,
+      started: reduceMotion,
+      dirty: true,
+      size: null,
+      shown: reduceMotion ? durations.length : 0,
+      drawn: -1,
+      beat: -1,
+      done: false
+    }
+  })
+
+  function sizeCanvas (ch) {
+    const width = ch.box.clientWidth
+    const height = ch.box.clientHeight
+    if (!width || !height) return
+    const dpr = Math.min(2, window.devicePixelRatio || 1)
+    ch.size = { width, height, dpr, font }
+    ch.canvas.width = Math.round(width * dpr)
+    ch.canvas.height = Math.round(height * dpr)
+    ch.dirty = true
+  }
+  let layoutKey = ''
+  function resizeStages () {
+    const key = `${window.innerWidth}x${window.innerHeight}`
+    if (key !== layoutKey) {
+      layoutKey = key
+      chapters.forEach(paginate)
+    }
+    chapters.forEach((ch) => { if (ch.near) sizeCanvas(ch) })
+    start()
+  }
+  function progressAt (ch) {
+    let b = ch.durations.length - 1
+    while (b > 0 && ch.time < ch.starts[b]) b--
+    return b + Math.min(1, (ch.time - ch.starts[b]) / ch.durations[b])
+  }
+  function paintBeats (ch, beat, done) {
+    if (ch.beat === beat && ch.done === done) return
+    ch.beat = beat
+    ch.done = done
+    ch.copy.classList.toggle('done', done)
+    ch.beatEls.forEach((el, n) => {
+      el.classList.toggle('active', n === beat)
+      el.classList.toggle('past', n < beat || done)
+      if (n === beat) el.setAttribute('aria-current', 'step')
+      else el.removeAttribute('aria-current')
+    })
+    ch.tickEls.forEach((el, n) => el.classList.toggle('on', n <= beat))
+    applyPages(ch)
+  }
+
+  // A chapter whose steps do not fit beside the stage is split into pages. Reaching the next
+  // page slides the stage across, squeezes the old page off the edge as it fades, and brings
+  // the new page in on the side the stage has left. Narrow screens scroll the steps instead.
+  const CONT_H = 40
+  function paginate (ch) {
+    const first = ch.pages[0]
+    ch.lis.forEach((li) => first.list.append(li))
+    ch.pages.splice(1).forEach((pg) => pg.el.remove())
+    const wide = window.innerWidth > 900
+    const limit = ch.stage.offsetHeight - 16
+    const heights = ch.lis.map((li) => li.offsetHeight + 4)
+    let used = ch.head.offsetHeight + (parseFloat(getComputedStyle(ch.head).marginBottom) || 0)
+    const fits = !wide || used + heights.reduce((sum, h) => sum + h, 0) <= limit
+    const groups = [[]]
+    heights.forEach((h, i) => {
+      if (!fits && groups[groups.length - 1].length && used + h > limit) {
+        groups.push([])
+        used = CONT_H
+      }
+      groups[groups.length - 1].push(i)
+      used += h
+    })
+    groups.slice(1).forEach(() => {
+      const el = make('div', 'pg')
+      const list = make('ol', 'steps')
+      el.append(make('span', 'chapter-cont mono', `${ch.num} · continued`), list)
+      ch.pagesEl.append(el)
+      ch.pages.push({ el, list })
+    })
+    groups.forEach((g, k) => g.forEach((i) => {
+      if (k) ch.pages[k].list.append(ch.lis[i])
+      ch.pageOf[i] = k
+    }))
+    applyPages(ch, true)
+  }
+  // How much of the previous page stays in view beside the stage before fading out.
+  const GHOST_SHOWN = 0.5
+  function applyPages (ch, force = false) {
+    const cur = ch.pageOf[Math.max(0, ch.beat)] || 0
+    if (!force && cur === ch.page) return
+    ch.page = cur
+    if (ch.pages.length < 2) {
+      ch.col.style.translate = ''
+      ch.pages.forEach(({ el }) => {
+        el.style.translate = ''
+        el.style.opacity = ''
+        el.style.removeProperty('--fade')
+        el.inert = false
+      })
+      return
+    }
+    const dir = ch.flip ? -1 : 1
+    const stageW = ch.col.offsetWidth
+    const copyW = ch.copy.offsetWidth
+    const gap = Math.abs(ch.copy.offsetLeft - ch.col.offsetLeft) - (dir > 0 ? stageW : copyW)
+    // The row pans as one: the stage moves across, the new page takes the side it left, and
+    // the old page slides out beside the stage as a fading ghost. The whole row then shifts
+    // away from the ghost, as far as the screen allows, so it stays balanced on screen.
+    let shift = 0
+    if (cur > 0) {
+      const ghostSide = cur % 2 ? dir : -dir
+      const rect = ch.el.getBoundingClientRect()
+      const room = ghostSide > 0 ? rect.left : window.innerWidth - rect.right
+      shift = -ghostSide * Math.min((gap + copyW * GHOST_SHOWN) / 2, Math.max(0, room - 16))
+    }
+    ch.col.style.translate = `${(cur % 2 ? dir * (copyW + gap) : 0) + shift}px 0`
+    ch.pages.forEach(({ el }, k) => {
+      const away = k % 2 === 1
+      const base = (away ? -dir * (stageW + gap) : 0) + shift
+      const out = away ? -dir : dir
+      const s = el.style
+      s.setProperty('--fade-dir', out > 0 ? '90deg' : '270deg')
+      if (k === cur) {
+        s.translate = `${base}px 0`
+        s.opacity = '1'
+        s.setProperty('--fade', '150%')
+      } else if (k < cur) {
+        s.translate = `${base + out * (copyW + gap)}px 0`
+        s.opacity = k === cur - 1 ? '.75' : '0'
+        s.setProperty('--fade', k === cur - 1 ? `${GHOST_SHOWN * 100}%` : '0%')
+      } else {
+        s.translate = `${base + out * 56}px 0`
+        s.opacity = '0'
+        s.setProperty('--fade', '150%')
+      }
+      el.inert = k !== cur
+    })
+  }
+
+  function frame (now) {
+    raf = 0
+    if (!inView) { lastFrame = 0; return }
+    const dt = lastFrame ? Math.min(64, now - lastFrame) : 16
+    lastFrame = now
+    const vh = window.innerHeight
+    const rate = reduceMotion ? 1 : 1 - Math.exp(-dt / DAMPING_MS)
+    let current = activeChapter
+
+    chapters.forEach((ch, i) => {
+      const rect = ch.el.getBoundingClientRect()
+      if (rect.top < vh * 0.5 && rect.bottom > vh * 0.5) current = i
+      const near = rect.bottom > -vh * 0.3 && rect.top < vh * 1.3
+      if (near !== ch.near) {
+        ch.near = near
+        if (near) {
+          sizeCanvas(ch)
+        } else {
+          ch.canvas.width = 0
+          ch.canvas.height = 0
+          ch.size = null
+        }
+      }
+      if (!ch.seen && rect.top < vh * 0.9) {
+        ch.seen = true
+        ch.el.classList.add('seen')
+      }
+      if (!ch.started && rect.top < vh * START_LINE && rect.bottom > vh * 0.2) ch.started = true
+      const visible = rect.top < vh * 0.8 && rect.bottom > vh * 0.2
+      if (ch.started && visible && !reduceMotion && ch.time < ch.total) {
+        ch.time = Math.min(ch.total, ch.time + dt)
+      }
+      const target = progressAt(ch)
+      ch.shown += (target - ch.shown) * rate
+      if (Math.abs(target - ch.shown) < 0.0004) ch.shown = target
+      const beat = Math.min(ch.beatEls.length - 1, Math.floor(target))
+      paintBeats(ch, beat, ch.time >= ch.total)
+      ch.beatEls[beat].style.setProperty('--fill', (target - beat).toFixed(3))
+      if (!near) return
+      const looping = !reduceMotion && rect.bottom > 0 && rect.top < vh
+      if (ch.size && (looping || ch.dirty || Math.abs(ch.shown - ch.drawn) > 0.0002)) {
+        drawScene(ch.ctx, i, ch.shown, ch.size, reduceMotion ? 0 : now)
+        ch.drawn = ch.shown
+        ch.dirty = false
+      }
+    })
+
+    if (current !== activeChapter) {
+      activeChapter = current
+      railItems.forEach((item, n) => item.classList.toggle('on', n === current))
+    }
+    const first = chapters[0].el.getBoundingClientRect()
+    const last = chapters[chapters.length - 1].el.getBoundingClientRect()
+    const shown = first.top < vh * 0.5 && last.bottom > vh * 0.5
+    if (shown !== railShown) {
+      railShown = shown
+      rail.classList.toggle('shown', shown)
+    }
+    raf = requestAnimationFrame(frame)
+  }
+  function start () {
+    if (!raf && inView) raf = requestAnimationFrame(frame)
+  }
+
+  // The opening is a stop of its own, so one scroll from it glides into the first chapter.
+  function openingZone () {
+    if (!opening) return []
+    const bottom = opening.getBoundingClientRect().bottom + window.scrollY
+    return [{ snap: 0, end: Math.max(0, bottom - window.innerHeight) }]
+  }
+  function zoneOf (ch) {
+    const vh = window.innerHeight
+    const rect = ch.el.getBoundingClientRect()
+    const top = rect.top + window.scrollY
+    const maxScroll = document.documentElement.scrollHeight - vh
+    const snap = Math.min(maxScroll, Math.max(0, top - Math.max(SNAP_PADDING, (vh - rect.height) / 2)))
+    const end = Math.min(maxScroll, Math.max(snap, top + rect.height + SNAP_PADDING - vh))
+    return { snap, end }
+  }
+  // `force` lets the keyboard enter the story from anywhere above or below it.
+  function nextStop (direction, force = false) {
+    const y = window.scrollY
+    const reach = window.innerHeight * ENTRY_REACH
+    const zones = [...openingZone(), ...chapters.map(zoneOf)]
+    if (direction > 0) {
+      for (let i = 0; i < zones.length; i++) {
+        if (y < zones[i].snap - SNAP_EPSILON) return i === 0 && !force && zones[i].snap - y > reach ? null : zones[i].snap
+        if (y < zones[i].end - SNAP_EPSILON) return null
+      }
+      return null
+    }
+    for (let i = zones.length - 1; i >= 0; i--) {
+      if (y > zones[i].end + SNAP_EPSILON) return i === zones.length - 1 && !force && y - zones[i].end > reach ? null : zones[i].end
+      if (y > zones[i].snap + SNAP_EPSILON) return null
+    }
+    return null
+  }
+  function cancelGlide () {
+    if (glideRaf) cancelAnimationFrame(glideRaf)
+    glideRaf = 0
+  }
+  function glideTo (target) {
+    cancelGlide()
+    const from = window.scrollY
+    const distance = Math.abs(target - from)
+    if (distance < 2) return
+    const duration = Math.min(MAX_GLIDE_MS, Math.max(MIN_GLIDE_MS, distance * GLIDE_MS_PER_PX + 500))
+    const startedAt = performance.now()
+    settling = true
+    wheelTotal = 0
+    const step = (now) => {
+      const t = Math.min(1, Math.max(0, (now - startedAt) / duration))
+      window.scrollTo({ top: from + (target - from) * ease(t), behavior: 'instant' })
+      glideRaf = t < 1 ? requestAnimationFrame(step) : 0
+    }
+    glideRaf = requestAnimationFrame(step)
+  }
+  function onWheel (e) {
+    if (e.ctrlKey || !e.deltaY || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return
+    const delta = e.deltaMode === 1 ? e.deltaY * 32 : e.deltaMode === 2 ? e.deltaY * window.innerHeight : e.deltaY
+    const size = Math.abs(delta)
+    const now = performance.now()
+    const gap = now - lastWheelAt
+    const rising = size > 30 && size > lastWheelSize * 1.6
+    lastWheelAt = now
+    lastWheelSize = size
+    if (glideRaf) { e.preventDefault(); return }
+    if (gap > WHEEL_QUIET_MS) {
+      settling = false
+      wheelTotal = 0
+    }
+    if (settling) {
+      if (!rising) { e.preventDefault(); return }
+      settling = false
+      wheelTotal = 0
+    }
+    const direction = Math.sign(delta)
+    const target = nextStop(direction)
+    if (target === null) return
+    e.preventDefault()
+    if (Math.sign(wheelTotal) !== direction) wheelTotal = 0
+    wheelTotal += delta
+    if (Math.abs(wheelTotal) >= WHEEL_THRESHOLD) glideTo(target)
+  }
+  // ← and → move between steps, continuing into the next or previous chapter at either end.
+  function stepBy (dir) {
+    const i = Math.max(0, activeChapter)
+    const ch = chapters[i]
+    if (activeChapter !== i) {
+      jump(i)
+      seek(i, 0)
+      return
+    }
+    const n = ch.beatEls.length
+    const current = ch.started ? Math.min(n - 1, Math.floor(progressAt(ch))) : -1
+    const target = current + dir
+    if (target >= n) {
+      if (i + 1 < chapters.length) {
+        jump(i + 1)
+        seek(i + 1, 0)
+      }
+    } else if (target < 0) {
+      if (i > 0) {
+        jump(i - 1)
+        seek(i - 1, chapters[i - 1].beatEls.length - 1)
+      }
+    } else {
+      seek(i, target)
+    }
+  }
+  function onKeydown (e) {
+    if (e.altKey || e.ctrlKey || e.metaKey) return
+    if (e.target.closest?.('input, textarea, select, [contenteditable]')) return
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault()
+      stepBy(e.key === 'ArrowRight' ? 1 : -1)
+      return
+    }
+    let direction = KEY_DIRECTION[e.key]
+    if (e.key === ' ') {
+      if (e.target.closest?.('button, a')) return
+      direction = e.shiftKey ? -1 : 1
+    }
+    if (!direction) return
+    if (glideRaf) { e.preventDefault(); return }
+    const target = nextStop(direction, true)
+    if (target === null) return
+    e.preventDefault()
+    if (reduceMotion) window.scrollTo({ top: target, behavior: 'instant' })
+    else glideTo(target)
+  }
+  function onTouchStart (e) {
+    touch = e.touches.length === 1 ? { y: e.touches[0].clientY, target: undefined } : null
+  }
+  function onTouchMove (e) {
+    if (glideRaf) {
+      if (e.cancelable) e.preventDefault()
+      return
+    }
+    if (!touch) return
+    const dy = e.touches[0].clientY - touch.y
+    if (touch.target === undefined) {
+      if (Math.abs(dy) < 8) return
+      touch.target = nextStop(dy < 0 ? 1 : -1)
+    }
+    if (touch.target === null || !e.cancelable) return
+    e.preventDefault()
+    if (Math.abs(dy) >= SWIPE_THRESHOLD) {
+      glideTo(touch.target)
+      touch = null
+    }
+  }
+  function onPointerDown (e) {
+    if (e.target === document.documentElement) cancelGlide()
+  }
+  function jump (i) {
+    const { snap } = zoneOf(chapters[i])
+    if (reduceMotion) window.scrollTo({ top: snap, behavior: 'instant' })
+    else glideTo(snap)
+  }
+  function seek (i, beat) {
+    const ch = chapters[i]
+    ch.started = true
+    ch.time = reduceMotion ? ch.starts[beat] + ch.durations[beat] - 1 : ch.starts[beat]
+  }
+
+  new ResizeObserver(resizeStages).observe(root)
+  window.addEventListener('resize', resizeStages)
+  window.addEventListener('keydown', onKeydown)
+  if (!reduceMotion) {
+    window.addEventListener('wheel', onWheel, { passive: false })
+    window.addEventListener('touchstart', onTouchStart, { passive: true })
+    window.addEventListener('touchmove', onTouchMove, { passive: false })
+    window.addEventListener('pointerdown', onPointerDown)
+  }
+  document.fonts?.ready.then(() => chapters.forEach((ch) => { paginate(ch); ch.dirty = true }))
+  window.addEventListener('scene-assets', () => chapters.forEach((ch) => { ch.dirty = true }))
+  new IntersectionObserver(([entry]) => {
+    inView = entry.isIntersecting
+    if (inView) start()
+  }, { rootMargin: '30% 0px' }).observe(root)
+})()
+</script>
+<script src="note-end.js" defer></script>
+</body>
+</html>

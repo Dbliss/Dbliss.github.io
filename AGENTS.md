@@ -25,6 +25,9 @@ Project layout
   ground/roads/skyline/cars plus one clickable landmark per project; returns
   `{ landmarks, update }` consumed by `src/pages/Home.vue`.
 - `public/stockfish/*`: Stockfish worker JS/WASM binaries for the chess page.
+- `public/study-notes/*`: standalone animated study notes, listed by
+  `src/pages/StudyNotes.vue` (route `/notes`) from `notes.json`. To write a note,
+  follow `public/study-notes/PROMPT.md`; do not edit the Vue page to add one.
 - `src/assets/*`: images, charts, and 3D assets for project pages.
 
 How the app is wired

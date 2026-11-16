@@ -1,0 +1,132 @@
+[
+  {
+    "slug": "unscented-kalman-filter",
+    "file": "unscented-kalman-filter.html",
+    "title": "The unscented Kalman filter",
+    "summary": "How sigma points carry a belief through a curve without a tangent, with each formula derived, and why that beats the extended filter on wide beliefs, as in the esports predictor.",
+    "topic": "Statistics / State estimation",
+    "tags": [
+      "esports predictor",
+      "sigma points",
+      "nonlinear filtering"
+    ],
+    "series": "Kalman filters",
+    "part": 3,
+    "chapters": 6,
+    "minutes": 3,
+    "updated": "2026-11-16"
+  },
+  {
+    "slug": "extended-kalman-filter",
+    "file": "extended-kalman-filter.html",
+    "title": "The extended Kalman filter",
+    "summary": "How the Kalman filter handles a measurement that bends, by working along the tangent at the best guess, with every formula derived from Pythagoras and the slope of the curve.",
+    "topic": "Statistics / State estimation",
+    "tags": [
+      "esports predictor",
+      "nonlinear filtering",
+      "ratings"
+    ],
+    "series": "Kalman filters",
+    "part": 2,
+    "chapters": 7,
+    "minutes": 4,
+    "updated": "2026-11-16"
+  },
+  {
+    "slug": "hash-tables-memoisation",
+    "file": "hash-tables-memoisation.html",
+    "title": "Hash tables and memoisation",
+    "summary": "How remembering answers turns millions of repeated calls into dozens, how a hash table finds a stored answer instantly, how a chess position becomes a Zobrist key that every piece contributes to and every move edits, and how a transposition table applies it all.",
+    "topic": "Algorithms",
+    "tags": [
+      "chess engine",
+      "caching",
+      "data structures"
+    ],
+    "chapters": 9,
+    "minutes": 5,
+    "updated": "2026-11-16"
+  },
+  {
+    "slug": "alpha-beta-pruning",
+    "file": "alpha-beta-pruning.html",
+    "title": "Minimax and alpha-beta pruning",
+    "summary": "How a chess engine picks a move by searching a game tree, and how alpha-beta pruning and move ordering skip most of the tree without changing the answer.",
+    "topic": "Algorithms",
+    "tags": [
+      "chess engine",
+      "game trees",
+      "search"
+    ],
+    "chapters": 5,
+    "minutes": 2,
+    "updated": "2026-11-16"
+  },
+  {
+    "slug": "sensor-fusion",
+    "file": "sensor-fusion.html",
+    "title": "Sensor fusion: accelerometer and magnetometer",
+    "summary": "How a drone works out roll and pitch from gravity, heading from the Earth’s magnetic field, and why it must combine the two, plus calibration and adding a gyroscope.",
+    "topic": "Control systems",
+    "tags": [
+      "drone",
+      "IMU",
+      "tilt-compensated compass"
+    ],
+    "chapters": 7,
+    "minutes": 4,
+    "updated": "2026-11-16",
+    "related": [
+      "kalman-filter"
+    ]
+  },
+  {
+    "slug": "pid-control",
+    "file": "pid-control.html",
+    "title": "PID control",
+    "summary": "How a drone uses proportional, integral and derivative terms to reach a target height and hold it, and why latency matters on a Raspberry Pi.",
+    "topic": "Control systems",
+    "tags": [
+      "drone",
+      "robotics",
+      "feedback control"
+    ],
+    "chapters": 5,
+    "minutes": 2,
+    "updated": "2026-11-16"
+  },
+  {
+    "slug": "kalman-filter",
+    "file": "kalman-filter.html",
+    "title": "The Kalman filter",
+    "summary": "How a filter combines a prediction with noisy measurements, with every formula derived: why variances add, the precision-weighted average, the Kalman gain and the new uncertainty.",
+    "topic": "Statistics / State estimation",
+    "tags": [
+      "esports predictor",
+      "state estimation",
+      "uncertainty"
+    ],
+    "chapters": 8,
+    "minutes": 4,
+    "updated": "2026-11-16",
+    "series": "Kalman filters",
+    "part": 1
+  },
+  {
+    "slug": "obrien-fleming",
+    "file": "obrien-fleming.html",
+    "title": "O’Brien–Fleming boundaries",
+    "summary": "How a clinical trial, or an A/B test of a new AI model, can check its results repeatedly and stop early without raising its 5% false positive risk. No statistics background needed.",
+    "topic": "Statistics",
+    "tags": [
+      "clinical trials",
+      "A/B testing",
+      "AI model evaluation",
+      "hypothesis testing"
+    ],
+    "chapters": 10,
+    "minutes": 4,
+    "updated": "2026-11-16"
+  }
+]

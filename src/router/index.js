@@ -11,6 +11,7 @@ const ProjectDetail = () => import('../pages/ProjectDetail.vue')
 const About = () => import('../pages/About.vue')
 const Contact = () => import('../pages/Contact.vue')
 const CityEditor = () => import('../pages/CityEditor.vue')
+const StudyNotes = () => import('../pages/StudyNotes.vue')
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -35,6 +36,7 @@ const router = createRouter({
     },
     { path: '/projects', name: 'projects', component: Projects, meta: { fullBleed: true } },
     { path: '/projects/:slug', name: 'project', component: ProjectDetail, props: true },
+    { path: '/notes', name: 'notes', component: StudyNotes },
     { path: '/about', name: 'about', component: About, meta: { hideFooter: true } },
     { path: '/contact', name: 'contact', component: Contact, meta: { fullBleed: true, hideFooter: true } },
     { path: '/:pathMatch(.*)*', redirect: '/' }

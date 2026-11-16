@@ -4,6 +4,7 @@
     <div class="navlinks">
       <RouterLink to="/">Home</RouterLink>
       <RouterLink to="/projects">Projects</RouterLink>
+      <RouterLink to="/notes">Notes</RouterLink>
       <RouterLink to="/about">About</RouterLink>
       <RouterLink to="/contact">Contact</RouterLink>
     </div>

@@ -9,6 +9,7 @@
     <nav class="navlinks" aria-label="Main navigation">
       <RouterLink to="/">Home</RouterLink>
       <RouterLink to="/projects">Projects</RouterLink>
+      <RouterLink to="/notes">Notes</RouterLink>
       <RouterLink to="/about">About</RouterLink>
       <RouterLink to="/contact">Contact</RouterLink>
     </nav>

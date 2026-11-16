@@ -87,14 +87,6 @@
           </ul>
         </section>
 
-        <section class="fr-context-chapter">
-          <p class="fr-context-step mono">04 | Evidence backlog</p>
-          <h3 class="fr-context-title">Context points to add before final publishing</h3>
-          <ul class="fr-list fr-context-list">
-            <li v-for="item in contextTodoBacklog" :key="item">{{ item }}</li>
-          </ul>
-        </section>
-
         <div class="fr-context-media-wrap">
           <p class="fr-context-step mono">Visual references</p>
           <div class="fr-context-media-grid">
@@ -114,10 +106,6 @@
       <section v-show="activeSegment === 'system-design'" class="card fr-section fr-segment-panel fr-reveal" v-reveal>
         <p class="section-label">System Design</p>
         <h2 class="fr-section-title">Structured System Design Walkthrough</h2>
-        <p class="fr-copy">
-          This section follows a system design interview structure from scope to deep dives. Each step is isolated so
-          the design reads clearly for engineering leaders and hiring managers.
-        </p>
 
         <section class="fr-design-block">
           <p class="fr-design-step mono">1) Functional Requirements</p>
@@ -238,10 +226,6 @@
       <section v-show="activeSegment === 'outcomes'" class="card fr-section fr-segment-panel fr-reveal" v-reveal>
         <p class="section-label">Outcomes</p>
         <h2 class="fr-section-title">Commercial impact, performance, and growth</h2>
-        <p class="fr-copy">
-          This section is intentionally structured for leadership and hiring review. Replace placeholders with verified
-          production values from analytics, finance, and reliability reporting.
-        </p>
 
         <section class="fr-outcome-block">
           <h3 class="fr-outcome-title">Commercial</h3>
@@ -387,7 +371,7 @@ const nonFunctionalChecklist = [
 ]
 
 const capacityApproach =
-  'Capacity math is done only where it changes architecture choices. Instead of blanket DAU/QPS arithmetic, estimate at the exact bottleneck: schedule publication throughput, conflict-check fan-out, and peak write bursts for booking windows.'
+  'Capacity estimates focus on the main bottlenecks: schedule publication throughput, conflict-check fan-out, and peak write bursts during booking windows.'
 
 const capacityTriggers = [
   'If same-day booking spikes exceed single scheduler worker capacity, scale publish workers horizontally with queue partitioning.',

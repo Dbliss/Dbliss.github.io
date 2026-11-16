@@ -139,7 +139,7 @@
 							<br><br>
 							In 1997, everybodies perception changed, when 'Deep Blue' defeated world champion Garry Kasparov. Just a few decades after the invention of the modern computer, it had surpassed the best human players, not through intuition, study, or experience, but through intelligent brute-force search. It was this moment that marked a turning point in the history of artificial intelligence.
 							<br><br>
-							But what makes chess such a luring problem for engineers? It's not just a game; it's a system of complex decision-making and feedback-driven learning. The rules are simple, but the possibilities are effectively infinite. It challenges us to think about how we search through vast possibilities and evaluate decisions under pressure. It is a brutally honest environment where mistakes are punished and improvement is rewarded. But why does chess work so well for computers?
+							But what makes chess such a luring problem for engineers? Chess is a system of complex decision-making and feedback-driven learning. The rules are simple, but the possibilities are effectively infinite. It challenges us to think about how we search through vast possibilities and evaluate decisions under pressure. It is a brutally honest environment where mistakes are punished and improvement is rewarded. But why does chess work so well for computers?
 						</div>
 						<div class="three-col-grid">
 
@@ -160,7 +160,7 @@
 							<div class="decision-card">
 								<div class="decision-kicker mono">Evidence-Driven Optimisation</div>
 								<p>
-									In chess, performance is easily measurable. How many times did one variant of an engine beat the other over thousands of games? Every minor improvement, from move ordering to tuning a single constant, can be precisely measured for its impact. Strength is not subjective; it is measured through iterations of profiling and data-driven refinement.
+									In chess, performance is easily measurable. How many times did one variant of an engine beat the other over thousands of games? Every minor improvement, from move ordering to tuning a single constant, can be precisely measured for its impact. Strength is measured through iterations of profiling and data-driven refinement.
 								</p>
 							</div>
 
@@ -196,10 +196,10 @@
 
 					<section class="notebook-cell notebook-cell-dark" data-section="search-optimisation" id="search-optimisation">
 						<div class="section-badge mono">05 - Search algorithm</div>
-						<h2 class="section-title">Search became an anytime decision system under tight latency constraints</h2>
+						<h2 class="section-title">Search as an anytime algorithm under a time limit</h2>
 						<p>
-							The software problem here is not "find the perfect answer". It is "return the strongest answer
-							you can before the clock expires". That makes the search an anytime algorithm: each completed
+							The goal of the search is to return the strongest move it can find before the clock runs out.
+							That makes the search an anytime algorithm: each completed
 							depth pass produces a usable answer, and if more time exists the engine keeps refining it.
 						</p>
 						<p>
@@ -253,7 +253,7 @@
 						<div class="deep-dive-panel deep-dive-panel-dark">
 							<div class="panel-heading">
 								<div class="panel-label mono">Engineering Principles</div>
-								<h3 class="subhead">What this section says about software skill</h3>
+								<h3 class="subhead">Software engineering takeaways</h3>
 							</div>
 							<div class="panel-grid">
 								<div class="analysis-card">
@@ -266,8 +266,8 @@
 								<div class="analysis-card">
 									<div class="panel-label mono">Bounded Computation</div>
 									<p>
-										This section was a practical lesson in trading completeness for value. The system needs
-										to degrade gracefully, not catastrophically, when time is limited.
+										This taught me to trade completeness for speed. When time is limited, the engine still
+										returns a reasonable move instead of running out the clock.
 									</p>
 								</div>
 							</div>
@@ -277,17 +277,17 @@
 							<div class="benchmark-card">
 								<div class="metric-label mono">Node throughput</div>
 								<div class="metric-value">~1.3m pos/s</div>
-								<p>Throughput mattered because every extra node had to translate into stronger practical play.</p>
+								<p>Higher throughput lets the engine search deeper in the same amount of time.</p>
 							</div>
 							<div class="benchmark-card">
 								<div class="metric-label mono">Pruning profile</div>
 								<div class="metric-value">~99.98%</div>
-								<p>Most of the raw game tree is discarded once move ordering and cutoffs begin cooperating.</p>
+								<p>Most of the raw game tree is discarded by move ordering and alpha-beta cutoffs.</p>
 							</div>
 							<div class="benchmark-card">
 								<div class="metric-label mono">Search stack</div>
 								<div class="metric-value">AB + PVS + QSearch</div>
-								<p>The gain came from subsystem cooperation rather than one isolated optimisation trick.</p>
+								<p>Alpha-beta, principal variation search and quiescence search working together.</p>
 							</div>
 						</div>
 
@@ -295,9 +295,9 @@
 
 					<section class="notebook-cell" data-section="board-state" id="board-state">
 						<div class="section-badge mono">06 - Move generation &amp; bitboards</div>
-						<h2 class="section-title">Board state was modelled for data locality, rollback, and fast set operations</h2>
+						<h2 class="section-title">Board representation with bitboards</h2>
 						<p>
-							This section is really about data structures. A naive representation would use an 8x8 array or a
+							Choosing the board representation is a data structure problem. A naive version would use an 8x8 array or a
 							list of piece objects and repeatedly scan the board looking for what is occupied, attacked, or
 							legal. That is easy to understand, but expensive when the same queries happen millions of times.
 						</p>
@@ -376,8 +376,8 @@ bitwise AND / OR / XOR instead of scanning 64 cells.</pre>
 							<div class="subsystem-card">
 								<div class="subsystem-title">Rollback-friendly state</div>
 								<p>
-									The board is mutated in place and restored through undo records. That is a classic
-									performance decision: reuse memory, avoid copies, and make rollback exact.
+									The board is mutated in place and restored through undo records. This reuses memory,
+									avoids copies and makes rollback exact.
 								</p>
 							</div>
 							<div class="subsystem-card">
@@ -397,18 +397,18 @@ bitwise AND / OR / XOR instead of scanning 64 cells.</pre>
 						</div>
 						<figure class="feature-frame">
 							<img class="media-img" :src="gameplayImg" alt="Live gameplay view from the chess engine interface" loading="lazy" />
-							<figcaption class="media-cap">The same board model had to satisfy two different software needs at once: very cheap search-state mutation and clean square-level interaction in the visible UI.</figcaption>
+							<figcaption class="media-cap">The same board model supports fast updates during search and square-by-square interaction in the UI.</figcaption>
 						</figure>
 						<div class="callout-note">
-							The main engineering lesson here was that "fast" and "maintainable" do not have to be opposites.
-							The hybrid model costs a little extra memory, but it keeps the state machine both efficient and
-							tractable to debug.
+							The hybrid model costs a little extra memory, but it is fast and still easy to debug.
+							
+							
 						</div>
 					</section>
 
 					<section class="notebook-cell" data-section="evaluation-design" id="evaluation-design">
 						<div class="section-badge mono">07 - Static evaluation</div>
-						<h2 class="section-title">Evaluation was built as an explainable scoring pipeline instead of a black box</h2>
+						<h2 class="section-title">A hand-tuned evaluation function</h2>
 						<p>
 							Once search reaches a stopping frontier, the engine needs a scoring function. Rather than using
 							an opaque learned model, I built an explicit weighted system. That made it slower to reach peak
@@ -416,10 +416,10 @@ bitwise AND / OR / XOR instead of scanning 64 cells.</pre>
 							able to explain why the engine preferred one position over another.
 						</p>
 						<p>
-							From a software design perspective, this is feature engineering plus weighted aggregation. The
+							The evaluation is a weighted sum of features. The
 							engine extracts many small signals, scores them separately for midgame and endgame, and blends
-							the result based on phase. The important part is not the domain vocabulary itself, but the fact
-							that the scoring logic is modular and parameterised rather than buried in one giant heuristic blob.
+							the result based on the game phase. Keeping the scoring logic modular and parameterised
+							makes each term easy to test and tune.
 						</p>
 						<div class="deep-dive-panel">
 							<div class="panel-heading">
@@ -445,7 +445,7 @@ bitwise AND / OR / XOR instead of scanning 64 cells.</pre>
 								<div class="decision-kicker mono">Explainability</div>
 								<p>
 									Because the model is hand-authored, I can trace a surprising score back to specific feature
-									weights instead of treating the evaluator as a mysterious oracle.
+									weights instead of treating the evaluator as a black box.
 								</p>
 							</div>
 							<div class="decision-card">
@@ -464,29 +464,29 @@ bitwise AND / OR / XOR instead of scanning 64 cells.</pre>
 							</div>
 						</div>
 						<div class="callout-note">
-							This section developed a useful general skill: turning fuzzy domain judgement into a measurable,
-							tunable scoring function with clean inputs, clean outputs, and a clear calibration workflow.
+							This taught me how to turn domain knowledge into a scoring function
+							that can be measured and tuned.
 						</div>
 					</section>
 
 					<section class="notebook-cell" data-section="testing-validation" id="testing-validation">
 						<div class="section-badge mono">08 - Caching &amp; performance</div>
-						<h2 class="section-title">Caching and hot-path discipline pushed the same hardware much further</h2>
+						<h2 class="section-title">Caching and hot-path optimisation</h2>
 						<p>
-							The main performance story here is memoization plus locality. The engine hashes each position into
+							Most of the performance gains came from memoization and memory locality. The engine hashes each position into
 							a 64-bit key and uses that key to probe a transposition table. If a semantically identical state
 							has already been searched, the engine can reuse the previous result instead of paying for the same
 							subtree again.
 						</p>
 						<p>
-							The rest of the gains came from hot-path discipline. Fixed-size move arrays avoid heap churn.
+							The rest came from optimising the hot path. Fixed-size move arrays avoid heap churn.
 							Incremental hashing avoids recomputing identity from scratch. In-place rollback avoids large state
-							copies. Time checks happen at intervals rather than every node. None of those changes is glamorous
-							on its own, but together they move the engine into a very different performance class.
+							copies. Time checks happen at intervals rather than every node. Each change is small
+							on its own, but together they made the engine much faster.
 						</p>
 						<figure class="feature-frame">
 							<img class="media-img" :src="searchTreeImg" alt="Search tree visual showing recursive exploration of moves and responses" loading="lazy" />
-							<figcaption class="media-cap">At the bottom of the stack, the search still reduces to a recursive decision tree, but the architectural value comes from how that tree is bounded, cached, and exposed through stable interfaces.</figcaption>
+							<figcaption class="media-cap">The search is a recursive tree of moves and replies, kept manageable by pruning and caching.</figcaption>
 						</figure>
 						<div class="deep-dive-panel">
 							<div class="panel-heading">
@@ -512,7 +512,7 @@ bitwise AND / OR / XOR instead of scanning 64 cells.</pre>
 								<div class="subsystem-title">Memoization key design</div>
 								<p>
 									A full board state collapses to one 64-bit identity value. That makes cache lookup cheap,
-									but only works because the key is updated exactly during every state transition.
+									as long as the key is updated correctly on every move.
 								</p>
 							</div>
 							<div class="subsystem-card">
@@ -532,8 +532,8 @@ bitwise AND / OR / XOR instead of scanning 64 cells.</pre>
 							<div class="subsystem-card">
 								<div class="subsystem-title">Runtime budgeting</div>
 								<p>
-									The engine checks time periodically instead of constantly, which is a small but important
-									example of respecting overhead even in instrumentation and control logic.
+									The engine checks the time periodically instead of on every node, which keeps the
+									overhead of the timing logic itself low.
 								</p>
 							</div>
 						</div>
@@ -541,12 +541,12 @@ bitwise AND / OR / XOR instead of scanning 64 cells.</pre>
 							<div class="benchmark-card">
 								<div class="metric-label mono">Cache role</div>
 								<div class="metric-value">TT + Zobrist</div>
-								<p>Repeated positions are converted from repeated searches into fast, hash-keyed reuse.</p>
+								<p>Positions that have already been searched are looked up by hash instead of searched again.</p>
 							</div>
 							<div class="benchmark-card">
 								<div class="metric-label mono">Throughput</div>
 								<div class="metric-value">~1.3m pos/s</div>
-								<p>Performance was judged by how much stronger search fit into the same time budget.</p>
+								<p>Positions evaluated per second on a typical search.</p>
 							</div>
 							<div class="benchmark-card">
 								<div class="metric-label mono">Tree reduction</div>
@@ -555,28 +555,28 @@ bitwise AND / OR / XOR instead of scanning 64 cells.</pre>
 							</div>
 						</div>
 						<div class="callout-note">
-							The useful software lesson here is that performance rarely comes from one clever trick. It comes
-							from many small decisions that all reduce unnecessary work, memory traffic, and avoidable latency.
+							Most of the speed-up came from many small changes that each cut unnecessary work, memory traffic
+							or latency, rather than from one large optimisation.
 						</div>
 					</section>
 
 					<section class="notebook-cell" data-section="iteration-validation" id="iteration-validation">
 						<div class="section-badge mono">09 - Iteration &amp; validation</div>
-						<h2 class="section-title">Iteration became an experimentation workflow with regression gates</h2>
+						<h2 class="section-title">Testing and iteration</h2>
 						<p>
 							Once the engine was functional, the work shifted from building features to building a reliable
 							feedback loop. Self-play and head-to-head matches became the experiment harness, while perft acted
-							as the regression suite that stopped "optimisations" from silently breaking correctness.
+							as the regression suite that caught any optimisation that broke move generation.
 						</p>
 						<p>
-							That is a software engineering pattern I value well beyond this project: measure behaviour with
-							production-like workloads, but keep deterministic correctness checks in front of every change. A
-							performance win that corrupts state is not a win.
+							I have carried this approach into other projects: measure performance on realistic workloads,
+							and run deterministic correctness checks before accepting any change.
+							
 						</p>
 						<div class="image-grid image-grid-dual">
 							<figure class="feature-frame">
 								<img class="media-img media-img-perft" :src="perftImg" alt="Perft validation output used to test chess move generation" loading="lazy" />
-								<figcaption class="media-cap">Perft remained the correctness gate before performance claims were trusted.</figcaption>
+								<figcaption class="media-cap">Perft tests were run before any performance change was accepted.</figcaption>
 							</figure>
 							<figure class="feature-frame">
 								<img
@@ -585,33 +585,33 @@ bitwise AND / OR / XOR instead of scanning 64 cells.</pre>
 									alt="Search log from the chess engine while evaluating positions"
 									loading="lazy"
 								/>
-								<figcaption class="media-cap">Self-play and live logs made iteration measurable instead of purely subjective.</figcaption>
+								<figcaption class="media-cap">Self-play results and search logs were used to measure each change.</figcaption>
 							</figure>
 						</div>
 						<div class="callout-note">
 							The project eventually included dedicated tuning infrastructure, so experiments could be compared
-							in large batches with confidence instead of by a few anecdotal games.
+							over large batches of games.
 						</div>
 					</section>
 
 					<section class="notebook-cell" data-section="local-ui" id="local-ui">
 						<div class="section-badge mono">10 - Local UI</div>
-						<h2 class="section-title">The local UI acted as both a product surface and a debugging tool</h2>
+						<h2 class="section-title">Local UI for play and debugging</h2>
 						<p>
-							The local interface turned the engine from a console-only program into something I could actually
-							play against, observe, and debug. That change sounds cosmetic, but it materially improved the
-							project because it exposed engine behaviour in a way raw terminal output never could.
+							The local interface turned the engine from a console-only program into something I could
+							play against, watch and debug. Seeing the engine's moves on a board made its behaviour much
+							easier to understand than terminal output.
 						</p>
 						<p>
 							Building the UI also forced a clean separation between the engine core and the interaction layer.
 							The same search and board code had to support local play, visible feedback, and future
-							integrations without being rewritten for each front end. In that sense, the UI was a proof that
-							the internal API boundary was real rather than accidental.
+							integrations without being rewritten for each front end.
+							
 						</p>
 						<div class="two-col-grid">
 							<figure class="feature-frame">
 								<img class="media-img" :src="gameplayImg" alt="Chess engine gameplay screen showing pieces and move interface" loading="lazy" />
-								<figcaption class="media-cap">The local UI made the engine easier to inspect, play against, and trust.</figcaption>
+								<figcaption class="media-cap">The local UI for playing against the engine.</figcaption>
 							</figure>
 							<div class="stacked-notes">
 								<div class="subsystem-card">
@@ -624,15 +624,15 @@ bitwise AND / OR / XOR instead of scanning 64 cells.</pre>
 								<div class="subsystem-card">
 									<div class="subsystem-title">Practical UX</div>
 									<p>
-										Local player-vs-engine support, move feedback, and a cleaner presentation pushed the
-										project beyond "works in a terminal" toward something others could actually use.
+										Local player-vs-engine support, move feedback and a cleaner presentation made the
+										project usable by people other than me.
 									</p>
 								</div>
 								<div class="subsystem-card">
 									<div class="subsystem-title">Reusable core</div>
 									<p>
-										The UI was a proof that the engine logic had been decomposed well enough to sit behind
-										more than one client.
+										The engine logic is separate from the UI, so the same core serves the local UI,
+										the CLI and the Lichess bot.
 									</p>
 								</div>
 							</div>
@@ -641,30 +641,30 @@ bitwise AND / OR / XOR instead of scanning 64 cells.</pre>
 
 					<section class="notebook-cell notebook-cell-end" data-section="lichess-integration" id="lichess-integration">
 						<div class="section-badge mono">11 - Lichess integration</div>
-						<h2 class="section-title">Lichess integration turned the engine into a real external-facing system</h2>
+						<h2 class="section-title">Playing online through Lichess</h2>
 						<p>
-							Lichess integration was the point where the project stopped being a private experiment and had to
-							handle real games in a live environment. That meant dealing with external APIs, real-time move
-							exchange, and the unpredictability of human and engine opponents outside controlled local tests.
+							Integrating with Lichess meant the engine had to
+							play real games online. That involved working with an external API, real-time move
+							exchange, and human and engine opponents outside controlled local tests.
 						</p>
 						<p>
-							For portfolio purposes, this section matters because it shows the work was not limited to core
-							algorithms. The engine was taken all the way through to integration, protocol handling, and
-							practical use against real opponents on infrastructure I did not control.
+							This took the work beyond the core
+							algorithms to integration, protocol handling and
+							regular play against other opponents on a third-party platform.
 						</p>
 						<div class="image-grid image-grid-dual">
 							<figure class="feature-frame">
 								<img class="media-img" :src="lichessImg" alt="Online chess rating or match result screenshot for the engine" loading="lazy" />
-								<figcaption class="media-cap">Lichess provided a live environment where strength and reliability were visible.</figcaption>
+								<figcaption class="media-cap">The engine's results on Lichess.</figcaption>
 							</figure>
 							<figure class="feature-frame">
 								<img class="media-img" :src="lichessAltImg" alt="Additional online chess match or rating screenshot for the engine" loading="lazy" />
-								<figcaption class="media-cap">A second result helps show repeatability beyond one isolated online session.</figcaption>
+								<figcaption class="media-cap">Results from a second online session.</figcaption>
 							</figure>
 						</div>
 						<div class="callout-note">
-							Beating me locally was one benchmark. Operating online through a third-party platform was the more
-							convincing demonstration that the engine was robust enough to leave the dev environment.
+							Beating me locally was the first benchmark. Playing reliably online against other players and engines
+							was a much stronger test.
 						</div>
 					</section>
 				</main>

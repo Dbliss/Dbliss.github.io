@@ -125,12 +125,12 @@
       <p class="section-label">Latest release · V2.1</p>
       <div class="slx-video-grid">
         <div class="slx-section-block">
-          <h2 class="section-title">Start from the real ground, not a rectangle</h2>
+          <h2 class="section-title">Locating fields on satellite imagery</h2>
           <p class="section-sub">
             Designers can now search for a venue, outline it on satellite imagery and have an oval fitted through
             the points. The measured size, orientation and location flow straight into the design. The pole step then
-            shades the standard's recommended pole zones over the real surroundings, so poles can be dragged to
-            places they could actually stand.
+            shades the standard's recommended pole zones over the satellite imagery, so poles can be dragged to
+            positions where they can physically be installed.
           </p>
           <ul class="slx-list">
             <li v-for="item in releaseHighlights" :key="item">{{ item }}</li>
@@ -180,8 +180,8 @@
         <div class="slx-section-block">
           <h2 class="section-title">The loading screen shows the search as it runs</h2>
           <p class="section-sub">
-            Rather than a spinner, the loading screen shows the best design found so far, drawn as the
-            final results will be. That includes isolux bands, each fitting's aiming line, 1/5/10 lux spill
+            While a job runs, the loading screen shows the best design found so far, drawn in the same
+            style as the final results. That includes isolux bands, each fitting's aiming line, 1/5/10 lux spill
             contours, and live statistics against the targets.
           </p>
           <ul class="slx-list">
@@ -194,7 +194,7 @@
     <!-- RESULT VIEWS -->
     <section class="slx-section" v-reveal>
       <p class="section-label">Results</p>
-      <h2 class="section-title">One design, five ways to read it</h2>
+      <h2 class="section-title">Result views</h2>
       <p class="section-sub slx-section-intro">
         The results can be viewed as a 3D night scene, a false-colour heatmap, isolux bands, or the lux at every grid
         point (hover to zoom in). Aiming points, grid values and isolux lines can each be switched on and off. The 3D
@@ -409,7 +409,7 @@
 
             <p class="section-sub">
               The search is visible while it runs. The loading screen shows the current stage, the fittings being tried and a live heatmap
-              of the best design so far against the targets, so users watch the solution converge instead of staring at a spinner.
+              of the best design so far against the targets, so users can watch the solution converge.
             </p>
           </div>
         </div>
@@ -442,7 +442,7 @@
             />
             <figcaption class="slx-gallery-caption">
               {{ videos.polePlacement
-                ? 'Pole placement over the real ground: shaded zones follow AS 2560.2.3, and poles can be added and dragged into place'
+                ? 'Pole placement on satellite imagery: shaded zones follow AS 2560.2.3, and poles can be added and dragged into place'
                 : 'Pole-position UI: invalid positions update as you change field size + sport' }}
             </figcaption>
           </figure>
@@ -577,7 +577,7 @@
 
         <!-- RIGHT / ROW 2 -->
         <div class="slx-section-block slx-feature-right-bottom">
-          <h2 class="section-title">Measured, not guessed</h2>
+          <h2 class="section-title">Benchmarks</h2>
 
           <div class="table-wrapper slx-table">
             <table class="mono">
@@ -708,11 +708,11 @@
       <div class="slx-section-block">
         <p class="section-label">Cloud architecture</p>
         <h2 class="section-title">
-          Serverless on AWS: nothing runs until someone needs it
+          Serverless AWS architecture
         </h2>
         <p class="section-sub">
           Sportslux started on a single always-on server. It now runs as an on-demand, serverless AWS stack: the frontend is served from the edge,
-          the API scales to zero between requests, and each calculation gets its own ARM container that shuts itself down when the work dries up.
+          the API scales to zero between requests, and each calculation gets its own ARM container that shuts down once it is idle.
           The whole stack is one CloudFormation template, deployed automatically on every merge.
         </p>
 
@@ -920,7 +920,7 @@ const releaseHighlights = [
 
 const liveProgressPoints = [
   'The worker sends a snapshot about once a second: the best candidate\'s illuminance as compact uint16 lux (~18 KB) plus its decoded fittings and aim points. It uses the same decoding as the final render.',
-  'The colour scale is fixed from 0 to the required lux for the whole run, so you can watch successive designs fill in. The scale never rescales under you.',
+  'The colour scale is fixed from 0 to the required lux for the whole run, so successive designs can be compared as they fill in.',
   'Progress is weighted by stage. Within a search it follows convergence on a log scale, it never moves backwards, and it does not stall in background tabs.',
   'For UI work, a dev page replays recorded optimiser runs through the real loading screen without a backend or login.'
 ]
@@ -1035,7 +1035,7 @@ const awsEfficiency = [
 ]
 
 const backendOps = [
-  'Every run is logged with enough metadata to reproduce issues, which makes debugging much faster than guessing from screenshots.',
+  'Every run is logged with enough metadata to reproduce issues, which makes debugging much faster.',
   'Caching is built in, so repeated runs with the same inputs return instantly instead of burning compute again.',
   'Validation happens at the API boundary, so the solver and databases are protected.',
   'A scheduled reconciler re-dispatches jobs whose worker disappeared and cleans up stale workers, so a failed container never leaves a user stuck on a loading screen.',
@@ -1051,7 +1051,7 @@ const learnings = [
   'I learned the value of proper observability by storing API calls and run metadata. This made issues easily diagnosable, made solver runs reproducible, enabled monitoring of usage/health, and allowed for result caching.',
   'Documentation is what keeps momentum in an intermittent project, so I documented features, decisions, and backend structure, and kept commits clear enough that rollbacks and version tracking are easy.',
   'Moving from an always-on server to serverless taught me to design around cost and cold starts: job state lives in the database, workers stay warm briefly, and compute is started just before a user needs it.',
-  'Performance work needs proof. Every optimisation shipped with a harness showing seeded results were identical to the old code, and tuning decisions were made from a 900-trial study rather than a handful of runs.',
+  'Every optimisation shipped with a test harness showing seeded results were identical to the old code, and tuning decisions were made from a 900-trial study rather than a handful of runs.',
 ]
 
 

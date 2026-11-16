@@ -55,7 +55,7 @@ The images here are two of the main diagnostics I use:
 Sportslux is a full-stack tool for engineers to rapidly design compliant sports field lighting layouts.
 It ingests field requirements, fixture photometry, and pole placement rules to generate optimised aiming plans, preview heatmaps, and PDFs.
 
-Designers can locate the real ground on satellite imagery, place up to 10 poles anywhere, watch the optimiser's best design update live, and review results in a 3D night view.
+Designers can locate the field on satellite imagery, place up to 10 poles anywhere, watch the optimiser's best design update live, and review results in a 3D night view.
 It also supports interactive manual overrides and uploads of custom IES files to extend the luminaire library.
 It runs on an on-demand serverless AWS stack (CloudFront, Lambda, ARM Fargate), so compute only exists while a calculation needs it.
 I led the UX, data model, and optimisation orchestration work to make it practical for day-to-day design teams.

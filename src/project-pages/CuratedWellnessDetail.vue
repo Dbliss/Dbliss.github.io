@@ -8,14 +8,14 @@
         <img class="cw-hero-logo" :src="logoCharcoal" alt="Curated Wellness" />
         <div class="cw-hero-copy">
           <p class="cw-kicker">Client build · Shopify · Applied AI</p>
-          <h1 class="cw-hero-title">Bella, an AI supplement guide that remembers who it's talking to.</h1>
+          <h1 class="cw-hero-title">Bella: an AI supplement guide with customer memory</h1>
           <p class="cw-hero-lead">
             I engineered everything behind the Curated Wellness storefront: the Bella chatbot, its retrieval and safety
             pipeline, customer and purchase memory, an affiliate programme, and the super admin the business runs on.
           </p>
           <div class="cw-hero-actions">
             <a class="cw-btn" :href="liveUrl" target="_blank" rel="noopener">Visit the live store ↗</a>
-            <a class="cw-btn cw-btn--quiet" href="#cw-bella" @click.prevent="scrollTo('cw-bella')">Watch Bella think ↓</a>
+            <a class="cw-btn cw-btn--quiet" href="#cw-bella" @click.prevent="scrollTo('cw-bella')">See how Bella replies ↓</a>
           </div>
         </div>
       </div>
@@ -43,15 +43,15 @@
     <section class="cw-section cw-overview" v-reveal>
       <div class="cw-overview-copy">
         <p class="cw-kicker">01 · The brief</p>
-        <h2 class="cw-h2">A premium store that sells like a knowledgeable friend</h2>
+        <h2 class="cw-h2">Project overview</h2>
         <p class="cw-copy">
           Curated Wellness is a New Zealand supplement brand with four products: creatine, whey protein, collagen and an
-          electrolyte blend. The founder wanted shoppers to get the kind of advice you'd get in a good boutique, without the
+          electrolyte blend. The founder wanted shoppers to get personalised product advice from a chatbot, without the
           compliance risk of an AI making health claims.
         </p>
         <p class="cw-copy">
-          The storefront look and feel came from the brand's design team. I was the engineer: I built the systems that make
-          the site smart, measurable and safe to run, and took them from a prototype in May to production on the owner's
+          The storefront look and feel came from the brand's design team. I built the systems behind it: the chatbot, customer
+          data, affiliate tracking and admin tools, and took them from a prototype in May to production on the owner's
           store in October 2026.
         </p>
         <div class="cw-pill-row">
@@ -121,7 +121,7 @@
 
     <!-- Bella replay -->
     <section class="cw-section cw-bella" id="cw-bella" v-reveal>
-      <p class="cw-kicker">03 · Watch Bella think</p>
+      <p class="cw-kicker">03 · Chat pipeline</p>
       <h2 class="cw-h2">Every reply runs through a five-stage pipeline</h2>
       <p class="cw-copy cw-copy--narrow">
         Pick a reply on the left. The right-hand panel shows what the backend did for that turn. This is a replay of real
@@ -212,11 +212,11 @@
     <!-- Retrieval -->
     <section class="cw-section cw-retrieval" v-reveal>
       <p class="cw-kicker">04 · Retrieval without a vector database</p>
-      <h2 class="cw-h2">Small, ranked context instead of the whole catalogue</h2>
+      <h2 class="cw-h2">Ranking which product knowledge goes into each reply</h2>
       <p class="cw-copy cw-copy--narrow">
         The brand's knowledge lives in markdown: six always-on guidance files plus seven micro-files per product. Each turn,
         the backend splits them into heading-level chunks, scores them against the message, page and shopper profile, and
-        packs the best into a fixed 32,000-character budget. It's cheap, deterministic and easy to unit-test, and the client
+        packs the best into a fixed 32,000-character budget. This keeps costs low and is easy to unit-test, and the client
         can edit the knowledge without touching code.
       </p>
 
@@ -320,8 +320,8 @@
           </li>
         </ul>
         <p class="cw-note">
-          When a turn overflows, lower-ranked chunks are dropped whole and logged by file and heading, so a silent quality
-          drop shows up in the server logs.
+          When a turn overflows, lower-ranked chunks are dropped whole and logged by file and heading, so missing context can be traced
+          in the server logs.
         </p>
       </div>
     </section>
@@ -329,7 +329,7 @@
     <!-- Architecture -->
     <section class="cw-section cw-arch" v-reveal>
       <p class="cw-kicker">05 · System architecture</p>
-      <h2 class="cw-h2">Shopify at the edge, a small Node service in the middle</h2>
+      <h2 class="cw-h2">Shopify app, Node backend and AWS services</h2>
       <p class="cw-copy cw-copy--narrow">
         Select any component to see what it does. Dashed boxes are the parts I didn't build.
       </p>
@@ -396,10 +396,10 @@
     <!-- Identity & affiliates -->
     <section class="cw-section cw-journey" v-reveal>
       <p class="cw-kicker">06 · Identity, memory &amp; attribution</p>
-      <h2 class="cw-h2">From anonymous visitor to known customer, without guessing</h2>
+      <h2 class="cw-h2">Linking visitors to Shopify customers</h2>
       <p class="cw-copy cw-copy--narrow">
         Bella remembers people across visits, and partners earn commission on the customers they bring in. Both depend on
-        tying a browser to a real Shopify customer, and doing it only when there's proof.
+        linking a browser to a Shopify customer account, which only happens once that link is verified.
       </p>
 
       <ol class="cw-steps">
@@ -422,10 +422,10 @@
     <!-- Admin -->
     <section class="cw-section cw-admin" v-reveal>
       <p class="cw-kicker">07 · Super admin</p>
-      <h2 class="cw-h2">One place to run the store, the partners and the bot</h2>
+      <h2 class="cw-h2">Admin dashboard for the store, partners and chatbot</h2>
       <p class="cw-copy cw-copy--narrow">
         The admin is a React Router app served from the Shopify app, backed by a dozen admin API routes. Below is a
-        faithful recreation of four of its views. The real dashboard sits behind a login, so the figures here are sample data.
+        recreation of four of its views. The real dashboard sits behind a login, so the figures here are sample data.
       </p>
 
       <div class="cw-admin-shell">
@@ -617,8 +617,8 @@
 
     <!-- Reliability -->
     <section class="cw-section cw-reliability" v-reveal>
-      <p class="cw-kicker">08 · Engineering for a real business</p>
-      <h2 class="cw-h2">Decisions I'd defend in a code review</h2>
+      <p class="cw-kicker">08 · Reliability</p>
+      <h2 class="cw-h2">Key design decisions</h2>
       <div class="cw-decisions">
         <article v-for="item in decisions" :key="item.title" class="cw-decision">
           <h3>{{ item.title }}</h3>
@@ -642,8 +642,8 @@
 
     <!-- Brand gallery -->
     <section class="cw-section cw-gallery-section" v-reveal>
-      <p class="cw-kicker">09 · The product knowledge Bella works from</p>
-      <h2 class="cw-h2">Four products, written down once and used everywhere</h2>
+      <p class="cw-kicker">09 · Product information</p>
+      <h2 class="cw-h2">Product guides</h2>
       <p class="cw-copy cw-copy--narrow">
         Bella's usage answers come from the same approved directions as the brand's packaging guides. Imagery by the
         Curated Wellness design team.
@@ -662,7 +662,7 @@
     <!-- Timeline -->
     <section class="cw-section cw-timeline-section" v-reveal>
       <p class="cw-kicker">10 · Delivery</p>
-      <h2 class="cw-h2">Six months from prototype to the owner's store</h2>
+      <h2 class="cw-h2">Project timeline</h2>
       <ol class="cw-timeline">
         <li v-for="item in timeline" :key="item.month">
           <span class="cw-timeline-month mono">{{ item.month }}</span>
@@ -675,8 +675,8 @@
     <!-- Closing -->
     <section class="cw-close" v-reveal>
       <div>
-        <p class="cw-kicker cw-kicker--light">What this project shows</p>
-        <h2 class="cw-close-title">Production AI that a small business can trust and run on its own</h2>
+        <p class="cw-kicker cw-kicker--light">Takeaways</p>
+        <h2 class="cw-close-title">Skills developed on this project</h2>
         <ul class="cw-close-list">
           <li v-for="skill in takeaways" :key="skill">{{ skill }}</li>
         </ul>
@@ -842,7 +842,7 @@ const turns = {
         text: 'Routine words ("strength", "4x a week") lift creatine sections. The product identity chunk joins automatically.',
         chunks: ['creatine-monohydrate/attributes.md', 'creatine-monohydrate/science.md', 'creatine-monohydrate/suitability.md', 'recommendations.md']
       },
-      model: { state: 'run', text: 'The model returns product handles, not free text. Unknown handles are discarded, so it can never invent a product.' },
+      model: { state: 'run', text: 'The model returns product handles instead of free text. Unknown handles are discarded, so it cannot recommend a product that does not exist.' },
       guards: { state: 'pass', text: 'Goal plus routine meets the readiness rules, so cards are allowed. Products named in the text get a card, and the product on the current page is never re-recommended.' },
       memory: { state: 'run', text: 'Profile adds routine (strength, 4x/week) and the recommended product, so later turns don\'t repeat it.' }
     }
@@ -872,7 +872,7 @@ const turns = {
     products: [],
     options: [{ label: "I'm pregnant, is creatine okay?", next: 'pregnant' }],
     pipeline: {
-      guardrail: { state: 'pass', text: 'Clear. Usage questions are the core job.' },
+      guardrail: { state: 'pass', text: 'Passed. Usage questions are within scope.' },
       retrieval: {
         state: 'run',
         text: 'Product name tokens are stripped before scoring, so the intent words "take" and "how" decide which sections win.',
@@ -892,7 +892,7 @@ const turns = {
     pipeline: {
       guardrail: { state: 'block', text: 'Matched a medical-advice pattern (pregnancy plus "okay"). The backend answers with fixed, reviewed copy.' },
       retrieval: { state: 'skip', text: 'Skipped. No context is assembled.' },
-      model: { state: 'skip', text: 'Not called. No tokens spent, and no chance of an improvised medical answer.' },
+      model: { state: 'skip', text: 'Not called, so no tokens are spent and the model cannot write its own medical answer.' },
       guards: { state: 'skip', text: 'Skipped. The guardrail copy is already final.' },
       memory: { state: 'run', text: 'Both messages are still stored, so the admin Chats view shows the full conversation.' }
     }
@@ -1333,7 +1333,7 @@ const sampleAffiliates = [
 
 const decisions = [
   {
-    title: 'Fail loudly, never lose a message',
+    title: 'Every message is stored',
     copy: 'Each message is stored before the reply is generated, and the reply is stored before it returns. If the database is down, chat returns a 503 instead of an unrecorded conversation.'
   },
   {
@@ -1341,20 +1341,20 @@ const decisions = [
     copy: 'Identity, order lines and commission are written in one transaction. Webhook retries upsert by order and line ID, so a retried webhook never double-counts.'
   },
   {
-    title: 'Privacy by proof',
+    title: 'Verified access to purchase history',
     copy: 'Purchase history appears only after a verified login or a verified order link. Anything typed into the chat, such as a name or email, never unlocks it.'
   },
   {
     title: 'Deterministic rules around the model',
-    copy: 'The LLM writes the words. Code decides when products may appear, which handles are real, how long replies are, and when a medical question never reaches the model.'
+    copy: 'The LLM writes the reply text, while code decides when products may appear, which handles are real, how long replies are, and when a medical question never reaches the model.'
   },
   {
     title: 'Client-editable knowledge',
     copy: 'The founder edits Bella\'s knowledge in the admin. Edits are stored as overrides on top of the repo files and can be reset with one click.'
   },
   {
-    title: 'Boring, cheap infrastructure',
-    copy: 'One EC2 box, one small RDS instance, a one-dependency Node service. It\'s cheap to run, easy to reason about, and has 130 tests behind it.'
+    title: 'Simple, low-cost infrastructure',
+    copy: 'The system runs on one EC2 instance, one small RDS database and a Node service with a single dependency, which keeps running costs low. It is covered by 130 automated tests.'
   }
 ]
 
@@ -1373,7 +1373,7 @@ const takeaways = [
   'Shipping an LLM feature with guardrails a non-technical client can rely on',
   'Designing identity and attribution logic where mistakes cost money or leak data',
   'Owning a production system from schema to monitoring to incident response',
-  'Working alongside a design team and a client to integrate rather than replace'
+  'Working alongside a design team and a client, building on top of their existing store'
 ]
 </script>
 

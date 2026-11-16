@@ -6,7 +6,7 @@
       <h1>Dillon Bliss</h1>
       <p class="section-sub">
         Mechatronic Engineer working as a Full-Stack Developer in Sydney.
-        The interactive city needs WebGL — here are the quick links instead.
+        The interactive city needs WebGL, so here are the quick links instead.
       </p>
       <div class="fallback-links">
         <RouterLink class="btn primary" to="/projects">View projects</RouterLink>
@@ -288,7 +288,7 @@ const customDetails = {
     title: 'Dillon Bliss',
     tagline: 'Mechatronic engineer · Full-stack developer · Sydney',
     excerpt:
-      'This city is my portfolio — every district is a real project. Start here to learn who I am, my experience, and what I have shipped.',
+      'This city is my portfolio, and each district is one of my projects. Start here to learn about me, my experience and the projects I have shipped.',
     stack: ['Vue', 'Node.js', 'Python', 'C++', 'PostgreSQL'],
     cta: 'About me'
   },
@@ -296,7 +296,7 @@ const customDetails = {
     title: 'Get in touch',
     tagline: 'Open to interesting problems and good coffee',
     excerpt:
-      'Want to talk engineering, full-stack work, or one of the projects in this city? The comms tower is always listening.',
+      'Want to talk engineering, full-stack work, or one of the projects in this city? Send me a message from the comms tower.',
     stack: [],
     cta: 'Contact'
   }

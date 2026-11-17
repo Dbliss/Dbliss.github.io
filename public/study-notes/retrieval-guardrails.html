@@ -428,7 +428,7 @@ function codeBlock (lines, x, y, w, h, active, a = 1) {
 }
 
 // ===== CONTENT: Retrieval and guardrails for an AI chatbot =====
-// One worked example: a shopper asks Bella, the Curated Wellness guide, how much creatine to take.
+// One worked example: a shopper asks a supplement chatbot how much creatine to take.
 // The pipeline follows the case study: request guardrail → heading-level chunks of markdown →
 // token-overlap scoring with product names stripped → boosts → packing into a 32,000-character
 // budget → the model call → deterministic response guards with one repair pass.
@@ -955,7 +955,7 @@ const SCENES = [
     title: 'Too much to send every time',
     draw: sceneCorpus,
     beats: [
-      { text: 'Bella, the Curated Wellness supplement guide, answers from the brand’s own writing, not from what a language model happens to know. Six guidance files apply to every conversation.' },
+      { text: 'Imagine a chatbot for a supplement shop. It uses the shop’s own documents to answer questions about its products. Six guidance files apply to every conversation.' },
       { text: 'Each of the four products has seven more files, one per topic: attributes, usage, science, suitability, FAQ, ingredients and safety.' },
       { text: 'A model reads its instructions as text, and each turn has a fixed allowance of 32,000 characters here. The whole catalogue overflows it, and sending everything would also bury the part that matters.' }
     ]
@@ -1052,7 +1052,7 @@ const SCENES = [
       { text: 'A failed check gets exactly one repair pass. The trimmed reply keeps only the two sentences that answer the question.' },
       { text: 'Product cards follow rules too. The shopper has given a goal, strength, and a routine, four sessions a week, so cards are now allowed.' },
       { text: 'Creatine has not been carded yet, and the shopper is not on its page, so its card is attached.' },
-      { text: 'Only now does the reply reach the shopper. The model writes the words, while code decides what is allowed.' }
+      { text: 'Only now does the reply reach the shopper. The model writes the words, while code decides what is allowed. Bella, the Curated Wellness supplement guide, is one example of this approach.' }
     ]
   }
 ]

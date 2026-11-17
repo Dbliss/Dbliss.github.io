@@ -3,7 +3,7 @@
     <header class="head">
       <div class="section-label">Study notes</div>
       <h1 class="title">Notes</h1>
-      <p class="sub">Animated walk-throughs, one worked example each. Lines on the right join notes that share an idea.</p>
+      <p class="sub">Notes that I used to help me learn complex topics.</p>
     </header>
 
     <div v-if="notes.length" class="toolbar">

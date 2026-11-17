@@ -22,8 +22,8 @@ const result = {
         finalMedianDisplay: '$500k'
       },
       points: [
-        { year: 0, p10: 100000, p50: 100000, p90: 100000, holdNetWorthP10: 100000, holdNetWorthP50: 100000, holdNetWorthP90: 100000, annualSurplusP10: 1000, annualSurplusP50: 2000, annualSurplusP90: 3000, homeEquityP50: 0 },
-        { year: 10, p10: 360000, p50: 500000, p90: 720000, holdNetWorthP10: 360000, holdNetWorthP50: 500000, holdNetWorthP90: 720000, annualSurplusP10: 2000, annualSurplusP50: 4000, annualSurplusP90: 6000, homeEquityP50: 0 }
+        { year: 0, p25: 100000, p50: 100000, p75: 100000, holdNetWorthP25: 100000, holdNetWorthP50: 100000, holdNetWorthP75: 100000, annualSurplusP25: 1000, annualSurplusP50: 2000, annualSurplusP75: 3000, homeEquityP50: 0 },
+        { year: 10, p25: 360000, p50: 500000, p75: 720000, holdNetWorthP25: 360000, holdNetWorthP50: 500000, holdNetWorthP75: 720000, annualSurplusP25: 2000, annualSurplusP50: 4000, annualSurplusP75: 6000, homeEquityP50: 0 }
       ]
     },
     buyHouseHome: {
@@ -45,9 +45,9 @@ const result = {
         finalMedianDisplay: '$620k'
       },
       points: [
-        { year: 0, p10: 100000, p50: 100000, p90: 100000, holdNetWorthP10: 100000, holdNetWorthP50: 100000, holdNetWorthP90: 100000, annualSurplusP10: -2000, annualSurplusP50: -1000, annualSurplusP90: 0, homeEquityP50: 0 },
-        { year: 5, p10: 180000, p50: 240000, p90: 310000, holdNetWorthP10: 220000, holdNetWorthP50: 290000, holdNetWorthP90: 350000, annualSurplusP10: -5000, annualSurplusP50: -1000, annualSurplusP90: 1500, homeEquityP50: 120000 },
-        { year: 10, p10: 330000, p50: 620000, p90: 910000, holdNetWorthP10: 430000, holdNetWorthP50: 760000, holdNetWorthP90: 1040000, annualSurplusP10: -3000, annualSurplusP50: 2500, annualSurplusP90: 8000, homeEquityP50: 650000 }
+        { year: 0, p25: 100000, p50: 100000, p75: 100000, holdNetWorthP25: 100000, holdNetWorthP50: 100000, holdNetWorthP75: 100000, annualSurplusP25: -2000, annualSurplusP50: -1000, annualSurplusP75: 0, homeEquityP50: 0 },
+        { year: 5, p25: 180000, p50: 240000, p75: 310000, holdNetWorthP25: 220000, holdNetWorthP50: 290000, holdNetWorthP75: 350000, annualSurplusP25: -5000, annualSurplusP50: -1000, annualSurplusP75: 1500, homeEquityP50: 120000 },
+        { year: 10, p25: 330000, p50: 620000, p75: 910000, holdNetWorthP25: 430000, holdNetWorthP50: 760000, holdNetWorthP75: 1040000, annualSurplusP25: -3000, annualSurplusP50: 2500, annualSurplusP75: 8000, homeEquityP50: 650000 }
       ]
     }
   }

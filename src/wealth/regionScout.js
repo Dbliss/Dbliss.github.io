@@ -145,9 +145,9 @@ function buildMonteCarloSeries(area, propertyType, startPrice, growthMean, growt
     const summary = percentileSummary(values)
     return {
       year,
-      low: roundToNearestThousand(summary.p10),
+      low: roundToNearestThousand(summary.p25),
       mid: roundToNearestThousand(summary.p50),
-      high: roundToNearestThousand(summary.p90)
+      high: roundToNearestThousand(summary.p75)
     }
   })
 }

@@ -1,5 +1,88 @@
 [
   {
+    "slug": "webhooks-hmac-idempotency",
+    "file": "webhooks-hmac-idempotency.html",
+    "title": "Webhooks, HMAC signatures and idempotency",
+    "summary": "How a backend knows a Shopify webhook is genuine, using a live SHA-256 and HMAC, why retries create duplicates, and how idempotency keys and transactions make each event count exactly once.",
+    "topic": "Web systems",
+    "tags": [
+      "curated wellness",
+      "frontrunner",
+      "webhooks",
+      "security"
+    ],
+    "chapters": 8,
+    "minutes": 3,
+    "updated": "2026-11-17",
+    "related": [
+      "hash-tables-memoisation"
+    ]
+  },
+  {
+    "slug": "retrieval-guardrails",
+    "file": "retrieval-guardrails.html",
+    "title": "Retrieval and guardrails for an AI chatbot",
+    "summary": "How the Curated Wellness chatbot blocks risky requests before the model, picks the right markdown chunks by shared words and boosts, packs them into a fixed budget, and checks the reply with rules in code.",
+    "topic": "Applied AI",
+    "tags": [
+      "curated wellness",
+      "retrieval",
+      "LLM safety"
+    ],
+    "chapters": 8,
+    "minutes": 3,
+    "updated": "2026-11-17"
+  },
+  {
+    "slug": "lighting-differential-evolution",
+    "file": "lighting-differential-evolution.html",
+    "title": "Lighting uniformity and differential evolution",
+    "summary": "How Sportslux works out the lux at every point of a field from a floodlight’s intensity table, scores a design on average light and uniformity, and searches 10^40 designs with differential evolution.",
+    "topic": "Algorithms",
+    "tags": [
+      "sportslux",
+      "optimisation",
+      "photometry"
+    ],
+    "chapters": 9,
+    "minutes": 4,
+    "updated": "2026-11-17"
+  },
+  {
+    "slug": "bootstrap-resampling",
+    "file": "bootstrap-resampling.html",
+    "title": "Bootstrap resampling of returns",
+    "summary": "Why the wealth calculator samples real monthly history instead of a bell, how months compound into a year, and why it copies blocks of months, at the same dates for every fund.",
+    "topic": "Statistics / Simulation",
+    "tags": [
+      "wealth pathways",
+      "monte carlo",
+      "bootstrap"
+    ],
+    "series": "Monte Carlo simulation",
+    "part": 2,
+    "chapters": 8,
+    "minutes": 3,
+    "updated": "2026-11-17"
+  },
+  {
+    "slug": "monte-carlo-simulation",
+    "file": "monte-carlo-simulation.html",
+    "title": "Monte Carlo simulation and percentile bands",
+    "summary": "How the wealth calculator turns one guess about returns into 500 random futures, how a seeded generator and the Box–Muller method draw each year’s return, and how percentiles turn the crowd into a band.",
+    "topic": "Statistics / Simulation",
+    "tags": [
+      "wealth pathways",
+      "monte carlo",
+      "percentiles"
+    ],
+    "series": "Monte Carlo simulation",
+    "part": 1,
+    "chapters": 7,
+    "minutes": 4,
+    "updated": "2026-11-17"
+  },
+  {
     "slug": "unscented-kalman-filter",
     "file": "unscented-kalman-filter.html",
     "title": "The unscented Kalman filter",

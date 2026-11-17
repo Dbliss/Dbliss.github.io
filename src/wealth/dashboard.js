@@ -500,7 +500,7 @@ export function buildDashboardModel(result, requestedBaselineKey, inflationRate 
       const breakevenYearVsBaseline = getBreakevenYearVsBaseline(strategy, baseline)
       const finalPoint = strategy.points[strategy.points.length - 1]
       const deltaVsBaseline = baseline ? strategy.summary.finalMedianNetWorth - baseline.summary.finalMedianNetWorth : 0
-      const variabilitySpread = finalPoint ? finalPoint.p90 - finalPoint.p10 : 0
+      const variabilitySpread = finalPoint ? finalPoint.p75 - finalPoint.p25 : 0
 
       return {
         ...strategy,
@@ -575,35 +575,35 @@ export function buildDashboardSeries(strategies, metric, inflationRate = 0.03) {
       if (metric === 'annualSurplus') {
         return {
           year: point.year,
-          low: point.annualSurplusP10,
+          low: point.annualSurplusP25,
           mid: point.annualSurplusP50,
-          high: point.annualSurplusP90
+          high: point.annualSurplusP75
         }
       }
 
       if (metric === 'holdBalance') {
         return {
           year: point.year,
-          low: point.holdNetWorthP10,
+          low: point.holdNetWorthP25,
           mid: point.holdNetWorthP50,
-          high: point.holdNetWorthP90
+          high: point.holdNetWorthP75
         }
       }
 
       if (metric === 'inflationAdjusted') {
         return {
           year: point.year,
-          low: discountToToday(point.p10, point.year, inflationRate),
+          low: discountToToday(point.p25, point.year, inflationRate),
           mid: discountToToday(point.p50, point.year, inflationRate),
-          high: discountToToday(point.p90, point.year, inflationRate)
+          high: discountToToday(point.p75, point.year, inflationRate)
         }
       }
 
       return {
         year: point.year,
-        low: point.p10,
+        low: point.p25,
         mid: point.p50,
-        high: point.p90
+        high: point.p75
       }
     })
   }))
@@ -621,7 +621,7 @@ export function buildDashboardDistributionSeries(result, strategies, metric, inf
       samples = samples.map((value) => discountToToday(value, horizonYear, inflationRate))
     }
 
-    const summary = samples.length ? percentileSummary(samples) : { p10: 0, p50: 0, p90: 0 }
+    const summary = samples.length ? percentileSummary(samples) : { p25: 0, p50: 0, p75: 0 }
 
     return {
       id: strategy.key,
@@ -630,9 +630,9 @@ export function buildDashboardDistributionSeries(result, strategies, metric, inf
       accent: strategy.accent,
       samples,
       stats: {
-        p10: summary.p10,
+        p25: summary.p25,
         p50: summary.p50,
-        p90: summary.p90,
+        p75: summary.p75,
         displayP50: formatShortCurrency(summary.p50)
       }
     }

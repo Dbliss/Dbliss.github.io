@@ -47,14 +47,51 @@ function roundLookbackYears(monthCount) {
   return Math.round((Math.max(0, Number(monthCount) || 0) / 12) * 10) / 10
 }
 
+function trimAssetToMonths(asset, months) {
+  const monthlyReturns = asset.monthlyReturns.filter(entry => months.has(entry.month))
+  return {
+    ...asset,
+    lookbackYears: roundLookbackYears(monthlyReturns.length),
+    startMonth: monthlyReturns[0]?.month ?? null,
+    endMonth: monthlyReturns[monthlyReturns.length - 1]?.month ?? null,
+    months: monthlyReturns.length,
+    monthlyReturns
+  }
+}
+
+// Shared funds are sampled at the same calendar months so that how they move together survives,
+// for example shares falling while bonds rise in the same crisis. That needs months every shared
+// fund has, so each shared history is trimmed to the window they all cover.
+function alignSharedAssets(assets) {
+  const sharedWithData = wealthBootstrapSharedAssetOrder.filter(key => assets[key]?.monthlyReturns.length)
+  const commonMonths = sharedWithData.reduce((common, key) => {
+    const months = new Set(assets[key].monthlyReturns.map(entry => entry.month))
+    return common === null ? months : new Set([...common].filter(month => months.has(month)))
+  }, null)
+  if (!commonMonths || commonMonths.size === 0) return null
+
+  sharedWithData.forEach((key) => {
+    assets[key] = trimAssetToMonths(assets[key], commonMonths)
+  })
+  const reference = assets[sharedWithData[0]]
+  return {
+    assetKeys: sharedWithData,
+    startMonth: reference.startMonth,
+    endMonth: reference.endMonth,
+    months: reference.months
+  }
+}
+
 export const wealthAssetBootstrapData = (() => {
   const assets = Object.fromEntries(
     wealthBootstrapAssetOrder.map((key) => [key, normaliseAsset(rawWealthAssetBootstrapData?.assets?.[key], key)])
   )
+  const sharedWindow = alignSharedAssets(assets)
 
   return {
     generatedAt: rawWealthAssetBootstrapData?.generatedAt || null,
     monthsPerSimulationYear: Math.max(1, Number(rawWealthAssetBootstrapData?.monthsPerSimulationYear) || 12),
+    sharedWindow,
     assets
   }
 })()
@@ -121,11 +158,15 @@ function resolveMonthlySequenceForAsset(assetKey, random, options = {}, cachedSe
   if (!monthlyReturns.length) return []
   if (Array.isArray(cachedSequences[assetKey])) return cachedSequences[assetKey]
 
-  if (wealthBootstrapSharedAssetOrder.includes(assetKey)) {
+  const sharedWindow = wealthAssetBootstrapData.sharedWindow
+  if (sharedWindow?.assetKeys.includes(assetKey)) {
+    // Every shared fund holds the same months in the same order, so one sampled set of
+    // positions reads each fund at the same calendar months.
     if (!Array.isArray(cachedSequences.__shared__)) {
-      cachedSequences.__shared__ = buildSampledMonthSequence(monthlyReturns, random, options)
+      const positions = Array.from({ length: sharedWindow.months }, (_, index) => index)
+      cachedSequences.__shared__ = buildSampledMonthSequence(positions, random, options)
     }
-    cachedSequences[assetKey] = cachedSequences.__shared__
+    cachedSequences[assetKey] = cachedSequences.__shared__.map(index => monthlyReturns[index])
     return cachedSequences[assetKey]
   }
 

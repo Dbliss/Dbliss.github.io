@@ -1,273 +1,113 @@
 <template>
-  <article class="sportslux-page">
-    <RouterLink
-      to="/projects"
-      class="btn back-link"
-    >
-      ← Back to projects
-    </RouterLink>
+  <article class="sportslux-page" aria-labelledby="sportslux-title">
+    <header class="slx-topline slx-inset">
+      <RouterLink to="/projects" class="slx-link">&#8592; All projects</RouterLink>
+      <span>Selected work / Sportslux</span>
+      <span class="slx-status"><i aria-hidden="true"></i> In production</span>
+    </header>
 
-    <!-- LIGHT STREAMS (behind cards, inside content column) -->
-    <div class="slx-light-layer" aria-hidden="true">
-      <div class="slx-light-layer-inner">
-        <div
-          v-for="trail in lightTrails"
-          :key="trail.id"
-          class="slx-light"
-          :style="{
-            '--x': trail.x + '%',
-            '--duration': trail.duration + 's',
-            '--delay': trail.delay + 's',
-            '--size': trail.size + 'px'
-          }"
-        ></div>
-      </div>
-    </div>
-
-    <!-- HERO -->
-    <section class="slx-hero" v-reveal>
-      <div class="slx-hero-left">
-        <p class="slx-kicker">Sports lighting · optimisation engine</p>
-
-        <h1 class="slx-title">
-          {{ project.title }}
-        </h1>
-
-        <p class="slx-subtitle">
-          Sportslux turns luminaire data and customer requests into an optimisation problem. A basic user enters in
-          field geometry, target lux levels and allowed hardware; the engine explores thousands of distributions and
-          returns optimal solutions within seconds.
-        </p>
-
-        <div class="slx-meta-row">
-          <div class="slx-tag-group">
-            <CategoryTag :category="project.category" />
-            <span
-              v-for="t in project.tags"
-              :key="t"
-              class="tag slx-tag"
-            >
-              {{ t }}
-            </span>
-          </div>
-
-          <p class="slx-stack mono">
-            <span class="slx-stack-label">Stack</span>
-            <span class="slx-stack-value">{{ project.stack.join(' · ') }}</span>
-          </p>
-        </div>
-
-        <div class="slx-hero-actions">
-          <a
-            v-if="project.repoUrl"
-            class="btn btn-primary"
-            :href="project.repoUrl"
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            View code ↗
-          </a>
-          <a
-            v-if="project.liveUrl"
-            class="btn btn-ghost"
-            :href="project.liveUrl"
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            Live demo ↗
-          </a>
-        </div>
-
-        <p class="slx-hero-footnote mono">
-          From hours of rudimentary selection of light positions to instant perfect solutions with live photometry.
-        </p>
-
-        <ul class="slx-hero-stats" aria-label="Sportslux headline numbers">
-          <li v-for="stat in heroStats" :key="stat.label">
-            <span class="slx-hero-stat-value mono">{{ stat.value }}</span>
-            <span class="slx-hero-stat-label">{{ stat.label }}</span>
-          </li>
-        </ul>
-      </div>
-
-      <div class="slx-hero-right">
-        <video
-          v-if="videos.walkthrough"
-          class="image"
-          :src="videos.walkthrough"
-          :poster="login"
-          aria-label="Sportslux walkthrough: sign in, set up a field, run the optimiser and download the report."
-          muted
-          autoplay
-          loop
-          playsinline
-          preload="metadata"
-        ></video>
-        <template v-else>
-          <video
-            v-autoplay-visible
-            class="image"
-            :src="video3d"
-            :poster="poster3d"
-            muted
-            loop
-            playsinline
-            preload="metadata"
-            aria-label="3D night render of Waverley Park, Melbourne, lit by the Sportslux design, with photometric haze showing each beam."
-          ></video>
-          <span class="slx-video-badge mono">Live 3D render · Waverley Park, Melbourne</span>
-        </template>
-      </div>
-    </section>
-
-    <!-- LATEST RELEASE: SATELLITE FIELD LOCATION -->
-    <section class="slx-section" v-reveal>
-      <p class="section-label">Latest release · V2.1</p>
-      <div class="slx-video-grid">
-        <div class="slx-section-block">
-          <h2 class="section-title">Locating fields on satellite imagery</h2>
-          <p class="section-sub">
-            Designers can now search for a venue, outline it on satellite imagery and have an oval fitted through
-            the points. The measured size, orientation and location flow straight into the design. The pole step then
-            shades the standard's recommended pole zones over the satellite imagery, so poles can be dragged to
-            positions where they can physically be installed.
-          </p>
-          <ul class="slx-list">
-            <li v-for="item in releaseHighlights" :key="item">{{ item }}</li>
-          </ul>
-        </div>
-
-        <figure class="slx-video-figure">
-          <video
-            v-autoplay-visible
-            class="slx-video"
-            :src="videoSatellite"
-            :poster="posterSatellite"
-            muted
-            loop
-            playsinline
-            preload="none"
-            aria-label="Searching for Waverley Park, outlining the oval on satellite imagery and fitting an oval through the points."
-          ></video>
-          <figcaption class="slx-gallery-caption">
-            Waverley Park located, outlined on satellite imagery and fitted as an oval (1.5× speed)
-          </figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <!-- LIVE OPTIMISER -->
-    <section class="slx-section" v-reveal>
-      <p class="section-label">Live optimisation</p>
-      <div class="slx-video-grid slx-video-grid-reverse">
-        <figure class="slx-video-figure">
-          <video
-            v-autoplay-visible
-            class="slx-video"
-            :src="videoLoading"
-            :poster="posterLoading"
-            muted
-            loop
-            playsinline
-            preload="none"
-            aria-label="The Sportslux loading screen showing the best design found so far updating live during a calculation."
-          ></video>
-          <figcaption class="slx-gallery-caption">
-            A real 8-pole AFL calculation for Waverley Park. The search section is shown at 3× speed.
-          </figcaption>
-        </figure>
-
-        <div class="slx-section-block">
-          <h2 class="section-title">The loading screen shows the search as it runs</h2>
-          <p class="section-sub">
-            While a job runs, the loading screen shows the best design found so far, drawn in the same
-            style as the final results. That includes isolux bands, each fitting's aiming line, 1/5/10 lux spill
-            contours, and live statistics against the targets.
-          </p>
-          <ul class="slx-list">
-            <li v-for="item in liveProgressPoints" :key="item">{{ item }}</li>
-          </ul>
+    <section class="slx-hero">
+      <figure class="slx-hero-media">
+        <video v-autoplay-visible="{ start: 6, end: 12 }" :src="`${video3d}#t=6`" :poster="poster3d" autoplay muted loop playsinline disablepictureinpicture disableremoteplayback tabindex="-1" @contextmenu.prevent preload="metadata"
+          aria-label="Sportslux 3D night render of Waverley Park, Melbourne, showing the lighting design and its beams."></video>
+        <figcaption>Waverley Park, Melbourne <span>3D lighting preview</span></figcaption>
+      </figure>
+      <div class="slx-hero-copy">
+        <p class="slx-eyebrow">Full-stack engineering / Schr&#233;der</p>
+        <h1 id="sportslux-title">Sportslux<span class="slx-title-dot">.</span></h1>
+        <p class="slx-hero-heading">Sports lighting<br>as an optimisation problem.</p>
+        <p class="slx-body">I led end-to-end development of this production application, covering system architecture, UX and frontend development, backend API design and AWS infrastructure. I also built the CI/CD pipeline to automate builds and deployments.</p>
+        <a href="#sportslux-overview" class="slx-link slx-explore" @click.prevent="scrollToOverview">Read the case study <span aria-hidden="true">&#8595;</span></a>
+        <div v-if="project.repoUrl || project.liveUrl" class="slx-actions">
+          <a v-if="project.repoUrl" :href="project.repoUrl" target="_blank" rel="noopener noreferrer" class="slx-link">View code &#8599;</a>
+          <a v-if="project.liveUrl" :href="project.liveUrl" target="_blank" rel="noopener noreferrer" class="slx-link">Live demo &#8599;</a>
         </div>
       </div>
     </section>
 
-    <!-- RESULT VIEWS -->
-    <section class="slx-section" v-reveal>
-      <p class="section-label">Results</p>
-      <h2 class="section-title">Result views</h2>
-      <p class="section-sub slx-section-intro">
-        The results can be viewed as a 3D night scene, a false-colour heatmap, isolux bands, or the lux at every grid
-        point (hover to zoom in). Aiming points, grid values and isolux lines can each be switched on and off. The 3D
-        view uses three.js and places the lit field in its surroundings. Its haze option shapes each beam from that
-        luminaire's real photometry. The view loads only when it is opened and is kept once built, so switching back
-        to it is instant.
-      </p>
-      <div class="slx-video-pair">
-        <figure class="slx-video-figure">
-          <video
-            v-autoplay-visible
-            class="slx-video"
-            :src="videoOverlays"
-            :poster="posterOverlays"
-            muted
-            loop
-            playsinline
-            preload="none"
-            aria-label="The 3D results view with isolux lines and then grid values drawn over the lit field."
-          ></video>
-          <figcaption class="slx-gallery-caption">
-            3D view with isolux lines, then the lux at every grid point
-          </figcaption>
-        </figure>
-
-        <figure class="slx-video-figure">
-          <video
-            v-autoplay-visible
-            class="slx-video"
-            :src="videoResults"
-            :poster="posterResults"
-            muted
-            loop
-            playsinline
-            preload="none"
-            aria-label="Switching the Sportslux results between the heatmap, isolux and an interactive lux grid with hover zoom."
-          ></video>
-          <figcaption class="slx-gallery-caption">
-            Heatmap, isolux and grid views. Hovering the grid zooms in on the values.
-          </figcaption>
-        </figure>
+    <section id="sportslux-overview" ref="overview" tabindex="-1" class="slx-overview slx-inset slx-band" aria-labelledby="slx-overview-title">
+      <div class="slx-overview-heading">
+        <p class="slx-eyebrow">01 / The project</p>
+        <h2 id="slx-overview-title">Why Sportslux<br>was developed.</h2>
+      </div>
+      <div>
+        <p class="slx-body">A sports lighting design is a plan for lighting a playing field: where the poles go, how many lights they need and where each light should point. The aim is to light the field evenly and brightly enough for play, while limiting glare and unwanted light reaching neighbouring properties.</p>
+        <p class="slx-body">Designers can spend hours adjusting these choices by hand. Sportslux was developed for Schr&#233;der to automate the initial design, calculating a suitable arrangement of lights and giving designers a starting point to review and refine.</p>
+        <p class="slx-body">Salespeople can also generate draft designs during customer meetings, showing what a proposed lighting installation could look like. This supports a more informed, professional conversation and provides a basis for more accurate initial quotes instead of rough estimates.</p>
+        <dl class="slx-project-facts">
+          <div><dt>Technology</dt><dd>{{ project.stack.join(' / ') }}</dd></div>
+        </dl>
       </div>
     </section>
 
-    <!-- ENGINE DESIGN -->
-    <section class="slx-section slx-engine" v-reveal>
-      <div class="slx-engine-header">
-        <div class="slx-section-grid-engine">
-          <div>
-            <p class="section-label">Engine design & Simulation</p>
-            <h2 class="section-title">Geometry, optimisation and photometry in one flow</h2>
-            <p class="section-lead">
-              The engine takes fixed project inputs, searches over the variables it can change,
-              and returns a verified lighting design that meets the performance targets.
-            </p>
+    <section class="slx-stats slx-inset" aria-label="Sportslux capabilities and time savings">
+      <div v-for="stat in stats" :key="stat.label"><p>{{ stat.value }}<span>{{ stat.unit }}</span></p><span class="slx-stat-label">{{ stat.label }}</span></div>
+    </section>
 
-            <p class="section-lead">
-              The user selects the sport, field dimensions, pole positions, and
-              what luminaires to use. The engine automatically finds the minimum number of Fittings required
-              to reach the optimal solution that meets the requirements. All done in seconds.
-            </p>
-          </div>
-
-          <img
-            class="image"
-            :src="resultsGrid"
-            alt="Sportslux photometry grid preview."
-            loading="lazy"
-          />
-        </div>
+    <section class="slx-feature slx-band slx-inset" aria-labelledby="slx-field-title">
+      <div class="slx-copy">
+        <p class="slx-eyebrow">02 / Geometry &amp; field setup</p>
+        <h2 id="slx-field-title">Satellite imagery<br>to field geometry.</h2>
+        <p class="slx-body">The field setup workflow lets designers search for a venue and trace its boundary on satellite imagery. An oval is fitted through the selected points, and the measured size, orientation and location become inputs to the lighting calculation.</p>
+        <p class="slx-body">Recommended pole zones appear over the map, so designers can place lights where they can actually be installed. Each pole can have its own position, height and fitting count.</p>
+        <div class="slx-details slx-expanded"><h3 class="slx-detail-title">Field setup capabilities</h3><ul><li v-for="item in fieldSetupHighlights" :key="item">{{ item }}</li></ul></div>
       </div>
+      <figure class="slx-media">
+        <video v-autoplay-visible :src="videoSatellite" :poster="posterSatellite" autoplay muted loop playsinline disablepictureinpicture disableremoteplayback tabindex="-1" @contextmenu.prevent preload="none"
+          aria-label="Locating Waverley Park on satellite imagery and tracing the field boundary."></video>
+        <figcaption><span>01 &mdash; Locate &amp; outline</span><span>Satellite field setup &middot; 1.5&times; speed</span></figcaption>
+      </figure>
+    </section>
 
-      <div class="slx-engine-matrix">
+    <section class="slx-feature slx-feature-media-first slx-band slx-inset" aria-labelledby="slx-search-title">
+      <div class="slx-copy">
+        <p class="slx-eyebrow">03 / Live calculation feedback</p>
+        <h2 id="slx-search-title">Visualising<br>solver progress.</h2>
+        <p class="slx-body">While a job runs, the interface renders the best candidate in the same style as the final result: isolux bands, fitting aiming lines, 1/5/10 lux spill contours and live statistics against the targets.</p>
+        <p class="slx-body">A fixed colour scale makes each improvement easy to compare. If the targets cannot be met, the closest solution is shown with the most important requirements prioritised.</p>
+        <div class="slx-details slx-expanded"><h3 class="slx-detail-title">Inside the live preview</h3><ul><li v-for="item in liveProgressPoints" :key="item">{{ item }}</li></ul></div>
+      </div>
+      <figure class="slx-media">
+        <video v-autoplay-visible :src="videoLoading" :poster="posterLoading" autoplay muted loop playsinline disablepictureinpicture disableremoteplayback tabindex="-1" @contextmenu.prevent preload="none"
+          aria-label="Live optimisation of an eight-pole AFL lighting design with updating heatmap and statistics."></video>
+        <figcaption><span>02 &mdash; Search &amp; refine</span><span>Real calculation &middot; search shown at 3&times; speed</span></figcaption>
+      </figure>
+    </section>
+
+    <section class="slx-showcase slx-band" aria-labelledby="slx-results-title">
+      <div class="slx-section-heading slx-inset">
+        <div><p class="slx-eyebrow">04 / Result visualisation</p><h2 id="slx-results-title">Rendering the<br>photometry.</h2></div>
+        <p class="slx-body">The same calculation supports a three.js night scene, false-colour heatmap, isolux bands and an interactive lux grid. The 3D scene places the field in its surroundings and derives beam haze from each luminaire's actual photometry.</p>
+      </div>
+      <figure class="slx-wide-media">
+        <video v-autoplay-visible :src="videoOverlays" :poster="posterOverlays" autoplay muted loop playsinline disablepictureinpicture disableremoteplayback tabindex="-1" @contextmenu.prevent preload="none"
+          aria-label="Sportslux three-dimensional field preview with aiming points, lighting overlays and photometric beams."></video>
+        <figcaption class="slx-inset"><span>03 &mdash; Understand the design</span><span>three.js / photometric beam rendering</span></figcaption>
+      </figure>
+      <div class="slx-feature slx-inset slx-results-detail">
+        <div class="slx-copy"><h3>Multiple views of<br>the same result.</h3><p class="slx-body">The result interface exposes uniformity, spill and lux at every grid point, with hover zoom for inspecting individual values. Aiming points, grid values and isolux lines can be toggled independently.</p><p class="slx-body">The 3D scene loads when it is first opened and is retained afterwards, keeping return visits to the view instant.</p></div>
+        <figure class="slx-media"><video v-autoplay-visible :src="videoResults" :poster="posterResults" autoplay muted loop playsinline disablepictureinpicture disableremoteplayback tabindex="-1" @contextmenu.prevent preload="none" aria-label="Switching between Sportslux result visualisations and lighting overlays."></video><figcaption>Heatmap, isolux and grid views</figcaption></figure>
+      </div>
+    </section>
+
+
+    <section class="slx-band slx-inset" aria-labelledby="slx-workflow-title">
+      <div class="slx-section-heading"><div><p class="slx-eyebrow">Interface &amp; manual refinement</p><h2 id="slx-workflow-title">Pole placement<br>&amp; manual control.</h2></div><p class="slx-body">The pole-position interface updates invalid positions as the sport and field size change. Manual mode allows individual fitting tilts and orientations to be adjusted, with the heatmap and metrics updating to reflect the changes.</p></div>
+      <div class="slx-ui-gallery"><figure class="slx-media"><video v-autoplay-visible :src="videoPoles" :poster="dashboardPreview" autoplay muted loop playsinline disablepictureinpicture disableremoteplayback tabindex="-1" @contextmenu.prevent preload="none" aria-label="Pole placement on satellite imagery with recommended installation zones."></video><figcaption>Pole placement on satellite imagery: shaded zones follow AS 2560.2.3, and poles can be added and dragged into place.</figcaption></figure><figure class="slx-media"><img :src="resultsHeatmap" alt="Sportslux result heatmap with all lighting metrics meeting requirements." loading="lazy" decoding="async"><figcaption>Result from a simple user setup, with all metrics meeting requirements.</figcaption></figure><figure class="slx-media"><img :src="dashboardPreview" alt="Sportslux pole-position selection interface." loading="lazy" decoding="async"><figcaption>Pole-position UI / field geometry and placement constraints</figcaption></figure><figure class="slx-media"><img :src="resultsGrid" alt="Sportslux photometry grid showing illuminance values across a field." loading="lazy" decoding="async"><figcaption>Photometry grid / individual calculated lux values</figcaption></figure></div>
+    </section>
+
+    <section class="slx-feature slx-feature-media-first slx-paper slx-band slx-inset" aria-labelledby="slx-report-title">
+      <div class="slx-copy"><p class="slx-eyebrow">05 / Reporting &amp; workflow integration</p><h2 id="slx-report-title">Automated<br>design reports.</h2><p class="slx-body">Sportslux generates a detailed PDF report from the calculation results and captured customer requirements. The export gives specialist lighting designers a consistent starting point for the next stage of a project.</p><p class="slx-body">This connects the sales workflow to the engineering workflow: initial concepts and requirements are recorded together, reducing rework and miscommunication during handoff.</p></div>
+      <figure class="slx-report-media"><img :src="reportImage" alt="Sportslux generated lighting design report with field visualisations and calculation results." loading="lazy" decoding="async"><figcaption>From interactive exploration to a downloadable report</figcaption></figure>
+    </section>
+
+
+    <section class="slx-band slx-inset" aria-labelledby="slx-method-title">
+      <div class="slx-section-heading">
+        <div><p class="slx-eyebrow">Engine design &amp; simulation</p><h2 id="slx-method-title">Geometry, constraints<br>&amp; objective functions.</h2></div>
+        <div><p class="slx-body">The engine takes fixed project inputs, searches over the variables it can change, and evaluates the resulting design against lighting performance targets.</p><p class="slx-body">The user selects the sport, field dimensions, pole positions and allowed luminaires. The engine searches fitting counts and configurations, aiming to meet the requirements with the minimum hardware. Typical scopes return results in seconds.</p></div>
+      </div>
+<div class="slx-engine-matrix">
         <!-- Column 1: User inputs -->
         <div class="slx-engine-column">
           <div class="slx-engine-column-title">User inputs</div>
@@ -354,175 +194,44 @@
         </div>
       </div>
 
-      <!-- Evolving optimisation result visual -->
-      <div class="slx-engine-result">
-        <div class="slx-engine-result-grid">
-          <video
-            v-if="videos.liveOptimisation"
-            class="image"
-            :src="videos.liveOptimisation"
-            aria-label="Live optimisation: the best design found so far improves until it meets the lighting targets."
-            muted
-            autoplay
-            loop
-            playsinline
-            preload="metadata"
-          ></video>
-          <img
-            v-else
-            class="image"
-            :src="currentResultFrame.image"
-            :alt="`Optimisation stage ${currentResultFrame.id}`"
-            loading="lazy"
-            decoding="async"
-          />
-
-          <div class="slx-engine-result-text">
-            <h2 class="section-subtitle">
-              Turning lighting design into an algorithm
-            </h2>
-            <p class="section-sub">
-              Early sports lighting design is usually a loop of guessing pole layouts, running old photometry software, tweaking fittings
+      
+      <div class="slx-feature slx-method-demo">
+        <div class="slx-copy"><h3>Turning lighting design<br>into an algorithm</h3><p class="slx-body">Early sports lighting design is usually a loop of guessing pole layouts, running old photometry software, tweaking fittings
               and hoping the results satisfy Australian standards. Sportslux streamlines that process. For a computer,
-              everything becomes geometry, constraints and objective functions.
-            </p>
-
-            <div style="margin-bottom: 0.8rem;"></div>
-
-            <p class="section-sub">
-              Because the objective is non-differentiable and discontinuous, Differential Evolution was chosen as the intelligent search algorithm.
+              everything becomes geometry, constraints and objective functions.</p>
+<p class="slx-body">Because the objective is non-differentiable and discontinuous, Differential Evolution was chosen as the intelligent search algorithm.
               The engine begins by randomly placing luminaires on the poles, then evaluates the photometry grid, isolux curves and glare.
               These metrics are assigned a cost score where heavy penalties are applied for any unmet targets. The algorithm then iteratively refines the solution
-              until it converges to a low-cost solution.
-            </p>
-
-            <div style="margin-bottom: 0.8rem;"></div>
-
-            <p class="section-sub">
-              To minimise hardware, the search is staged: begin with one luminaire per pole, then increase the count only when targets can’t be met.
+              until it converges to a low-cost solution.</p>
+<p class="slx-body">To minimise hardware, the search is staged: begin with one luminaire per pole, then increase the count only when targets can’t be met.
               Each stage is cached so the next depth can warm-start from previous best candidates, keeping runtimes low while reliably converging to a minimum-fitting design.
               A technique I learned from my work on chess engines, known as iterative deepening. If the best lux per fitting seen so far shows
-              a field would need more than the 20-fittings-per-pole limit, the job is declined early with the reason, rather than after trying every count.
-            </p>
-
-            <div style="margin-bottom: 0.8rem;"></div>
-
-            <p class="section-sub">
-              The search is visible while it runs. The loading screen shows the current stage, the fittings being tried and a live heatmap
-              of the best design so far against the targets, so users can watch the solution converge.
-            </p>
-          </div>
-        </div>
+              a field would need more than the 20-fittings-per-pole limit, the job is declined early with the reason, rather than after trying every count.</p>
+<p class="slx-body">The search is visible while it runs. The loading screen shows the current stage, the fittings being tried and a live heatmap
+              of the best design so far against the targets, so users can watch the solution converge.</p></div>
+        <figure class="slx-media slx-demo-figure">
+          <img :src="currentResultFrame.image" :alt="`Illustrative optimisation stage ${currentResultFrame.id}`" loading="lazy" decoding="async">
+          <figcaption>Illustrative optimisation sequence / existing result frames</figcaption>
+          <dl class="slx-demo-metrics"><div><dt>Fittings per pole</dt><dd>{{ currentResultFrame.luminairesPerPole }}</dd></div><div><dt>Average illuminance</dt><dd>{{ currentResultFrame.lux }} lx</dd></div><div><dt>Uniformity</dt><dd>{{ currentResultFrame.uniformity.toFixed(2) }}</dd></div></dl>
+        </figure>
       </div>
     </section>
 
-    <!-- Images -->
-    <section class="slx-section slx-section-block" v-reveal>
-      <div class="slx-section-block">
-        <div class="slx-gallery-card" role="group" aria-label="Sportslux UI examples">
-          <figure class="slx-gallery-item">
-            <video
-              v-if="videos.polePlacement"
-              class="slx-gallery-img"
-              :src="videos.polePlacement"
-              :poster="dashboardPreview"
-              aria-label="Pole placement: invalid positions update as the sport and field size change."
-              muted
-              autoplay
-              loop
-              playsinline
-              preload="metadata"
-            ></video>
-            <img
-              v-else
-              class="slx-gallery-img"
-              :src="dashboardPreview"
-              alt="UI of pole position selection."
-              loading="lazy"
-            />
-            <figcaption class="slx-gallery-caption">
-              {{ videos.polePlacement
-                ? 'Pole placement on satellite imagery: shaded zones follow AS 2560.2.3, and poles can be added and dragged into place'
-                : 'Pole-position UI: invalid positions update as you change field size + sport' }}
-            </figcaption>
-          </figure>
 
-          <figure class="slx-gallery-item">
-            <video
-              v-if="videos.manualMode"
-              class="slx-gallery-img"
-              :src="videos.manualMode"
-              :poster="resultsHeatmap"
-              aria-label="Manual mode: adjusting fitting tilt and orientation updates the heatmap and metrics."
-              muted
-              autoplay
-              loop
-              playsinline
-              preload="metadata"
-            ></video>
-            <img
-              v-else
-              class="slx-gallery-img"
-              :src="resultsHeatmap"
-              alt="Result of a simple configuration leading to a lighting design with all metrics passing."
-              loading="lazy"
-            />
-            <figcaption class="slx-gallery-caption">
-              {{ videos.manualMode
-                ? 'Manual mode: tweak any fitting’s tilt or orientation and the heatmap and metrics update'
-                : 'Result from a simple user setup, with all metrics meeting requirements' }}
-            </figcaption>
-          </figure>
-        </div>
-      </div>
-    </section>
-
-    <!-- FEATURES + ISOLUX -->
-    <section class="slx-section slx-feature-layout" v-reveal>
-      <!-- full-width label so both columns start below it -->
-      <p class="section-label">Feature Set</p>
-
-      <div class="slx-feature-grid">
-        <!-- LEFT / ROW 1 -->
-        <div class="slx-section-block slx-feature-left-top">
-          <h2 class="section-title">Technical Challenges</h2>
-
-          <p class="section-sub">
-            Computers are excellent at brute-force computing millions of possibilities and finding the very best solution.
+    <section class="slx-band slx-inset" aria-labelledby="slx-challenges-title">
+      <div class="slx-feature"><div class="slx-copy"><p class="slx-eyebrow">Technical challenges</p><h2 id="slx-challenges-title">Searching a<br>combinatorial space.</h2><p class="slx-body">Computers are excellent at brute-force computing millions of possibilities and finding the very best solution.
             However, this problem quickly grows beyond brute force. Every luminaire has its own orientation (0–360°), tilt (−10° to +15°)
             and model, so a design with just nine luminaires already exceeds <strong>10<sup>40</sup> possible configurations</strong>.
-            With up to 20 luminaires on each of up to ten poles, the space passes <strong>10<sup>350</sup></strong>.
-          </p>
-
-          <p class="section-sub">
-            Trying to evaluate every combination is computationally infeasible. Even at millions of evaluations per second,
+            With up to 20 luminaires on each of up to ten poles, the space passes <strong>10<sup>350</sup></strong>.</p>
+<p class="slx-body">Trying to evaluate every combination is computationally infeasible. Even at millions of evaluations per second,
             a brute-force search would take longer than the age of the universe.
-            For Sportslux to be usable in practice, solutions needed to be returned in a few minutes or less.
-          </p>
-
-          <p class="section-sub">
-            To achieve this, the engine relies on advanced optimisation algorithms to intelligently explore the solution space,
+            For Sportslux to be usable in practice, solutions needed to be returned in a few minutes or less.</p>
+<p class="slx-body">To achieve this, the engine relies on advanced optimisation algorithms to intelligently explore the solution space,
             rapidly converging toward optimal configurations without evaluating more than a tiny fraction of all possibilities.
             Reaching this level of performance required careful algorithm selection, aggressive pruning, and a deliberately
-            engineered computation pipeline.
-          </p>
-        </div>
-
-        <!-- RIGHT / ROW 1 -->
-        <div class="slx-section-block slx-feature-right-top">
-          <img
-            class="image"
-            :src="isoluxPreview"
-            alt="Sportslux isolux curves and distributions."
-            loading="lazy"
-          />
-        </div>
-
-        <!-- LEFT / ROW 2 -->
-        <div class="slx-section-block slx-feature-left-bottom">
-          <h2 class="section-title">Key Optimisation Strategies</h2>
-
-          <div class="section-sub slx-feature-block">
+            engineered computation pipeline.</p></div><figure class="slx-media"><img :src="isoluxPreview" alt="Isolux curves showing the calculated distribution of illuminance across the field." loading="lazy" decoding="async"><figcaption>Calculated isolux curves and lighting distributions</figcaption></figure></div>
+      <h3 class="slx-strategies-heading">Key optimisation strategies</h3>
+<div class="slx-strategy-list">
             <div class="slx-feature-item">
               <strong>Extensive caching: </strong>
               <ul class="slx-subpoints">
@@ -535,12 +244,12 @@
 
             <div class="slx-feature-item">
               <strong>Batched integer search: </strong>
-              <span>Rather than scoring candidates one at a time across CPU cores, the whole population is scored in a single vectorised batch using whole-number decisions. This was 3–11× faster than the previous four-core solver, with identical results.</span>
+              <span>The whole population is scored in a single vectorised batch using whole-number decisions, allowing the engine to evaluate many candidate designs efficiently.</span>
             </div>
 
             <div class="slx-feature-item">
               <strong>Bounded memory: </strong>
-              <span>Luminaire footprints are streamed into fixed-size sample banks and only the winning design is rebuilt at full resolution, cutting peak memory from 7–19 GB to under 300 MB.</span>
+              <span>Luminaire footprints are streamed into fixed-size sample banks and only the winning design is rebuilt at full resolution, keeping memory use bounded during the search.</span>
             </div>
 
             <div class="slx-feature-item">
@@ -560,7 +269,7 @@
 
             <div class="slx-feature-item">
               <strong>Algorithm tuning and evaluation: </strong>
-              <span>Multiple optimisation methods were tested, ultimately converging on SciPy’s Differential Evolution algorithm as the best balance of reliability and performance for this problem. Every later change was benchmarked against the previous version across 170+ seeded trials, which checked that scores and lighting grids were identical. The settings were then tuned in a 900-trial study (nine jobs × five seeds × 20 variants). The adopted combination of a bounded score with a uniformity bonus, a Latin hypercube start, local search and population 20 beat the previous optimiser on 43 of 45 paired runs.</span>
+              <span>Multiple optimisation methods were tested, ultimately converging on SciPy's Differential Evolution algorithm as the best balance of reliability and performance for this problem. A 900-trial study (nine jobs &times; five seeds &times; 20 variants) informed the settings: a bounded score with a uniformity bonus, a Latin hypercube start, local search and population 20.</span>
             </div>
 
             <div class="slx-feature-item">
@@ -570,303 +279,58 @@
 
             <div class="slx-feature-item">
               <strong>Infrastructure choices: </strong>
-              <span>The memory work let each calculation fit in a small 1 vCPU / 2 GB ARM container that only runs while a job needs it (see the cloud architecture below).</span>
+              <span>Each calculation runs in a small 1 vCPU / 2 GB ARM container that only runs while a job needs it (see the cloud architecture below).</span>
             </div>
           </div>
-        </div>
-
-        <!-- RIGHT / ROW 2 -->
-        <div class="slx-section-block slx-feature-right-bottom">
-          <h2 class="section-title">Benchmarks</h2>
-
-          <div class="table-wrapper slx-table">
-            <table class="mono">
-              <thead>
-                <tr>
-                  <th>Workload</th>
-                  <th>Peak RAM</th>
-                  <th>Pipeline</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="row in benchmarks" :key="row.workload">
-                  <td>{{ row.workload }}</td>
-                  <td>{{ row.memory }}</td>
-                  <td>{{ row.time }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <p class="section-sub">
-            Before → after the first round of performance work. Medians of repeated runs, measured with a harness that asserts
-            every score, winning fitting, illuminance grid and glare value is identical to the original code.
-          </p>
-          <p class="section-sub">
-            <strong>Latest solver rework:</strong> a 48-fitting AFL oval went from 37.6 s to 8.6 s end-to-end, with identical results.
-          </p>
-        </div>
-      </div>
+        
+      <div class="slx-practical"><h3>Designed for practical use</h3><p class="slx-body">Typical scopes return a lighting design in seconds, allowing designers to explore layouts and discuss options during a customer meeting.</p><p class="slx-body">Prepared photometry and complete solutions are cached, so repeat calculations can reuse work. Each search runs independently in an on-demand worker and reports its best design as it progresses.</p></div>
     </section>
 
-        <!-- Admin page -->
-    <section class="slx-section slx-section-grid-admin slx-modes" v-reveal>
-      <div class="slx-section-block">
-        <h2 class="section-title">
-          Admin Functionality
-        </h2>
-
-        <p class="section-sub">
-          The admin page allows key personnel to easily invite users and revoke access.
-          The role and permissions follow an easily adjustable role based access control (RBAC) model.
-          Specific roles also possess the ability to change available luminaires by deleting a luminaire, or upload a new one.
-          Admins also have the ability to monitor usage statistics, looking at the total number of runs, and the most active users, 
-          giving information about which employees are generating the most leads, and which positions in the organisation use the tool most. 
-        </p>
-        <p class="section-sub">
-          All customer information is secured using bcrypt and JWT tokens. Passwords are securely hashed and salted before storage, following
-          modern industry practices. Users who forget their password can reset it themselves through an emailed link.
-        </p>
-        <p class="section-sub">
-          Cloud hosting lets Schreder teams and selected customers log in from anywhere with a browser, on a custom domain served over HTTPS
-          with HSTS and standard security headers. Compute only exists while a calculation needs it, which keeps both the attack surface
-          and the running costs low.
-        </p>
+    <section class="slx-engineering slx-band slx-inset" aria-labelledby="slx-engine-title">
+      <div class="slx-section-heading"><div><p class="slx-eyebrow">06 / Optimisation &amp; infrastructure</p><h2 id="slx-engine-title">Solver design<br>&amp; cloud architecture.</h2></div><p class="slx-body">The system runs on an on-demand, serverless AWS stack. The frontend is served from the edge, the API scales to zero between requests, and each calculation runs in its own ARM container. One CloudFormation template defines the stack, with automatic deployment on every merge.</p></div>
+      <div class="slx-engine-notes">
+        <div><span class="slx-eyebrow">Search</span><h3>Vectorised search.</h3><p class="slx-body">SciPy's Differential Evolution searches whole-number fitting decisions in vectorised batches. Photometry is streamed into fixed-size sample banks, and only the winning design is rebuilt at full resolution.</p></div>
+        <div><span class="slx-eyebrow">Evaluate</span><h3>Algorithm evaluation.</h3><p class="slx-body">A 900-trial study informed the solver settings: a bounded score with a uniformity bonus, a Latin hypercube start, local search and population 20. Prepared photometry and complete solutions are cached for reuse.</p></div>
+        <div><span class="slx-eyebrow">Deliver</span><h3>On-demand workers.</h3><p class="slx-body">A dedicated ARM Fargate worker runs each calculation. Opening the form pre-starts a worker; completed workers stay warm briefly so follow-up calculations can avoid another cold start.</p></div>
       </div>
-
-      <div class="slx-section-block slx-panel">
-        <img
-          class="image"
-          :src="admin"
-          alt="Sportslux secure admin screen."
-          loading="lazy"
-          decoding="async"
-        />
+      <div class="slx-architecture" aria-label="Sportslux AWS architecture components">
+        <div v-for="(column, index) in awsArchitecture" :key="column.title" class="slx-architecture-column"><p class="slx-eyebrow">0{{ index + 1 }} / {{ column.title }}</p><div v-for="node in column.nodes" :key="node.name"><h4>{{ node.name }}</h4><p>{{ node.detail }}</p></div></div>
       </div>
+      <div class="slx-details slx-expanded"><h3 class="slx-detail-title">Architecture &amp; operations in detail</h3><div class="slx-technical-grid"><div v-for="group in technicalGroups" :key="group.title"><h3>{{ group.title }}</h3><ul><li v-for="item in group.items" :key="item">{{ item }}</li></ul></div></div><h3>Deployment</h3><ol><li v-for="step in deployPipeline" :key="step">{{ step }}</li></ol></div>
     </section>
 
-    <!-- Key Learnings -->
-    <section class="slx-section slx-section-grid-learnings slx-modes" v-reveal>
-       <div class="slx-section-block slx-panel">
-        <img
-          class="image"
-          :src="devBoard"
-          alt="Sportslux secure admin screen."
-          loading="lazy"
-          decoding="async"
-        />
-      </div>
-      <div class="slx-section-block">
-        <h2 class="section-title">
-          Key Learnings
-        </h2>
-        <p class="section-sub">
-          Sportslux was built by a team of two. Designed first as a locally hosted MVP, then deployed and iterated on in short sprints.
-          The process was documented on Confluence and managed in Jira with ticketing and sprint planning.
-          In a two-person team, you don’t get to specialise, you're forced to understand the full system end-to-end.
-          Below are the key learnings from this project:
-        </p>
-
-        <ul class="slx-list">
-          <li v-for="item in learnings" :key="item">
-            {{ item }}
-          </li>
-        </ul>
-      </div>
+    <section class="slx-feature slx-band slx-inset" aria-labelledby="slx-admin-title">
+      <div class="slx-copy"><p class="slx-eyebrow">07 / Administration &amp; security</p><h2 id="slx-admin-title">Access control<br>&amp; operations.</h2><p class="slx-body">The administration interface uses an adjustable role-based access control model. Authorised staff can invite users, revoke access, upload or delete luminaire models, and monitor total runs and the most active users. Usage reporting also shows which roles in the organisation use the tool most.</p><p class="slx-body">Passwords are hashed and salted with bcrypt, with JWT-based authentication and self-service password resets through emailed links. A custom domain serves the application over HTTPS with HSTS and standard security headers, giving Schr&#233;der teams and selected customers browser access.</p></div>
+      <figure class="slx-media slx-screenshot"><img :src="admin" alt="Sportslux administration interface for managing users, access and luminaires." loading="lazy" decoding="async"><figcaption>Administration / access, luminaire library &amp; usage</figcaption></figure>
     </section>
 
-    <!-- IMPACT -->
-    <section class="slx-section" v-reveal>
-      <p class="section-label">Impact</p>
-      <div class="slx-section-grid-impact">
-              <div class="slx-section-block">
-        <h2 class="section-title">
-          Business Value
-        </h2>
-
-        <ul class="slx-list-spaced">
-          <li v-for="item in benefits" :key="item">
-            {{ item }}
-          </li>
-        </ul>
-      </div>
-
-      <div class="slx-section-block">
-        <img
-          class="image"
-          :src="reportImage"
-          alt="Example of an automatically generated Sportslux report."
-          loading="lazy"
-          decoding="async"
-        />
-      </div>
-      </div>
+    <section class="slx-impact slx-band slx-inset" aria-labelledby="slx-impact-title">
+      <p class="slx-eyebrow">08 / Project outcomes</p><h2 id="slx-impact-title">Business impact<br>of the engineering work.</h2>
+      <div class="slx-impact-bottom"><p class="slx-lead">Approximately two hours of designer time saved per use, with initial lighting concepts available during customer meetings.</p><div><p class="slx-body">Sportslux brings design exploration into customer meetings and makes the handoff to specialist lighting designers clearer. The project also led to a Young Achiever Award nomination in 2025.</p><p class="slx-small">The existing project figures record 480+ runs and an estimated 960 hours saved. These are recorded project figures rather than a live usage counter.</p></div></div>
+      <div class="slx-details slx-expanded"><h3 class="slx-detail-title">Project impact in detail</h3><ul><li v-for="item in benefits" :key="item">{{ item }}</li></ul></div>
     </section>
 
-    <!-- CLOUD ARCHITECTURE -->
-    <section class="slx-section slx-impact" v-reveal>
-      <div class="slx-section-block">
-        <p class="section-label">Cloud architecture</p>
-        <h2 class="section-title">
-          Serverless AWS architecture
-        </h2>
-        <p class="section-sub">
-          Sportslux started on a single always-on server. It now runs as an on-demand, serverless AWS stack: the frontend is served from the edge,
-          the API scales to zero between requests, and each calculation gets its own ARM container that shuts down once it is idle.
-          The whole stack is one CloudFormation template, deployed automatically on every merge.
-        </p>
+    <section class="slx-reflection slx-band slx-inset" aria-labelledby="slx-learning-title"><div class="slx-section-heading"><div><p class="slx-eyebrow">09 / Collaboration &amp; learning</p><h2 id="slx-learning-title">End-to-end delivery.<br>Development led by me.</h2></div><div><p class="slx-body">I led development from a locally hosted MVP to production releases. Jira and Confluence supported short sprints, clear decisions and a shared understanding of the system.</p><p class="slx-body">The work connected user experience, data design, numerical optimisation and cloud infrastructure, with real designer feedback shaping each iteration.</p></div></div><div class="slx-details slx-expanded"><figure class="slx-media slx-development-media"><img :src="devBoard" alt="Sportslux development board showing tickets and sprint planning." loading="lazy" decoding="async"><figcaption>Development process / Jira ticketing and sprint planning, supported by Confluence documentation</figcaption></figure><h3 class="slx-detail-title">Lessons from the project</h3><ul><li v-for="item in learnings" :key="item">{{ item }}</li></ul></div><div class="slx-details slx-expanded"><h3 class="slx-detail-title">Release history</h3><ol class="slx-timeline"><li v-for="event in keyDates" :key="event.date + event.version + event.title"><span class="slx-small">{{ event.date }} / {{ event.version }}</span><p>{{ event.title }}</p></li></ol></div></section>
 
-        <div
-          class="slx-arch"
-          role="img"
-          aria-label="AWS architecture: CloudFront and S3 serve the frontend; API Gateway and a Lambda API handle requests and dispatch jobs to ARM Fargate workers; PostgreSQL holds job state, S3 holds reports, and a scheduled reconciler recovers stalled jobs."
-        >
-          <div
-            v-for="col in awsArchitecture"
-            :key="col.title"
-            class="slx-arch-col"
-          >
-            <div class="slx-arch-col-title">{{ col.title }}</div>
-            <div
-              v-for="node in col.nodes"
-              :key="node.name"
-              class="slx-arch-node"
-            >
-              <span class="slx-arch-node-name mono">{{ node.name }}</span>
-              <span class="slx-arch-node-detail">{{ node.detail }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="slx-arch-pipeline">
-          <span class="slx-small-heading">Deploy</span>
-          <ol class="slx-arch-steps mono">
-            <li v-for="step in deployPipeline" :key="step">{{ step }}</li>
-          </ol>
-        </div>
-
-        <div class="slx-roadmap-grid">
-          <div>
-            <h3 class="slx-small-heading">Request path</h3>
-            <ul class="slx-list">
-              <li v-for="item in backendRequestPath" :key="item">
-                {{ item }}
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 class="slx-small-heading">Core components</h3>
-            <ul class="slx-list">
-              <li v-for="item in backendCoreComponents" :key="item">
-                {{ item }}
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <div style="margin-top: 1rem;"></div>
-
-        <div class="slx-roadmap-grid">
-          <div>
-            <h3 class="slx-small-heading">Why it’s efficient</h3>
-            <ul class="slx-list">
-              <li v-for="item in awsEfficiency" :key="item">
-                {{ item }}
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 class="slx-small-heading">Operational guarantees</h3>
-            <ul class="slx-list">
-              <li v-for="item in backendOps" :key="item">
-                {{ item }}
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TIMELINE -->
-    <section class="slx-section slx-timeline" v-reveal>
-      <p class="section-label">Timeline</p>
-      <h2 class="section-title">
-        Shipping Sportslux in stages
-      </h2>
-
-      <div
-        ref="timelineScrollEl"
-        class="slx-timeline-scroll"
-        aria-label="Sportslux release timeline"
-      >
-        <ol class="slx-timeline-strip">
-          <li
-            v-for="(event, idx) in keyDates"
-            :key="event.date + event.version"
-            :ref="el => setTimelineItemRef(idx, el)"
-            class="slx-timeline-chip"
-            :class="{ 'is-current': isCurrentVersion(event) }"
-          >
-            <div class="slx-timeline-top">
-              <span class="slx-timeline-dot" aria-hidden="true"></span>
-              <div class="mono slx-timeline-date">
-                {{ event.date }}
-              </div>
-            </div>
-
-            <div class="slx-timeline-text">
-              {{ event.title }}
-            </div>
-
-            <div class="mono slx-timeline-version">
-              {{ event.version }}
-            </div>
-          </li>
-        </ol>
-      </div>
-    </section>
+    <footer class="slx-end slx-inset"><span class="slx-eyebrow">Sportslux / {{ project.category }} project</span><RouterLink to="/projects" class="slx-end-link">Explore more work <span aria-hidden="true">&#8599;</span></RouterLink></footer>
   </article>
 </template>
 
 <script setup>
-import { nextTick } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
-import CategoryTag from '../components/CategoryTag.vue'
-
-import dashboardPreview from '../assets/sportslux/dashboard.png'
-import resultsGrid from '../assets/sportslux/grid.png'
-import resultsHeatmap from '../assets/sportslux/heatmap.png'
-import isoluxPreview from '../assets/sportslux/isolux.png'
-import reportImage from '../assets/sportslux/report.png'
-import login from '../assets/sportslux/login.png'
-import admin from '../assets/sportslux/admin.png'
-import devBoard from '../assets/sportslux/devboard.png'
-
 import video3d from '../assets/sportslux/videos/3d-night-render.mp4'
 import poster3d from '../assets/sportslux/videos/3d-night-render.jpg'
 import videoSatellite from '../assets/sportslux/videos/satellite-locate.mp4'
 import posterSatellite from '../assets/sportslux/videos/satellite-locate.jpg'
 import videoLoading from '../assets/sportslux/videos/live-optimiser.mp4'
 import posterLoading from '../assets/sportslux/videos/live-optimiser.jpg'
-import videoResults from '../assets/sportslux/videos/result-views.mp4'
 import videoOverlays from '../assets/sportslux/videos/result-3d-overlays.mp4'
 import posterOverlays from '../assets/sportslux/videos/result-3d-overlays.jpg'
+import videoResults from '../assets/sportslux/videos/result-views.mp4'
 import posterResults from '../assets/sportslux/videos/result-views.jpg'
-
-/* Optional clips: drop an .mp4 with one of these names into assets/sportslux/videos/
-   and it replaces the matching still image. Missing files fall back to the image. */
-const videoFiles = import.meta.glob('../assets/sportslux/videos/*.mp4', { eager: true, import: 'default' })
-const videoFile = name => videoFiles[`../assets/sportslux/videos/${name}.mp4`] || null
-const videos = {
-  walkthrough: videoFile('walkthrough'),
-  liveOptimisation: videoFile('live-optimisation'),
-  polePlacement: videoFile('pole-placement'),
-  manualMode: videoFile('manual-mode')
-}
-
+import reportImage from '../assets/sportslux/report.png'
+import admin from '../assets/sportslux/admin.png'
 import result1 from '../assets/sportslux/results/1.png'
 import result2 from '../assets/sportslux/results/2.png'
 import result3 from '../assets/sportslux/results/3.png'
@@ -879,213 +343,66 @@ import result9 from '../assets/sportslux/results/9.png'
 import result10 from '../assets/sportslux/results/10.png'
 import result11 from '../assets/sportslux/results/11.png'
 import result12 from '../assets/sportslux/results/12.png'
+import resultsGrid from '../assets/sportslux/grid.png'
+import resultsHeatmap from '../assets/sportslux/heatmap.png'
+import isoluxPreview from '../assets/sportslux/isolux.png'
+import dashboardPreview from '../assets/sportslux/dashboard.png'
+import devBoard from '../assets/sportslux/devboard.png'
+import videoPoles from '../assets/sportslux/videos/pole-placement.mp4'
 
-const props = defineProps({
-  project: {
-    type: Object,
-    required: true
-  }
-})
 
-const TRAIL_COUNT = 40
-
-const lightTrails = Array.from({ length: TRAIL_COUNT }, (_, i) => {
-  const n = TRAIL_COUNT
-  const baseX = 6 + (i * 88) / (n - 1) // 6% .. 94%
-  return {
-    id: i,
-    x: baseX,
-    duration: 40 + (i % 4) * 5,
-    delay: -i * 1.7,
-    size: 610 + (i % 3) * 60
-  }
-})
-
-const currentVersion = computed(() => props.project?.currentVersion || 'V2.1.2')
-
-const heroStats = [
-  { value: '3–6×', label: 'faster design search' },
-  { value: '19 GB → 288 MB', label: 'peak memory' },
-  { value: '10 × 20', label: 'poles × fittings per pole' }
-]
-
-const releaseHighlights = [
-  'Up to 10 poles placed anywhere. Layouts no longer need to be four matching corner poles.',
-  'Each pole has its own height, and the form suggests one based on where the pole stands.',
-  'Fitting counts can be chosen automatically for the whole field or pole by pole, up to 20 per pole.',
-  'Designs no longer carry extra fittings. Poles with more light than they need lose fittings as long as the design still meets the standard.',
-  'When no design meets the standard, the closest one is shown, ranked by the most important requirements first.',
-  'Field markings follow the rules: AS 2560.2.3 rugby in-goals and FIFA-sized soccer areas, scaled to smaller pitches.'
-]
-
-const liveProgressPoints = [
-  'The worker sends a snapshot about once a second: the best candidate\'s illuminance as compact uint16 lux (~18 KB) plus its decoded fittings and aim points. It uses the same decoding as the final render.',
-  'The colour scale is fixed from 0 to the required lux for the whole run, so successive designs can be compared as they fill in.',
-  'Progress is weighted by stage. Within a search it follows convergence on a log scale, it never moves backwards, and it does not stall in background tabs.',
-  'For UI work, a dev page replays recorded optimiser runs through the real loading screen without a backend or login.'
-]
-
-const benchmarks = [
-  { workload: 'Soccer · 36 fittings', memory: '7.0 GB → 196 MB', time: '12.5 s → 8.4 s' },
-  { workload: 'AFL · 48 fittings', memory: '7.0 GB → 245 MB', time: '37.6 s → 18.3 s' },
-  { workload: 'AFL · 3 optics', memory: '19.2 GB → 288 MB', time: '59.5 s → 27.1 s' },
-  { workload: '16 poles · 192 fittings', memory: '159 MB → 159 MB', time: '20.6 s → 1.1 s' }
-]
-
-function isCurrentVersion(event) {
-  return event.version === currentVersion.value
+defineProps({ project: { type: Object, required: true } })
+const overview = ref(null)
+function scrollToOverview() {
+  overview.value?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })
+  overview.value?.focus({ preventScroll: true })
 }
+const stats = [
+  { value: '~2', unit: 'hrs', label: 'Designer time saved per use' },
+  { value: '10', unit: 'poles', label: 'Individually positioned per field' },
+  { value: '20', unit: 'fittings', label: 'Available on each pole' }
+]
 
-const timelineScrollEl = ref(null)
-const timelineItemEls = ref([])
-
-function setTimelineItemRef(idx, el) {
-  if (el) timelineItemEls.value[idx] = el
+// Autoplay without playback controls; suspend off-screen clips to limit work.
+const vAutoplayVisible = {
+  mounted(el, binding) {
+    const segment = binding.value
+    const keepWithinSegment = () => {
+      if (segment && el.readyState >= 1 && !el.seeking &&
+          (el.currentTime < segment.start || el.currentTime >= segment.end)) {
+        el.currentTime = segment.start
+      }
+    }
+    if (segment) {
+      el.addEventListener('loadedmetadata', keepWithinSegment)
+      el.addEventListener('timeupdate', keepWithinSegment)
+      keepWithinSegment()
+    }
+    let inView = false
+    const sync = () => {
+      keepWithinSegment()
+      if (inView && !document.hidden) el.play()?.catch(() => {})
+      else el.pause()
+    }
+    const observer = 'IntersectionObserver' in window
+      ? new IntersectionObserver(entries => {
+          inView = entries[0].isIntersecting
+          sync()
+        }, { threshold: 0.1 })
+      : null
+    if (observer) observer.observe(el)
+    else { inView = true; sync() }
+    document.addEventListener('visibilitychange', sync)
+    el._slxCleanup = () => {
+      observer?.disconnect()
+      document.removeEventListener('visibilitychange', sync)
+      el.removeEventListener('loadedmetadata', keepWithinSegment)
+      el.removeEventListener('timeupdate', keepWithinSegment)
+      el.pause()
+    }
+  },
+  unmounted(el) { el._slxCleanup?.() }
 }
-
-function centerTimelineOnCurrent() {
-  const container = timelineScrollEl.value
-  if (!container) return
-
-  const idx = keyDates.findIndex(e => e.version === currentVersion.value)
-  if (idx === -1) return
-
-  const el = timelineItemEls.value[idx]
-  if (!el) return
-
-  // center the selected chip in the scroll container
-  const containerRect = container.getBoundingClientRect()
-  const elRect = el.getBoundingClientRect()
-
-  const currentScrollLeft = container.scrollLeft
-  const elCenter = (elRect.left - containerRect.left) + (elRect.width / 2)
-  const targetScrollLeft = currentScrollLeft + elCenter - (containerRect.width / 2)
-
-  container.scrollTo({ left: targetScrollLeft, behavior: 'auto' })
-}
-
-onMounted(async () => {
-  await nextTick()
-  centerTimelineOnCurrent()
-})
-
-const awsArchitecture = [
-  {
-    title: 'Edge',
-    nodes: [
-      { name: 'CloudFront', detail: 'Custom domain, HTTPS, HSTS + security headers' },
-      { name: 'S3 · frontend', detail: 'Private bucket, readable only by CloudFront' }
-    ]
-  },
-  {
-    title: 'API',
-    nodes: [
-      { name: 'API Gateway', detail: 'HTTP API in front of the backend' },
-      { name: 'Lambda · FastAPI', detail: 'arm64 container: auth, validation, job control' }
-    ]
-  },
-  {
-    title: 'Compute',
-    nodes: [
-      { name: 'ECS Fargate', detail: 'ARM worker per job, 1 vCPU / 2 GB, kept warm 5 min' },
-      { name: 'EventBridge → Lambda', detail: 'Reconciler every minute recovers stalled jobs' }
-    ]
-  },
-  {
-    title: 'Data',
-    nodes: [
-      { name: 'PostgreSQL · RDS', detail: 'Users, run history, cached solutions, job state' },
-      { name: 'S3 · artifacts', detail: 'Reports + images, expired by lifecycle rule' },
-      { name: 'Secrets Manager', detail: 'DB, JWT and SMTP settings' }
-    ]
-  }
-]
-
-const deployPipeline = [
-  'Merge to main',
-  'GitHub Actions builds arm64 images',
-  'ECR (pinned by digest)',
-  'CloudFormation stack update',
-  'DB migration',
-  'Frontend upload + CloudFront invalidation'
-]
-
-const backendRequestPath = [
-  'The Vue app is served from a private S3 bucket through CloudFront, so pages load from the edge with no server involved.',
-  'API calls go through API Gateway to FastAPI on Lambda, which validates inputs and checks authentication/roles, so bad or unauthorised requests never reach compute.',
-  'A valid calculation is written to a jobs table in PostgreSQL and handed to an idle warm worker if one is waiting. Otherwise Lambda starts a new Fargate task.',
-  'The worker runs the optimiser and publishes a live snapshot about once a second (stage, fittings tried, best heatmap so far) that the loading screen polls. Jobs can be cancelled midway.',
-  'Results, images and PDF reports land in S3 and the job record in PostgreSQL, so a user can refresh the page or change tabs without re-running the job.'
-]
-
-const backendCoreComponents = [
-  'CloudFront + S3: fast static delivery of the UI from the edge, with both buckets fully private.',
-  'API Gateway + Lambda: the FastAPI app packaged as an ARM container image. Strict typed requests, and it scales to zero between requests.',
-  'Optimisation engine on Fargate: kept in its own container, separate from the web layer, so it stays testable and can report progress independently.',
-  'Postgres (RDS): records users, runs and job state. Job hand-off uses row locks, so two jobs can never claim the same worker.',
-  'S3 artifacts: keeps generated reports/exports durable and lightweight to serve, without bloating the database.'
-]
-
-const awsEfficiency = [
-  'Pay per use: there is no always-on application server. The API and workers scale to zero when idle and scale out automatically when several designers run jobs at once.',
-  'ARM (Graviton) throughout: both the API and the workers run on arm64, which costs less per unit of compute than x86.',
-  'Cold starts hidden from the user: opening the calculation form pre-starts a worker, and finished workers stay warm for 5 minutes, so follow-up runs and manual-mode tweaks skip the 30–60 s container start-up.',
-  'Right-sized compute: cutting the solver’s peak memory from gigabytes to a few hundred megabytes is what lets every calculation fit in a 2 GB container.',
-  'Least privilege: each component has its own IAM role scoped to just the buckets, secret and ECS actions it needs, and compute runs in private subnets with no public IPs.'
-]
-
-const backendOps = [
-  'Every run is logged with enough metadata to reproduce issues, which makes debugging much faster.',
-  'Caching is built in, so repeated runs with the same inputs return instantly instead of burning compute again.',
-  'Validation happens at the API boundary, so the solver and databases are protected.',
-  'A scheduled reconciler re-dispatches jobs whose worker disappeared and cleans up stale workers, so a failed container never leaves a user stuck on a loading screen.',
-  'Infrastructure is code: one CloudFormation template defines the stack, every merge deploys automatically, and images are pinned by digest so rolling back is a redeploy of the previous build.'
-]
-
-const learnings = [
-  'I had to design the overall structure of the system end-to-end, making sure it could scale cleanly and still stay reliable as usage grows.',
-  'I learned that good API design is mostly about preventing misuse, so I built clear schemas, stringent validation, and role-based permissions so the system can be managed safely.',
-  'I further improved my code optimisation skill set, this time in Python. This consisted of profiling properly, finding the real bottlenecks, and then fixing them with better data structures, caching, and vectorisation.',
-  'I learned to iterate with the end-user in mind: collecting real feedback from customers, turning it into clear tickets, and planning sprints so we ship improvements without breaking what already works.',
-  'How to properly future proof code, designing the database so new luminaire models and new constraints can be added without needing a schema rewrite or breaking existing projects.',
-  'I learned the value of proper observability by storing API calls and run metadata. This made issues easily diagnosable, made solver runs reproducible, enabled monitoring of usage/health, and allowed for result caching.',
-  'Documentation is what keeps momentum in an intermittent project, so I documented features, decisions, and backend structure, and kept commits clear enough that rollbacks and version tracking are easy.',
-  'Moving from an always-on server to serverless taught me to design around cost and cold starts: job state lives in the database, workers stay warm briefly, and compute is started just before a user needs it.',
-  'Every optimisation shipped with a test harness showing seeded results were identical to the old code, and tuning decisions were made from a 900-trial study rather than a handful of runs.',
-]
-
-
-const benefits = [
-  'Turned early sports-field design from hours of manual work into seconds-long solver runs for typical scopes. Each use saves about 2 hours of designer time.',
-  'Since launch, designers have run Sportslux over 480 times. 480 uses x 2 hours = 960 hours saved (at $150/hour) ~ $144 000 of business value to date.',
-  'Sales teams can now build and iterate lighting concepts live in front of customers, lifting perceived technical maturity. Salespeople who use the tool report increased sales rate. However, this is anecdotal.',
-  'Streamlines the handoff between sales teams and lighting designers, as initial designs are now formatted in the exact form a lighting designer desires, reducing rework and miscommunication.',
-  'Customers now immediately receive a detailed report of their initial design automatically generated by the system, improving customer experience and professionalism.',
-  'All sales meetings now automatically log the customer\'s exact requirements and initial designs, allowing for better follow-up and more tailored proposals.',
-  'As a side use-case, the website also hosts a DGI calculator for quick daylight glare analysis, which has been used over 300 times since launch.',
-  'Sportslux led to me getting nominated for the Young Achiever Award 2025, recognising the significant impact this project had on the business.'
-]
-
-const keyDates = [
-  { date: '14/03/2025', version: 'V0.0.0', title: 'Exploration and initial implementation of the optimisation engine.' },
-  { date: '14/04/2025', version: 'V0.1.0', title: 'Internal alpha and early designer feedback on the UI and solver outputs.' },
-  { date: '24/04/2025', version: 'V1.0.0', title: 'First production rollout of Sportslux for day-to-day project work.' },
-  { date: '09/06/2025', version: 'V1.0.1', title: 'Kickoff of V2 architecture and refactors based on production usage.' },
-  { date: '11/07/2025', version: 'V1.1.0', title: 'V2 beta released to designers for testing and feedback.' },
-  { date: '18/07/2025', version: 'V2.0.0', title: 'V2 deployed to production with expanded feature set.' },
-  { date: '29/07/2025', version: 'V2.0.1', title: 'Stability and polish update focused on bug fixes.' },
-  { date: '11/08/2025', version: 'V2.0.2', title: 'Additional stability pass and defect fixes in production.' },
-  { date: '18/08/2025', version: 'V2.0.2', title: 'DGI calculator migrated into the Sportslux service.' },
-  { date: '01/10/2025', version: 'V2.0.3', title: 'Further maintenance and bug-fix release.' },
-  { date: '12/10/2026', version: 'V2.0.3', title: 'Solver rework: batched integer search and bounded memory, up to 4× faster with peak RAM cut from GBs to MBs.' },
-  { date: '20/10/2026', version: 'V2.0.3', title: 'Moved to on-demand serverless AWS, with live optimisation progress, warm workers and automatic deploys.' },
-  { date: '29/10/2026', version: 'V2.0.4', title: 'Custom domain, self-service password reset, security headers and pre-warmed calculations.' },
-  { date: '03/11/2026', version: 'V2.1.0', title: 'Up to 10 poles anywhere, 20 fittings per pole, satellite field location and a 3D night view.' },
-  { date: '03/11/2026', version: 'V2.1.2', title: 'Rugby in-goals, FIFA soccer markings and a live-site standards fix.' }
-]
-
-/* --------- OPTIMISATION RESULT FRAMES (IMAGE + METRICS) --------- */
-/* 12 = worst, 1 = best */
 
 const resultFrames = [
   { id: 12, image: result12, luminairesPerPole: 1, lux: 49, uniformity: 0.08, models: '1' },
@@ -1231,1333 +548,317 @@ onBeforeUnmount(() => {
   clearInterval(frameInterval)
 })
 
-/**
- * Scroll-based reveal directive
- * Fades & slides sections in as they enter the viewport.
- */
-const vReveal = {
-  mounted(el) {
-    el.classList.add('slx-reveal')
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-visible')
-            observer.unobserve(entry.target)
-          }
-        })
-      },
-      {
-        threshold: 0.2
-      }
-    )
-    observer.observe(el)
-  }
-}
 
-/**
- * Plays a muted looping video only while it is on screen, so off-screen
- * clips neither download (preload="none") nor burn CPU. Users who prefer
- * reduced motion get the poster plus native controls instead.
- */
-const vAutoplayVisible = {
-  mounted(el) {
-    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    if (reduceMotion) {
-      el.controls = true
-      return
-    }
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const p = el.play()
-            if (p && p.catch) p.catch(() => { el.controls = true })
-          } else {
-            el.pause()
-          }
-        })
-      },
-      { threshold: 0.35 }
-    )
-    observer.observe(el)
-    el._slxObserver = observer
+const fieldSetupHighlights = [
+  'Up to 10 poles placed anywhere, with support for both symmetric and asymmetric layouts.',
+  'Each pole has its own height, and the form suggests one based on where the pole stands.',
+  'Fitting counts can be chosen automatically for the whole field or pole by pole, up to 20 per pole.',
+  'The optimiser removes unnecessary fittings from each pole while keeping the design within the standard.',
+  'When no design meets the standard, the closest one is shown, ranked by the most important requirements first.',
+  'Field markings follow the rules: AS 2560.2.3 rugby in-goals and FIFA-sized soccer areas, scaled to smaller pitches.'
+]
+
+const liveProgressPoints = [
+  'The worker sends a snapshot about once a second: the best candidate\'s illuminance as compact uint16 lux (~18 KB) plus its decoded fittings and aim points. It uses the same decoding as the final render.',
+  'The colour scale is fixed from 0 to the required lux for the whole run, so successive designs can be compared as they fill in.',
+  'Progress is weighted by stage. Within a search it follows convergence on a log scale, it never moves backwards, and it does not stall in background tabs.',
+  'For UI work, a dev page replays recorded optimiser runs through the real loading screen without a backend or login.'
+]
+
+const awsArchitecture = [
+  {
+    title: 'Edge',
+    nodes: [
+      { name: 'CloudFront', detail: 'Custom domain, HTTPS, HSTS + security headers' },
+      { name: 'S3 · frontend', detail: 'Private bucket, readable only by CloudFront' }
+    ]
   },
-  unmounted(el) {
-    el._slxObserver?.disconnect()
+  {
+    title: 'API',
+    nodes: [
+      { name: 'API Gateway', detail: 'HTTP API in front of the backend' },
+      { name: 'Lambda · FastAPI', detail: 'arm64 container: auth, validation, job control' }
+    ]
+  },
+  {
+    title: 'Compute',
+    nodes: [
+      { name: 'ECS Fargate', detail: 'ARM worker per job, 1 vCPU / 2 GB, kept warm 5 min' },
+      { name: 'EventBridge → Lambda', detail: 'Reconciler every minute recovers stalled jobs' }
+    ]
+  },
+  {
+    title: 'Data',
+    nodes: [
+      { name: 'PostgreSQL · RDS', detail: 'Users, run history, cached solutions, job state' },
+      { name: 'S3 · artifacts', detail: 'Reports + images, expired by lifecycle rule' },
+      { name: 'Secrets Manager', detail: 'DB, JWT and SMTP settings' }
+    ]
   }
-}
+]
+
+const deployPipeline = [
+  'Merge to main',
+  'GitHub Actions builds arm64 images',
+  'ECR (pinned by digest)',
+  'CloudFormation stack update',
+  'DB migration',
+  'Frontend upload + CloudFront invalidation'
+]
+
+const backendRequestPath = [
+  'The Vue app is served from a private S3 bucket through CloudFront, so pages load from the edge with no server involved.',
+  'API calls go through API Gateway to FastAPI on Lambda, which validates inputs and checks authentication/roles, so bad or unauthorised requests never reach compute.',
+  'A valid calculation is written to a jobs table in PostgreSQL and handed to an idle warm worker if one is waiting. Otherwise Lambda starts a new Fargate task.',
+  'The worker runs the optimiser and publishes a live snapshot about once a second (stage, fittings tried, best heatmap so far) that the loading screen polls. Jobs can be cancelled midway.',
+  'Results, images and PDF reports land in S3 and the job record in PostgreSQL, so a user can refresh the page or change tabs without re-running the job.'
+]
+
+const backendCoreComponents = [
+  'CloudFront + S3: fast static delivery of the UI from the edge, with both buckets fully private.',
+  'API Gateway + Lambda: the FastAPI app packaged as an ARM container image. Strict typed requests, and it scales to zero between requests.',
+  'Optimisation engine on Fargate: kept in its own container, separate from the web layer, so it stays testable and can report progress independently.',
+  'Postgres (RDS): records users, runs and job state. Job hand-off uses row locks, so two jobs can never claim the same worker.',
+  'S3 artifacts: keeps generated reports/exports durable and lightweight to serve, without bloating the database.'
+]
+
+const awsEfficiency = [
+  'Pay per use: there is no always-on application server. The API and workers scale to zero when idle and scale out automatically when several designers run jobs at once.',
+  'ARM (Graviton) throughout: both the API and the workers run on arm64, which costs less per unit of compute than x86.',
+  'Cold starts hidden from the user: opening the calculation form pre-starts a worker, and finished workers stay warm for 5 minutes, so follow-up runs and manual-mode tweaks skip the 30–60 s container start-up.',
+  'Right-sized compute: bounded memory use lets each calculation run in a 2 GB container.',
+  'Least privilege: each component has its own IAM role scoped to just the buckets, secret and ECS actions it needs, and compute runs in private subnets with no public IPs.'
+]
+
+const backendOps = [
+  'Every run is logged with enough metadata to reproduce issues, which makes debugging much faster.',
+  'Caching is built in, so repeated runs with the same inputs return instantly instead of burning compute again.',
+  'Validation happens at the API boundary, so the solver and databases are protected.',
+  'A scheduled reconciler re-dispatches jobs whose worker disappeared and cleans up stale workers, so a failed container never leaves a user stuck on a loading screen.',
+  'Infrastructure is code: one CloudFormation template defines the stack, every merge deploys automatically, and images are pinned by digest so rolling back is a redeploy of the previous build.'
+]
+
+const learnings = [
+  'I had to design the overall structure of the system end-to-end, making sure it could scale cleanly and still stay reliable as usage grows.',
+  'I learned that good API design is mostly about preventing misuse, so I built clear schemas, stringent validation, and role-based permissions so the system can be managed safely.',
+  'I further improved my code optimisation skill set, this time in Python. This consisted of profiling properly, finding the real bottlenecks, and then fixing them with better data structures, caching, and vectorisation.',
+  'I learned to iterate with the end-user in mind: collecting real feedback from customers, turning it into clear tickets, and planning sprints so we ship improvements without breaking what already works.',
+  'How to properly future proof code, designing the database so new luminaire models and new constraints can be added without needing a schema rewrite or breaking existing projects.',
+  'I learned the value of proper observability by storing API calls and run metadata. This made issues easily diagnosable, made solver runs reproducible, enabled monitoring of usage/health, and allowed for result caching.',
+  'Documentation is what keeps momentum in an intermittent project, so I documented features, decisions, and backend structure, and kept commits clear enough that rollbacks and version tracking are easy.',
+  'Moving from an always-on server to serverless taught me to design around cost and cold starts: job state lives in the database, workers stay warm briefly, and compute is started just before a user needs it.',
+  'I learned to validate solver behaviour with reproducible seeded trials and use a 900-trial study to guide tuning decisions.',
+]
+
+const benefits = [
+  'Turned early sports-field design from hours of manual work into seconds-long solver runs for typical scopes. Each use saves about 2 hours of designer time.',
+  'Since launch, designers have run Sportslux over 480 times. 480 uses x 2 hours = 960 hours saved (at $150/hour) ~ $144 000 of business value to date.',
+  'Sales teams can now build and iterate lighting concepts live in front of customers, lifting perceived technical maturity. Salespeople who use the tool report increased sales rate. However, this is anecdotal.',
+  'Streamlines the handoff between sales teams and lighting designers, as initial designs are now formatted in the exact form a lighting designer desires, reducing rework and miscommunication.',
+  'Customers now immediately receive a detailed report of their initial design automatically generated by the system, improving customer experience and professionalism.',
+  'All sales meetings now automatically log the customer\'s exact requirements and initial designs, allowing for better follow-up and more tailored proposals.',
+  'As a side use-case, the website also hosts a DGI calculator for quick daylight glare analysis, which has been used over 300 times since launch.',
+  'Sportslux led to me getting nominated for the Young Achiever Award 2025, recognising the significant impact this project had on the business.'
+]
+
+const keyDates = [
+  { date: '14/03/2025', version: 'V0.0.0', title: 'Exploration and initial implementation of the optimisation engine.' },
+  { date: '14/04/2025', version: 'V0.1.0', title: 'Internal alpha and early designer feedback on the UI and solver outputs.' },
+  { date: '24/04/2025', version: 'V1.0.0', title: 'First production rollout of Sportslux for day-to-day project work.' },
+  { date: '09/06/2025', version: 'V1.0.1', title: 'Kickoff of V2 architecture and refactors based on production usage.' },
+  { date: '11/07/2025', version: 'V1.1.0', title: 'V2 beta released to designers for testing and feedback.' },
+  { date: '18/07/2025', version: 'V2.0.0', title: 'V2 deployed to production with expanded feature set.' },
+  { date: '29/07/2025', version: 'V2.0.1', title: 'Stability and polish update focused on bug fixes.' },
+  { date: '11/08/2025', version: 'V2.0.2', title: 'Additional stability pass and defect fixes in production.' },
+  { date: '18/08/2025', version: 'V2.0.2', title: 'DGI calculator migrated into the Sportslux service.' },
+  { date: '01/10/2025', version: 'V2.0.3', title: 'Further maintenance and bug-fix release.' },
+  { date: '12/10/2026', version: 'V2.0.3', title: 'Batched integer search and bounded-memory photometry implemented in the solver.' },
+  { date: '20/10/2026', version: 'V2.0.3', title: 'Moved to on-demand serverless AWS, with live optimisation progress, warm workers and automatic deploys.' },
+  { date: '29/10/2026', version: 'V2.0.4', title: 'Custom domain, self-service password reset, security headers and pre-warmed calculations.' },
+  { date: '03/11/2026', version: 'V2.1.0', title: 'Up to 10 poles anywhere, 20 fittings per pole, satellite field location and a 3D night view.' },
+  { date: '03/11/2026', version: 'V2.1.2', title: 'Rugby in-goals, FIFA soccer markings and a live-site standards fix.' }
+]
+
+const technicalGroups = [
+  { title: 'Request path', items: backendRequestPath },
+  { title: 'Core components', items: backendCoreComponents },
+  { title: 'Efficiency', items: awsEfficiency },
+  { title: 'Operations', items: backendOps }
+]
 </script>
 
 <style scoped>
-.sportslux-page {
-  position: relative;
-  padding: clamp(1.8rem, 4vw, 3rem);
-  background: radial-gradient(circle at top, #070a1b 0, #02030a 55%, #000 100%);
-  color: #e6f0ff;
-  overflow: hidden;
-  width: 100vw;
-  margin-inline: calc(50% - 50vw);
-  min-height: 100vh;
-  box-sizing: border-box;
+:global(main.container:has(.sportslux-page)) { width: 100%; max-width: none; margin: 0; padding: 0; }
+.sportslux-page { --slx-bg: #0c0e0f; --slx-ink: #f3f3ed; --slx-muted: #a6aaa7; --slx-line: #303434; --slx-accent: #d4e6b3; background: var(--slx-bg); color: var(--slx-ink); overflow: clip; }
+.sportslux-page *, .sportslux-page *::before, .sportslux-page *::after { box-sizing: border-box; }
+.sportslux-page h1, .sportslux-page h2, .sportslux-page h3, .sportslux-page h4, .sportslux-page p, .sportslux-page figure { margin: 0; }
+.slx-inset { padding-inline: clamp(24px, 5vw, 100px); }
+.slx-band { border-top: 1px solid var(--slx-line); padding-block: clamp(76px, 9vw, 160px); }
+.slx-topline { min-height: 88px; display: flex; align-items: center; justify-content: space-between; gap: 24px; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; }
+.slx-topline > span:nth-child(2) { color: var(--slx-muted); }
+.slx-status { display: inline-flex; align-items: center; gap: 9px; }
+.slx-status i { width: 6px; height: 6px; border-radius: 50%; background: var(--slx-accent); }
+.slx-link { display: inline-flex; align-items: center; gap: 32px; width: fit-content; padding-block: 7px; border-bottom: 1px solid currentColor; font-size: 13px; }
+.slx-link:hover { color: var(--slx-accent); }
+.sportslux-page :is(a, summary, video):focus-visible { outline: 2px solid var(--slx-accent); outline-offset: 7px; }
+.slx-hero { display: grid; grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr); min-height: 660px; padding-bottom: clamp(76px, 9vw, 150px); }
+.slx-hero-media { align-self: stretch; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.slx-hero-media video { width: 100%; min-height: 420px; aspect-ratio: 1.2; object-fit: cover; background: #14201a; }
+.slx-hero-media figcaption { padding: 17px 0 0 clamp(24px, 5vw, 100px); display: flex; justify-content: space-between; gap: 20px; }
+.slx-hero-copy { padding: clamp(42px, 5vw, 90px) clamp(24px, 5vw, 100px); padding-right: clamp(24px, 4vw, 80px); align-self: center; }
+.slx-eyebrow { font-size: 10px; line-height: 1.6; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; }
+.slx-copy .slx-eyebrow, .slx-overview-heading .slx-eyebrow, .slx-section-heading .slx-eyebrow, .slx-impact > .slx-eyebrow { margin-bottom: 30px; color: var(--slx-muted); }
+.slx-hero-copy .slx-eyebrow { color: var(--slx-accent); margin-bottom: 36px; }
+.sportslux-page h1 { font-size: clamp(48px, 6.7vw, 120px); font-weight: 500; letter-spacing: -.075em; line-height: .96; }
+.slx-title-dot { color: var(--slx-accent); }
+.sportslux-page .slx-hero-heading { font-size: clamp(27px, 3vw, 54px); line-height: 1.12; letter-spacing: -.045em; margin: 28px 0; }
+.slx-body { font-size: clamp(15px, 1.15vw, 18px); line-height: 1.8; color: var(--slx-muted); max-width: 570px; }
+.slx-body + .slx-body { margin-top: 20px; }
+.slx-explore { margin-top: 38px; }
+.slx-actions { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 20px; }
+.sportslux-page h2 { font-size: clamp(38px, 4.6vw, 76px); line-height: 1.07; font-weight: 400; letter-spacing: -.055em; }
+.sportslux-page h3 { font-size: clamp(26px, 2.5vw, 42px); line-height: 1.16; font-weight: 400; letter-spacing: -.04em; }
+.slx-lead { font-size: clamp(21px, 2vw, 32px); line-height: 1.45; letter-spacing: -.025em; max-width: 660px; }
+.slx-overview { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(40px, 8vw, 150px); scroll-margin-top: 100px; }
+.slx-overview .slx-body { margin-top: 26px; }
+.slx-project-facts { margin: 48px 0 0; }
+.slx-project-facts > div { display: grid; grid-template-columns: 125px 1fr; gap: 20px; padding-block: 18px; border-top: 1px solid var(--slx-line); font-size: 13px; }
+.slx-project-facts dt { color: var(--slx-muted); }
+.slx-project-facts dd { margin: 0; }
+.slx-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; padding-block: 55px 85px; }
+.slx-stats > div { padding-top: 24px; border-top: 1px solid var(--slx-line); }
+.slx-stats p { font-size: clamp(56px, 7.5vw, 120px); line-height: 1.1; font-weight: 400; letter-spacing: -.07em; }
+.slx-stats p span { font-size: clamp(16px, 1.6vw, 26px); margin-left: 12px; letter-spacing: -.025em; color: var(--slx-muted); }
+.slx-stat-label { display: block; font-size: 12px; color: var(--slx-muted); margin-top: 22px; }
+.slx-feature { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.3fr); align-items: center; gap: clamp(40px, 7vw, 130px); }
+.slx-feature-media-first { grid-template-columns: minmax(0, 1.3fr) minmax(0, .8fr); }
+.slx-feature-media-first > .slx-copy { grid-column: 2; grid-row: 1; }
+.slx-feature-media-first > figure { grid-column: 1; grid-row: 1; }
+.slx-copy h2, .slx-copy h3 { margin-bottom: 32px; }
+.slx-media { min-width: 0; }
+.slx-media video, .slx-media img { display: block; width: 100%; height: auto; background: #151a1b; }
+.slx-media video { aspect-ratio: 16 / 9; object-fit: contain; }
+.sportslux-page figcaption { font-size: 10px; color: var(--slx-muted); line-height: 1.6; letter-spacing: .025em; }
+.slx-media figcaption, .slx-wide-media figcaption { display: flex; justify-content: space-between; gap: 12px; padding-top: 18px; }
+.slx-section-heading { display: grid; grid-template-columns: 1.2fr 1fr; align-items: end; gap: clamp(40px, 9vw, 160px); margin-bottom: clamp(50px, 6vw, 100px); }
+.slx-wide-media video { display: block; width: 100%; max-height: 85vh; aspect-ratio: 16 / 8; object-fit: cover; background: #131b17; }
+.slx-wide-media figcaption { padding-block: 20px; }
+.slx-results-detail { padding-top: clamp(60px, 8vw, 130px); }
+.slx-paper { --slx-muted: #656a62; --slx-ink: #20251f; --slx-line: #d0d3c9; --slx-accent: #3b572a; background: #e9eae2; color: var(--slx-ink); }
+.slx-report-media { padding: clamp(20px, 4vw, 65px); background: #d9ddd1; }
+.slx-report-media img { display: block; width: 100%; max-height: 700px; object-fit: contain; }
+.slx-report-media figcaption { text-align: center; padding-top: 24px; }
+.slx-engine-notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(25px, 4vw, 75px); }
+.slx-engine-notes > div { border-top: 1px solid var(--slx-line); padding-top: 24px; }
+.slx-engine-notes .slx-eyebrow { color: var(--slx-accent); }
+.slx-engine-notes h3 { font-size: clamp(23px, 2vw, 32px); margin-block: 20px; }
+.slx-engine-notes .slx-body { font-size: 14px; }
+.slx-architecture { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-block: 70px 30px; border-block: 1px solid var(--slx-line); }
+.slx-architecture-column { padding: 28px 24px; border-right: 1px solid var(--slx-line); }
+.slx-architecture-column:first-child { padding-left: 0; }
+.slx-architecture-column:last-child { border-right: 0; }
+.slx-architecture-column > p { color: var(--slx-accent); margin-bottom: 30px; }
+.slx-architecture-column > div + div { margin-top: 24px; }
+.sportslux-page h4 { font-size: 14px; font-weight: 500; }
+.slx-architecture-column div p { font-size: 12px; line-height: 1.6; margin-top: 7px; color: var(--slx-muted); }
+.slx-details { margin-top: 30px; border-top: 1px solid var(--slx-line); border-bottom: 1px solid var(--slx-line); }
+.slx-details + .slx-details { margin-top: -1px; }
+.slx-details summary { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-block: 22px; font-size: 13px; cursor: pointer; list-style: none; }
+.slx-details summary::-webkit-details-marker { display: none; }
+.slx-details summary span { font-size: 22px; font-weight: 300; transition: transform .2s; }
+.slx-details[open] summary span { transform: rotate(45deg); }
+.slx-details summary:hover { color: var(--slx-accent); }
+.slx-details ul, .slx-details ol { margin: 0 0 30px; padding-left: 20px; color: var(--slx-muted); font-size: 14px; line-height: 1.9; }
+.slx-details li + li { margin-top: 14px; }
+.slx-details h3 { font-size: 22px; margin-block: 24px 18px; }
+.slx-technical-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 70px; }
+.slx-screenshot { background: #191d1e; padding: 24px; }
+.slx-impact { background: #18211b; }
+.slx-impact h2 { font-size: clamp(40px, 5.5vw, 88px); max-width: 1100px; }
+.slx-impact-bottom { margin-top: 70px; display: grid; grid-template-columns: 1fr 1fr; gap: clamp(35px, 8vw, 150px); }
+.slx-small { font-size: 11px; line-height: 1.8; color: var(--slx-muted); }
+.slx-impact-bottom .slx-small { margin-top: 24px; }
+.slx-timeline { list-style: none; padding-left: 0 !important; display: grid; grid-template-columns: 1fr 1fr; gap: 25px 60px; }
+.slx-timeline li { margin: 0 !important; padding-top: 16px; border-top: 1px solid var(--slx-line); }
+.slx-timeline p { color: var(--slx-ink); margin-top: 6px; }
+.slx-end { padding-block: 60px 90px; display: flex; align-items: center; justify-content: space-between; gap: 30px; border-top: 1px solid var(--slx-line); }
+.slx-end > span { color: var(--slx-muted); }
+.slx-end-link { font-size: clamp(26px, 4vw, 64px); letter-spacing: -.05em; }
+.slx-end-link span { margin-left: 25px; color: var(--slx-accent); }
+@media (min-width: 1800px) { .slx-hero { min-height: 850px; } .slx-hero-media video { max-height: 820px; } }
+@media (max-width: 1100px) {
+  .slx-hero { grid-template-columns: 1.05fr 1fr; min-height: auto; }
+  .slx-hero-copy { padding-left: 32px; }
+  .slx-hero-media video { min-height: 370px; }
+  .slx-hero-media figcaption { flex-direction: column; gap: 0; }
+  .slx-feature, .slx-feature-media-first { gap: 35px; grid-template-columns: 1fr 1.1fr; }
+  .slx-feature-media-first { grid-template-columns: 1.1fr 1fr; }
+  .slx-media figcaption { flex-direction: column; gap: 3px; }
+  .slx-architecture-column { padding-inline: 16px; }
+}
+@media (max-width: 760px) {
+  .slx-topline { min-height: 74px; font-size: 9px; gap: 12px; }
+  .slx-topline > span:nth-child(2) { display: none; }
+  .slx-hero { display: flex; flex-direction: column; padding-bottom: 50px; }
+  .slx-hero-copy { order: -1; padding: 30px 24px 50px; align-self: stretch; }
+  .slx-hero-copy .slx-eyebrow { margin-bottom: 28px; }
+  .sportslux-page h1 { font-size: clamp(62px, 14vw, 100px); }
+  .sportslux-page .slx-hero-heading { font-size: clamp(32px, 7vw, 48px); margin-block: 22px; }
+  .slx-hero-media video { aspect-ratio: 16 / 10; min-height: 0; object-fit: contain; }
+  .slx-hero-media figcaption { padding-inline: 24px; flex-direction: row; font-size: 9px; }
+  .slx-overview, .slx-feature, .slx-feature-media-first, .slx-section-heading, .slx-impact-bottom { grid-template-columns: 1fr; gap: 40px; }
+  .slx-feature-media-first > .slx-copy, .slx-feature-media-first > figure { grid-column: auto; grid-row: auto; }
+  .slx-stats { gap: 18px; padding-block: 15px 55px; }
+  .slx-stats p { font-size: clamp(40px, 11vw, 72px); }
+  .slx-stats p span { display: block; margin: 6px 0 0; font-size: 15px; letter-spacing: 0; }
+  .slx-stat-label { font-size: 10px; margin-top: 16px; }
+  .slx-engine-notes, .slx-technical-grid, .slx-timeline { grid-template-columns: 1fr; }
+  .slx-architecture { grid-template-columns: 1fr 1fr; margin-top: 45px; }
+  .slx-architecture-column { padding: 24px 14px; }
+  .slx-architecture-column:nth-child(odd) { padding-left: 0; }
+  .slx-architecture-column:nth-child(even) { border-right: 0; }
+  .slx-architecture-column:nth-child(n+3) { border-top: 1px solid var(--slx-line); }
+  .slx-wide-media video { aspect-ratio: 16 / 10; object-fit: contain; max-height: none; }
+  .slx-wide-media figcaption { flex-direction: column; gap: 3px; }
+  .slx-impact-bottom { margin-top: 40px; }
+  .slx-end { align-items: flex-start; flex-direction: column; padding-block: 45px 60px; }
+  .slx-project-facts > div { grid-template-columns: 105px 1fr; gap: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .sportslux-page *, .sportslux-page *::before, .sportslux-page *::after { scroll-behavior: auto !important; transition: none !important; } }
+
+/* The full case-study content stays expanded for the author's editing pass. */
+.slx-expanded { padding-block: 24px; }
+.slx-expanded > .slx-detail-title { font-size: 20px; margin: 0 0 24px; }
+.slx-expanded ul, .slx-expanded ol { margin-bottom: 0; }
+.sportslux-page video { pointer-events: none; }
+.slx-engine-matrix { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin-bottom: 80px; }
+.slx-engine-column { border-block: 1px solid var(--slx-line); padding-block: 25px; }
+.slx-engine-column-title { font-size: 18px; margin-bottom: 24px; }
+.slx-engine-list { list-style: none; padding: 0; margin: 0; }
+.slx-engine-list li { display: flex; justify-content: space-between; align-items: baseline; gap: 18px; padding-block: 12px; font-size: 12px; border-top: 1px solid var(--slx-line); }
+.slx-engine-label { color: var(--slx-muted); }
+.slx-engine-value, .slx-engine-value-2 { text-align: right; overflow-wrap: anywhere; }
+.slx-engine-flow-line { display: none; }
+.slx-method-demo { align-items: start; grid-template-columns: 1fr 1fr; }
+.slx-demo-figure { position: sticky; top: 110px; }
+.slx-demo-metrics { display: flex; justify-content: space-between; gap: 20px; margin: 30px 0 0; border-top: 1px solid var(--slx-line); padding-top: 20px; }
+.slx-demo-metrics dt { color: var(--slx-muted); font-size: 11px; }
+.slx-demo-metrics dd { margin: 8px 0 0; font-size: 24px; }
+.slx-strategies-heading { margin-top: 90px !important; margin-bottom: 40px !important; }
+.slx-strategy-list { display: grid; grid-template-columns: 1fr 1fr; gap: 35px 70px; }
+.slx-feature-item { padding-top: 24px; border-top: 1px solid var(--slx-line); font-size: 14px; line-height: 1.9; color: var(--slx-muted); }
+.slx-feature-item strong { display: block; color: var(--slx-ink); font-size: 18px; font-weight: 400; margin-bottom: 15px; }
+.slx-subpoints { margin: 0; padding-left: 20px; }
+.slx-subpoints li + li { margin-top: 12px; }
+.slx-practical { margin-top: 65px; }
+.slx-practical h3 { margin-bottom: 25px; }
+.slx-ui-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 60px 40px; align-items: start; }
+.slx-development-media { margin-bottom: 50px !important; }
+@media (max-width: 760px) {
+  .slx-engine-matrix, .slx-method-demo, .slx-strategy-list, .slx-ui-gallery { grid-template-columns: 1fr; }
+  .slx-engine-matrix { gap: 24px; margin-bottom: 45px; }
+  .slx-demo-figure { position: static; }
+  .slx-strategies-heading { margin-top: 55px !important; }
 }
 
-:global(body) {
-  overflow-x: hidden;
-}
-
-/* Ensure all normal children stay above the light layer */
-.sportslux-page > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* Constrain inner content width inside the full-bleed background */
-.slx-hero,
-.slx-section {
-  max-width: 1100px;
-  margin-inline: auto;
-}
-
-/* LIGHT STREAMS LAYER */
-
-.slx-light-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  display: flex;
-  justify-content: center;
-}
-
-.slx-light-layer-inner {
-  position: relative;
-  width: 100%;
-  max-width: 1100px;
-  height: 100%;
-  margin-inline: auto;
-}
-
-.slx-light {
-  position: absolute;
-  top: -20%;
-  left: var(--x);
-  width: var(--size);
-  height: var(--size);
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(235, 243, 255, 0.7) 0%,
-    rgba(4, 7, 22, 0) 70%
-  );
-  filter: blur(18px);
-  opacity: 0.45;
-  mix-blend-mode: screen;
-  transform: translate3d(-50%, 0, 0);
-  animation:
-    slx-light-fall var(--duration) linear infinite,
-    slx-light-wave calc(var(--duration) * 0.9) ease-in-out infinite;
-  animation-delay: var(--delay);
-}
-
-/* only vertical position + fade */
-@keyframes slx-light-fall {
-  0% {
-    top: -20%;
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.4;
-  }
-  90% {
-    top: 100%;
-    opacity: 0.4;
-  }
-  100% {
-    top: 120%;
-    opacity: 0;
-  }
-}
-
-@keyframes slx-light-wave {
-  0% {
-    transform: translate3d(-50%, 0, 0);
-  }
-  25% {
-    transform: translate3d(calc(-50% - 240px), 0, 0);
-  }
-  50% {
-    transform: translate3d(calc(-50% + 240px), 0, 0);
-  }
-  75% {
-    transform: translate3d(calc(-50% - 240px), 0, 0);
-  }
-  100% {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 1.6rem;
-  padding: 0.45rem 0.9rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(3, 5, 20, 0.9);
-  color: inherit;
-  font-size: 0.8rem;
-  text-decoration: none;
-  backdrop-filter: blur(18px);
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
-  transition:
-    transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1),
-    border-color 0.18s,
-    background 0.18s,
-    box-shadow 0.18s;
-}
-
-.back-link:hover {
-  transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.45);
-  background: rgba(6, 10, 35, 0.98);
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.8);
-}
-
-/* Scroll reveal */
-
-.slx-reveal {
-  opacity: 0;
-  transform: translateY(40px) scale(0.98);
-  filter: blur(3px);
-  transition:
-    opacity 0.6s cubic-bezier(0.22, 0.61, 0.36, 1),
-    transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1),
-    filter 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-
-.slx-reveal.is-visible {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  filter: blur(0);
-}
-
-/* Hero */
-
-.slx-hero {
-  position: relative;
-  border-radius: 1.75rem;
-  padding-left: clamp(1.9rem, 4vw, 2.8rem);
-  background: linear-gradient(145deg, rgba(7, 12, 40, 0.88), rgba(12, 22, 70, 0.92));
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.8);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 1fr);
-  align-items: center;
-  overflow: hidden;
-  backdrop-filter: blur(18px);
-}
-
-.slx-hero-left {
-  max-width: 100%;
-}
-
-/* Right panel should stretch fully and clip content */
-.slx-hero-right {
-  align-self: stretch;
-  height: 100%;
-  overflow: hidden;
-
-  /* Match the hero rounding ONLY on the outside-right corners */
-  border-top-right-radius: 1.75rem;
-  border-bottom-right-radius: 1.75rem;
-
-  /* Important: left edge must be perfectly square */
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
-/* Image must fill the panel perfectly */
-.slx-hero-right > img,
-.slx-hero-right > video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-
-  /* kill the global .image rounding */
-  border-radius: 0;
-}
-
-.slx-kicker {
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  font-size: 0.78rem;
-  color: #8cd5ff;
-  margin-bottom: 0.6rem;
-}
-
-.slx-title {
-  font-size: clamp(2.1rem, 2vw, 2.9rem);
-  line-height: 1.05;
-  letter-spacing: -0.04em;
-  margin: 0 0 0.85rem;
-}
-
-.slx-subtitle {
-  margin: 0 0 1.5rem;
-  font-size: 0.98rem;
-  color: #a6b4d1;
-  max-width: 36rem;
-}
-
-.slx-meta-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.slx-tag-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.slx-tag {
-  font-size: 0.76rem;
-  border-radius: 999px;
-  padding: 0.25rem 0.7rem;
-  background: rgba(10, 22, 72, 0.8);
-  border: 1px solid rgba(177, 206, 255, 0.3);
-  color: #cfddff;
-}
-
-.slx-stack {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  font-size: 0.78rem;
-  color: #9eb0d7;
-}
-
-.slx-stack-label {
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: 0.72rem;
-  color: #7aa5ff;
-}
-
-.slx-stack-value {
-  opacity: 0.9;
-}
-
-.slx-hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.8rem;
-}
-
-.btn {
-  border-radius: 999px;
-  border: 1px solid transparent;
-  padding: 0.75rem 1.55rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  transform-origin: center;
-  transition:
-    transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1),
-    box-shadow 0.2s,
-    background 0.2s,
-    border-color 0.2s,
-    color 0.2s;
-}
-
-.btn-primary {
-  background:
-    radial-gradient(circle at 0% 0%, #ffffff33 0, transparent 60%),
-    linear-gradient(120deg, #4dd2ff, #a855ff);
-  color: #02010a;
-  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.6);
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.8);
-}
-
-.btn-ghost {
-  background: rgba(10, 18, 52, 0.8);
-  border-color: rgba(187, 206, 255, 0.35);
-  color: #dde6ff;
-  backdrop-filter: blur(14px);
-}
-
-.btn-ghost:hover {
-  transform: translateY(-1px);
-  background: rgba(18, 27, 72, 0.95);
-  border-color: rgba(221, 234, 255, 0.7);
-}
-
-.slx-hero-footnote {
-  font-size: 0.78rem;
-  color: #8b9ac4;
-}
-
-/* Generic sections */
-
-.slx-section {
-  margin-top: 2rem;
-  border-radius: 1.5rem;
-  padding: 1.7rem 1.8rem;
-  background: linear-gradient(145deg, rgba(5, 10, 34, 0.9), rgba(7, 14, 46, 0.92));
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(16px);
-}
-
-.slx-section-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 3.5fr) minmax(0, 2.6fr);
-  gap: 1.8rem;
-  align-items: flex-start;
-}
-
-.slx-section-grid-impact {
-  display: grid;
-  grid-template-columns: minmax(0, 2.5fr) minmax(0, 2fr);
-  gap: 1.8rem;
-  align-items: flex-start;
-}
-
-.slx-section-grid-learnings {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 2.6fr);
-  gap: 1.8rem;
-  align-items: flex-start;
-}
-
-.slx-section-grid-admin {
-  display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 3fr);
-  gap: 1.8rem;
-  align-items: flex-start;
-}
-
-
-.slx-section-grid-engine {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1.8rem;
-  align-items: flex-start;
-}
-
-.slx-section-block {
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-
-.section-label {
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: 0.78rem;
-  color: #8db1ff;
-}
-
-.section-title {
-  margin: 0;
-  font-size: 1.3rem;
-  letter-spacing: -0.02em;
-}
-
-.section-subtitle {
-  margin: 0 0 0.3rem;
-  font-size: 1rem;
-}
-
-.section-sub {
-  margin: 0;
-  font-size: 0.92rem;
-  color: #a4b3d4;
-}
-
-/* Lists */
-.slx-list {
-  margin: 0;
-  padding-left: 1.1rem;
-  list-style: disc;
-  display: grid;
-  gap: 0.45rem;
-  font-size: 0.9rem;
-  color: #a7b5d5;
-}
-
-.slx-list-spaced {
- margin: 0;
-  padding-left: 1.1rem;
-  list-style: disc;
-  display: grid;
-  gap: 1rem;
-  font-size: 0.9rem;
-  color: #a7b5d5;
-}
-
-
-/* Images */
-
-.image-wrapper {
-  border-radius: 1rem;
-  padding: 0.7rem;
-  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
-  border: 1px solid rgba(188, 214, 255, 0.26);
-}
-
-.image {
-  width: 100%;
-  display: block;
-  border-radius: 0.7rem;
-}
-
-/* Images */
-
-.slx-gallery-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1rem;
-}
-
-.slx-gallery-item {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  min-width: 0;
-}
-
-.slx-gallery-img {
-  width: 100%;
-  aspect-ratio: 16 / 12;     /* forces same vertical size */
-  height: auto;
-  display: block;
-  border-radius: 0.85rem;
-  background: linear-gradient(145deg, #05081f, #050b2a);
-}
-
-video.slx-gallery-img {
-  object-fit: cover;
-}
-
-/* Hero badge + stats */
-
-.slx-hero-right {
-  position: relative;
-}
-
-.slx-video-badge {
-  position: absolute;
-  left: 0.9rem;
-  bottom: 0.9rem;
-  padding: 0.3rem 0.65rem;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  color: #dbe6ff;
-  background: rgba(3, 6, 22, 0.72);
-  border: 1px solid rgba(188, 214, 255, 0.25);
-  backdrop-filter: blur(8px);
-  pointer-events: none;
-}
-
-.slx-hero-stats {
-  list-style: none;
-  margin: 1.4rem 0 1.6rem;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.8rem;
-}
-
-.slx-hero-stats li {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.7rem 0.8rem;
-  border-radius: 0.8rem;
-  background: rgba(10, 22, 72, 0.55);
-  border: 1px solid rgba(177, 206, 255, 0.18);
-}
-
-.slx-hero-stat-value {
-  font-size: 1.05rem;
-  color: #8cd5ff;
-  white-space: nowrap;
-}
-
-.slx-hero-stat-label {
-  font-size: 0.74rem;
-  color: #9eb0d7;
-  line-height: 1.3;
-}
-
-/* Video sections */
-
-.slx-video-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-  gap: 1.8rem;
-  align-items: center;
-  margin-top: 0.6rem;
-}
-
-.slx-video-grid-reverse {
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-}
-
-.slx-video-figure {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  min-width: 0;
-}
-
-.slx-video {
-  width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 0.85rem;
-  background: linear-gradient(145deg, #05081f, #050b2a);
-  border: 1px solid rgba(188, 214, 255, 0.18);
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55);
-}
-
-.slx-section-intro {
-  margin: 0.6rem 0 1.2rem;
-  max-width: 60rem;
-}
-
-.slx-video-pair {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  gap: 1.2rem;
-  align-items: start;
-}
-
-@media (max-width: 900px) {
-  .slx-video-pair {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 960px) {
-  .slx-video-grid,
-  .slx-video-grid-reverse {
-    grid-template-columns: 1fr;
-  }
-
-  /* keep text before video on mobile for the reversed layout */
-  .slx-video-grid-reverse .slx-video-figure {
-    order: 2;
-  }
-}
-
-@media (max-width: 720px) {
-  .slx-hero-stats {
-    grid-template-columns: 1fr;
-  }
-}
-
-.slx-gallery-caption {
-  margin: 0;
-  font-size: 0.8rem;
-  line-height: 1.35;
-  color: #a4b3d4;
-  text-align: center;
-}
-
-@media (max-width: 900px) {
-  .slx-gallery-card {
-    grid-template-columns: 1fr;
-  }
-}
-
-.slx-gallery {
-  display: flex;
-  flex-direction: row;
-  gap: 0.85rem;
-}
-
-.slx-image-glow.secondary {
-  opacity: 0.9;
-}
-
-.slx-image-large {
-  min-height: 230px;
-  background: linear-gradient(145deg, #05081f, #050b2a);
-}
-
-.slx-image-caption {
-  margin-top: 0.65rem;
-}
-
-.slx-image-login {
-  margin-top: 0.9rem;
-}
-
-.slx-image-report {
-  background: linear-gradient(145deg, #05081f, #0a1238);
-}
-
-/* Engine */
-.slx-engine {
-  margin-top: 2.2rem;
-  position: relative;
-}
-
-.slx-engine-header {
-  margin-bottom: 1.2rem;
-}
-
-.slx-engine-flow {
-  position: absolute;
-  top: 10rem; /* tune so it sits between titles and first rows */
-  left: 0;
-  right: 0;
-  pointer-events: none;
-}
-
-.slx-engine-flow-line {
-  position: relative;
-  justify-self: center;         
-  align-self: center;
-  width: calc(3vw + 20px); 
-  height: calc(0.6vh + 5px);
-  border-radius: 999px;
-  margin: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    #4dd2ff,
-    #a855ff,
-    transparent
-  );
-  background-size: 200% 100%;
-  animation:
-    slx-flow-move 4s linear infinite reverse;
-  transform-origin: center;
-  opacity: 0.55;
-  filter: drop-shadow(0 0 2px rgba(124, 149, 199, 0.35));
-}
-
-.slx-engine-flow-line-1 {
-  animation-delay: 0s;
-}
-
-.slx-engine-flow-line-2 {
-  animation-delay: 1.4s;
-}
-
-/* Arrowhead on the right */
-.slx-engine-flow-line::after {
-  content: '';
-  position: absolute;
-  right: -7px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 12px 0 12px 20px;
-  border-color: transparent transparent transparent #4dd2ff;
-  filter: drop-shadow(0 0 2px rgba(124, 149, 199, 0.35));
-  animation:
-    slx-flow-move 4s linear infinite reverse;
-}
-
-/* Simple movement of the gradient along the beam */
-@keyframes slx-flow-move {
-  0% {
-    background-position: 0% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-/* Optional: hide on small screens if it gets cramped */
-@media (max-width: 960px) {
-  .slx-engine-flow {
-    display: none;
-  }
-}
-
-.slx-engine-matrix {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
-  column-gap: 1.2rem;
-  align-items: center;
-}
-
-/* Column content */
-.slx-engine-list {
-  position: relative;
-  margin: 0;
-  padding: 0.4rem 0.5rem;
-  list-style: none;
-  display: grid;
-  gap: 0rem;
-  font-size: 0.88rem;
-  color: #c0c9e9;
-}
-
-/* Label + value rows */
-.slx-engine-list li {
-  display: inline-flex;
-  align-items: baseline;
-  justify-content: flex-start;
-  gap: 0rem;
-  padding: 0;
-}
-
-.slx-engine-label {
-  flex: 1;
-  opacity: 0.9;
-}
-
-.slx-engine-value {
-  font-family: var(--mono-font, 'JetBrains Mono', ui-monospace, SFMono-Regular,
-    Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace);
-  font-size: 0.82rem;
-  color: #9ad1ff;
-  white-space: nowrap;
-}
-
-.slx-engine-value-2 {
-  font-family: var(--mono-font, 'JetBrains Mono', ui-monospace, SFMono-Regular,
-    Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace);
-  font-size: 0.82rem;
-  color: #9ad1ff;
-  white-space: nowrap;
-}
-
-/* Square brackets [ ] */
-.slx-engine-list::before,
-.slx-engine-list::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 10px;
-  border-style: solid;
-  border-color: #aecdff;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-/* [ */
-.slx-engine-list::before {
-  left: 0;
-  border-width: 2px 0 2px 2px;
-}
-
-/* ] */
-.slx-engine-list::after {
-  right: 0;
-  border-width: 2px 2px 2px 0;
-}
-
-/* Result image + caption under matrix */
-.slx-engine-result {
-  margin-top: 1.8rem;
-}
-
-/* Two-column layout for image + text */
-.slx-engine-result-grid {
-  display: grid;
-  grid-template-columns: 3fr 2.4fr;   /* 60% / 40% */
-  gap: 2rem;
-  align-items: start;
-}
-
-/* Keep your existing image now centered in its left column */
-.slx-engine-result-visual {
-  display: flex;
-  justify-content: center;
-}
-
-/* Right-hand text styling */
-.slx-engine-result-text {
-  color: #c8d4f4;
-  font-size: 0.92rem;
-  padding-top: 0.4rem;
-}
-
-.slx-result-title {
-  margin: 0 0 0.7rem;
-  font-size: 1.05rem;
-  color: #aecdff;
-}
-
-
-
-/* Stack image + text on mobile */
-@media (max-width: 900px) {
-  .slx-engine-result-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-/* Engine column wrappers + titles */
-.slx-engine-column {
-  position: relative;
-}
-
-/* Titles centred between [ ] and slightly above them (row -1 vibe) */
-.slx-engine-column-title {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: -0.5rem; /* tweak this value if you want it closer/further */
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: #8db1ff;
-  white-space: nowrap;
-}
-
-
-/* Feature layout */
-
-/* Feature layout */
-.slx-feature-layout {
-  margin-top: 2.1rem;
-}
-
-.slx-feature-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 3.5fr) minmax(0, 2.6fr);
-  grid-template-rows: auto auto;
-  gap: 1.8rem;
-  align-items: start;
-}
-
-/* ensure the right column doesn't get forced into weird centering */
-.slx-feature-right-top,
-.slx-feature-right-bottom {
-  align-items: stretch;
-}
-
-.section-sub.slx-feature-block {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem; /* slightly more spacing between each technique */
-}
-
-
-/* mobile stack */
-@media (max-width: 960px) {
-  .slx-feature-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-.slx-visual-panel {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Modes / table */
-
-.slx-modes {
-  margin-top: 2.1rem;
-}
-
-.table-wrapper {
-  margin-top: 0.85rem;
-  overflow-x: auto;
-  border-radius: 0.85rem;
-  border: 1px solid rgba(174, 199, 255, 0.35);
-  text-align: center;
-}
-
-.table-wrapper table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 280px;
-  font-size: 0.82rem;
-}
-
-.table-wrapper th,
-.table-wrapper td {
-  padding: 0.6rem 0.75rem;
-  text-align: left;
-  border-bottom: 1px solid rgba(92, 115, 170, 0.7);
-}
-
-.table-wrapper tbody tr:nth-child(even) td {
-  background: rgba(8, 16, 46, 0.6);
-}
-
-/* Stack */
-
-.slx-stack {
-  margin-top: 2.1rem;
-}
-
-.slx-stack-panel {
-  gap: 0.8rem;
-}
-
-.slx-stack-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 0.4rem;
-}
-
-.slx-chip {
-  border-radius: 999px;
-  padding: 0.35rem 0.8rem;
-  font-size: 0.8rem;
-  background: rgba(10, 21, 66, 0.9);
-  border: 1px solid rgba(173, 199, 255, 0.5);
-  color: #d4e0ff;
-}
-
-/* Impact / roadmap */
-
-.slx-impact {
-  margin-top: 2.1rem;
-}
-
-.slx-roadmap-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
-  gap: 1.2rem;
-}
-
-.slx-small-heading {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  margin: 0 0 0.4rem;
-  color: #90b3ff;
-}
-
-/* Cloud architecture diagram */
-.slx-arch {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1.6rem;
-  margin: 0.8rem 0 0.4rem;
-}
-
-.slx-arch-col {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  padding: 0.9rem 0.8rem;
-  border-radius: 1rem;
-  background: rgba(8, 16, 46, 0.6);
-  border: 1px solid rgba(174, 199, 255, 0.22);
-}
-
-/* Arrow from each column into the next */
-.slx-arch-col + .slx-arch-col::before {
-  content: '';
-  position: absolute;
-  left: -1.45rem;
-  top: 50%;
-  width: 1.3rem;
-  height: 2px;
-  background: linear-gradient(90deg, rgba(141, 177, 255, 0.2), #8db1ff);
-}
-
-.slx-arch-col + .slx-arch-col::after {
-  content: '';
-  position: absolute;
-  left: -0.35rem;
-  top: calc(50% - 4px);
-  border: 5px solid transparent;
-  border-left-color: #8db1ff;
-  border-right: 0;
-}
-
-.slx-arch-col-title {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: #8db1ff;
-}
-
-.slx-arch-node {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.55rem 0.65rem;
-  border-radius: 0.7rem;
-  background: rgba(10, 21, 66, 0.9);
-  border: 1px solid rgba(173, 199, 255, 0.35);
-  box-shadow: 0 0 18px rgba(80, 130, 255, 0.12);
-}
-
-.slx-arch-node-name {
-  font-size: 0.8rem;
-  color: #e6f0ff;
-}
-
-.slx-arch-node-detail {
-  font-size: 0.74rem;
-  line-height: 1.35;
-  color: #a4b3d4;
-}
-
-.slx-arch-pipeline {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.4rem 0.9rem;
-  margin: 0.6rem 0 1rem;
-}
-
-.slx-arch-pipeline .slx-small-heading {
-  margin: 0;
-}
-
-.slx-arch-steps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 0.76rem;
-  color: #c8d4f4;
-}
-
-.slx-arch-steps li + li::before {
-  content: '→';
-  margin-right: 0.35rem;
-  color: #8db1ff;
-}
-
-@media (max-width: 960px) {
-  .slx-arch {
-    grid-template-columns: 1fr;
-    gap: 1.4rem;
-  }
-
-  /* Arrows point down when columns stack */
-  .slx-arch-col + .slx-arch-col::before {
-    left: 50%;
-    top: -1.3rem;
-    width: 2px;
-    height: 1.1rem;
-    background: linear-gradient(180deg, rgba(141, 177, 255, 0.2), #8db1ff);
-  }
-
-  .slx-arch-col + .slx-arch-col::after {
-    left: calc(50% - 4px);
-    top: -0.3rem;
-    border: 5px solid transparent;
-    border-top-color: #8db1ff;
-    border-bottom: 0;
-  }
-}
-
-/* TIMELINE (horizontal, compact) */
-.slx-timeline {
-  margin-top: 2.1rem;
-}
-
-.slx-timeline-scroll {
-  margin-top: 0.9rem;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 0.2rem 0.2rem 0.6rem;
-  -webkit-overflow-scrolling: touch;
-  contain: layout paint;
-}
-
-.slx-timeline-strip {
-  list-style: none;
-  display: flex;
-  gap: 0.9rem;
-  margin: 0;
-  padding: 0;
-  min-width: max-content;
-}
-
-.slx-timeline-chip {
-  position: relative;
-  width: 270px;
-  border-radius: 1rem;
-  padding: 0.85rem 0.95rem 1.35rem;
-  background: rgba(6, 12, 40, 0.55);
-  border: 1px solid rgba(188, 214, 255, 0.18);
-  box-shadow: none;
-  contain: content;
-}
-
-.slx-timeline-top {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 0.55rem;
-}
-
-.slx-timeline-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: radial-gradient(circle, #4dd2ff 0, #a855ff 100%);
-  box-shadow: 0 0 0 4px rgba(77, 210, 255, 0.10);
-  flex: 0 0 auto;
-}
-
-.slx-timeline-date {
-  font-size: 0.78rem;
-  color: #92a7d7;
-  white-space: nowrap;
-}
-
-.slx-timeline-text {
-  font-size: 0.9rem;
-  color: #c2cff1;
-  line-height: 1.25;
-}
-
-.slx-timeline-version {
-  position: absolute;
-  right: 0.85rem;
-  bottom: 0.7rem;
-  font-size: 0.78rem;
-  color: #9ad1ff;
-  opacity: 0.9;
-}
-
-.slx-timeline-chip.is-current {
-  border-color: rgba(221, 234, 255, 0.65);
-  background: linear-gradient(145deg, rgba(10, 22, 72, 0.78), rgba(7, 14, 46, 0.82));
-  box-shadow: none;
-}
-
-.slx-timeline-chip.is-current .slx-timeline-version {
-  color: #dde6ff;
-  opacity: 1;
-}
-
-.slx-timeline-chip.is-current .slx-timeline-dot {
-  box-shadow: 0 0 0 5px rgba(168, 85, 255, 0.14);
-}
-
-/* Scrollbar (subtle) */
-.slx-timeline-scroll::-webkit-scrollbar {
-  height: 10px;
-}
-.slx-timeline-scroll::-webkit-scrollbar-thumb {
-  background: rgba(141, 177, 255, 0.22);
-  border-radius: 999px;
-}
-
-/* Animations */
-
-@keyframes slx-pole-breathe {
-  0% {
-    transform: translateY(0);
-    opacity: 0.7;
-  }
-  50% {
-    transform: translateY(-4px);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(1px);
-    opacity: 0.85;
-  }
-}
-
-@keyframes slx-beam-flicker {
-  0% {
-    opacity: 0.6;
-    filter: blur(2px);
-  }
-  50% {
-    opacity: 1;
-    filter: blur(1px);
-  }
-  100% {
-    opacity: 0.7;
-    filter: blur(2.5px);
-  }
-}
-
-@keyframes slx-lux-pulse {
-  0% {
-    background: radial-gradient(circle at 50% 60%, rgba(7, 11, 32, 0.96), rgba(5, 7, 24, 0.9));
-    box-shadow: 0 0 0 1px rgba(15, 23, 56, 0.9) inset;
-  }
-  50% {
-    background: radial-gradient(circle at 50% 50%, rgba(77, 210, 255, 0.9), rgba(10, 18, 52, 0.98));
-    box-shadow:
-      0 0 8px rgba(77, 210, 255, 0.7),
-      0 0 0 1px rgba(29, 78, 216, 0.9) inset;
-  }
-  100% {
-    background: radial-gradient(circle at 50% 40%, rgba(168, 85, 255, 0.9), rgba(9, 12, 38, 0.98));
-    box-shadow:
-      0 0 9px rgba(168, 85, 255, 0.7),
-      0 0 0 1px rgba(56, 114, 255, 0.9) inset;
-  }
-}
-
-/* Responsive */
-
-@media (max-width: 960px) {
-  .slx-hero {
-    grid-template-columns: 1fr;
-  }
-
-  .slx-section-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .slx-timeline-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .slx-engine-matrix {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 720px) {
-  .sportslux-page {
-    padding: 1.4rem 1.1rem 1.8rem;
-  }
-
-  .slx-hero {
-    padding: 1.6rem 1.4rem;
-  }
-
-  .slx-roadmap-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .slx-field-footer {
-    justify-content: flex-start;
-  }
-
-  .slx-engine-matrix {
-    grid-template-columns: 1fr;
-  }
-}
 </style>

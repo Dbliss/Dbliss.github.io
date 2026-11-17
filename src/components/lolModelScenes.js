@@ -85,7 +85,8 @@ const FEATS = [
 const STAGE_W = [0.35, 0.25, 0.4]
 const SPOT_PCT = [84, 71, 78]
 const SPOT_COMP = STAGE_W.reduce((s, w, k) => s + w * SPOT_PCT[k], 0)
-const OPP_COMP = 41.6
+// Keep the illustrative pair centred on 50 so the expected baseline is easy to read.
+const OPP_COMP = 100 - SPOT_COMP
 const GAME_AVG = (SPOT_COMP + OPP_COMP) / 2
 const PERF_SCALE = 30
 function ordinal (n) {
@@ -636,7 +637,9 @@ function sceneData (p) {
 const STAGE_NAMES = ['Early', 'Middle', 'Late']
 const STAGE_MIN = ['10–15 min', '15–20 min', '20–25 min']
 
-function scenePerf (p) {
+function scenePerf (beat) {
+  // The model paths and overall-score calculation now share one narrated step.
+  const p = remap(beat, [0, 1, 3, 4])
   const M = match
   const toTrees = ease(seg(p, 0.82, 1.2))
   const toBars = ease(seg(p, 3, 3.25))
@@ -704,10 +707,10 @@ function scenePerf (p) {
     })
 
     // Beat 2: three percentiles become one score, then a difference from expected.
-    const formula = easeOut(seg(p, 2, 2.3))
+    const combined = easeOut(seg(p, 2, 2.3))
     const gauge = easeOut(seg(p, 2.25, 2.6))
     const delta = ease(seg(p, 2.55, 2.9))
-    txt(`84 × 0.35 + 71 × 0.25 + 78 × 0.40 = ${Math.round(SPOT_COMP)}`, W / 2, H * 0.6, { size: fz(13), color: C.ink, mono: true, weight: 700, align: 'center', alpha: formula })
+    txt(`Combined score: ${SPOT_COMP.toFixed(2)}`, W / 2, H * 0.6, { size: fz(18), color: C.ink, weight: 700, align: 'center', alpha: combined })
     if (gauge > 0) {
       const x0 = W * 0.1
       const x1 = W * 0.9
@@ -955,6 +958,8 @@ function moveArrow (xa, xb, y, color, a) {
 //   beat 0  a belief per player              beat 3  the surprise is shared out by uncertainty
 //   beat 1  predict through sigma points     beat 4  performance nudge, then the loop repeats
 //   beat 2  prediction against the result
+let ratingsLoopStartedAt = null
+
 function sceneRatings (p) {
   const M = match
   const L = { x0: W * 0.02, x1: W * 0.98, y0: H * 0.1, y1: H * 0.57 }
@@ -969,7 +974,30 @@ function sceneRatings (p) {
   const update = ease(seg(p, 3.25, 3.85))
   const nudge = ease(seg(p, 4.05, 4.6))
   const sigFade = easeOut(seg(p, 1, 1.2)) * (1 - seg(p, 1.92, 2.05))
-  const state = (pl) => ({ mu: lerp(pl.mu, pl.mu1, update) + nudge * (pl.mu2 - pl.mu1), sig: lerp(pl.sig, pl.sig1, update) })
+  // Start the repeating games after the narrated performance nudge has landed.
+  // Each posterior carries into the next belief, rather than resetting the curves.
+  if (!LIVE || p < 4.6) ratingsLoopStartedAt = null
+  else if (ratingsLoopStartedAt === null) ratingsLoopStartedAt = T
+  const loopTime = ratingsLoopStartedAt === null ? 0 : Math.max(0, T - ratingsLoopStartedAt) / 8000
+  const loopGame = Math.floor(loopTime)
+  const running = (loopTime - loopGame) * 4
+  const loopActive = LIVE && ratingsLoopStartedAt !== null
+  const loopUpdate = ease(seg(running, 3.05, 3.9))
+  const loopPredict = ease(seg(running, 1.05, 1.8))
+  const state = (pl, ti) => {
+    if (!loopActive) return { mu: lerp(pl.mu, pl.mu1, update) + nudge * (pl.mu2 - pl.mu1), sig: lerp(pl.sig, pl.sig1, update) }
+    // Illustrative future results vary, keeping ratings within the visible axis.
+    // Uncertain players move further; process uncertainty widens a prediction,
+    // then the observed result contracts it during Update.
+    const meanAt = (game) => pl.mu2 + (ti === 0 ? 1 : -1) * (24 + pl.sig * 0.45) * Math.sin(game * 0.85)
+    const spreadAt = (game) => 28 + (pl.sig1 - 28) * Math.exp(-game * 0.08)
+    const prior = spreadAt(loopGame)
+    const predicted = Math.sqrt(prior * prior + 28 * 28)
+    return {
+      mu: lerp(meanAt(loopGame), meanAt(loopGame + 1), loopUpdate),
+      sig: lerp(lerp(prior, predicted, loopPredict), spreadAt(loopGame + 1), loopUpdate)
+    }
+  }
   const peakOf = (sig) => Math.min(rowH * 0.86, rowH * 0.62 * Math.pow(70 / sig, 0.75))
   const gy = (mu, sig, base, r) => base - peakOf(sig) * Math.exp(-0.5 * ((r - mu) / sig) ** 2)
   const spPos = {}
@@ -1002,7 +1030,7 @@ function sceneRatings (p) {
     for (let ti = 0; ti < 2; ti++) {
       const pl = M.players[ti][i]
       const col = M.color[ti]
-      const s = state(pl)
+      const s = state(pl, ti)
       const isSpot = ti === SPOT.ti && i === SPOT.i
       const alpha = isSpot ? 1 : others
       if (alpha <= 0) continue
@@ -1042,12 +1070,16 @@ function sceneRatings (p) {
       const arrowY = base - peakOf(s.sig) - 7
       // The filter's move, then the performance nudge on top of it.
       if (update > 0 && nudge < 1) moveArrow(xOf(pl.mu), xOf(lerp(pl.mu, pl.mu1, update)), arrowY, col, 0.9 * (1 - nudge))
-      if (nudge > 0) {
+      if (nudge > 0 && !loopActive) {
         const xa = xOf(pl.mu1)
         const xb = xOf(lerp(pl.mu1, pl.mu2, nudge))
         const mc = pl.perf >= 0 ? C.green : C.pink
         moveArrow(xa, xb, arrowY, mc, 0.9)
         runner([{ x: xa, y: arrowY }, { x: xb, y: arrowY }], i * 0.12 + ti * 0.5, mc, nudge, 1700)
+      }
+      if (loopActive && loopUpdate > 0 && loopUpdate < 1) {
+        const previous = pl.mu2 + (ti === 0 ? 1 : -1) * (24 + pl.sig * 0.45) * Math.sin(loopGame * 0.85)
+        moveArrow(xOf(previous), xOf(s.mu), arrowY, col, Math.sin(Math.PI * loopUpdate))
       }
     }
   }
@@ -1193,21 +1225,20 @@ function sceneRatings (p) {
     txt('tight belief: barely moves', L.x1, baseOf(tight.i) - rowH * 0.72 + (tight.i === wide.i ? fz(13) : 0), { size: fz(10.5), color: C.muted, mono: true, weight: 700, align: 'right', alpha: callout })
   }
   const equation = easeOut(seg(p, 3.2, 3.45)) * (1 - seg(p, 4, 4.15))
-  txt('μ ← μ + K · (result − predicted)', W / 2, H * 0.83, { size: fz(14), color: C.ink, mono: true, weight: 700, align: 'center', alpha: equation })
-  txt('K grows with σ²   ·   σ² shrinks', W / 2, H * 0.91, { size: fz(12), color: C.muted, mono: true, align: 'center', alpha: equation })
+  txt('More uncertainty, a bigger adjustment', W / 2, H * 0.83, { size: fz(14), color: C.ink, weight: 700, align: 'center', alpha: equation })
+  txt('New evidence narrows each belief', W / 2, H * 0.91, { size: fz(12), color: C.muted, align: 'center', alpha: equation })
 
   // The cycle closes: updated beliefs are the starting point for the next game.
   const loopA = easeOut(seg(p, 4.1, 4.4))
   if (loopA > 0) {
-    txt('Δμ += performance_score / 30', W / 2, H * 0.68, { size: fz(13), color: C.green, mono: true, weight: 700, align: 'center', alpha: loopA })
+    txt('Individual performance adjusts each rating', W / 2, H * 0.68, { size: fz(13), color: C.green, weight: 700, align: 'center', alpha: loopA })
     const steps = ['Belief', 'Predict', 'Compare', 'Update']
     const chipW = W * 0.19
     const chipH = Math.max(22, 34 * U)
     const y = H * 0.82
     const centre = (k) => W * (0.14 + k * 0.24)
-    const running = LIVE ? cycle(5200) * 4 : -1
     steps.forEach((step, k) => {
-      const on = LIVE && Math.floor(running) === k ? Math.sin(Math.PI * (running - k)) : 0
+      const on = loopActive && Math.floor(running) === k ? Math.sin(Math.PI * (running - k)) : 0
       A(loopA)
       rr(centre(k) - chipW / 2, y - chipH / 2, chipW, chipH, chipH / 2)
       ctx.fillStyle = rgba(C.hi, 0.08 + 0.26 * on)
@@ -1709,14 +1740,7 @@ function scenePrediction (p) {
     txt(`score ${signed(v, 3)}`, X(v), B.y1 + fz(14), { size: fz(12), color: C.hi, mono: true, weight: 700, align: 'center' })
 
     const score = SCORE_STEPS.final
-    const inverse = Math.exp(-score)
-    const line1 = easeOut(seg(p, 5.42, 5.56))
-    const line2 = easeOut(seg(p, 5.54, 5.68))
-    const line3 = easeOut(seg(p, 5.66, 5.8))
-    const size = fz(14)
-    txt('chance = 1 / (1 + e^(−score))', W / 2, H * 0.53, { size, color: C.muted, mono: true, align: 'center', alpha: line1 })
-    txt(`= 1 / (1 + e^(−${score.toFixed(3)}))`, W / 2, H * 0.6, { size, color: C.ink, mono: true, align: 'center', alpha: line2 })
-    txt(`= 1 / (1 + ${inverse.toFixed(3)})`, W / 2, H * 0.67, { size, color: C.ink, mono: true, align: 'center', alpha: line3 })
+    txt('The curve turns score into win chance', W / 2, H * 0.56, { size: fz(14), color: C.muted, align: 'center', alpha: easeOut(seg(p, 5.42, 5.56)) })
     const result = easeOut(seg(p, 5.78, 5.95))
     txt(`${Math.round(sigmoid(score) * 100)}%`, W / 2, H * 0.81, { size: fz(62), color: C.ink, weight: 800, align: 'center', alpha: result })
     txt('raw chance for T1', W / 2, H * 0.94, { size: fz(14), color: C.muted, mono: true, align: 'center', alpha: result })
@@ -2102,60 +2126,123 @@ const betLine = (() => {
     : 'No real edge, so no bet.'
 })()
 
+// Native MathML gives these few essential calculations proper fractions, subscripts and
+// superscripts without a runtime typesetting library. Values come from the scene's match.
+const mn = (n) => `<mn>${n}</mn>`
+const mi = (s) => `<mi>${s}</mi>`
+const op = (s) => `<mo>${s}</mo>`
+const row = (s) => `<mrow>${s}</mrow>`
+const frac = (a, b) => `<mfrac>${row(a)}${row(b)}</mfrac>`
+const mathLine = (label, body) => ({ label, math: `<math xmlns="http://www.w3.org/1998/Math/MathML" display="block">${row(body)}</math>` })
+const eq = op('=')
+const plus = op('+')
+const minus = op('−')
+const times = op('×')
+const CALCULATIONS = {
+  performance: {
+    title: 'Combine the three game stages',
+    explanation: 'E, M and L are the early, middle and late-game percentile scores for this role. S is their combined score. The weights give those stages 35%, 25% and 40% of the total.',
+    lines: [
+      mathLine('Rule', `${mi('S')}${eq}${mn('0.35')}${mi('E')}${plus}${mn('0.25')}${mi('M')}${plus}${mn('0.40')}${mi('L')}`),
+      mathLine('T1 mid · the three highlighted paths', `${mn(84)}${times}${mn('0.35')}${plus}${mn(71)}${times}${mn('0.25')}${plus}${mn(78)}${times}${mn('0.40')}${eq}${mn(SPOT_COMP.toFixed(2))}`)
+    ],
+    interpretation: `T1 mid’s combined score is ${SPOT_COMP.toFixed(2)} out of 100. This is a weighted score, not a win probability.`
+  },
+  comparison: {
+    title: 'Compare the two mid laners',
+    explanation: 'The baseline B is the average of the two opposing players’ combined scores in this game. The difference d measures how far T1 mid played above that baseline.',
+    lines: [
+      mathLine('Baseline · this match', `${mi('B')}${eq}${frac(`${mn(SPOT_COMP.toFixed(2))}${plus}${mn(OPP_COMP.toFixed(2))}`, mn(2))}${eq}${mn(GAME_AVG.toFixed(2))}`),
+      mathLine('Above the baseline', `${mi('d')}${eq}${mi('S')}${minus}${mi('B')}${eq}${mn(SPOT_COMP.toFixed(2))}${minus}${mn(GAME_AVG.toFixed(2))}${eq}${mn((SPOT_COMP - GAME_AVG).toFixed(2))}`)
+    ],
+    interpretation: `The animation rounds this to +${Math.round(SPOT_COMP - GAME_AVG)} above expected. T2 mid has the opposite difference. Internally, the difference is divided by ${PERF_SCALE} to put it on the rating model’s performance scale.`
+  },
+  surprise: {
+    title: 'Measure the surprise',
+    explanation: 'y is the result: 1 for a T1 win, 0 for a loss. p is the win probability from the rating beliefs, before the match. The residual r is the gap between result and prediction.',
+    lines: [
+      mathLine('Rule', `${mi('r')}${eq}${mi('y')}${minus}${mi('p')}`),
+      mathLine('T1 wins in this animation', `${mi('r')}${eq}${mn(1)}${minus}${mn(match.phat.toFixed(3))}${op('≈')}${mn((1 - match.phat).toFixed(3))}`)
+    ],
+    interpretation: `The rating model gave T1 about ${pct(match.phat)} beforehand. A win leaves a positive surprise, so T1’s ratings move up and T2’s move down. Uncertainty determines how much each player moves. This rating-only prediction is separate from the forest’s later 61% prediction.`
+  },
+  probability: {
+    title: 'Turn the tree score into a probability',
+    explanation: 's is the sum of the tree outputs. p is T1’s raw win probability. The logistic function keeps p between 0 and 1; e is the mathematical constant, approximately 2.718.',
+    lines: [
+      mathLine('Logistic function', `${mi('p')}${eq}${frac(mn(1), `${mn(1)}${plus}<msup>${mi('e')}${row(`${minus}${mi('s')}`)}</msup>`)}`),
+      mathLine('The score from the animation', `${mi('p')}${eq}${frac(mn(1), `${mn(1)}${plus}<msup>${mi('e')}${row(`${minus}${mn(SCORE_STEPS.final.toFixed(3))}`)}</msup>`)}${op('≈')}${mn('0.61')}${eq}${mn(61)}${op('%')}`)
+    ],
+    interpretation: 'A score of zero would mean 50%. This positive score favours T1. Calibration later adjusts the raw 61% to 58% using observed results from past matches.'
+  },
+  edge: {
+    title: 'Compare model and market',
+    explanation: 'p is the calibrated T1 win probability and m is the bookmaker-implied probability. Their difference is the model’s edge. Use decimals in the calculation.',
+    lines: [
+      mathLine('Rule', `${mi('edge')}${eq}${mi('p')}${minus}${mi('m')}`),
+      mathLine('This match · after calibration', `${mn(match.pCal.toFixed(2))}${minus}${mn(match.pm.toFixed(2))}${eq}${mn((match.pCal - match.pm).toFixed(2))}`)
+    ],
+    interpretation: '58% minus 53% gives an edge of 5 percentage points. That clears the animation’s 1.5-point minimum for considering a bet.'
+  },
+  stake: {
+    title: 'Size the example bet',
+    explanation: 'f is the fraction of bankroll staked on T1. With p as the calibrated probability and m as the market probability, this is one quarter of the Kelly fraction. It applies here because T1’s edge clears the minimum.',
+    lines: [
+      mathLine('Quarter Kelly', `${mi('f')}${eq}${frac(mn(1), mn(4))}${times}${frac(`${mi('p')}${minus}${mi('m')}`, `${mn(1)}${minus}${mi('m')}`)}`),
+      mathLine('This match', `${mi('f')}${eq}${frac(mn(1), mn(4))}${times}${frac(`${mn(match.pCal.toFixed(2))}${minus}${mn(match.pm.toFixed(2))}`, `${mn(1)}${minus}${mn(match.pm.toFixed(2))}`)}${op('≈')}${mn(kellyOf(match).stake.toFixed(4))}`)
+    ],
+    interpretation: `That is ${(kellyOf(match).stake * 100).toFixed(1)}% of the bankroll, or ${(kellyOf(match).stake * 1000).toFixed(2)} units from a 1,000-unit example bankroll. The animation uses a quarter of full Kelly to reduce the stake.`
+  }
+}
+
 export const SCENES = [
   {
     short: 'The match',
     title: 'Two teams, five roles',
-    code: 'TOP / JNG / MID / BOT / SUP',
     draw: sceneMatch,
     beats: [
-      { text: 'One example match, Team 1 against Team 2 (T1 and T2 from here on), runs through every stage below. The figures are illustrative, but each step mirrors the real code. Five players on each side take their positions: Top, Jungle, Mid, and the Bot-Support duo.', ms: 7000 },
+      { text: 'Here is an example match; five players on each side take their positions: Top, Jungle, Mid, and the Bot-Support duo.', ms: 7000 },
       { text: 'Each player lines up against their direct opposite, and those five pairings are how the model reads a match.', ms: 4000 }
     ]
   },
   {
     short: 'Match data',
     title: 'Match data',
-    code: 'golddiffat15 · xpdiffat15 · csdiffat15 · vspm',
     draw: sceneData,
     beats: [
-      { text: 'Every player is measured across hundreds of in-game metrics, each one judged directly against the opponent in their role. Here is how that fills out for one T1 player.' },
+      { text: 'Every player is measured across hundreds of in-game metrics. For esports, thousands of metrics are readily available for consumption, which makes models rich in information.' },
       { text: 'The other nine players follow, producing ten clean stat lines ready to score.' }
     ]
   },
   {
     short: 'Performance',
     title: 'Performance scores',
-    code: 'performance_score = f_position(early, middle, late) − expected',
     draw: scenePerf,
     beats: [
-      { text: 'Different roles have different jobs. For a fair comparison, players are scored within their role, separately for early, middle and late game.' },
-      { text: `The early-game model ranks T1’s mid against every other mid player: ${ordinal(SPOT_PCT[0])} percentile. Middle and late game are ranked the same way: ${ordinal(SPOT_PCT[1])} and ${ordinal(SPOT_PCT[2])}.` },
-      { text: `Weighted together that’s ${Math.round(SPOT_COMP)}, against ${Math.round(OPP_COMP)} for T2’s mid. Expected is the average of the two (${Math.round(GAME_AVG)}), so T1’s mid scores ${signed(spot.perf * PERF_SCALE, 0)}.` },
-      { text: 'Every player is scored against their opposite number. Green is above expected and pink is below.' }
+      { text: 'Different roles have different objectives. Like how a goalkeeper isn\'t measured the same as a striker. Players are scored based on how well they played their role, separated for the different stages of the game: early, middle and late.' },
+      { text: 'The highlighted paths show separate models evaluating each player’s early, mid and late-game performance. Each stage is ranked against players in the same role to produce a percentile score. These scores are then combined into an overall performance rating.', calculation: CALCULATIONS.performance },
+      { text: 'Performance scores answer “How well did this player play?” Compare T1 mid’s combined score with the baseline between the two mid laners.', calculation: CALCULATIONS.comparison }
     ]
   },
   {
     short: 'Skills',
     title: 'Skill profiles',
-    code: 'vision = z(wpm) + z(wcpm) + 0.5·z(vspm)   ·   EMA span 5',
     draw: sceneSkills,
     beats: [
-      { text: 'Take one player. They get five skill scores, and each faint outline is one game. Single games are noisy.' },
-      { text: 'The bold shape is a running average, so it follows form rather than flukes.' },
+      { text: 'Take one player; they get five skill scores. Every faint outline is their score for that game.' },
+      { text: 'Individual games are noisy, so the profile is smoothed over time. Each new game contributes one third of the updated profile; the previous smoothed profile contributes the other two thirds. Recent form matters more, while older games fade gradually.' },
       { text: 'The same is done for every position on the team.' },
-      { text: 'Then the same again for the other team, so all five match-ups can be compared.' }
+      { text: 'Then the same again for the other team, so all five match-ups can be compared.\n\nSkill profiles answer the question "What are this player’s strengths and weaknesses?"' }
     ]
   },
   {
     short: 'Ratings',
     title: 'Player ratings',
-    code: 'h(x) = σ((s̄T1 − s̄T2) / 400)   ·   Δμ += performance_score / 30',
     draw: sceneRatings,
     beats: [
       { text: 'The model tracks a belief about every player: a best estimate of their skill and how uncertain that estimate is. Ten players means ten beliefs, rather than ten fixed Elo numbers.' },
       { text: 'To predict a game, an Unscented Kalman Filter places sigma points across those beliefs. Each is one plausible version of the ten players. A curve turns each one’s rating gap into a win chance, and those chances are averaged.' },
-      { text: 'Then the game is played. The surprise is the gap between the prediction and the result: an upset is a big surprise, and a confident, correct call barely registers.' },
+      { text: 'Then the game is played. The surprise is the gap between the prediction and the result: an upset is a big surprise, and a confident, correct call barely registers.', calculation: CALCULATIONS.surprise },
       { text: 'The surprise is shared out by uncertainty. The Kalman gain moves uncertain players the most and settled players the least, and every belief tightens with the new evidence.' },
       { text: 'Each player’s own performance score then nudges their rating individually. The updated beliefs become the starting point for the next game.' }
     ]
@@ -2163,7 +2250,6 @@ export const SCENES = [
   {
     short: 'Over time',
     title: 'Ratings over time',
-    code: 'σ² += q_day · idle days · tier (×1 · ×1.5 · ×2)',
     draw: sceneTime,
     beats: [
       { text: `Ratings are never rebuilt from scratch. A new player starts at their league’s average with a wide band (± ${Math.round(TL.sd0)}), and every game narrows it.` },
@@ -2174,7 +2260,6 @@ export const SCENES = [
   {
     short: 'Prediction',
     title: 'Prediction',
-    code: 'elo_edge · mid_perfL_edge · sup_elo_diff · bot_vision_edge · …',
     draw: scenePrediction,
     beats: [
       { text: 'Everything becomes head-to-head gaps between the teams, alongside context like patch, roster changes and region strength. The team rating gap is the strongest signal.' },
@@ -2182,13 +2267,12 @@ export const SCENES = [
       { text: `Tree 1 lands on ${signed(match.forest[0].val, 2)} for this match. Tree 2 isn’t trained on match results directly: it learns from whatever tree 1 still got wrong across past matches. Tree 3 then learns from what’s left, so the remaining error keeps shrinking.` },
       { text: 'There are hundreds of trees in all, and every one asks its own questions and lands on its own small correction.' },
       { text: 'Their outputs simply add up to one score.' },
-      { text: `A logistic function turns that score into a probability: ${signed(SCORE_STEPS.final, 3)} becomes a raw win chance of ${pct(match.pRaw)} for T1. In practice several models are ensembled with bookmaker prices to reduce variance.` }
+      { text: `A logistic function turns that score into a probability: ${signed(SCORE_STEPS.final, 3)} becomes a raw win chance of ${pct(match.pRaw)} for T1. In practice several models are ensembled with bookmaker prices to reduce variance.`, calculation: CALCULATIONS.probability }
     ]
   },
   {
     short: 'Every team',
     title: 'Every team vs every team',
-    code: 'P(i beats j) = σ(slope · (r̄ᵢ − r̄ⱼ) / 400)   ·   bestof_prob(p, n)',
     draw: sceneLeague,
     beats: [
       { text: 'The same ratings price any pairing, not just this match. A team’s rating is the average of its five latest starters, league offset included, so a roster change shows up straight away.' },
@@ -2199,14 +2283,13 @@ export const SCENES = [
   {
     short: 'Calibrate & bet',
     title: 'Calibrate & bet',
-    code: 'p_cal = iso(p_raw)   ·   edge = p_cal − p_market   ·   stake = ¼ Kelly',
     draw: sceneCalibrate,
     beats: [
       { text: 'Calibration learns from past predictions. They’re grouped into buckets, and each bucket’s average prediction is compared with how often those teams actually won. Raw predictions turn out to be overconfident.' },
       { text: 'Isotonic regression then fits a stepped line through the buckets that can only ever rise. It becomes a lookup from any raw prediction to its real-world win rate, pulling predictions onto the diagonal.' },
       { text: `T1’s raw ${pct(match.pRaw)} is read off that line and comes out at ${pct(match.pCal)}.` },
-      { text: `Final prediction: T1 wins ${pct(match.pCal)} of the time. The bookmakers have T1 at ${pct(match.pm)}.` },
-      { text: betLine }
+      { text: `Final prediction: T1 wins ${pct(match.pCal)} of the time. The bookmakers have T1 at ${pct(match.pm)}.`, calculation: CALCULATIONS.edge },
+      { text: betLine, calculation: CALCULATIONS.stake }
     ]
   }
 ]

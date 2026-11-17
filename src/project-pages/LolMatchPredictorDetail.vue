@@ -79,7 +79,7 @@
     <section class="algo">
       <div class="section-label">How the model works</div>
       <h2 class="algo-title">One match, from raw rows to a priced bet</h2>
-      <p class="algo-intro">Each stage starts as you reach it, then plays on its own. Select any step to watch it again.</p>
+      <p class="algo-intro">Each stage starts as you reach it, then plays on its own. Select any step to watch it again. Use ↑ / ↓ to move between sections and ← / → to move between steps. The numbers are illustrative; worked calculations beside the relevant steps use the same example as the animation.</p>
       <LolModelStory />
     </section>
 

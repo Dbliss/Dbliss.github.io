@@ -41,7 +41,6 @@
         <header class="chapter-head">
           <span class="chapter-num mono">{{ String(i + 1).padStart(2, '0') }}</span>
           <h3 class="chapter-title">{{ s.title }}</h3>
-          <code class="chapter-code">{{ s.code }}</code>
         </header>
 
         <ol class="steps">
@@ -54,8 +53,15 @@
               @click="seek(i, bi)"
             >
               <span class="beat-bar" aria-hidden="true"><span class="beat-fill" /></span>
-              <span class="beat-text">{{ b.text }}</span>
+              <span class="beat-text">
+                <span v-for="(paragraph, pi) in b.text.split('\n\n')" :key="pi" class="beat-paragraph">{{ paragraph }}</span>
+              </span>
             </button>
+            <LolWorkedCalculation
+              v-if="b.calculation"
+              :calculation="b.calculation"
+              :active="bi === activeBeats[i]"
+            />
           </li>
         </ol>
       </div>
@@ -72,6 +78,7 @@
 // viewport scroll normally until their edge, and the page scrolls normally outside the story.
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { SCENES, drawScene, sceneAssetsReady } from './lolModelScenes'
+import LolWorkedCalculation from './LolWorkedCalculation.vue'
 
 const START_LINE = 0.45 // a chapter starts once its top rises above this share of the viewport
 const MS_PER_WORD = 210
@@ -115,10 +122,13 @@ let lastWheelSize = 0
 let wheelTotal = 0
 let touch = null
 
-function beatDuration ({ text, ms }) {
+function beatDuration ({ text, ms, calculation }) {
   if (ms) return ms
-  const words = text.trim().split(/\s+/).length
-  return Math.min(MAX_BEAT_MS, Math.max(MIN_BEAT_MS, words * MS_PER_WORD + BEAT_PADDING_MS))
+  const reading = calculation
+    ? `${text} ${calculation.explanation} ${calculation.interpretation}`
+    : text
+  const words = reading.trim().split(/\s+/).length
+  return Math.min(calculation ? 20000 : MAX_BEAT_MS, Math.max(MIN_BEAT_MS, words * MS_PER_WORD + BEAT_PADDING_MS + (calculation ? 4000 : 0)))
 }
 
 function sizeCanvas (ch) {
@@ -302,8 +312,45 @@ function onWheel (e) {
 }
 
 function onKeydown (e) {
+  if (e.defaultPrevented) return
   if (e.altKey || e.ctrlKey || e.metaKey) return
   if (e.target.closest?.('input, textarea, select, [contenteditable]')) return
+  const isArrow = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)
+  const middle = window.innerHeight * 0.5
+  const current = chapters.findIndex((ch) => {
+    const rect = ch.el.getBoundingClientRect()
+    return rect.top <= middle && rect.bottom > middle
+  })
+  if (isArrow && current !== -1) {
+    e.preventDefault()
+    if (glideRaf || e.repeat) return
+    let chapter = current
+    let beat = Math.min(chapters[current].durations.length - 1, Math.floor(progressAt(chapters[current])))
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      chapter += e.key === 'ArrowDown' ? 1 : -1
+      beat = 0
+    } else {
+      beat += e.key === 'ArrowRight' ? 1 : -1
+      if (beat < 0) {
+        chapter--
+        if (chapter >= 0) beat = chapters[chapter].durations.length - 1
+      } else if (beat >= chapters[chapter].durations.length) {
+        chapter++
+        beat = 0
+      }
+    }
+    if (chapter < 0 || chapter >= chapters.length) {
+      // Vertical arrows can leave the walkthrough at either end.
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        cancelGlide()
+        window.scrollBy({ top: (chapter < 0 ? -1 : 1) * window.innerHeight * 0.8, behavior: reduceMotion ? 'instant' : 'smooth' })
+      }
+      return
+    }
+    seek(chapter, beat)
+    if (chapter !== current) jump(chapter)
+    return
+  }
   let direction = KEY_DIRECTION[e.key]
   if (e.key === ' ') {
     // Space belongs to a focused control, such as a step button.
@@ -315,7 +362,8 @@ function onKeydown (e) {
   const target = nextStop(direction)
   if (target === null) return
   e.preventDefault()
-  glideTo(target)
+  if (reduceMotion) window.scrollTo({ top: target, behavior: 'instant' })
+  else glideTo(target)
 }
 
 function onTouchStart (e) {
@@ -389,10 +437,10 @@ onMounted(() => {
   resizer = new ResizeObserver(resizeStages)
   resizer.observe(root.value)
   window.addEventListener('resize', resizeStages)
+  window.addEventListener('keydown', onKeydown)
 
   if (!reduceMotion) {
     window.addEventListener('wheel', onWheel, { passive: false })
-    window.addEventListener('keydown', onKeydown)
     window.addEventListener('touchstart', onTouchStart, { passive: true })
     window.addEventListener('touchmove', onTouchMove, { passive: false })
     window.addEventListener('pointerdown', onPointerDown)
@@ -545,17 +593,6 @@ canvas {
   color: var(--ink);
 }
 
-.chapter-code {
-  display: inline-block;
-  margin-top: 12px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 0.72rem;
-  overflow-wrap: anywhere;
-  background: color-mix(in srgb, var(--accent) 7%, transparent);
-  color: var(--accent);
-}
-
 .steps {
   display: flex;
   flex-direction: column;
@@ -614,6 +651,14 @@ canvas {
 
 .beat.past .beat-fill {
   transform: scaleY(1);
+}
+
+.beat-paragraph {
+  display: block;
+}
+
+.beat-paragraph + .beat-paragraph {
+  margin-top: 0.8em;
 }
 
 .beat-text {

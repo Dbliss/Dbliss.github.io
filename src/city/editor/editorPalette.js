@@ -22,6 +22,7 @@ const CAR_TYPES = ['sedan', 'sedan-sports', 'taxi', 'police', 'suv', 'suv-luxury
 
 // Same keys/colors/radii as the landmark defs in cityScene.js
 export const LANDMARKS = [
+  { type: '10-1', label: 'Oh Hell Card Table', color: 0x6ee7a0, radius: 13 },
   { type: 'hq', label: 'About Me (HQ)', color: 0x8b5bff, radius: 13 },
   { type: 'sportslux', label: 'Sportslux Stadium', color: 0x9fc4ff, radius: 21 },
   { type: 'sports-booking', label: 'FrontRunner Park', color: 0x7fd4ff, radius: 22 },

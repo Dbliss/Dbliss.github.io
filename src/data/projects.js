@@ -1,5 +1,19 @@
 export const projects = [
   {
+    slug: '10-1',
+    title: 'Oh Hell: 10 to 1',
+    tagline: 'A trick-taking card game with AI opponents, running entirely in your browser',
+    excerpt: 'Play a full down, blind and back-up game against bots that combine learned models, hidden-hand simulation and endgame search.',
+    description: 'A playable Oh Hell game with bowers, bidding advice and a bidding quiz. A React interface runs the Python rules engine in a Web Worker through Pyodide, with the C simulation core compiled to WebAssembly. Bot changes are compared on matched deals and confirmed on unseen deals before promotion.',
+    stack: ['Python', 'C', 'React', 'TypeScript', 'WebAssembly', 'Pyodide'],
+    tags: ['Game AI', 'Monte Carlo Simulation', 'WebAssembly'],
+    groups: ['AI & ML', 'Full-stack & web', 'Algorithms & optimisation'],
+    category: 'Personal project',
+    repoUrl: 'https://github.com/Dbliss/10-1',
+    liveUrl: '/10-1/',
+    featured: true
+  },
+  {
     slug: 'lol-match-predictor',
     title: 'Bayesian Predictor for Esports',
     tagline: 'Side project to price pro esports matches like a bookmaker',

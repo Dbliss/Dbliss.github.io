@@ -37,6 +37,41 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Publish the browser game in the same Pages artifact as the portfolio.
+      # Its Vite pages mode already uses /10-1/ as the asset base.
+      - name: Checkout Oh Hell
+        uses: actions/checkout@v4
+        with:
+          repository: Dbliss/10-1
+          ref: main
+          path: _oh-hell
+          persist-credentials: false
+
+      - name: Set up Python for Oh Hell
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Set up WebAssembly compiler
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 5.0.3
+
+      - name: Package Oh Hell engine
+        working-directory: _oh-hell
+        run: python browser_build.py --emcc emcc
+
+      - name: Build Oh Hell
+        working-directory: _oh-hell/frontend
+        run: |
+          npm ci
+          npm run build:pages
+
+      - name: Include Oh Hell in portfolio
+        run: |
+          mkdir -p dist/10-1
+          cp -a _oh-hell/frontend/dist/. dist/10-1/
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 

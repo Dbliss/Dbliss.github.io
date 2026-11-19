@@ -30,6 +30,7 @@ const project = computed(() =>
 // initial site load) from downloading every project's images, charts, games,
 // Stockfish integration, and three.js code.
 const componentMap = {
+  '10-1': defineAsyncComponent(() => import('../project-pages/OhHellDetail.vue')),
   'lol-match-predictor': defineAsyncComponent(() => import('../project-pages/LolMatchPredictorDetail.vue')),
   sportslux: defineAsyncComponent(() => import('../project-pages/SportsluxDetail.vue')),
   chessEngine: defineAsyncComponent(() => import('../project-pages/ChessEngineDetail.vue')),

@@ -1180,6 +1180,38 @@ function landmarkChessPark(group, scene, def) {
   return { radius: 15, height: 8 }
 }
 
+/** Card-table landmark for the browser game. */
+function landmarkOhHell() {
+  const group = new THREE.Group()
+  const table = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 1.2, 48), std({ color: 0x155b49 }))
+  table.position.y = 3
+  group.add(table)
+  const leg = new THREE.Mesh(new THREE.CylinderGeometry(2, 3, 2.4, 16), std({ color: 0x30261d }))
+  leg.position.y = 1.2
+  group.add(leg)
+  const texture = canvasTexture(512, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#103c32'
+    ctx.fillRect(0, 0, w, h)
+    ctx.textAlign = 'center'
+    ctx.fillStyle = '#f6e8c9'
+    ctx.font = 'bold 68px system-ui, sans-serif'
+    ctx.fillText('OH HELL', w / 2, 105)
+    ctx.font = '40px system-ui, sans-serif'
+    ctx.fillText('10 TO 1', w / 2, 180)
+  })
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(12, 6), new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide }))
+  sign.position.set(0, 10, -5)
+  group.add(sign)
+  for (let i = 0; i < 5; i++) {
+    const card = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.12, 3.6), std({ color: i % 2 ? 0xe3b7af : 0xfff3d7 }))
+    card.position.set((i - 2) * 2.1, 3.7 + i * 0.02, 0)
+    card.rotation.y = (i - 2) * -0.16
+    group.add(card)
+  }
+  shadowify(group)
+  return { group, radius: 13, height: 14 }
+}
+
 /** Esports arena: Kenney commercial building with a jumbo odds screen. */
 function landmarkEsportsArena() {
   const g = new THREE.Group()
@@ -1548,6 +1580,17 @@ export function buildCity(scene) {
 
   // landmark placements: [key, builder, x, z, rotY, meta]
   const defs = [
+    {
+      key: '10-1',
+      build: landmarkOhHell,
+      x: 32, z: -42, rot: 0,
+      label: 'Oh Hell: 10 to 1',
+      sub: 'Play the card game against AI opponents',
+      route: '/projects/10-1',
+      color: 0x6ee7a0,
+      radius: 13, height: 14,
+      hitR: 10
+    },
     {
       key: 'hq',
       build: landmarkHQ,

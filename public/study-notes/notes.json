@@ -1,5 +1,362 @@
 [
   {
+    "slug": "ci-cd-pipelines",
+    "title": "CI/CD pipelines: from commit to production",
+    "summary": "Follow one release through a runner, reproducible builds, artifacts, permissions, AWS deployment and rollback, using the portfolio and Sportslux workflows.",
+    "topic": "Web systems",
+    "tags": [
+      "sportslux",
+      "super move",
+      "10-to-1",
+      "github actions",
+      "deployment"
+    ],
+    "file": "ci-cd-pipelines.html",
+    "chapters": 8,
+    "minutes": 3,
+    "updated": "2026-11-20"
+  },
+  {
+    "slug": "neural-networks-backpropagation",
+    "title": "Neural networks, backpropagation and Adam",
+    "summary": "Build a prediction from weighted inputs, send its error backwards, and follow an Adam update into the card bot’s NumPy networks.",
+    "topic": "Applied AI",
+    "tags": [
+      "10-to-1",
+      "neural networks",
+      "training"
+    ],
+    "file": "neural-networks-backpropagation.html",
+    "chapters": 7,
+    "minutes": 3,
+    "updated": "2026-11-20",
+    "related": [
+      "alpha-beta-pruning"
+    ]
+  },
+  {
+    "slug": "self-play-policy-iteration",
+    "title": "Self-play and policy iteration",
+    "summary": "Watch a card policy generate games, label alternative actions with rollouts, refit its networks and face an independent promotion gate.",
+    "topic": "Applied AI",
+    "tags": [
+      "10-to-1",
+      "training",
+      "self-play"
+    ],
+    "file": "self-play-policy-iteration.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "related": [
+      "neural-networks-backpropagation",
+      "obrien-fleming"
+    ]
+  },
+  {
+    "slug": "hidden-hands-importance-resampling",
+    "title": "Hidden hands and importance resampling",
+    "summary": "Turn known cards, missing suits and bids into a weighted collection of possible hands, then use those hands to compare legal plays.",
+    "topic": "Statistics / Simulation",
+    "tags": [
+      "10-to-1",
+      "monte carlo",
+      "beliefs"
+    ],
+    "file": "hidden-hands-importance-resampling.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "related": [
+      "monte-carlo-simulation",
+      "self-play-policy-iteration"
+    ]
+  },
+  {
+    "slug": "decision-trees-random-forests",
+    "title": "Decision trees and random forests",
+    "summary": "Split match examples into leaves, measure how a split helps, and combine varied trees into a random forest.",
+    "topic": "Applied AI",
+    "tags": [
+      "esports predictor",
+      "machine learning",
+      "trees"
+    ],
+    "file": "decision-trees-random-forests.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "series": "Tree ensembles",
+    "part": 1
+  },
+  {
+    "slug": "gradient-boosting",
+    "title": "Gradient boosting: learning the corrections",
+    "summary": "Build an additive prediction one small tree at a time, starting with squared-error corrections and ending with binary win probabilities.",
+    "topic": "Applied AI",
+    "tags": [
+      "esports predictor",
+      "machine learning",
+      "trees"
+    ],
+    "file": "gradient-boosting.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "series": "Tree ensembles",
+    "part": 2,
+    "related": [
+      "probability-calibration"
+    ]
+  },
+  {
+    "slug": "probability-calibration",
+    "title": "Probability calibration and scoring rules",
+    "summary": "Distinguish accuracy from honest probabilities, calculate Brier score and log loss, and read a calibration curve.",
+    "topic": "Statistics",
+    "tags": [
+      "esports predictor",
+      "evaluation",
+      "probabilities"
+    ],
+    "file": "probability-calibration.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "related": [
+      "temporal-validation-leakage"
+    ]
+  },
+  {
+    "slug": "temporal-validation-leakage",
+    "title": "Temporal validation and data leakage",
+    "summary": "Rebuild one prediction as it could have existed before a match, then keep fitting, tuning and final evaluation on the correct side of time.",
+    "topic": "Applied AI",
+    "tags": [
+      "esports predictor",
+      "evaluation",
+      "data engineering"
+    ],
+    "file": "temporal-validation-leakage.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "related": [
+      "gradient-boosting"
+    ]
+  },
+  {
+    "slug": "voxel-bin-packing",
+    "title": "3D bin packing and voxel constraints",
+    "summary": "Place furniture on a voxel grid, reject collisions and unsupported loads, then compare feasible truck fleets.",
+    "topic": "Algorithms",
+    "tags": [
+      "super move",
+      "optimisation",
+      "packing"
+    ],
+    "file": "voxel-bin-packing.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "related": [
+      "genetic-algorithms"
+    ]
+  },
+  {
+    "slug": "genetic-algorithms",
+    "title": "Genetic algorithms for packing orders",
+    "summary": "Encode a furniture ordering, decode it into a valid load, breed permutation-safe candidates and retain useful improvements.",
+    "topic": "Algorithms",
+    "tags": [
+      "super move",
+      "optimisation",
+      "evolutionary search"
+    ],
+    "file": "genetic-algorithms.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "related": [
+      "lighting-differential-evolution"
+    ]
+  },
+  {
+    "slug": "database-concurrency",
+    "title": "Database concurrency and transaction isolation",
+    "summary": "Reproduce a double-booking race, separate atomicity from isolation, and protect decisions with locks, constraints and retryable serializable transactions.",
+    "topic": "Web systems",
+    "tags": [
+      "frontrunner",
+      "sportslux",
+      "postgresql",
+      "concurrency"
+    ],
+    "file": "database-concurrency.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "related": [
+      "webhooks-hmac-idempotency"
+    ]
+  },
+  {
+    "slug": "multi-tenant-authorisation",
+    "title": "Multi-tenant authorisation and delegated roles",
+    "summary": "Resolve a caller, tenant, resource and action, then enforce role permissions and delegation boundaries at the API.",
+    "topic": "Web systems",
+    "tags": [
+      "frontrunner",
+      "sportslux",
+      "security",
+      "rbac"
+    ],
+    "file": "multi-tenant-authorisation.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "related": [
+      "database-concurrency"
+    ]
+  },
+  {
+    "slug": "durable-background-jobs",
+    "title": "Durable background jobs and failure recovery",
+    "summary": "Keep a calculation alive beyond its HTTP request, claim work safely, recover abandoned jobs and avoid duplicate external effects.",
+    "topic": "Web systems",
+    "tags": [
+      "sportslux",
+      "frontrunner",
+      "queues",
+      "reliability"
+    ],
+    "file": "durable-background-jobs.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "related": [
+      "webhooks-hmac-idempotency",
+      "database-concurrency",
+      "ci-cd-pipelines"
+    ]
+  },
+  {
+    "slug": "bitboards-state-representation",
+    "title": "Bitboards and efficient state representation",
+    "summary": "Represent board occupancy as bits, combine sets with bitwise operations and update a position without copying the whole board.",
+    "topic": "Algorithms",
+    "tags": [
+      "chess engine",
+      "10-to-1",
+      "bit operations"
+    ],
+    "file": "bitboards-state-representation.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "related": [
+      "hash-tables-memoisation",
+      "hidden-hands-importance-resampling"
+    ]
+  },
+  {
+    "slug": "iterative-deepening-quiescence",
+    "title": "Iterative deepening and quiescence search",
+    "summary": "Keep a completed move ready under a deadline, reuse shallower searches and extend unstable tactical positions beyond the nominal depth.",
+    "topic": "Algorithms",
+    "tags": [
+      "chess engine",
+      "search",
+      "time budgets"
+    ],
+    "file": "iterative-deepening-quiescence.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "related": [
+      "alpha-beta-pruning",
+      "hash-tables-memoisation"
+    ]
+  },
+  {
+    "slug": "workers-webassembly",
+    "title": "Web Workers, WebAssembly and language boundaries",
+    "summary": "Move expensive work off the UI thread, account for message costs and follow Python and compiled C through the browser game.",
+    "topic": "Web systems",
+    "tags": [
+      "10-to-1",
+      "super move",
+      "wealth pathways",
+      "web workers"
+    ],
+    "file": "workers-webassembly.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "related": [
+      "monte-carlo-simulation",
+      "voxel-bin-packing"
+    ]
+  },
+  {
+    "slug": "identity-customer-memory",
+    "title": "Identity resolution and customer memory",
+    "summary": "Follow an anonymous visitor into cart and order records, distinguish record linkage from verified access, and keep remembered context within its owner’s boundary.",
+    "topic": "Web systems",
+    "tags": [
+      "curated wellness",
+      "identity",
+      "security",
+      "data modelling"
+    ],
+    "file": "identity-customer-memory.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "related": [
+      "retrieval-guardrails",
+      "webhooks-hmac-idempotency"
+    ]
+  },
+  {
+    "slug": "leverage-amortisation-cashflow",
+    "title": "Leverage, amortisation and cash-flow modelling",
+    "summary": "Follow a property, loan and cash account together, distinguish interest from principal, and compare wealth pathways on consistent cash flows.",
+    "topic": "Statistics / Simulation",
+    "tags": [
+      "wealth pathways",
+      "finance modelling",
+      "cash flow"
+    ],
+    "file": "leverage-amortisation-cashflow.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "related": [
+      "monte-carlo-simulation",
+      "bootstrap-resampling"
+    ]
+  },
+  {
+    "slug": "etl-incremental-sync",
+    "title": "ETL correctness and incremental synchronisation",
+    "summary": "Move one asset through extraction, transformation and loading, then handle stable keys, checkpoints, deletions and partial failures.",
+    "topic": "Web systems",
+    "tags": [
+      "asset data integration",
+      "data engineering",
+      "etl"
+    ],
+    "file": "etl-incremental-sync.html",
+    "chapters": 6,
+    "minutes": 2,
+    "updated": "2026-11-20",
+    "related": [
+      "webhooks-hmac-idempotency",
+      "durable-background-jobs"
+    ]
+  },
+  {
     "slug": "webhooks-hmac-idempotency",
     "file": "webhooks-hmac-idempotency.html",
     "title": "Webhooks, HMAC signatures and idempotency",

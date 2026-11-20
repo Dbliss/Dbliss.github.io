@@ -5,12 +5,10 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 // game, chart, or case-study dependencies that should not delay first paint.
 import Home from '../pages/Home.vue'
 
-const City = () => import('../pages/City.vue')
 const Projects = () => import('../pages/Projects.vue')
 const ProjectDetail = () => import('../pages/ProjectDetail.vue')
 const About = () => import('../pages/About.vue')
 const Contact = () => import('../pages/Contact.vue')
-const CityEditor = () => import('../pages/CityEditor.vue')
 const StudyNotes = () => import('../pages/StudyNotes.vue')
 
 const router = createRouter({
@@ -20,18 +18,6 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: Home,
-      meta: { hideNav: true, hideFooter: true, fullBleed: true, navReveal: false }
-    },
-    {
-      path: '/city',
-      name: 'city',
-      component: City,
-      meta: { hideNav: true, hideFooter: true, fullBleed: true }
-    },
-    {
-      path: '/city-editor',
-      name: 'city-editor',
-      component: CityEditor,
       meta: { hideNav: true, hideFooter: true, fullBleed: true, navReveal: false }
     },
     { path: '/projects', name: 'projects', component: Projects, meta: { fullBleed: true } },

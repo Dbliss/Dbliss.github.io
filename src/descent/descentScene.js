@@ -900,8 +900,8 @@ function makeKnight() {
 }
 
 // ---------------------------------------------------------------------------
-// Drone project symbol — a readable fallback immediately, then the same GLB
-// used by the city once it has loaded. It drifts as if neutrally buoyant.
+// Drone project symbol: a readable fallback immediately, then the loaded GLB.
+// It drifts as if neutrally buoyant.
 // ---------------------------------------------------------------------------
 
 function makeDrone() {

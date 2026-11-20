@@ -1,53 +1,50 @@
 <template>
   <section class="pj">
-    <header class="pj-head">
-      <div class="pj-bar">
-        <h1 class="pj-count">Selected projects({{ list.length }})</h1>
-        <div class="pj-filters" role="group" aria-label="Filter projects">
-          <button
-            v-for="f in filters"
-            :key="f.label"
-            type="button"
-            :class="['pj-filter', active === f.label && 'is-active']"
-            :aria-pressed="active === f.label"
-            @click="active = f.label"
-          >{{ f.label }}<sup>{{ f.count }}</sup></button>
-        </div>
-      </div>
-    </header>
-
-    <TransitionGroup tag="div" name="pj" class="pj-grid">
+    <div class="pj-grid">
       <ProjectCard
         v-for="p in list"
         :key="p.slug"
         :ref="card => setCard(p.slug, card)"
         :project="p"
+        :class="{ 'is-full': fullRow.has(p.slug) }"
         :mobile-preview="mobilePreview"
         :playback-active="activePreview === p.slug"
+        @hover="on => setHover(p.slug, on)"
       />
-    </TransitionGroup>
+    </div>
   </section>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { projects as all } from '../data/projects'
 import ProjectCard from '../components/ProjectCard.vue'
 
-const ALL = 'All'
-// What a hiring manager screens for: shipped work, and the kind of engineering.
-const GROUPS = ['In production', 'Full-stack & web', 'AI & ML', 'Data engineering', 'Algorithms & optimisation', 'Systems & embedded']
+const list = all
 
-const filters = computed(() => [
-  { label: ALL, count: all.length },
-  ...GROUPS.map((g) => ({ label: g, count: all.filter((p) => p.groups?.includes(g)).length })).filter((f) => f.count)
-])
-const active = ref(ALL)
-
-const list = computed(() => (active.value === ALL ? all : all.filter((p) => p.groups?.includes(active.value))))
+// Cards that span both desktop columns: anything flagged `wide`, plus a final
+// card left alone on its row so the grid never ends on a half-empty row.
+const fullRow = (() => {
+  const full = new Set()
+  let col = 0
+  list.forEach((p, i) => {
+    const last = i === list.length - 1
+    if (p.wide || (last && col === 0)) {
+      full.add(p.slug)
+      col = 0
+    } else {
+      col = (col + 1) % 2
+    }
+  })
+  return full
+})()
 
 const mobilePreview = ref(false)
 const activePreview = ref(null)
+const CYCLE_MS = 15000
+const hovered = ref(null)
+const cycled = ref(null)
+let cycleTimer = 0
 const cards = new Map()
 let previewQuery
 let frame = 0
@@ -58,23 +55,84 @@ function setCard(slug, card) {
   schedulePreview()
 }
 
-function updatePreview() {
-  frame = 0
+function visibleSlugs() {
+  return list
+    .filter((p) => {
+      const rect = cards.get(p.slug)?.getBoundingClientRect()
+      return rect && rect.bottom > 0 && rect.top < window.innerHeight
+    })
+    .map((p) => p.slug)
+}
+
+function closestToCenter(slugs) {
+  const center = window.innerHeight / 2
   let closest = null
   let distance = Infinity
-  if (mobilePreview.value && !document.hidden) {
-    const center = window.innerHeight / 2
-    for (const project of list.value) {
-      const rect = cards.get(project.slug)?.getBoundingClientRect()
-      if (!rect || rect.bottom <= 0 || rect.top >= window.innerHeight) continue
-      const delta = Math.abs(rect.top + rect.height / 2 - center)
-      if (delta < distance) {
-        closest = project.slug
-        distance = delta
-      }
+  for (const slug of slugs) {
+    const rect = cards.get(slug).getBoundingClientRect()
+    const delta = Math.abs(rect.top + rect.height / 2 - center)
+    if (delta < distance) {
+      closest = slug
+      distance = delta
     }
   }
-  activePreview.value = closest
+  return closest
+}
+
+// Desktop: the hovered card plays; otherwise one on-screen card plays at a time
+// and hands over to the next on-screen card every CYCLE_MS.
+// Mobile: the card nearest the middle of the screen plays.
+function updatePreview() {
+  frame = 0
+  if (document.hidden) {
+    stopCycle()
+    activePreview.value = null
+    return
+  }
+  const visible = visibleSlugs()
+  if (mobilePreview.value) {
+    stopCycle()
+    activePreview.value = closestToCenter(visible)
+    return
+  }
+  if (!visible.includes(cycled.value)) setCycled(closestToCenter(visible))
+  else if (!cycleTimer) startCycle()
+  activePreview.value = hovered.value || cycled.value
+}
+
+function stopCycle() {
+  clearTimeout(cycleTimer)
+  cycleTimer = 0
+}
+
+function startCycle() {
+  stopCycle()
+  if (mobilePreview.value || hovered.value || !cycled.value || document.hidden) return
+  cycleTimer = setTimeout(advanceCycle, CYCLE_MS)
+}
+
+function setCycled(slug) {
+  cycled.value = slug
+  startCycle()
+}
+
+function advanceCycle() {
+  cycleTimer = 0
+  const visible = visibleSlugs()
+  setCycled(visible[(visible.indexOf(cycled.value) + 1) % visible.length] ?? null)
+  schedulePreview()
+}
+
+function setHover(slug, on) {
+  if (on) {
+    hovered.value = slug
+  } else if (hovered.value === slug) {
+    // Carry on from the card the pointer just left, with a fresh full turn.
+    hovered.value = null
+    cycled.value = slug
+  }
+  startCycle()
+  schedulePreview()
 }
 
 function schedulePreview() {
@@ -85,8 +143,6 @@ function updatePreviewMode() {
   mobilePreview.value = previewQuery.matches
   schedulePreview()
 }
-
-watch(list, schedulePreview, { flush: 'post' })
 
 onMounted(() => {
   previewQuery = window.matchMedia('(max-width: 760px), (hover: none)')
@@ -99,6 +155,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(frame)
+  stopCycle()
   previewQuery?.removeEventListener('change', updatePreviewMode)
   window.removeEventListener('scroll', schedulePreview)
   window.removeEventListener('resize', schedulePreview)
@@ -108,44 +165,9 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .pj {
-  --mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
   background: #fff;
-  padding-bottom: 8px;
+  padding: 8px 0;
 }
-
-.pj-head { padding: 72px 20px 18px; }
-.pj-bar {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px 32px;
-  flex-wrap: wrap;
-}
-.pj-count {
-  margin: 0;
-  color: #111;
-  font: 500 13px/1 var(--mono);
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
-
-.pj-filters { display: flex; flex-wrap: wrap; gap: 6px 22px; }
-.pj-filter {
-  padding: 2px 0;
-  border: 0;
-  border-bottom: 1px solid transparent;
-  background: none;
-  color: #8a8a8a;
-  font: 500 13px/1.3 var(--mono);
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: color .2s, border-color .2s;
-}
-.pj-filter sup { margin-left: 2px; font-size: 9px; }
-.pj-filter:hover { color: #111; }
-.pj-filter.is-active { color: #111; border-bottom-color: #111; }
-.pj-filter:focus-visible { outline: 1px solid #111; outline-offset: 3px; }
 
 .pj-grid {
   position: relative;
@@ -153,17 +175,11 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
-/* An odd one out at the end runs the full width as a wide banner */
-.pj-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; aspect-ratio: 32 / 11; }
+/* Wide projects, and an odd one out at the end, run the full width as a banner */
+.pj-grid > .is-full { grid-column: 1 / -1; aspect-ratio: 32 / 11; }
 
 @media (max-width: 760px) {
-  .pj-head { padding: 40px 16px 14px; }
   .pj-grid { grid-template-columns: 1fr; }
-  .pj-grid > :last-child:nth-child(odd) { aspect-ratio: 16 / 11; }
+  .pj-grid > .is-full { aspect-ratio: 16 / 11; }
 }
-
-.pj-enter-active { transition: opacity .4s ease; }
-.pj-enter-from { opacity: 0; }
-.pj-leave-active { display: none; }
-.pj-move { transition: transform .5s cubic-bezier(.2, .8, .2, 1); }
 </style>

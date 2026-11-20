@@ -25,7 +25,7 @@
       </div>
     </template>
 
-    <main :class="route.meta?.fullBleed ? 'fullbleed' : 'container'">
+    <main :class="fullBleed ? 'fullbleed' : 'container'">
       <RouterView />
     </main>
 
@@ -56,6 +56,13 @@ const hideFooter = computed(() => {
   const slug = route.params.slug
   const p = projects.find(x => x.slug === slug)
   return Boolean(p?.hideFooter)
+})
+
+// Full-bleed: route meta, or a project page that draws its own full-width layout
+const fullBleed = computed(() => {
+  if (route.meta?.fullBleed) return true
+  if (route.name !== 'project') return false
+  return Boolean(projects.find(x => x.slug === route.params.slug)?.fullBleed)
 })
 
 // Nav hide base rule (same idea as footer)
@@ -120,7 +127,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style>
-/* Full-bleed pages (e.g. the interactive city home) manage their own layout */
+/* Full-bleed pages manage their own layout */
 main.fullbleed {
   width: 100%;
   padding: 0;

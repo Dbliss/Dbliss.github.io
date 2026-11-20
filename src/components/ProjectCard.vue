@@ -3,10 +3,10 @@
     class="pt"
     :class="{ 'is-expanded': expanded }"
     :data-category="project.category || null"
-    @mouseenter="hovered = true"
-    @mouseleave="hovered = false"
+    @mouseenter="emit('hover', true)"
+    @mouseleave="emit('hover', false)"
   >
-    <ProjectMedia :slug="project.slug" :active="mobilePreview ? playbackActive : hovered" class="pt-media" />
+    <ProjectMedia :slug="project.slug" :active="playbackActive" class="pt-media" />
 
     <button
       v-if="mobilePreview"
@@ -52,9 +52,10 @@ const props = defineProps({
   playbackActive: { type: Boolean, default: false }
 })
 
-// Tracked on the whole tile: the link and detail overlays sit on top of the media,
-// so the media element itself never receives the pointer.
-const hovered = ref(false)
+// The page decides which single card plays (hovered, cycling, or centred on mobile).
+// Hover is tracked on the whole tile: the link and detail overlays sit on top of the
+// media, so the media element itself never receives the pointer.
+const emit = defineEmits(['hover'])
 const expanded = ref(false)
 
 const caseStudy = computed(() => ({ name: 'project', params: { slug: props.project.slug } }))

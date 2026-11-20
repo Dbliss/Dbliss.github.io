@@ -21,9 +21,6 @@ Project layout
 - `src/data/projects.js`: project metadata (slug, title, stack, tags, etc.).
 - `src/data/socials.js`: social links.
 - `src/chess/*`: helper logic for chess UI + Stockfish worker integration.
-- `src/city/cityScene.js`: three.js night-city world for the landing page. Builds
-  ground/roads/skyline/cars plus one clickable landmark per project; returns
-  `{ landmarks, update }` consumed by `src/pages/Home.vue`.
 - `public/stockfish/*`: Stockfish worker JS/WASM binaries for the chess page.
 - `public/study-notes/*`: standalone animated study notes, listed by
   `src/pages/StudyNotes.vue` (route `/notes`) from `notes.json`. To write a note,
@@ -47,12 +44,10 @@ How the app is wired
   `src/data/projects.js`:
   - `hideNav`, `hideFooter` enable "immersive" pages.
   - `App.vue` uses those flags to swap into a nav hotzone + overlay.
-- The home route (`/`) is a full-screen interactive 3D city (`Home.vue` +
-  `src/city/cityScene.js`). Its route meta sets `hideNav`, `hideFooter`, and
-  `fullBleed` (App.vue drops the `.container` class for full-bleed routes).
-  Landmark → route mapping lives in the `defs` array in `cityScene.js`; add a
-  new landmark there when a new project ships. The old landing hero/experience
-  content now lives on `src/pages/About.vue`.
+  - `fullBleed` drops the `.container` wrapper so the page can own its full width
+    (used by the `10-1` Oh Hell page).
+- The home route (`/`) renders the portfolio landing hero in `src/pages/Home.vue`.
+  Its route meta hides the shared nav and footer and enables full-bleed layout.
 
 
 

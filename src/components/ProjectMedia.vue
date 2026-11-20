@@ -31,7 +31,7 @@ import HoverCanvas from './previews/HoverCanvas.vue'
 import WealthDashboardPreview from './previews/WealthDashboardPreview.vue'
 import { drawBoosting } from './previews/boostingScene'
 import { drawPipeline } from './previews/pipelineScene'
-import { drawOhHell } from './previews/ohHellScene'
+import { drawBotThinking } from './previews/ohHellBotScene'
 import { useHoverClock } from './previews/useHoverClock'
 import sportsluxRecording from '../assets/sportslux/videos/sportslux-recording.mp4'
 import floodlitField from '../assets/sports-booking/floodlit-field.jpg'
@@ -45,7 +45,7 @@ const props = defineProps({
 
 // One place to choose what each project tile shows.
 const MEDIA = {
-  '10-1': { draw: drawOhHell },
+  '10-1': { draw: drawBotThinking },
   'lol-match-predictor': { draw: drawBoosting },
   // The media fragment makes the browser show that frame while the video sits paused.
   // trimStart / trimEnd are seconds cut from each end of the recording at playback.

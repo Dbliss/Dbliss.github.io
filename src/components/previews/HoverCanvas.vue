@@ -5,12 +5,14 @@
 <script setup>
 // Full-tile 2D canvas. `draw(ctx, width, height, time)` paints one frame in CSS pixels;
 // it is painted once at rest and then on every frame while the tile is hovered.
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useHoverClock } from './useHoverClock'
 
 const props = defineProps({
   draw: { type: Function, required: true },
-  active: { type: Boolean, default: false }
+  active: { type: Boolean, default: false },
+  // Changing this repaints the current frame, for scenes driven by outside state.
+  repaintKey: { type: [String, Number, Boolean], default: null }
 })
 
 const el = ref(null)
@@ -27,6 +29,7 @@ function paint (time) {
 }
 
 const clock = useHoverClock(() => props.active, paint)
+watch(() => props.repaintKey, () => paint(clock.time()))
 
 onMounted(() => {
   const canvas = el.value
@@ -40,6 +43,8 @@ onMounted(() => {
     paint(clock.time())
   })
   ro.observe(canvas)
+  // Scenes that load images expose `draw.ready`; repaint the resting frame once they arrive.
+  props.draw.ready?.then(() => paint(clock.time()))
 })
 
 onBeforeUnmount(() => ro?.disconnect())
